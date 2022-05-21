@@ -16,23 +16,23 @@
 // limitations under the License.
 ///////////////////////////////////////////////////////////////////////////////
 
-module tcb_tb #(
+
+
+module tcb_tb
+  import tcb_pkg::*;
+#(
   int unsigned AW = 32,    // address width
   int unsigned DW = 32,    // data    width
   int unsigned BW = DW/8   // byte e. width
 )(
-`ifdef VERILATOR
   // system signals
   input  logic clk,  // clock
   input  logic rst   // reset
-`endif
 );
 
-`ifndef VERILATOR
 // system signals
 logic clk = 1'b1;  // clock
 logic rst = 1'b1;  // reset
-`endif
 
 ////////////////////////////////////////////////////////////////////////////////
 // local signals
@@ -47,17 +47,19 @@ logic [DW-1:0] wdt;  // write data
 logic [DW-1:0] rdt;  // read data
 logic          err;  // error
 
-
 ////////////////////////////////////////////////////////////////////////////////
 // test sequence
 ////////////////////////////////////////////////////////////////////////////////
 
-`ifndef VERILATOR
 // clock
 always #(20ns/2) clk = ~clk;
 // reset
 initial
 begin
+  // manager/subordinate
+  tcb_man man = new(bus.man);
+  tcb_sub sub = new(bus.sub);
+  // reset sequence
   repeat (4) @(posedge clk);
   rst <= 1'b0;
   repeat (1) @(posedge clk);
@@ -68,31 +70,9 @@ begin
 //  sub.req( wen,  adr,     ben,          wdt,                   );
     sub.rsp(                                   32'h89abcdef, 1'b0);
   join
-  repeat (16) @(posedge clk);
+  repeat (4) @(posedge clk);
   $finish();
 end
-`endif
-
-////////////////////////////////////////////////////////////////////////////////
-// memory
-////////////////////////////////////////////////////////////////////////////////
-
-// bus manager
-tcb_man man (
-  .bus  (bus)
-);
-
-// bus monitor
-tcb_mon #(
-  .NAME ("TCB")
-) mon (
-  .bus  (bus)
-);
-
-// bus subordinate
-tcb_sub sub (
-  .bus  (bus)
-);
 
 /*
 ////////////////////////////////////////////////////////////////////////////////

@@ -21,21 +21,4 @@ module tcb_sub (
   tcb_if.sub bus
 );
 
-// response
-task rsp (
-  input  logic [bus.DW-1:0] rdt,     // read data
-  input  logic              err,     // error
-  input  int unsigned       dly = 0  // valid delay
-);
-  while (~bus.vld) begin
-    @(posedge bus.clk);
-  end
-  repeat (dly)  @(posedge bus.clk);
-  // read data
-  bus.rdt <= rdt;
-  bus.err <= err;
-endtask: rsp
-
-assign bus.rdy = 1'b1;
-
 endmodule: tcb_sub
