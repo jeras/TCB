@@ -16,63 +16,70 @@
 // limitations under the License.
 ///////////////////////////////////////////////////////////////////////////////
 
-
-
 module tcb_tb
   import tcb_pkg::*;
 #(
+  // bus widths
   int unsigned AW = 32,    // address width
   int unsigned DW = 32,    // data    width
-  int unsigned BW = DW/8   // byte e. width
+  int unsigned BW = DW/8,  // byte e. width
+  // response delay
+  int unsigned DLY = 1
 )(
   // system signals
   input  logic clk,  // clock
   input  logic rst   // reset
 );
 
-// system signals
-logic clk = 1'b1;  // clock
-logic rst = 1'b1;  // reset
+  // system signals
+  logic clk = 1'b1;  // clock
+  logic rst = 1'b1;  // reset
 
 ////////////////////////////////////////////////////////////////////////////////
 // local signals
 ////////////////////////////////////////////////////////////////////////////////
 
-tcb_if #(.AW (AW), .DW (DW)) bus (.clk (clk), .rst (rst));
-
-logic          wen;  // write enable
-logic [AW-1:0] adr;  // address
-logic [BW-1:0] ben;  // byte enable
-logic [DW-1:0] wdt;  // write data
-logic [DW-1:0] rdt;  // read data
-logic          err;  // error
+  tcb_if #(.AW (AW), .DW (DW)) bus (.clk (clk), .rst (rst));
 
 ////////////////////////////////////////////////////////////////////////////////
 // test sequence
 ////////////////////////////////////////////////////////////////////////////////
 
-// clock
-always #(20ns/2) clk = ~clk;
-// reset
-initial
-begin
-  // manager/subordinate
-  tcb_man man = new(bus.man);
-  tcb_sub sub = new(bus.sub);
-  // reset sequence
-  repeat (4) @(posedge clk);
-  rst <= 1'b0;
-  repeat (1) @(posedge clk);
-  fork
-    //       wen,  adr,     ben,          wdt,          rdt,  err
-    man.req(1'b1, 'h00, 4'b1111, 32'h01234567,                   );
-    man.rsp(                                            rdt,  err);
-//  sub.req( wen,  adr,     ben,          wdt,                   );
-    sub.rsp(                                   32'h89abcdef, 1'b0);
-  join
-  repeat (4) @(posedge clk);
-  $finish();
-end
+  // clock
+  always #(20ns/2) clk = ~clk;
+
+  // reset
+  initial
+  begin
+    // manager/subordinate
+//    tcb_man man = new(bus.man);
+//    tcb_sub sub = new(bus.sub);
+    // reset sequence
+    repeat (4) @(posedge clk);
+    rst <= 1'b0;
+    repeat (1) @(posedge clk);
+    fork
+      //               wen,  adr,     ben,          wdt,          rdt,  err, len
+        man.req_trn('{1'b1, 'h00, 4'b1111, 32'h01234567,                     0});
+        sub.rsp_trn('{                                   32'h89abcdef, 1'b0, 0});
+  //    man.rsp_trn(                                            rdt,  err);
+  //    sub.req_trn( wen,  adr,     ben,          wdt,                   );
+    join
+    repeat (4) @(posedge clk);
+    $finish();
+  end
+
+  tcb_man #(
+    .DLY  (DLY)
+  ) man (
+    .bus  (bus)
+  );
+
+  tcb_sub #(
+    .DLY  (DLY)
+  ) sub (
+    .bus  (bus)
+  );
 
 /*
 ////////////////////////////////////////////////////////////////////////////////

@@ -36,10 +36,14 @@ logic [DW-1:0] rdt;  // read data
 logic          err;  // error
 logic          rdy;  // ready
 
-// transfer
+// local signals
 logic          trn;  // transfer
+logic          idl;  // idle
 
+// transfer (valid and ready at the same time)
 assign trn = vld & rdy;
+// idle (either not valid or ending a cycle with a transfer)
+assign idl = ~vld | trn;
 
 // manager
 modport  man (
@@ -55,8 +59,28 @@ modport  man (
   input  rdt,
   input  err,
   input  rdy,
-  // transfer
-  input  trn
+  // local signals
+  input  trn,
+  input  idl
+);
+
+// monitor
+modport  mon (
+  // system signals
+  input  clk,
+  input  rst,
+  // system bus
+  input  vld,
+  input  wen,
+  input  adr,
+  input  ben,
+  input  wdt,
+  input  rdt,
+  input  err,
+  input  rdy,
+  // local signals
+  input  trn,
+  input  idl
 );
 
 // subordinate
@@ -73,8 +97,9 @@ modport  sub (
   output rdt,
   output err,
   output rdy,
-  // transfer
-  input  trn
+  // local signals
+  input  trn,
+  input  idl
 );
 
 endinterface: tcb_if
