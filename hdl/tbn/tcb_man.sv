@@ -55,9 +55,6 @@ module tcb_man
     rsp_siz <= rsp_que.size();
   end
 
-  // debug queue access
-  event pop;
-
 ///////////////////////////////////////////////////////////////////////////////
 // transfer cycle
 ///////////////////////////////////////////////////////////////////////////////
@@ -85,7 +82,6 @@ module tcb_man
     if (~cyc | bus.trn) begin
       if (req_que.size()) begin
         req_tmp <= req_que.pop_front();
-        -> pop;
         cyc <= 1'b1;
       end else begin
         cyc <= 1'b0;
