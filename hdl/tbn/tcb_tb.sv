@@ -25,15 +25,11 @@ module tcb_tb
   int unsigned BW = DW/8,  // byte e. width
   // response delay
   int unsigned DLY = 1
-)(
-  // system signals
-  input  logic clk,  // clock
-  input  logic rst   // reset
 );
 
   // system signals
-  logic clk = 1'b1;  // clock
-  logic rst = 1'b1;  // reset
+  logic clk;  // clock
+  logic rst;  // reset
 
 ////////////////////////////////////////////////////////////////////////////////
 // local signals
@@ -46,24 +42,23 @@ module tcb_tb
 ////////////////////////////////////////////////////////////////////////////////
 
   // clock
+  initial          clk = 1'b1;
   always #(20ns/2) clk = ~clk;
 
   // reset
   initial
   begin
-    // manager/subordinate
-//    tcb_man man = new(bus.man);
-//    tcb_sub sub = new(bus.sub);
     // reset sequence
+    rst <= 1'b1;
     repeat (4) @(posedge clk);
     rst <= 1'b0;
     repeat (1) @(posedge clk);
     fork
       //               wen,  adr,     ben,          wdt,          rdt,  err, len
-        man.req_trn('{1'b1, 'h00, 4'b1111, 32'h01234567,                     1});
-        sub.rsp_trn('{                                   32'h89abcdef, 1'b0, 1});
-  //    man.rsp_trn(                                            rdt,  err);
-  //    sub.req_trn( wen,  adr,     ben,          wdt,                   );
+        man.req('{1'b1, 'h00, 4'b1111, 32'h01234567,                     1});
+        sub.rsp('{                                   32'h89abcdef, 1'b0, 1});
+  //    man.rsp(                                            rdt,  err);
+  //    sub.req( wen,  adr,     ben,          wdt,                   );
     join
     repeat (8) @(posedge clk);
     $finish();

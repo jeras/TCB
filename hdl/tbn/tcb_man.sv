@@ -26,21 +26,35 @@ module tcb_man
   tcb_if.man bus
 );
 
+///////////////////////////////////////////////////////////////////////////////
+// request/response queues
+///////////////////////////////////////////////////////////////////////////////
+
   // queues
   tcb_req_t req_que [$];  // request  queue
   tcb_rsp_t rsp_que [$];  // response queue
-  // cycle length counters
-  int unsigned req_cnt;
 
-  // task for pushing a new request into the queue
-  task req_trn (
+  // push a new request into the queue
+  function void req (
     input tcb_req_t req
   );
     req_que.push_back(req);
-  endtask: req_trn
+  endfunction: req
 
-  // temporary structures
-  tcb_rsp_t rsp;  // response structure
+  // pop a response from the queue
+  function tcb_rsp_t rsp ();
+    rsp = rsp_que.pop_front();
+  endfunction: rsp
+
+///////////////////////////////////////////////////////////////////////////////
+// transfer cycle
+///////////////////////////////////////////////////////////////////////////////
+
+  // cycle length counter
+  int unsigned cnt;
+
+  // temporary response structure
+  tcb_rsp_t tmp;
 
   // initialization before the first clock edge
   initial bus.vld <= 1'b0;
@@ -51,16 +65,16 @@ module tcb_man
   always @(posedge bus.clk, posedge bus.rst)
   if (bus.rst) begin
     bus.vld <= 1'b0;
-    req_cnt <=  'd0;
+    cnt <= 0;
   end else begin
     // handshake
     if (req_que.size() > int'(bus.trn)) begin
-      if (req_cnt < req_que[0].len) begin
-        req_cnt <= req_cnt + 1;
+      if (cnt < req_que[0].len) begin
+        cnt <= cnt + 1;
         bus.vld <= 1'b0;
       end else begin
         if (bus.trn) begin
-          req_cnt <=  'd0;
+          cnt <= 0;
         end
         bus.vld <= 1'b1;
       end
@@ -73,9 +87,7 @@ module tcb_man
     end
     // push response into queue
     if (bus.rsp) begin
-      $display("DEBUG: readback %d", rsp_que.size());
-      rsp_que.push_back(rsp);
-      $display("DEBUG: readback %d", rsp_que.size());
+      rsp_que.push_back(tmp);
     end
   end
 
@@ -95,8 +107,8 @@ module tcb_man
       bus.wdt = 'x;
     end
     // response
-    rsp.rdt = bus.rdt;
-    rsp.err = bus.err;
+    tmp.rdt = bus.rdt;
+    tmp.err = bus.err;
   end
 
 endmodule: tcb_man

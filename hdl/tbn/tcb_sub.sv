@@ -26,21 +26,35 @@ module tcb_sub
   tcb_if.sub bus
 );
 
+///////////////////////////////////////////////////////////////////////////////
+// request/response queues
+///////////////////////////////////////////////////////////////////////////////
+
   // queues are initialized outside this module
   tcb_req_t req_que [$];  // request  queue
   tcb_rsp_t rsp_que [$];  // response queue
-  // cycle length counters
-  int unsigned rsp_cnt;
 
-  // task for pushing a new response into the queue
-  task rsp_trn (
+  // push a response into the queue
+  function void rsp (
     input tcb_rsp_t rsp
   );
     rsp_que.push_back(rsp);
-  endtask: rsp_trn
+  endfunction: rsp
 
-  // temporary structures
-  tcb_req_t req;  // request  structure
+  // pop a request from the queue
+  function tcb_req_t req ();
+    req = req_que.pop_front();
+  endfunction: req
+
+///////////////////////////////////////////////////////////////////////////////
+// transfer cycle
+///////////////////////////////////////////////////////////////////////////////
+
+  // cycle length counter
+  int unsigned cnt;
+
+  // temporary request structure
+  tcb_req_t tmp;
 
   // initialization before the first clock edge
   initial bus.rdy <= 1'b0;
@@ -50,20 +64,19 @@ module tcb_sub
   // valid/ready handshake and queue
   always @(posedge bus.clk, posedge bus.rst)
   if (bus.rst) begin
-    bus.rdy <= 1'b0;
-    rsp_cnt <=  'd0;
+    cnt <= 0;
   end else begin
     // ready timer
     if (bus.vld) begin
       if (bus.rdy) begin
-        rsp_cnt <= 0;
+        cnt <= 0;
       end else begin
-        rsp_cnt <= rsp_cnt + 1;
+        cnt <= cnt + 1;
       end
     end
     // push request into queue
     if (bus.trn) begin
-      req_que.push_back(req);
+      req_que.push_back(tmp);
     end
     // pop response from queue
     if (bus.rsp && rsp_que.size()) begin
@@ -75,7 +88,7 @@ module tcb_sub
   always_comb
   begin
     if (rsp_que.size()) begin
-      if (rsp_cnt < rsp_que[0].len) begin
+      if (cnt < rsp_que[0].len) begin
         bus.rdy <= 1'b0;
       end else begin
         bus.rdy <= 1'b1;
@@ -89,10 +102,10 @@ module tcb_sub
   always_comb
   begin
     // request
-    req.wen = bus.wen;
-    req.adr = bus.adr;
-    req.ben = bus.ben;
-    req.wdt = bus.wdt;
+    tmp.wen = bus.wen;
+    tmp.adr = bus.adr;
+    tmp.ben = bus.ben;
+    tmp.wdt = bus.wdt;
     // response
     if (bus.rsp && rsp_que.size()) begin
       bus.rdt = rsp_que[0].rdt;
