@@ -65,9 +65,7 @@ module tcb_man
         bus.vld <= 1'b1;
       end
     end else begin
-//      if (bus.trn) begin
-        bus.vld <= 1'b0;
-//      end
+      bus.vld <= 1'b0;
     end
     // pop request from queue
     if (bus.trn && req_que.size()) begin
