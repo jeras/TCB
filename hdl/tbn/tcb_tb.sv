@@ -54,11 +54,17 @@ module tcb_tb
     rst <= 1'b0;
     repeat (1) @(posedge clk);
     fork
-      //               wen,  adr,     ben,          wdt,          rdt,  err, len
-        man.req('{1'b1, 'h00, 4'b1111, 32'h01234567,                     1});
-        sub.rsp('{                                   32'h89abcdef, 1'b0, 1});
+      begin: req
+      //           wen,  adr,     ben,          wdt,          rdt,  err, len
+        man.req('{1'b1, 'h00, 4'b1111, 32'h01234567,                     0});
+        sub.rsp('{                                   32'h89abcdef, 1'b0, 0});
+        man.req('{1'b1, 'h01, 4'b1111, 32'h76543210,                     1});
+        sub.rsp('{                                   32'hfedcba98, 1'b0, 1});
+      end: req
+      begin: rsp
   //    man.rsp(                                            rdt,  err);
   //    sub.req( wen,  adr,     ben,          wdt,                   );
+      end: rsp
     join
     repeat (8) @(posedge clk);
     $finish();

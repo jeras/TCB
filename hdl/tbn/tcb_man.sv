@@ -34,7 +34,7 @@ module tcb_man
   tcb_req_t req_que [$];  // request  queue
   tcb_rsp_t rsp_que [$];  // response queue
 
-  // push a new request into the queue
+  // push a request into the queue
   function void req (
     input tcb_req_t req
   );
@@ -46,69 +46,77 @@ module tcb_man
     rsp = rsp_que.pop_front();
   endfunction: rsp
 
+  // debug queue size
+  int unsigned req_siz;
+  int unsigned rsp_siz;
+  always @(posedge bus.clk)
+  begin
+    req_siz <= req_que.size();
+    rsp_siz <= rsp_que.size();
+  end
+
+  // debug queue access
+  event pop;
+
 ///////////////////////////////////////////////////////////////////////////////
 // transfer cycle
 ///////////////////////////////////////////////////////////////////////////////
 
+  // active cycle
+  bit cyc = 1'b0;
+
   // cycle length counter
   int unsigned cnt;
 
-  // temporary response structure
-  tcb_rsp_t tmp;
+  // temporary request/response structure
+  tcb_req_t req_tmp;
+  tcb_rsp_t rsp_tmp;
 
   // initialization before the first clock edge
   initial bus.vld <= 1'b0;
 
-  // NOTE: the VALID signal is usually driven synchronously
-
   // valid/ready handshake and queue
   always @(posedge bus.clk, posedge bus.rst)
   if (bus.rst) begin
-    bus.vld <= 1'b0;
+    cyc <= 0;
     cnt <= 0;
   end else begin
-    // handshake
-    if (req_que.size() > int'(bus.trn)) begin
-      if (cnt < req_que[0].len) begin
-        cnt <= cnt + 1;
-        bus.vld <= 1'b0;
-      end else begin
-        if (bus.trn) begin
-          cnt <= 0;
-        end
-        bus.vld <= 1'b1;
-      end
-    end else begin
-      bus.vld <= 1'b0;
-    end
     // pop request from queue
-    if (bus.trn && req_que.size()) begin
-      void'(req_que.pop_front());
+    if (~cyc | bus.trn) begin
+      if (req_que.size()) begin
+        req_tmp <= req_que.pop_front();
+        -> pop;
+        cyc <= 1'b1;
+      end else begin
+        cyc <= 1'b0;
+      end
+    end
+    // cycle length counter
+    if (cyc) begin
+      if (bus.trn)  cnt <= 0;
+      else          cnt <= cnt + 1;
     end
     // push response into queue
     if (bus.rsp) begin
-      rsp_que.push_back(tmp);
+      rsp_que.push_back(rsp_tmp);
     end
   end
 
   // other bus signals
   always_comb
   begin
+    // handshake
+    bus.vld = cyc & (cnt >= req_tmp.len);
+    // cycle length
+    rsp_tmp.len = cnt;  // TODO: delay to DLY
     // request
-    if (bus.vld && rsp_que.size()) begin
-      bus.wen = req_que[0].wen;
-      bus.adr = req_que[0].adr;
-      bus.ben = req_que[0].ben;
-      bus.wdt = req_que[0].wdt;
-    end else begin
-      bus.wen = 'x;
-      bus.adr = 'x;
-      bus.ben = 'x;
-      bus.wdt = 'x;
-    end
+    bus.wen = bus.vld ? req_tmp.wen : 'x;
+    bus.adr = bus.vld ? req_tmp.adr : 'x;
+    bus.ben = bus.vld ? req_tmp.ben : 'x;
+    bus.wdt = bus.vld ? req_tmp.wdt : 'x;
     // response
-    tmp.rdt = bus.rdt;
-    tmp.err = bus.err;
+    rsp_tmp.rdt = bus.rdt;
+    rsp_tmp.err = bus.err;
   end
 
 endmodule: tcb_man

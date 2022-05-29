@@ -30,7 +30,7 @@ module tcb_sub
 // request/response queues
 ///////////////////////////////////////////////////////////////////////////////
 
-  // queues are initialized outside this module
+  // queues
   tcb_req_t req_que [$];  // request  queue
   tcb_rsp_t rsp_que [$];  // response queue
 
@@ -46,74 +46,88 @@ module tcb_sub
     req = req_que.pop_front();
   endfunction: req
 
+  // debug queue size
+  int unsigned req_siz;
+  int unsigned rsp_siz;
+  always @(posedge bus.clk)
+  begin
+    req_siz <= req_que.size();
+    rsp_siz <= rsp_que.size();
+  end
+
+  // debug queue access
+  event pop;
+
 ///////////////////////////////////////////////////////////////////////////////
 // transfer cycle
 ///////////////////////////////////////////////////////////////////////////////
 
+  // active cycle
+  bit cyc = 1'b0;
+
   // cycle length counter
   int unsigned cnt;
 
-  // temporary request structure
-  tcb_req_t tmp;
+  // temporary request/response structure
+  tcb_req_t req_tmp;
+  tcb_rsp_t rsp_tmp;
+
+  // response pipeline
+  tcb_rsp_t rsp_dly [0:DLY-1];
 
   // initialization before the first clock edge
   initial bus.rdy <= 1'b0;
 
-  // NOTE: the READY signal is usually driven asynchronously
-
   // valid/ready handshake and queue
   always @(posedge bus.clk, posedge bus.rst)
   if (bus.rst) begin
+    cyc <= 0;
     cnt <= 0;
   end else begin
-    // ready timer
-    if (bus.vld) begin
-      if (bus.rdy) begin
-        cnt <= 0;
+    // pop response from queue
+    if (~cyc | bus.trn) begin
+      if (rsp_que.size()) begin
+        rsp_tmp <= rsp_que.pop_front();
+        -> pop;
+        cyc <= 1'b1;
       end else begin
-        cnt <= cnt + 1;
+        cyc <= 1'b0;
       end
+    end
+    // cycle length counter
+//  if (cyc) begin
+    if (cyc & bus.vld) begin
+      if (bus.trn)  cnt <= 0;
+      else          cnt <= cnt + 1;
     end
     // push request into queue
     if (bus.trn) begin
-      req_que.push_back(tmp);
-    end
-    // pop response from queue
-    if (bus.rsp && rsp_que.size()) begin
-      void'(rsp_que.pop_front());
-    end
-  end
-
-  // handshake
-  always_comb
-  begin
-    if (rsp_que.size()) begin
-      if (cnt < rsp_que[0].len) begin
-        bus.rdy <= 1'b0;
-      end else begin
-        bus.rdy <= 1'b1;
-      end
-    end else begin
-      bus.rdy <= 1'b0;
+      req_que.push_back(req_tmp);
     end
   end
 
   // other bus signals
   always_comb
   begin
+    // handshake
+    bus.rdy = cyc & (cnt >= rsp_tmp.len);
+    // cycle length
+    req_tmp.len = cnt;
     // request
-    tmp.wen = bus.wen;
-    tmp.adr = bus.adr;
-    tmp.ben = bus.ben;
-    tmp.wdt = bus.wdt;
+    req_tmp.wen = bus.wen;
+    req_tmp.adr = bus.adr;
+    req_tmp.ben = bus.ben;
+    req_tmp.wdt = bus.wdt;
     // response
-    if (bus.rsp && rsp_que.size()) begin
-      bus.rdt = rsp_que[0].rdt;
-      bus.err = rsp_que[0].err;
-    end else begin
-      bus.rdt = 'x;
-      bus.err = 'x;
-    end
+    bus.rdt = rsp_dly[DLY-1].rdt;
+    bus.err = rsp_dly[DLY-1].err;
   end
+
+  // TODO
+  // response pipeline
+  always @(posedge bus.clk)
+  rsp_dly[0] <= bus.trn ? rsp_tmp : 'x;
+//  for (int unsigned i=0; i<DLY; i++) begin
+//  end
 
 endmodule: tcb_sub

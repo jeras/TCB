@@ -13,11 +13,11 @@
    </db_ref_list>
    <zoom_setting>
       <ZoomStartTime time="0.000 ns"></ZoomStartTime>
-      <ZoomEndTime time="340.875 ns"></ZoomEndTime>
-      <Cursor1Time time="66.266 ns"></Cursor1Time>
+      <ZoomEndTime time="260.000 ns"></ZoomEndTime>
+      <Cursor1Time time="121.176 ns"></Cursor1Time>
    </zoom_setting>
    <column_width_setting>
-      <NameColumnWidth column_width="254"></NameColumnWidth>
+      <NameColumnWidth column_width="230"></NameColumnWidth>
       <ValueColumnWidth column_width="66"></ValueColumnWidth>
    </column_width_setting>
    <WVObjectSize size="3" />
@@ -82,64 +82,148 @@
       <obj_property name="label">man</obj_property>
       <obj_property name="DisplayName">label</obj_property>
       <obj_property name="isExpanded"></obj_property>
-      <wvobject type="array" fp_name="/tcb_tb/man/tmp">
-         <obj_property name="ElementShortName">tmp</obj_property>
-         <obj_property name="ObjectShortName">tmp</obj_property>
-         <obj_property name="isExpanded"></obj_property>
-         <wvobject type="array" fp_name="/tcb_tb/man/tmp.rdt">
-            <obj_property name="ElementShortName">.rdt[31:0]</obj_property>
-            <obj_property name="ObjectShortName">.rdt[31:0]</obj_property>
-         </wvobject>
-         <wvobject type="logic" fp_name="/tcb_tb/man/tmp.err">
-            <obj_property name="ElementShortName">.err</obj_property>
-            <obj_property name="ObjectShortName">.err</obj_property>
-         </wvobject>
-         <wvobject type="array" fp_name="/tcb_tb/man/tmp.len">
-            <obj_property name="ElementShortName">.len[31:0]</obj_property>
-            <obj_property name="ObjectShortName">.len[31:0]</obj_property>
-            <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
-         </wvobject>
+      <wvobject type="array" fp_name="/tcb_tb/man/req_siz">
+         <obj_property name="ElementShortName">req_siz[31:0]</obj_property>
+         <obj_property name="ObjectShortName">req_siz[31:0]</obj_property>
+         <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
+      </wvobject>
+      <wvobject type="array" fp_name="/tcb_tb/man/rsp_siz">
+         <obj_property name="ElementShortName">rsp_siz[31:0]</obj_property>
+         <obj_property name="ObjectShortName">rsp_siz[31:0]</obj_property>
+         <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
+      </wvobject>
+      <wvobject type="logic" fp_name="/tcb_tb/man/cyc">
+         <obj_property name="ElementShortName">cyc</obj_property>
+         <obj_property name="ObjectShortName">cyc</obj_property>
       </wvobject>
       <wvobject type="array" fp_name="/tcb_tb/man/cnt">
          <obj_property name="ElementShortName">cnt[31:0]</obj_property>
          <obj_property name="ObjectShortName">cnt[31:0]</obj_property>
          <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
       </wvobject>
-   </wvobject>
-   <wvobject type="group" fp_name="group965">
-      <obj_property name="label">sub</obj_property>
-      <obj_property name="DisplayName">label</obj_property>
-      <obj_property name="isExpanded"></obj_property>
-      <wvobject type="array" fp_name="/tcb_tb/sub/tmp">
-         <obj_property name="ElementShortName">tmp</obj_property>
-         <obj_property name="ObjectShortName">tmp</obj_property>
+      <wvobject type="array" fp_name="/tcb_tb/man/req_tmp">
+         <obj_property name="ElementShortName">req_tmp</obj_property>
+         <obj_property name="ObjectShortName">req_tmp</obj_property>
          <obj_property name="isExpanded"></obj_property>
-         <wvobject type="logic" fp_name="/tcb_tb/sub/tmp.wen">
+         <wvobject type="logic" fp_name="/tcb_tb/man/req_tmp.wen">
             <obj_property name="ElementShortName">.wen</obj_property>
             <obj_property name="ObjectShortName">.wen</obj_property>
          </wvobject>
-         <wvobject type="array" fp_name="/tcb_tb/sub/tmp.adr">
+         <wvobject type="array" fp_name="/tcb_tb/man/req_tmp.adr">
             <obj_property name="ElementShortName">.adr[31:0]</obj_property>
             <obj_property name="ObjectShortName">.adr[31:0]</obj_property>
          </wvobject>
-         <wvobject type="array" fp_name="/tcb_tb/sub/tmp.ben">
+         <wvobject type="array" fp_name="/tcb_tb/man/req_tmp.ben">
             <obj_property name="ElementShortName">.ben[3:0]</obj_property>
             <obj_property name="ObjectShortName">.ben[3:0]</obj_property>
          </wvobject>
-         <wvobject type="array" fp_name="/tcb_tb/sub/tmp.wdt">
+         <wvobject type="array" fp_name="/tcb_tb/man/req_tmp.wdt">
             <obj_property name="ElementShortName">.wdt[31:0]</obj_property>
             <obj_property name="ObjectShortName">.wdt[31:0]</obj_property>
          </wvobject>
-         <wvobject type="array" fp_name="/tcb_tb/sub/tmp.len">
+         <wvobject type="array" fp_name="/tcb_tb/man/req_tmp.len">
             <obj_property name="ElementShortName">.len[31:0]</obj_property>
             <obj_property name="ObjectShortName">.len[31:0]</obj_property>
             <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
          </wvobject>
       </wvobject>
+      <wvobject type="array" fp_name="/tcb_tb/man/rsp_tmp">
+         <obj_property name="ElementShortName">rsp_tmp</obj_property>
+         <obj_property name="ObjectShortName">rsp_tmp</obj_property>
+         <obj_property name="isExpanded"></obj_property>
+         <wvobject type="array" fp_name="/tcb_tb/man/rsp_tmp.rdt">
+            <obj_property name="ElementShortName">.rdt[31:0]</obj_property>
+            <obj_property name="ObjectShortName">.rdt[31:0]</obj_property>
+         </wvobject>
+         <wvobject type="logic" fp_name="/tcb_tb/man/rsp_tmp.err">
+            <obj_property name="ElementShortName">.err</obj_property>
+            <obj_property name="ObjectShortName">.err</obj_property>
+         </wvobject>
+         <wvobject type="array" fp_name="/tcb_tb/man/rsp_tmp.len">
+            <obj_property name="ElementShortName">.len[31:0]</obj_property>
+            <obj_property name="ObjectShortName">.len[31:0]</obj_property>
+            <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
+         </wvobject>
+      </wvobject>
+   </wvobject>
+   <wvobject type="group" fp_name="group965">
+      <obj_property name="label">sub</obj_property>
+      <obj_property name="DisplayName">label</obj_property>
+      <obj_property name="isExpanded"></obj_property>
+      <wvobject type="array" fp_name="/tcb_tb/sub/req_siz">
+         <obj_property name="ElementShortName">req_siz[31:0]</obj_property>
+         <obj_property name="ObjectShortName">req_siz[31:0]</obj_property>
+         <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
+      </wvobject>
+      <wvobject type="array" fp_name="/tcb_tb/sub/rsp_siz">
+         <obj_property name="ElementShortName">rsp_siz[31:0]</obj_property>
+         <obj_property name="ObjectShortName">rsp_siz[31:0]</obj_property>
+         <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
+      </wvobject>
+      <wvobject type="logic" fp_name="/tcb_tb/sub/cyc">
+         <obj_property name="ElementShortName">cyc</obj_property>
+         <obj_property name="ObjectShortName">cyc</obj_property>
+      </wvobject>
       <wvobject type="array" fp_name="/tcb_tb/sub/cnt">
          <obj_property name="ElementShortName">cnt[31:0]</obj_property>
          <obj_property name="ObjectShortName">cnt[31:0]</obj_property>
          <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
+      </wvobject>
+      <wvobject type="array" fp_name="/tcb_tb/sub/req_tmp">
+         <obj_property name="ElementShortName">req_tmp</obj_property>
+         <obj_property name="ObjectShortName">req_tmp</obj_property>
+         <obj_property name="isExpanded"></obj_property>
+         <wvobject type="logic" fp_name="/tcb_tb/sub/req_tmp.wen">
+            <obj_property name="ElementShortName">.wen</obj_property>
+            <obj_property name="ObjectShortName">.wen</obj_property>
+         </wvobject>
+         <wvobject type="array" fp_name="/tcb_tb/sub/req_tmp.adr">
+            <obj_property name="ElementShortName">.adr[31:0]</obj_property>
+            <obj_property name="ObjectShortName">.adr[31:0]</obj_property>
+         </wvobject>
+         <wvobject type="array" fp_name="/tcb_tb/sub/req_tmp.ben">
+            <obj_property name="ElementShortName">.ben[3:0]</obj_property>
+            <obj_property name="ObjectShortName">.ben[3:0]</obj_property>
+         </wvobject>
+         <wvobject type="array" fp_name="/tcb_tb/sub/req_tmp.wdt">
+            <obj_property name="ElementShortName">.wdt[31:0]</obj_property>
+            <obj_property name="ObjectShortName">.wdt[31:0]</obj_property>
+         </wvobject>
+         <wvobject type="array" fp_name="/tcb_tb/sub/req_tmp.len">
+            <obj_property name="ElementShortName">.len[31:0]</obj_property>
+            <obj_property name="ObjectShortName">.len[31:0]</obj_property>
+            <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
+         </wvobject>
+      </wvobject>
+      <wvobject type="array" fp_name="/tcb_tb/sub/rsp_tmp">
+         <obj_property name="ElementShortName">rsp_tmp</obj_property>
+         <obj_property name="ObjectShortName">rsp_tmp</obj_property>
+         <obj_property name="isExpanded"></obj_property>
+         <wvobject type="array" fp_name="/tcb_tb/sub/rsp_tmp.rdt">
+            <obj_property name="ElementShortName">.rdt[31:0]</obj_property>
+            <obj_property name="ObjectShortName">.rdt[31:0]</obj_property>
+         </wvobject>
+         <wvobject type="logic" fp_name="/tcb_tb/sub/rsp_tmp.err">
+            <obj_property name="ElementShortName">.err</obj_property>
+            <obj_property name="ObjectShortName">.err</obj_property>
+         </wvobject>
+         <wvobject type="array" fp_name="/tcb_tb/sub/rsp_tmp.len">
+            <obj_property name="ElementShortName">.len[31:0]</obj_property>
+            <obj_property name="ObjectShortName">.len[31:0]</obj_property>
+            <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
+         </wvobject>
+         <wvobject type="array" fp_name="/tcb_tb/sub/rsp_tmp.rdt">
+            <obj_property name="ElementShortName">.rdt[31:0]</obj_property>
+            <obj_property name="ObjectShortName">.rdt[31:0]</obj_property>
+         </wvobject>
+         <wvobject type="logic" fp_name="/tcb_tb/sub/rsp_tmp.err">
+            <obj_property name="ElementShortName">.err</obj_property>
+            <obj_property name="ObjectShortName">.err</obj_property>
+         </wvobject>
+         <wvobject type="array" fp_name="/tcb_tb/sub/rsp_tmp.len">
+            <obj_property name="ElementShortName">.len[31:0]</obj_property>
+            <obj_property name="ObjectShortName">.len[31:0]</obj_property>
+         </wvobject>
       </wvobject>
    </wvobject>
 </wave_config>
