@@ -27,52 +27,68 @@ module tcb_sub
 );
 
   // queues are initialized outside this module
-  tcb_req_t que_req [$];  // request  queue
-  tcb_rsp_t que_rsp [$];  // response queue
+  tcb_req_t req_que [$];  // request  queue
+  tcb_rsp_t rsp_que [$];  // response queue
+  // cycle length counters
+  int unsigned rsp_cnt;
 
   // task for pushing a new response into the queue
   task rsp_trn (
     input tcb_rsp_t rsp
   );
-    que_rsp.push_back(rsp);
+    rsp_que.push_back(rsp);
   endtask: rsp_trn
 
   // temporary structures
   tcb_req_t req;  // request  structure
-  tcb_rsp_t rsp;  // response structure
 
-  // response delay queue
-  logic [(DLY>0 ? DLY : 1)-1:0] que_trn;
+  // initialization before the first clock edge
+  initial bus.rdy <= 1'b0;
 
-  logic cyc = 1'b0;
-
+  // valid/ready handshake and queue
   always @(posedge bus.clk, posedge bus.rst)
   if (bus.rst) begin
-    rsp.len <=  'd0;
-    bus.rdy <= 1'b1;
+    bus.rdy <= 1'b0;
+    rsp_cnt <=  'd0;
   end else begin
-    if ((~cyc | bus.trn) && que_req.size()) begin
-      rsp = que_rsp.pop_front();
-      cyc = 1'b1;
+    // handshake
+    if (bus.trn) begin
+      rsp_cnt <= 0;
+    end else begin
+      if (bus.vld && rsp_que.size()) begin
+        if (rsp_cnt < rsp_que[0].len) begin
+          rsp_cnt <= rsp_cnt + 1;
+          bus.rdy <= 1'b0;
+        end else begin
+          bus.rdy <= 1'b1;
+        end
+      end
     end
+    // push request into queue
+    if (bus.trn) begin
+      req_que.push_back(req);
+    end
+    // pop response from queue
+    if (bus.rsp && rsp_que.size()) begin
+      void'(rsp_que.pop_front());
+    end
+  end
+
+  // other bus signals
+  always_comb
+  begin
     // request
-    if (bus.vld && req.len) begin
-      req.len <= req.len - 1;
-    end
-    if (req.len) begin
-      req.len <= req.len - 1;
-    end
-    if (bus.trn) begin
-      req.wen <= bus.wen;
-      req.adr <= bus.adr;
-      req.ben <= bus.ben;
-      req.wdt <= bus.wdt;
-      que_req.push_back(req);
-    end
+    req.wen = bus.wen;
+    req.adr = bus.adr;
+    req.ben = bus.ben;
+    req.wdt = bus.wdt;
     // response
-    if (bus.trn) begin
-      bus.rdt <= rsp.rdt;
-      bus.err <= rsp.err;
+    if (bus.rsp && rsp_que.size()) begin
+      bus.rdt = rsp_que[0].rdt;
+      bus.err = rsp_que[0].err;
+    end else begin
+      bus.rdt = 'x;
+      bus.err = 'x;
     end
   end
 

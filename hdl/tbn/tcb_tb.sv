@@ -60,12 +60,12 @@ module tcb_tb
     repeat (1) @(posedge clk);
     fork
       //               wen,  adr,     ben,          wdt,          rdt,  err, len
-        man.req_trn('{1'b1, 'h00, 4'b1111, 32'h01234567,                     0});
-        sub.rsp_trn('{                                   32'h89abcdef, 1'b0, 0});
+        man.req_trn('{1'b1, 'h00, 4'b1111, 32'h01234567,                     1});
+        sub.rsp_trn('{                                   32'h89abcdef, 1'b0, 1});
   //    man.rsp_trn(                                            rdt,  err);
   //    sub.req_trn( wen,  adr,     ben,          wdt,                   );
     join
-    repeat (4) @(posedge clk);
+    repeat (8) @(posedge clk);
     $finish();
   end
 

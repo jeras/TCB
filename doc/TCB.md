@@ -23,6 +23,10 @@ The design is based on the following principles:
 * Handshake based on AXI4-Stream (valid/ready).
 * Low power consumption should be considered.
 
+## References
+
+https://ibex-core.readthedocs.io/en/latest/02_user/integration.html
+
 ## Bus signals
 
 Regarding naming conventions,
