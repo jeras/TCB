@@ -45,23 +45,20 @@ module tcb_sub
   // initialization before the first clock edge
   initial bus.rdy <= 1'b0;
 
+  // NOTE: the READY signal is usually driven asynchronously
+
   // valid/ready handshake and queue
   always @(posedge bus.clk, posedge bus.rst)
   if (bus.rst) begin
     bus.rdy <= 1'b0;
     rsp_cnt <=  'd0;
   end else begin
-    // handshake
-    if (bus.trn) begin
-      rsp_cnt <= 0;
-    end else begin
-      if (bus.vld && rsp_que.size()) begin
-        if (rsp_cnt < rsp_que[0].len) begin
-          rsp_cnt <= rsp_cnt + 1;
-          bus.rdy <= 1'b0;
-        end else begin
-          bus.rdy <= 1'b1;
-        end
+    // ready timer
+    if (bus.vld) begin
+      if (bus.rdy) begin
+        rsp_cnt <= 0;
+      end else begin
+        rsp_cnt <= rsp_cnt + 1;
       end
     end
     // push request into queue
@@ -71,6 +68,20 @@ module tcb_sub
     // pop response from queue
     if (bus.rsp && rsp_que.size()) begin
       void'(rsp_que.pop_front());
+    end
+  end
+
+  // handshake
+  always_comb
+  begin
+    if (rsp_que.size()) begin
+      if (rsp_cnt < rsp_que[0].len) begin
+        bus.rdy <= 1'b0;
+      end else begin
+        bus.rdy <= 1'b1;
+      end
+    end else begin
+      bus.rdy <= 1'b0;
     end
   end
 

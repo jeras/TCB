@@ -45,6 +45,8 @@ module tcb_man
   // initialization before the first clock edge
   initial bus.vld <= 1'b0;
 
+  // NOTE: the VALID signal is usually driven synchronously
+
   // valid/ready handshake and queue
   always @(posedge bus.clk, posedge bus.rst)
   if (bus.rst) begin
