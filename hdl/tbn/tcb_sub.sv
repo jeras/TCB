@@ -26,10 +26,9 @@ module tcb_sub
   tcb_if.sub bus
 );
 
-initial
-begin
-  check_param_delay: assert (DLY == bus.DLY) else $error("%m parameter DLY checker failed");
-end
+generate
+if (DLY != bus.DLY)  $error("%m parameter DLY checker failed");
+endgenerate
 
 ///////////////////////////////////////////////////////////////////////////////
 // request/response queues
