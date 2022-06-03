@@ -19,50 +19,48 @@
 `timescale  1ns / 1ps
 
 module uart_model #(
-  parameter DW     = 8,          // data width (sizes from 5 to 8 bits are supported)
-  parameter SW     = 1,          // stop width (one or more stop bits are supported)
-  parameter IDLE   = 1'b1,       // bus idle state
-  parameter PARITY = "NONE",     // parity ("NONE" , "EVEN", "ODD")
-  parameter BAUD   = 112_200,    // baud rate
+  int unsigned DW     = 8,          // data width (sizes from 5 to 8 bits are supported)
+  int unsigned SW     = 1,          // stop width (one or more stop bits are supported)
+  string       PARITY = "NONE",     // parity ("NONE" , "EVEN", "ODD")
+  int unsigned BAUD   = 112_200,    // baud rate
   // data streams
-  parameter FILE_I = "",         // program filename
-  parameter FILE_O = "",         // program filename
+  string       FILE_I = "",         // program filename
+  string       FILE_O = "",         // program filename
   // presentation
-  parameter NAME   = "noname",
-  parameter AUTO   = 0
+  string       NAME   = "noname",
+  bit          AUTO   = 0
 )(
-//  output reg  DTR,  // Data Terminal Ready
-//  output reg  DSR,  // Data Set Ready
-//  output reg  RTS,  // Request To Send
-//  output reg  CTS,  // Clear To Send
-//  output reg  DCD,  // Carrier Detect
-//  output reg  RI,   // Ring Indicator
-  output reg  TxD,  // Transmitted Data
-  input  wire RxD   // Received Data
+//output logic DTR,  // Data Terminal Ready
+//output logic DSR,  // Data Set Ready
+//output logic RTS,  // Request To Send
+//output logic CTS,  // Clear To Send
+//output logic DCD,  // Carrier Detect
+//output logic RI,   // Ring Indicator
+  output logic TXD,  // Transmitted Data
+  input  logic RXD   // Received Data
 );
 
 ///////////////////////////////////////////////////////////////////////////////
 // computing the delay based on the baudrate                                 //
 ///////////////////////////////////////////////////////////////////////////////
 
-localparam d = 1_000_000_000/BAUD;
+localparam time dly = 1_000_000_000/BAUD;
 
 ///////////////////////////////////////////////////////////////////////////////
 // internal signals                                                          //
 ///////////////////////////////////////////////////////////////////////////////
 
 // running status
-reg run_tx, run_rx;
+logic run_tx, run_rx;
 
-//            transmitter, receiver   ;
-integer       fp_tx , fp_rx ;
-integer       fs_tx , fs_rx ;
-integer       cnt_tx, cnt_rx;
-integer       bit_tx, bit_rx;
-reg [DW-1:0]  c_tx  , c_rx  ;  // transferred character
+//                 TX,     RX ;
+int             fp_tx , fp_rx ;
+int             fs_tx , fs_rx ;
+int             cnt_tx, cnt_rx;
+logic [DW-1:0]  c_tx  , c_rx  ;  // transferred character
 
 // transfer start condition and data sampling events for UART receiver
-event RxD_edge, sample;
+event sample;
 
 ///////////////////////////////////////////////////////////////////////////////
 // file handler                                                              //
@@ -71,7 +69,7 @@ event RxD_edge, sample;
 // automatic initialization if enabled
 initial begin
   $display ("DEBUG: Starting master");
-  TxD = IDLE;
+  TXD = 1'b1;
   run_tx = 0;
   run_rx = 0;
   if (AUTO)  start (FILE_I, FILE_O);
@@ -79,8 +77,8 @@ end
 
 // start UART model
 task start (
-  input reg [256*8-1:0] filename_tx,
-  input reg [256*8-1:0] filename_rx
+  input string filename_tx,
+  input string filename_rx
 ); begin
   // transmit initialization
   cnt_tx = 0;
@@ -106,69 +104,72 @@ task stop; begin
   $fclose (fp_rx);
 end endtask
 
-///////////////////////////////////////////////////////////////////////////////
-// receive and transmitt handlers                                             //
-///////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+// TX/RX handlers
+////////////////////////////////////////////////////////////////////////////////
 
 // transmitter
 always @ (posedge run_tx) begin
   while (run_tx) begin
     while ($feof(fp_tx)) begin end
     c_tx = $fgetc(fp_tx);
-    // start bit
-    TxD = ~IDLE; #d;
-    // transmit bits LSB first
-    for (bit_tx=0; bit_tx<DW; bit_tx=bit_tx+1) begin
-      //{c_tx [DW-2:0], TxD} = c_tx;
-      TxD = c_tx [bit_tx]; #d;
-    end
-    // send parity
-    case (PARITY)
-      "ODD"  : begin  TxD = ~^c_tx; #d;  end
-      "EVEN" : begin  TxD =  ^c_tx; #d;  end
-      "NONE" : begin                     end
-    endcase
-    // increment counter
-    cnt_tx = cnt_tx + 1;
-    // stop bits
-    for (bit_tx=DW; bit_tx<DW+SW; bit_tx=bit_tx+1) begin
-      TxD = IDLE; #d;
-    end
+    tx(c_tx);
+    cnt_tx++;
   end
 end
-
-// receiver
-generate
-if (IDLE)  always @ (negedge RxD) -> RxD_edge;
-else       always @ (posedge RxD) -> RxD_edge;
-endgenerate
 
 always @ (posedge run_rx) begin
   while (run_rx) begin
-    @ (RxD_edge) begin
-      #(d/2);
-      // check the start bit
-      if (RxD != ~IDLE)  $display ("DEBUG: start bit error."); #d;
-      // sample in the middle of each bit
-      for (bit_rx=0; bit_rx<DW; bit_rx=bit_rx+1) begin
-        //c_rx = {c_rx [DW-2:0], RxD};
-        -> sample;
-        c_rx [bit_rx] = RxD; #d;
-      end
-      // check parity
-      case (PARITY)
-        "ODD"  : begin  if (RxD != ~^c_rx)  $display ("DEBUG: parity error."); #d;  end
-        "EVEN" : begin  if (RxD !=  ^c_rx)  $display ("DEBUG: parity error."); #d;  end
-        "NONE" : begin                                                              end
-      endcase
-      // increment counter and write received character into file
-      cnt_rx = cnt_rx + 1;
-      fs_tx = $ungetc (c_rx, fp_rx);
-      // check the stop bit
-      if (RxD != IDLE)  $display ("DEBUG: stop bit error.");
-    end
+    rx(c_rx);
+    // increment counter and write received character into file
+    cnt_rx++;
+    fs_tx = $ungetc(c_rx, fp_rx);
   end
 end
 
+////////////////////////////////////////////////////////////////////////////////
+// TX/RX tasks
+////////////////////////////////////////////////////////////////////////////////
 
-endmodule
+// TX
+task tx (input logic [DW-1:0] dat);
+  // start bit
+  TXD = 1'b0; #dly;
+  // transmit bits LSB first
+  for (int i=0; i<DW; i++) begin
+    TXD = dat[i]; #dly;
+  end
+  // send parity
+  case (PARITY)
+    "ODD"  : begin  TXD = ~^dat; #dly;  end
+    "EVEN" : begin  TXD =  ^dat; #dly;  end
+    "NONE" : begin                      end
+  endcase
+  // stop bits
+  for (int i=0; i<SW; i++) begin
+    TXD = 1'b1; #dly;
+  end
+endtask: tx
+
+// RX
+task rx (output logic [DW-1:0] dat);
+  @(negedge RXD)
+  #(dly/2);
+  // check the start bit
+  if (RXD != 1'b0)  $display ("DEBUG: start bit error."); #dly;
+  // sample in the middle of each bit
+  for (int i=0; i<DW; i++) begin
+    -> sample;
+    dat [i] = RXD; #dly;
+  end
+  // check parity
+  case (PARITY)
+    "ODD"  : begin  if (RXD != ~^dat)  $display ("DEBUG: parity error."); #dly;  end
+    "EVEN" : begin  if (RXD !=  ^dat)  $display ("DEBUG: parity error."); #dly;  end
+    "NONE" : begin                                                               end
+  endcase
+  // check the stop bit
+  if (RXD != 1'b1)  $display ("DEBUG: stop bit error.");
+endtask: rx
+
+endmodule: uart_model

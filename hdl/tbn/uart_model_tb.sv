@@ -18,25 +18,27 @@
 
 `timescale  1us / 1ps
 
-module uart_tb ();
+module uart_model_tb ();
 
 // master program input and data output files
 //localparam M1_P = "hdl/bench/wishbone/wishbone_program.txt";
-localparam UART_TX = "hdl/bench/uart/uart_tx.txt";
-localparam UART_RX = "hdl/bench/uart/uart_rx.txt";
-
-// UART loop signal
-wire loop;
+localparam string UART_TX = "hdl/bench/uart/uart_tx.txt";
+localparam string UART_RX = "hdl/bench/uart/uart_rx.txt";
 
 //////////////////////////////////////////////////////////////////////////////
-// 
+// test sequence
 //////////////////////////////////////////////////////////////////////////////
 
-// request for a dumpfile
+string txt;
+int unsigned i;
+
 initial begin
-  $dumpfile("test.vcd");
-  $dumpvars(0, uart_tb);
-  #1000000;
+  txt = "Hello Workd!";
+//foreach (txt[c])  uart.tx(c);
+  for (i=0; i<txt.len(); i++) begin
+    uart.tx(txt[i]);
+  end
+  #10000;
   $finish;
 end
 
@@ -44,17 +46,20 @@ end
 // module instances 
 //////////////////////////////////////////////////////////////////////////////
 
+// UART loop signal
+wire loop;
+
+// UART model instance
 uart_model #(
   .BAUD   (14400),
   .PARITY ("ODD"),
   .FILE_I (UART_TX),
   .FILE_O (UART_RX),
   .NAME   ("UART"),
-  .AUTO   (1)
+  .AUTO   (0)
 ) uart (
-  .TxD    (loop),
-  .RxD    (loop)
+  .TXD    (loop),
+  .RXD    (loop)
 );
 
-
-endmodule
+endmodule: uart_model_tb
