@@ -27,7 +27,7 @@ module tcb_sub
 );
 
 generate
-if (DLY != bus.DLY)  $error("%m parameter DLY checker failed");
+if (DLY != bus.DLY)  $error("%m parameter DLY validation failed");
 endgenerate
 
 ////////////////////////////////////////////////////////////////////////////////

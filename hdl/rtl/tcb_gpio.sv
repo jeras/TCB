@@ -21,10 +21,11 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 module tcb_gpio #(
+  // GPIO parameters
   int unsigned GW = 32,   // GPIO width
-  // implementation details
-  bit          CFG_MIN = 1'b0,  // minimalistic implementation
   int unsigned CFG_CDC = 2,     // implement clock domain crossing stages (0 - bypass)
+  // TCB parameters
+  bit          CFG_MIN = 1'b0,  // minimalistic implementation
   // implementation device (ASIC/FPGA vendor/device)
   string       CHIP = ""
 )(
@@ -36,12 +37,23 @@ module tcb_gpio #(
   tcb_if.sub bus
 );
 
-// read value
-logic [GW-1:0] gpio_r;
+////////////////////////////////////////////////////////////////////////////////
+// parameter validation
+////////////////////////////////////////////////////////////////////////////////
+
+localparam int unsigned DLY = 1;
+
+generate
+  if (DLY != bus.DLY)  $error("ERROR: %m parameter DLY validation failed");
+  if (GW   > bus.DW )  $error("ERROR: %m parameter GW exceeds the data bus width");
+endgenerate
 
 ////////////////////////////////////////////////////////////////////////////////
 // clock domain crossing
 ////////////////////////////////////////////////////////////////////////////////
+
+// read value
+logic [GW-1:0] gpio_r;
 
 generate
 if (CFG_CDC > 0) begin: gen_cdc
@@ -90,7 +102,7 @@ end: gen_nocdc
 endgenerate
 
 ////////////////////////////////////////////////////////////////////////////////
-// system bus access
+// TCB access
 ////////////////////////////////////////////////////////////////////////////////
 
 // read access

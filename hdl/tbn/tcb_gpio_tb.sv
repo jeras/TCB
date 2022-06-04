@@ -27,15 +27,27 @@ module tcb_gpio_tb
   int unsigned DLY = 1
 );
 
+  // GPIO width
+  localparam int unsigned GW = 32;
+
   // system signals
   logic clk;  // clock
   logic rst;  // reset
 
-////////////////////////////////////////////////////////////////////////////////
-// local signals
-////////////////////////////////////////////////////////////////////////////////
-
+  // TCB interface
   tcb_if #(.AW (AW), .DW (DW)) bus (.clk (clk), .rst (rst));
+
+  // response check values
+  tcb_rsp_t rsp;
+  logic [DW-1:0] rdt;  // read data
+  logic          err;  // error
+  logic          rdy;  // ready
+  int unsigned   len;  // handshake delay length
+
+  // GPIO signals
+  logic [GW-1:0] gpio_o;
+  logic [GW-1:0] gpio_e;
+  logic [GW-1:0] gpio_i;
 
 ////////////////////////////////////////////////////////////////////////////////
 // test sequence
@@ -54,17 +66,28 @@ module tcb_gpio_tb
     rst <= 1'b0;
     repeat (1) @(posedge clk);
     fork
-      begin: req
-      //           wen,  adr,     ben,          wdt,          rdt,  err, len
-        man.req('{1'b1, 'h00, 4'b1111, 32'h01234567,                     0});
-        sub.rsp('{                                   32'h89abcdef, 1'b0, 0});
-        man.req('{1'b1, 'h01, 4'b1111, 32'h76543210,                     1});
-        sub.rsp('{                                   32'hfedcba98, 1'b0, 1});
-      end: req
-      begin: rsp
-  //    man.rsp(                                            rdt,  err);
-  //    sub.req( wen,  adr,     ben,          wdt,                   );
-      end: rsp
+      // start TCB requests
+      begin: test_req
+        //         wen,  adr,     ben,          wdt, len
+        man.req('{1'b1, 'h00, 4'b1111, 32'h01234567, 0});  // write output register
+        man.req('{1'b1, 'h04, 4'b1111, 32'h76543210, 0});  // write enable register
+        man.req('{1'b0, 'h08, 4'b1111, 32'hxxxxxxxx, 0});  // read input register
+        man.req('{1'b0, 'h08, 4'b1111, 32'hxxxxxxxx, 0});  // read input register
+        man.req('{1'b0, 'h08, 4'b1111, 32'hxxxxxxxx, 0});  // read input register
+      end: test_req
+      // set GPIO input values
+      begin: test_gpio
+        repeat (2) @(negedge clk);
+        gpio_i <= GW'('h89abcdef);
+        repeat (1) @(negedge clk);
+        gpio_i <= GW'('hfedcba98);
+      end: test_gpio
+      // check TCB responses
+      begin: test_rsp
+        man.rsp(rsp);  if (rsp.rdt !== GW'('hxxxxxxxx))  $display("ERROR: readout error rdt=%8h, ref=%8h", rsp.rdt, GW'('hxxxxxxxx));
+        man.rsp(rsp);  if (rsp.rdt !== GW'('h89abcdef))  $display("ERROR: readout error rdt=%8h, ref=%8h", rsp.rdt, GW'('h89abcdef));
+        man.rsp(rsp);  if (rsp.rdt !== GW'('hfedcba98))  $display("ERROR: readout error rdt=%8h, ref=%8h", rsp.rdt, GW'('hfedcba98));
+      end: test_rsp
     join
     repeat (8) @(posedge clk);
     $finish();
@@ -76,10 +99,20 @@ module tcb_gpio_tb
     .bus  (bus)
   );
 
-  tcb_sub #(
-    .DLY  (DLY)
-  ) sub (
-    .bus  (bus)
+  tcb_gpio #(
+    .GW      (GW),
+    // implementation details
+//    bit          CFG_MIN = 1'b0,  // minimalistic implementation
+    .CFG_CDC (2),
+    // implementation device (ASIC/FPGA vendor/device)
+    .CHIP    ("")
+  ) gpio (
+    // GPIO signals
+    .gpio_o (gpio_o),
+    .gpio_e (gpio_e),
+    .gpio_i (gpio_i),
+    // system bus interface
+    .bus    (bus)
   );
 
 endmodule: tcb_gpio_tb

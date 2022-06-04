@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<wave_config>
+   <wave_state>
+   </wave_state>
+   <db_ref_list>
+      <db_ref path="tcb_gpio_tb_behav.wdb" id="1">
+         <top_modules>
+            <top_module name="glbl" />
+            <top_module name="tcb_gpio_tb" />
+            <top_module name="tcb_pkg" />
+         </top_modules>
+      </db_ref>
+   </db_ref_list>
+   <zoom_setting>
+      <ZoomStartTime time="0.000 ns"></ZoomStartTime>
+      <ZoomEndTime time="443.914 ns"></ZoomEndTime>
+      <Cursor1Time time="320.000 ns"></Cursor1Time>
+   </zoom_setting>
+   <column_width_setting>
+      <NameColumnWidth column_width="202"></NameColumnWidth>
+      <ValueColumnWidth column_width="66"></ValueColumnWidth>
+   </column_width_setting>
+   <WVObjectSize size="25" />
+   <wvobject type="logic" fp_name="/tcb_gpio_tb/clk">
+      <obj_property name="ElementShortName">clk</obj_property>
+      <obj_property name="ObjectShortName">clk</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/tcb_gpio_tb/rst">
+      <obj_property name="ElementShortName">rst</obj_property>
+      <obj_property name="ObjectShortName">rst</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/tcb_gpio_tb/gpio_o">
+      <obj_property name="ElementShortName">gpio_o[31:0]</obj_property>
+      <obj_property name="ObjectShortName">gpio_o[31:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/tcb_gpio_tb/gpio_e">
+      <obj_property name="ElementShortName">gpio_e[31:0]</obj_property>
+      <obj_property name="ObjectShortName">gpio_e[31:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/tcb_gpio_tb/gpio_i">
+      <obj_property name="ElementShortName">gpio_i[31:0]</obj_property>
+      <obj_property name="ObjectShortName">gpio_i[31:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/tcb_gpio_tb/AW">
+      <obj_property name="ElementShortName">AW[31:0]</obj_property>
+      <obj_property name="ObjectShortName">AW[31:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/tcb_gpio_tb/DW">
+      <obj_property name="ElementShortName">DW[31:0]</obj_property>
+      <obj_property name="ObjectShortName">DW[31:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/tcb_gpio_tb/BW">
+      <obj_property name="ElementShortName">BW[31:0]</obj_property>
+      <obj_property name="ObjectShortName">BW[31:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/tcb_gpio_tb/DLY">
+      <obj_property name="ElementShortName">DLY[31:0]</obj_property>
+      <obj_property name="ObjectShortName">DLY[31:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/tcb_gpio_tb/GW">
+      <obj_property name="ElementShortName">GW[31:0]</obj_property>
+      <obj_property name="ObjectShortName">GW[31:0]</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/tcb_gpio_tb/bus/clk">
+      <obj_property name="ElementShortName">clk</obj_property>
+      <obj_property name="ObjectShortName">clk</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/tcb_gpio_tb/bus/rst">
+      <obj_property name="ElementShortName">rst</obj_property>
+      <obj_property name="ObjectShortName">rst</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/tcb_gpio_tb/bus/vld">
+      <obj_property name="ElementShortName">vld</obj_property>
+      <obj_property name="ObjectShortName">vld</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/tcb_gpio_tb/bus/wen">
+      <obj_property name="ElementShortName">wen</obj_property>
+      <obj_property name="ObjectShortName">wen</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/tcb_gpio_tb/bus/adr">
+      <obj_property name="ElementShortName">adr[31:0]</obj_property>
+      <obj_property name="ObjectShortName">adr[31:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/tcb_gpio_tb/bus/ben">
+      <obj_property name="ElementShortName">ben[3:0]</obj_property>
+      <obj_property name="ObjectShortName">ben[3:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/tcb_gpio_tb/bus/wdt">
+      <obj_property name="ElementShortName">wdt[31:0]</obj_property>
+      <obj_property name="ObjectShortName">wdt[31:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/tcb_gpio_tb/bus/rdt">
+      <obj_property name="ElementShortName">rdt[31:0]</obj_property>
+      <obj_property name="ObjectShortName">rdt[31:0]</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/tcb_gpio_tb/bus/err">
+      <obj_property name="ElementShortName">err</obj_property>
+      <obj_property name="ObjectShortName">err</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/tcb_gpio_tb/bus/rdy">
+      <obj_property name="ElementShortName">rdy</obj_property>
+      <obj_property name="ObjectShortName">rdy</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/tcb_gpio_tb/bus/trn">
+      <obj_property name="ElementShortName">trn</obj_property>
+      <obj_property name="ObjectShortName">trn</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/tcb_gpio_tb/bus/idl">
+      <obj_property name="ElementShortName">idl</obj_property>
+      <obj_property name="ObjectShortName">idl</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/tcb_gpio_tb/bus/rsp">
+      <obj_property name="ElementShortName">rsp</obj_property>
+      <obj_property name="ObjectShortName">rsp</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/tcb_gpio_tb/rsp">
+      <obj_property name="ElementShortName">rsp</obj_property>
+      <obj_property name="ObjectShortName">rsp</obj_property>
+      <obj_property name="isExpanded"></obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/tcb_gpio_tb/man/rsp_tmp">
+      <obj_property name="ElementShortName">rsp_tmp</obj_property>
+      <obj_property name="ObjectShortName">rsp_tmp</obj_property>
+   </wvobject>
+</wave_config>

@@ -27,10 +27,12 @@ The design is based on the following principles:
 
 https://ibex-core.readthedocs.io/en/latest/02_user/integration.html
 
+https://stnolting.github.io/neorv32/#_bus_interface
+
 ## Bus signals
 
 Regarding naming conventions,
-for aesthetic reasons (vertical allignment) all signal names are
+for aesthetic reasons (vertical alignment) all signal names are
 [three-letter abbreviation (TLA)](https://en.wikipedia.org/wiki/Three-letter_acronym).
 Suffixes specifying the direction of module ports (input/output, i/o) shall be avoided.
 Instead the set of signals can have a prefix or is grouped into a SystemVerilog interface.
@@ -38,10 +40,10 @@ This set name shall use specifiers like manager/subordinate (master/slave, m/s).
 
 The SRAM signal chip select/enable is replaced with the AXI handshake signal valid `vld`.
 Backpressure is supported by adding the AXI handshake signal ready `rdy`.
-Hanshake signals shall follow the basic principles defined for the AXI family of protocols.
+Handshake signals shall follow the basic principles defined for the AXI family of protocols.
 * While valid is not active all other signals shall be ignored (`X` in timing diagrams).
 * `vld` must be inactive during reset.
-* Once the manager assrts `vld`, it must not remove it till the transfer is completed by an active `rdy` signal.
+* Once the manager asserts `vld`, it must not remove it till the transfer is completed by an active `rdy` signal.
 * The manager must not wait for `rdy` to be asserted before starting a new transfer by asserting `vld`.
 * The subordinate can assert/remove the `rdy` signal without restrictions.
 
@@ -101,11 +103,57 @@ about whether the address `adr` from the manager can reach the subordinate.
 
 Read data is available on `rdt` after a fixed delay of 1 clock cycle from the transfer.
 
-## Support components
+## Reference implementation
 
-### Arbiter
+The reference implementation is written in SystemVerilog.
 
-### Decoder
+### RTL components
+
+#### Interface
+
+#### Arbiter
+
+#### Decoder
+
+### Testbench components
+
+NOTE: The testbench code is in an Alpha state.
+The aim is for a fully UVM compatible implementation.
+The current code just barely covers the documented functionality.
+
+#### Manager
+
+#### Subordinate
+
+## RTL design recommendations with examples
+
+
+
+### Peripherals
+
+The reference TCB implementation is written in SystemVerilog,
+therefore this document discusses Verilog parameters.
+The VHDL equivalent would be generics,
+and other HDL languages also have constructs with equivalent functionality.
+
+| parameter     | type           | default | description |
+|---------------|----------------|---------|-------------|
+| `DLY`         | `int unsigned` | `'d1`   | Read delay. |
+| `CFG_REG_ADR` | `bit`          | `1'b0`  | Configuration: REGister for Read ADdRess. |
+| `CFG_REG_RDT` | `bit`          | `1'b1`  | Configuration: REGister for Read DaTa. |
+| `CFG_ENR_CFG` | `bit`          | `1'b1`  | Configuration: ENable Read access to ConFiGuration registers. |
+
+If both address and 
+
+The [GPIO controller](GPIO.md) is a good example how this parameters can be used
+to provide the desired area/timing optimizations for a specific design.
+
+In the default configuration read/write data paths behave as follows:
+- In the write path the address is not registered and the decoder delay falls on the request side.
+- In the read path the address is not registered and the decoder delay falls on the request side.
+  Since the read data bus is registered, there is no decoder delay at the response side.
+- Since read access to configuration registers is enabled, it affects the timing on the request side.
+
 
 
 ## Limitations and undefined features

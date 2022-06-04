@@ -26,8 +26,12 @@ module tcb_man
   tcb_if.man bus
 );
 
+////////////////////////////////////////////////////////////////////////////////
+// parameter validation
+////////////////////////////////////////////////////////////////////////////////
+
 generate
-if (DLY != bus.DLY)  $error("%m parameter DLY checker failed");
+if (DLY != bus.DLY)  $error("ERROR: %m parameter DLY checker failed");
 endgenerate
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -46,9 +50,12 @@ endgenerate
   endfunction: req
 
   // pop a response from the queue
-  function tcb_rsp_t rsp ();
+  task rsp (
+    output tcb_rsp_t rsp
+  );
+    wait (rsp_que.size() > 0);
     rsp = rsp_que.pop_front();
-  endfunction: rsp
+  endtask: rsp
 
   // debug queue size
   int unsigned req_siz;

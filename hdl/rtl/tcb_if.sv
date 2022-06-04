@@ -59,14 +59,14 @@ interface tcb_if #(
     if (DLY == 1) begin: gen_rsp
       always @(posedge clk, posedge rst)
       if (rst)  rsp <= 1'b0;
-      else      rsp <= trn;
+      else      rsp <= trn & ~wen;
     end: gen_rsp
     else begin: gen_dly
       logic [DLY-1:0] que;
       assign rsp = que[DLY-1];
       always @(posedge clk, posedge rst)
       if (rst)  que <= '0;
-      else      que <= {que[DLY-2:0], trn};
+      else      que <= {que[DLY-2:0], trn & ~wen};
     end: gen_dly
   end: gen_dly
   endgenerate
