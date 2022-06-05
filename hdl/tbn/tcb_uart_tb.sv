@@ -16,7 +16,7 @@
 // limitations under the License.
 ////////////////////////////////////////////////////////////////////////////////
 
-module tcb_gpio_tb
+module tcb_uart_tb
   import tcb_pkg::*;
 #(
   // bus widths
@@ -27,8 +27,8 @@ module tcb_gpio_tb
   int unsigned DLY = 1
 );
 
-  // GPIO width
-  localparam int unsigned GW = 32;
+  // UART data width
+  localparam int unsigned UDW = 8;
 
   // system signals
   logic clk;  // clock
@@ -40,10 +40,9 @@ module tcb_gpio_tb
   // response check values
   tcb_rsp_t rsp;
 
-  // GPIO signals
-  logic [GW-1:0] gpio_o;
-  logic [GW-1:0] gpio_e;
-  logic [GW-1:0] gpio_i;
+  // UART signals
+  logic uart_o;
+  logic uart_e;
 
 ////////////////////////////////////////////////////////////////////////////////
 // test sequence
@@ -72,17 +71,17 @@ module tcb_gpio_tb
         man.req('{1'b0, 'h08, 4'b1111, 32'hxxxxxxxx, 0});  // read input register
       end: test_req
       // set GPIO input values
-      begin: test_gpio
-        repeat (2) @(negedge clk);
-        gpio_i <= GW'('h89abcdef);
-        repeat (1) @(negedge clk);
-        gpio_i <= GW'('hfedcba98);
-      end: test_gpio
+//      begin: test_gpio
+//        repeat (2) @(negedge clk);
+//        gpio_i <= GW'('h89abcdef);
+//        repeat (1) @(negedge clk);
+//        gpio_i <= GW'('hfedcba98);
+//      end: test_gpio
       // check TCB responses
       begin: test_rsp
-        man.rsp(rsp);  if (rsp.rdt !== GW'('hxxxxxxxx))  $display("ERROR: readout error rdt=%8h, ref=%8h", rsp.rdt, GW'('hxxxxxxxx));
-        man.rsp(rsp);  if (rsp.rdt !== GW'('h89abcdef))  $display("ERROR: readout error rdt=%8h, ref=%8h", rsp.rdt, GW'('h89abcdef));
-        man.rsp(rsp);  if (rsp.rdt !== GW'('hfedcba98))  $display("ERROR: readout error rdt=%8h, ref=%8h", rsp.rdt, GW'('hfedcba98));
+        man.rsp(rsp);  if (rsp.rdt !== DW'('hxxxxxxxx))  $display("ERROR: readout error rdt=%8h, ref=%8h", rsp.rdt, DW'('hxxxxxxxx));
+        man.rsp(rsp);  if (rsp.rdt !== DW'('h89abcdef))  $display("ERROR: readout error rdt=%8h, ref=%8h", rsp.rdt, DW'('h89abcdef));
+        man.rsp(rsp);  if (rsp.rdt !== DW'('hfedcba98))  $display("ERROR: readout error rdt=%8h, ref=%8h", rsp.rdt, DW'('hfedcba98));
       end: test_rsp
     join
     repeat (8) @(posedge clk);
@@ -95,20 +94,14 @@ module tcb_gpio_tb
     .bus  (bus)
   );
 
-  tcb_gpio #(
-    .GW      (GW),
-    // implementation details
-//    bit          CFG_MIN = 1'b0,  // minimalistic implementation
-    .CFG_CDC (2),
-    // implementation device (ASIC/FPGA vendor/device)
-    .CHIP    ("")
-  ) gpio (
-    // GPIO signals
-    .gpio_o (gpio_o),
-    .gpio_e (gpio_e),
-    .gpio_i (gpio_i),
+  tcb_uart #(
+    .DW      (UDW)
+  ) uart (
+    // UART signals
+    .uart_txd (uart_txd),
+    .uart_rxd (uart_rxd),
     // system bus interface
-    .bus    (bus)
+    .bus      (bus)
   );
 
-endmodule: tcb_gpio_tb
+endmodule: tcb_uart_tb
