@@ -64,11 +64,12 @@ module tcb_uart_tb
       // start TCB requests
       begin: test_req
         //         wen,  adr,     ben,          wdt, len
-        man.req('{1'b1, 'h00, 4'b1111, 32'h01234567, 0});  // write output register
-        man.req('{1'b1, 'h04, 4'b1111, 32'h76543210, 0});  // write enable register
-        man.req('{1'b0, 'h08, 4'b1111, 32'hxxxxxxxx, 0});  // read input register
-        man.req('{1'b0, 'h08, 4'b1111, 32'hxxxxxxxx, 0});  // read input register
-        man.req('{1'b0, 'h08, 4'b1111, 32'hxxxxxxxx, 0});  // read input register
+        man.req('{1'b1, 'h08, 4'b1111, 32'h00000003, 0});  // write TX baudrate
+        man.req('{1'b1, 'h00, 4'b1111, 32'h000000A5, 0});  // write TX data
+        man.req('{1'b1, 'h00, 4'b1111, 32'h0000005A, 0});  // write TX data
+//        man.req('{1'b0, 'h08, 4'b1111, 32'hxxxxxxxx, 0});  // read input register
+//        man.req('{1'b0, 'h08, 4'b1111, 32'hxxxxxxxx, 0});  // read input register
+//        man.req('{1'b0, 'h08, 4'b1111, 32'hxxxxxxxx, 0});  // read input register
       end: test_req
       // set GPIO input values
 //      begin: test_gpio
@@ -79,12 +80,12 @@ module tcb_uart_tb
 //      end: test_gpio
       // check TCB responses
       begin: test_rsp
-        man.rsp(rsp);  if (rsp.rdt !== DW'('hxxxxxxxx))  $display("ERROR: readout error rdt=%8h, ref=%8h", rsp.rdt, DW'('hxxxxxxxx));
-        man.rsp(rsp);  if (rsp.rdt !== DW'('h89abcdef))  $display("ERROR: readout error rdt=%8h, ref=%8h", rsp.rdt, DW'('h89abcdef));
-        man.rsp(rsp);  if (rsp.rdt !== DW'('hfedcba98))  $display("ERROR: readout error rdt=%8h, ref=%8h", rsp.rdt, DW'('hfedcba98));
+//        man.rsp(rsp);  if (rsp.rdt !== DW'('hxxxxxxxx))  $display("ERROR: readout error rdt=%8h, ref=%8h", rsp.rdt, DW'('hxxxxxxxx));
+//        man.rsp(rsp);  if (rsp.rdt !== DW'('h89abcdef))  $display("ERROR: readout error rdt=%8h, ref=%8h", rsp.rdt, DW'('h89abcdef));
+//        man.rsp(rsp);  if (rsp.rdt !== DW'('hfedcba98))  $display("ERROR: readout error rdt=%8h, ref=%8h", rsp.rdt, DW'('hfedcba98));
       end: test_rsp
     join
-    repeat (8) @(posedge clk);
+    repeat (200) @(posedge clk);
     $finish();
   end
 
@@ -103,5 +104,8 @@ module tcb_uart_tb
     // system bus interface
     .bus      (bus)
   );
+
+  // UART loopback
+  assign uart_rxd = uart_txd;
 
 endmodule: tcb_uart_tb

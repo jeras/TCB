@@ -19,7 +19,7 @@
 module tcb_uart_ser #(
   int unsigned CW = 8,  // baudrate counter width
   int unsigned DW = 8,  // shifter data width
-  bit      STP = 1'b1   // STOP bit
+  int unsigned SW = 1   // stop sequence width
 )(
   // system signals
   input  logic          clk,
@@ -34,6 +34,10 @@ module tcb_uart_ser #(
   output logic          txd
 );
 
+// shift sequence length (start + data + stop)
+localparam int unsigned SL = 1 + DW + SW;
+
+
 // parallel stream transfer
 logic          str_trn;
 
@@ -41,12 +45,13 @@ logic          str_trn;
 logic [CW-1:0] bdr_cnt;
 logic          bdr_end;
 
-// shifter bit counter
+// shifter bit counter and run status
 logic  [4-1:0] shf_cnt;
-logic  [4-1:0] shf_end;
+logic          shf_end;
+logic          shf_run;
 
 // shift data register
-logic [DW-1:0] shf_dat;
+logic [DW-0:0] shf_dat;
 
 ////////////////////////////////////////////////////////////////////////////////
 // parallel stream
@@ -56,7 +61,7 @@ logic [DW-1:0] shf_dat;
 assign str_trn = str_vld & str_rdy;
 
 // parallel stream ready
-assign str_rdy = shf_end;
+assign str_rdy = ~shf_run | (shf_end & bdr_end);
 
 ////////////////////////////////////////////////////////////////////////////////
 // serializer
@@ -64,10 +69,10 @@ assign str_rdy = shf_end;
 
 // baudrate generator from clock
 always @ (posedge clk, posedge rst)
-if (rst)        bdr_cnt <= '0;
+if (rst)              bdr_cnt <= '0;
 else begin
-  if (str_trn)  bdr_cnt <= '0;
-  else          bdr_cnt <= bdr_cnt + (~shf_end);
+  if      (str_trn)  bdr_cnt <= '0;
+  else if (shf_run)  bdr_cnt <= bdr_end ? '0 : bdr_cnt + 1;
 end
 
 // enable signal for shifting logic
@@ -75,22 +80,35 @@ assign bdr_end = bdr_cnt == cfg_bdr;
 
 // bit counter
 always @ (posedge clk, posedge rst)
-if (rst)        shf_cnt <= 4'd0;
-else begin
-  if (str_trn)  shf_cnt <= 4'(DW);
-  else          shf_cnt <= shf_cnt - 1;
+if (rst) begin
+  shf_cnt <= 4'd0;
+  shf_run <= 1'b0;
+end else begin
+  if (str_trn) begin
+    shf_cnt <= 4'd0;
+    shf_run <= 1'b1;
+  end else begin
+    if (shf_run & bdr_end) begin
+      if (shf_end) begin
+        shf_run <= 1'b0;
+        shf_cnt <= 4'd0;
+      end else begin
+        shf_cnt <= shf_cnt + 1;
+      end
+    end
+  end
 end
 
 // end of shift sequence
-assign shf_end = shf_cnt == 4'd0;
+assign shf_end = shf_cnt == 4'(SL-1);
 
 // data shift register
 // without reset, to reduce ASIC area
 always @(posedge clk, posedge rst)
-if (rst)             shf_dat <= {DW{STP}};
+if (rst)              shf_dat <= '1;
 else begin
-  if      (str_trn)  shf_dat <= str_dat;
-  else if (bdr_end)  shf_dat <= {STP, shf_dat[DW-1:1]};
+  if       (str_trn)  shf_dat <= {      str_dat        , 1'b0};
+  else if  (bdr_end)  shf_dat <= {1'b1, shf_dat[DW-0:1]      };
 end
 
 assign txd = shf_dat[0];

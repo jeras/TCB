@@ -18,8 +18,7 @@
 
 module tcb_uart_des #(
   int unsigned CW = 8,  // baudrate counter width
-  int unsigned DW = 8,  // shifter data width
-  bit      STP = 1'b1   // STOP bit
+  int unsigned DW = 8   // shifter data width
 )(
   // system signals
   input  logic          clk,
@@ -68,7 +67,7 @@ assign str_vld = shf_end;
 ////////////////////////////////////////////////////////////////////////////////
 
 // delay uart_rxd and detect a start negative edge
-always @ (posedge bus.clk)
+always @ (posedge clk)
 rxd_dly <= rxd;
 
 assign rxd_start = rxd_dly & ~rxd;
@@ -103,7 +102,7 @@ end
 assign shf_end = shf_cnt == 4'd0;
 
 // data shift register
-always @ (posedge bus.clk)
+always @ (posedge clk)
 if (bdr_smp)  shf_dat <= {rxd, shf_dat[DW-1:1]};
 
 // parallel stream data
