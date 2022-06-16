@@ -23,12 +23,12 @@ module tcb_uart #(
 //  parameter string PARITY   = "NONE",         // parity type "EVEN", "ODD", "NONE"
 //  parameter int    STOPSIZE = 1,              // number of stop bits
   // TX channel
-  logic [CW-1:0] CFG_TXD_BDR_RST = '0,  logic CFG_TXD_BDR_ENA = 1'b1,
-  logic [CW-1:0] CFG_TXD_IRQ_RST = '0,  logic CFG_TXD_IRQ_ENA = 1'b1,
+  logic [CW-1:0] CFG_TX_BDR_RST = '0,  logic CFG_TX_BDR_ENA = 1'b1,
+  logic [CW-1:0] CFG_TX_IRQ_RST = '0,  logic CFG_TX_IRQ_ENA = 1'b1,
   // RX channel
-  logic [CW-1:0] CFG_RXD_BDR_RST = '0,  logic CFG_RXD_BDR_ENA = 1'b1,
-  logic [CW-1:0] CFG_RXD_SMP_RST = '0,  logic CFG_RXD_SMP_ENA = 1'b1,
-  logic [CW-1:0] CFG_RXD_IRQ_RST = '0,  logic CFG_RXD_IRQ_ENA = 1'b1
+  logic [CW-1:0] CFG_RX_BDR_RST = '0,  logic CFG_RX_BDR_ENA = 1'b1,
+  logic [CW-1:0] CFG_RX_SMP_RST = '0,  logic CFG_RX_SMP_ENA = 1'b1,
+  logic [CW-1:0] CFG_RX_IRQ_RST = '0,  logic CFG_RX_IRQ_ENA = 1'b1
 )(
   // UART
   input  logic uart_rxd,  // receive
@@ -93,28 +93,28 @@ module tcb_uart #(
   always_ff @(posedge bus.clk, posedge bus.rst)
   if (bus.rst) begin
     // TX channel
-    tx_cfg_bdr <= CFG_TXD_BDR_RST;
-    tx_cfg_irq <= CFG_TXD_IRQ_RST;
+    tx_cfg_bdr <= CFG_TX_BDR_RST;
+    tx_cfg_irq <= CFG_TX_IRQ_RST;
     // RX channel
-    rx_cfg_bdr <= CFG_RXD_BDR_RST;
-    rx_cfg_smp <= CFG_RXD_SMP_RST;
-    rx_cfg_irq <= CFG_RXD_IRQ_RST;
+    rx_cfg_bdr <= CFG_RX_BDR_RST;
+    rx_cfg_smp <= CFG_RX_SMP_RST;
+    rx_cfg_irq <= CFG_RX_IRQ_RST;
   end else if (bus.trn) begin
     if (bus.wen) begin
       // write access
-      case (bus.adr[4-1:0])
+      case (bus.adr[6-1:0])
         // TX channel
         6'h00:   ;  // write data goes directly into the TX FIFO
         6'h04:   ;
-        6'h08:   if (CFG_TXD_BDR_ENA) tx_cfg_bdr <= bus.wdt;
+        6'h08:   if (CFG_TX_BDR_ENA) tx_cfg_bdr <= bus.wdt;
         6'h0C:   ;
-        6'h10:   if (CFG_TXD_IRQ_ENA) tx_cfg_irq <= bus.wdt;
+        6'h10:   if (CFG_TX_IRQ_ENA) tx_cfg_irq <= bus.wdt;
         // RX channel
         6'h20:   ;
         6'h24:   ;
-        6'h28:   if (CFG_RXD_BDR_ENA) rx_cfg_bdr <= bus.rdt;
-        6'h2C:   if (CFG_RXD_SMP_ENA) rx_cfg_smp <= bus.wdt;
-        6'h30:   if (CFG_RXD_IRQ_ENA) rx_cfg_irq <= bus.rdt;
+        6'h28:   if (CFG_RX_BDR_ENA) rx_cfg_bdr <= bus.wdt;
+        6'h2C:   if (CFG_RX_SMP_ENA) rx_cfg_smp <= bus.wdt;
+        6'h30:   if (CFG_RX_IRQ_ENA) rx_cfg_irq <= bus.wdt;
         // default
         default: ;  // do nothing
       endcase

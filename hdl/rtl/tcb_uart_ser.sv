@@ -37,7 +37,6 @@ module tcb_uart_ser #(
 // shift sequence length (start + data + stop)
 localparam int unsigned SL = 1 + DW + SW;
 
-
 // parallel stream transfer
 logic          str_trn;
 
@@ -51,7 +50,7 @@ logic          shf_end;
 logic          shf_run;
 
 // shift data register
-logic [DW-0:0] shf_dat;
+logic [DW+1-1:0] shf_dat;
 
 ////////////////////////////////////////////////////////////////////////////////
 // parallel stream

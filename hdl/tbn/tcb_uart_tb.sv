@@ -64,7 +64,9 @@ module tcb_uart_tb
       // start TCB requests
       begin: test_req
         //         wen,  adr,     ben,          wdt, len
-        man.req('{1'b1, 'h08, 4'b1111, 32'h00000003, 0});  // write TX baudrate
+        man.req('{1'b1, 'h08, 4'b1111, 32'h00000003, 0});  // write TX baudrate (4)
+        man.req('{1'b1, 'h28, 4'b1111, 32'h00000003, 0});  // write RX baudrate (4)
+        man.req('{1'b1, 'h2C, 4'b1111, 32'h00000001, 0});  // write RX sample   (2)
         man.req('{1'b1, 'h00, 4'b1111, 32'h000000A5, 0});  // write TX data
         man.req('{1'b1, 'h00, 4'b1111, 32'h0000005A, 0});  // write TX data
 //        man.req('{1'b0, 'h08, 4'b1111, 32'hxxxxxxxx, 0});  // read input register
