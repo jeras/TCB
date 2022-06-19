@@ -21,9 +21,8 @@ interface tcb_if #(
   int unsigned AW = 32,    // address width
   int unsigned DW = 32,    // data    width
   int unsigned BW = DW/8,  // byte e. width
-    // response delay
+  // response delay
   int unsigned DLY = 1
-
 )(
   // system signals
   input  logic clk,  // clock

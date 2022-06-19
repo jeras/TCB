@@ -29,9 +29,29 @@ module tcb_arb #(
   // port priorities (lower number is higher priority)
   int unsigned PRI [0:PN-1] = '{0, 1}
 )(
-  tcb_if.sub s[PN-1:0],  // TCB subordinate ports (manager     devices connect here)
-  tcb_if.man m           // TCB manager     port  (subordinate device connects here)
+  tcb_if.sub sub[PN-1:0],  // TCB subordinate ports (manager     devices connect here)
+  tcb_if.man man           // TCB manager     port  (subordinate device connects here)
 );
+
+  genvar i;
+
+////////////////////////////////////////////////////////////////////////////////
+// parameter validation
+////////////////////////////////////////////////////////////////////////////////
+
+// camparing subordinate and manager interface parameters
+generate
+for (i=0; i<PN; i++) begin
+  if (sub[i].DW  != man.DW )  $error("ERROR: %m parameter DW  validation failed");
+  if (sub[i].DW  != man.DW )  $error("ERROR: %m parameter DW  validation failed");
+  if (sub[i].SW  != man.SW )  $error("ERROR: %m parameter SW  validation failed");
+  if (sub[i].DLY != man.DLY)  $error("ERROR: %m parameter DLY validation failed");
+end
+endgenerate
+
+////////////////////////////////////////////////////////////////////////////////
+// local parameters and functions
+////////////////////////////////////////////////////////////////////////////////
 
 // multiplexer select width
 localparam SW = $clog2(PN);
@@ -52,17 +72,15 @@ endfunction: clog2
 ////////////////////////////////////////////////////////////////////////////////
 
 // arbiter/multiplexer signals
-logic [PN-1:0] s_arb;
-logic [SW-1:0] s_sel;
-logic [SW-1:0] m_sel;
+logic [PN-1:0] sub_arb;
+logic [SW-1:0] sub_sel;
+logic [SW-1:0] man_sel;
 
-logic          t_vld [PN-1:0];  // valid
-logic          t_wen [PN-1:0];  // write enable
-logic [AW-1:0] t_adr [PN-1:0];  // address
-logic [BW-1:0] t_ben [PN-1:0];  // byte enable
-logic [DW-1:0] t_wdt [PN-1:0];  // write data
-
-genvar i;
+logic          tmp_vld [PN-1:0];  // valid
+logic          tmp_wen [PN-1:0];  // write enable
+logic [AW-1:0] tmp_adr [PN-1:0];  // address
+logic [BW-1:0] tmp_ben [PN-1:0];  // byte enable
+logic [DW-1:0] tmp_wdt [PN-1:0];  // write data
 
 ////////////////////////////////////////////////////////////////////////////////
 // arbiter
@@ -71,19 +89,19 @@ genvar i;
 // organize priority order
 generate
 for (i=0; i<PN; i++) begin: gen_arb
-  assign s_arb[i] = t_vld[PRI[i]];
+  assign sub_arb[i] = tmp_vld[PRI[i]];
 end: gen_arb
 endgenerate
 
 // simple priority arbiter
-assign s_sel = PRI[clog2(s_arb)];
+assign sub_sel = PRI[clog2(sub_arb)];
 
 // multiplexer integer select
-always_ff @(posedge m.clk, posedge m.rst)
-if (s.rst) begin
-  m_sel <= '0;
-end else if (m.vld & m.rdy) begin
-  m_sel <= s_sel;
+always_ff @(posedge man.clk, posedge man.rst)
+if (man.rst) begin
+  man_sel <= '0;
+end else if (man.trn) begin
+  man_sel <= sub_sel;
 end
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -94,20 +112,20 @@ end
 // since a dynamix index can't be used on an array of interfaces
 generate
 for (i=0; i<PN; i++) begin: gen_req
-  assign t_vld[i] = s.vld[i];
-  assign t_wen[i] = s.wen[i];
-  assign t_ben[i] = s.ben[i];
-  assign t_adr[i] = s.adr[i];
-  assign t_wdt[i] = s.wdt[i];
+  assign tmp_vld[i] = sub.vld[i];
+  assign tmp_wen[i] = sub.wen[i];
+  assign tmp_ben[i] = sub.ben[i];
+  assign tmp_adr[i] = sub.adr[i];
+  assign tmp_wdt[i] = sub.wdt[i];
 end: gen_req
 endgenerate
 
 // multiplexer
-assign m.vld = t_vld[s_sel];
-assign m.wen = t_wen[s_sel];
-assign m.ben = t_ben[s_sel];
-assign m.adr = t_adr[s_sel];
-assign m.wdt = t_wdt[s_sel];
+assign man.vld = tmp_vld[sub_sel];
+assign man.wen = tmp_wen[sub_sel];
+assign man.ben = tmp_ben[sub_sel];
+assign man.adr = tmp_adr[sub_sel];
+assign man.wdt = tmp_wdt[sub_sel];
 
 ////////////////////////////////////////////////////////////////////////////////
 // response
@@ -116,9 +134,9 @@ assign m.wdt = t_wdt[s_sel];
 // replicate response signals
 generate
 for (i=0; i<PN; i++) begin: gen_rsp
-  assign s[i].rdt = (m_sel == i[SW-1:0]) ? m.rdt : 'x;  // response phase
-  assign s[i].err = (m_sel == i[SW-1:0]) ? m.err : 'x;  // response phase
-  assign s[i].rdy = (s_sel == i[SW-1:0]) ? m.rdy : '0;  // request  phase
+  assign sub[i].rdt = (man_sel == i[SW-1:0]) ? man.rdt : 'x;  // response phase
+  assign sub[i].err = (man_sel == i[SW-1:0]) ? man.err : 'x;  // response phase
+  assign sub[i].rdy = (sub_sel == i[SW-1:0]) ? man.rdy : '0;  // request  phase
 end: gen_rsp
 endgenerate
 

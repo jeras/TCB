@@ -25,7 +25,8 @@ module tcb_gpio #(
   int unsigned GW = 32,   // GPIO width
   int unsigned CFG_CDC = 2,     // implement clock domain crossing stages (0 - bypass)
   // TCB parameters
-  bit          CFG_MIN = 1'b0,  // minimalistic implementation
+  bit          CFG_RSP_REG = 1'b1,  // register response path (by default the response is registered giving a DLY of 1)
+  bit          CFG_RSP_MIN = 1'b0,  // minimalistic response implementation
   // implementation device (ASIC/FPGA vendor/device)
   string       CHIP = ""
 )(
@@ -41,7 +42,7 @@ module tcb_gpio #(
 // parameter validation
 ////////////////////////////////////////////////////////////////////////////////
 
-localparam int unsigned DLY = 1;
+  localparam int unsigned DLY = 1;
 
 generate
   if (DLY != bus.DLY)  $error("ERROR: %m parameter DLY validation failed");
@@ -52,8 +53,8 @@ endgenerate
 // clock domain crossing
 ////////////////////////////////////////////////////////////////////////////////
 
-// read value
-logic [GW-1:0] gpio_r;
+  // read value
+  logic [GW-1:0] gpio_r;
 
 generate
 if (CFG_CDC > 0) begin: gen_cdc
@@ -107,55 +108,70 @@ endgenerate
 
 // read access
 generate
-if (CFG_MIN) begin: gen_min
+// minimalistic implementation
+if (CFG_RSP_MIN) begin: gen_rsp_min
 
-  // minimalistic implementation
   // only the GPIO input can be read
   assign bus.rdt = gpio_r;
 
-end: gen_min
-else begin: gen_nrm
+end: gen_rsp_min
+// normal implementation
+else begin: gen_rsp_nrm
 
-  // normal implementation
-  // output registers and GPIO input are decoded and properly delayed
+  logic [bus.DW-1:0] bus_rdt;
+
+  // GPIO output/enable registers and GPIO input are decoded
+  always_comb
+  case (bus.adr[4-1:0])
+    4'h0:    bus_rdt = gpio_o;
+    4'h4:    bus_rdt = gpio_e;
+    4'h8:    bus_rdt = gpio_r;
+    default: bus_rdt = 'x;
+  endcase
+
+  // read data response is registered
+  if (CFG_RSP_REG) begin: gen_rsp_reg
+
+    always_ff @(posedge bus.clk, posedge bus.rst)
+    if (bus.rst) begin
+      bus.rdt <= '0;
+    end else if (bus.trn ) begin
+      if (~bus.wen) begin
+        bus.rdt <= bus_rdt;
+      end
+    end
+
+  end: gen_rsp_reg
+  // read data response is combinational
+  else begin: gen_rsp_cmb
+    
+    assign bus.rdt = bus_rdt;
+
+  end: gen_rsp_cmb
+
+end: gen_rsp_nrm
+endgenerate
+
+  // write output and output enable
   always_ff @(posedge bus.clk, posedge bus.rst)
   if (bus.rst) begin
-    bus.rdt <= '0;
-  end else if (bus.vld & bus.rdy) begin
-    if (~bus.wen) begin
-      // read access
+    gpio_o <= '0;
+    gpio_e <= '0;
+  end else if (bus.trn) begin
+    if (bus.wen) begin
+      // write access
       case (bus.adr[4-1:0])
-        4'h0:    bus.rdt <= gpio_o;
-        4'h4:    bus.rdt <= gpio_e;
-        4'h8:    bus.rdt <= gpio_r;
-        default: bus.rdt <= 'x;
+        4'h0:    gpio_o <= bus.wdt[GW-1:0];
+        4'h4:    gpio_e <= bus.wdt[GW-1:0];
+        default: ;  // do nothing
       endcase
     end
   end
 
-end: gen_nrm
-endgenerate
+  // controller response is immediate
+  assign bus.rdy = 1'b1;
 
-// write output and output enable
-always_ff @(posedge bus.clk, posedge bus.rst)
-if (bus.rst) begin
-  gpio_o <= '0;
-  gpio_e <= '0;
-end else if (bus.vld & bus.rdy) begin
-  if (bus.wen) begin
-    // write access
-    case (bus.adr[4-1:0])
-      4'h0:    gpio_o <= bus.wdt[GW-1:0];
-      4'h4:    gpio_e <= bus.wdt[GW-1:0];
-      default: ;  // do nothing
-    endcase
-  end
-end
-
-// controller response is immediate
-assign bus.rdy = 1'b1;
-
-// there are no error cases
-assign bus.err = 1'b0;
+  // there are no error cases
+  assign bus.err = 1'b0;
 
 endmodule: tcb_gpio

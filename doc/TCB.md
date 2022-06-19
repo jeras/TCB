@@ -19,15 +19,41 @@ at least partially shared by both interfaces.
 The design is based on the following principles:
 * Intended for closely coupled memories and caches, and therefore based on synchronous memory (SRAM) interfaces.
 * Support pipelining for both writes and reads to minimize stalling overhead.
-  Meaning the handshake is dune during the arbitration phase.
-* Handshake based on AXI4-Stream (valid/ready).
+  Meaning the handshake is done during the arbitration phase.
+* Handshake based on AXI4 (valid/ready).
 * Low power consumption should be considered.
+
+What it is not intended for:
+* It is not optimized for clock domain crossing (CDC), which has a large delay between the start of a request and the response, and the delay has some unpredictability.
+* Does not provide out of order access functionality.
+* It is not a good fit for managers with a variable pipeline length in the load/store unit.
 
 ## References
 
-https://ibex-core.readthedocs.io/en/latest/02_user/integration.html
+1. [Ibex RISC-V core load/store bus interface](https://ibex-core.readthedocs.io/en/latest/02_user/integration.html)
+2. [NeoRV32 RISC-V core bus interface](https://stnolting.github.io/neorv32/#_bus_interface)
+3. [AMBA4 AHB4](https://developer.arm.com/documentation/ihi0033/latest/)
 
-https://stnolting.github.io/neorv32/#_bus_interface
+## Terminology
+
+TCB terminology is mostly based on Verilog and AMBA.
+
+| Term | Description |
+|------|-------------|
+| period | The term _clock period_ is preferred over _clock cycle_ to avoid confusion with _access cycle_ which can be multiple clock periods long. |
+| manager | Managers are modules driving requests toward a subordinate and receiving a response from it. This term is equivalent to _master_. |
+| subordinate | Subordinates are module receiving requests from a manager and responding to it. This term is equivalent to _slave_. |
+| handshake | Exchange of `valid` and `ready` signals during between manager and subordinate. |
+| cycle | Or _access cycle_ is one or more clock periods long exchange between a master and a subordinate governed by a valid/ready handshake, and it ends with a transfer. TODO: clarify if the delayed response is also part of the access cycle. |
+| transfer | Each access cycle ends in a single clock period long transfer where valid and ready handshake signals are both active. |
+| request | The collective value of signals (address, write enable, byte enable, write data) driven by a manager toward a subordinate, while valid is active during an access cycle. |
+| response |  TODO: clarify whether a response can be held multiple clock periods. |
+| backpressure | A subordinate can delay the transfer by driving the ready signal low. |
+| back-to-back | Performing transfers continuously in each clock period, without idling the bus by waiting the for a response before issuing e new request. |
+| parameter | Static (compile time) configuration of a HDL/RTL module, `parameter` in Verilog or `generic` in VHDL. |
+| configuration | 
+| control |
+| status |
 
 ## Bus signals
 
@@ -60,7 +86,7 @@ into a module placed between the manager and the subordinate.
 | parameter/generic | description |
 | `AW`              | Address width. |
 | `DW`              | Data width. |
-| `SW=DW/8`         | Byte select width. |
+| `BW=DW/8`         | Byte select width. |
 
 | signal | width  | direction | description |
 |--------|--------|-----------|-------------|
@@ -70,7 +96,13 @@ into a module placed between the manager and the subordinate.
 | `ben`  | `DW`/8 | M -> S    | Byte enable (select). |
 | `wdt`  | `DW`   | M -> S    | Write data. |
 | `rdt`  | `DW`   | S -> M    | Read data. |
+| `err`  | 1      | S -> M    | Error response. |
 | `rdy`  | 1      | S -> M    | Hanshake ready. |
+
+Various implementations can add custom signals to either the request or response,
+some examples of custom signals would be:
+* cache related signals,
+* multiple types of error responses.
 
 ## Handshake protocol and signal timing
 
@@ -115,6 +147,16 @@ The reference implementation is written in SystemVerilog.
 
 #### Decoder
 
+#### Register
+
+#### Error
+
+The error subordinate `tcb_err` is used to close unused interconnect manager ports.
+The most common use case would be to replace a peripheral device disabled with a parameter.
+
+It will provide an error response to any request.
+It does not add backpressure.
+
 ### Testbench components
 
 NOTE: The testbench code is in an Alpha state.
@@ -125,9 +167,11 @@ The current code just barely covers the documented functionality.
 
 #### Subordinate
 
-## RTL design recommendations with examples
+## RTL design recommendations
 
+### Parameter validation
 
+### Handling of reset transitions
 
 ### Peripherals
 
@@ -139,8 +183,8 @@ and other HDL languages also have constructs with equivalent functionality.
 | parameter     | type           | default | description |
 |---------------|----------------|---------|-------------|
 | `DLY`         | `int unsigned` | `'d1`   | Read delay. |
-| `CFG_REG_ADR` | `bit`          | `1'b0`  | Configuration: REGister for Read ADdRess. |
-| `CFG_REG_RDT` | `bit`          | `1'b1`  | Configuration: REGister for Read DaTa. |
+| `CFG_REQ_REG` | `bit`          | `1'b0`  | Configuration: enable REQest REGister. |
+| `CFG_RSP_REG` | `bit`          | `1'b1`  | Configuration: enable ReSPonse REGister. |
 | `CFG_ENR_CFG` | `bit`          | `1'b1`  | Configuration: ENable Read access to ConFiGuration registers. |
 
 If both address and 
