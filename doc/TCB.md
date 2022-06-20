@@ -155,29 +155,29 @@ The reference implementation is written in SystemVerilog.
 #### Arbiter
 
 ```mermaid
-flowchart TD
-    man[0] & man[1] --> arb --> sub
+flowchart LR
+    man0 & man1 --> arb --> sub
 ```
 
 
 #### Decoder
 
 ```mermaid
-flowchart TD
-    man --> dec --> sub[0] & sub[1]
+flowchart LR
+    man --> dec --> sub0 & sub1
 ```
 
 #### Register
 
 ```mermaid
-flowchart TD
+flowchart LR
     man --> reg --> sub
 ```
 
 #### Error
 
 ```mermaid
-flowchart TD
+flowchart LR
     man --> err
 ```
 
