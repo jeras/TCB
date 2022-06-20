@@ -33,8 +33,9 @@ What it is not intended for:
 1. [Ibex RISC-V core load/store bus interface](https://ibex-core.readthedocs.io/en/latest/02_user/integration.html)
 2. [NeoRV32 RISC-V core bus interface](https://stnolting.github.io/neorv32/#_bus_interface)
 3. [AMBA4 AHB4](https://developer.arm.com/documentation/ihi0033/latest/)
+4. [Wishbone B4](https://cdn.opencores.org/downloads/wbspec_b4.pdf)
 
-## Terminology
+## Terminology and naming conventions
 
 TCB terminology is mostly based on Verilog and AMBA.
 
@@ -55,38 +56,42 @@ TCB terminology is mostly based on Verilog and AMBA.
 | control |
 | status |
 
-## Bus signals
-
 Regarding naming conventions,
 for aesthetic reasons (vertical alignment) all signal names are
-[three-letter abbreviation (TLA)](https://en.wikipedia.org/wiki/Three-letter_acronym).
-Suffixes specifying the direction of module ports (input/output, i/o) shall be avoided.
-Instead the set of signals can have a prefix or is grouped into a SystemVerilog interface.
-This set name shall use specifiers like manager/subordinate (master/slave, m/s).
+[three-letter abbreviations (TLA)](https://en.wikipedia.org/wiki/Three-letter_acronym).
 
-The SRAM signal chip select/enable is replaced with the AXI handshake signal valid `vld`.
-Backpressure is supported by adding the AXI handshake signal ready `rdy`.
+## Bus signals
+
+Suffixes specifying the direction of module ports as input/output (`in`/`out`, `i`/`o`) should be avoided.
+Instead the set of signals can have a prefix or is grouped into a SystemVerilog interface.
+This set name shall use specifiers like manager/subordinate (`man`/`sub`, `m`/`s`).
+
+The SRAM signal chip select/enable is replaced with the AXI like handshake signal valid `vld`.
+Backpressure is supported by adding the AXI like handshake signal ready `rdy`.
 Handshake signals shall follow the basic principles defined for the AXI family of protocols.
 * While valid is not active all other signals shall be ignored (`X` in timing diagrams).
 * `vld` must be inactive during reset.
-* Once the manager asserts `vld`, it must not remove it till the transfer is completed by an active `rdy` signal.
+* Once the manager asserts `vld`, it must not remove it till the cycle is completed by an active `rdy` signal.
 * The manager must not wait for `rdy` to be asserted before starting a new transfer by asserting `vld`.
 * The subordinate can assert/remove the `rdy` signal without restrictions.
+* There is no inherent timeout mechanism. TODO: clarify `rdy` behavior if part of the system is under reset.
 
-This means once a transfer is initiated, it must be completed.
+This means once an access cycle is initiated, it must be completed with a transfer.
 Since `rdy` can be asserted during reset (`rdy` can be a constant value),
 `vld` must not be asserted, since this would indicate transfers while in reset state.
 Since the subordinate is allowed to wait for `vld` before asserting `rdy` (no restrictions),
-the manager can't wait for `rdy` to before asserting `vld`,
+the manager shall not wait for `rdy` before asserting `vld`,
 since this could result in a lockup.
-There is also no integrated timeout abort mechanism,
+
+There is no integrated timeout abort mechanism,
 although it would be possible to place such functionality
 into a module placed between the manager and the subordinate.
 
-| parameter/generic | description |
-| `AW`              | Address width. |
-| `DW`              | Data width. |
-| `BW=DW/8`         | Byte select width. |
+| parameter | type | description |
+|-----------|------|-------------|
+| `AW`      | int unsigned | Address width. |
+| `DW`      | int unsigned | Data width. |
+| `BW=DW/8` | int unsigned | Byte select width. |
 
 | signal | width  | direction | description |
 |--------|--------|-----------|-------------|
@@ -99,12 +104,16 @@ into a module placed between the manager and the subordinate.
 | `err`  | 1      | S -> M    | Error response. |
 | `rdy`  | 1      | S -> M    | Hanshake ready. |
 
-Various implementations can add custom signals to either the request or response,
+Various implementations can add custom (user defined) signals to either the request or response,
 some examples of custom signals would be:
 * cache related signals,
 * multiple types of error responses.
 
 ## Handshake protocol and signal timing
+
+### Reset release sequence
+
+### Reset assertion sequence
 
 ### Write transfer
 
@@ -145,17 +154,42 @@ The reference implementation is written in SystemVerilog.
 
 #### Arbiter
 
+```mermaid
+flowchart TD
+    man[0] & man[1] --> arb --> sub
+```
+
+
 #### Decoder
+
+```mermaid
+flowchart TD
+    man --> dec --> sub[0] & sub[1]
+```
 
 #### Register
 
+```mermaid
+flowchart TD
+    man --> reg --> sub
+```
+
 #### Error
 
-The error subordinate `tcb_err` is used to close unused interconnect manager ports.
+```mermaid
+flowchart TD
+    man --> err
+```
+
+The error subordinate module `tcb_err` is used to close unused leaf interconnect manager ports.
 The most common use case would be to replace a peripheral device disabled with a parameter.
 
 It will provide an error response to any request.
 It does not add backpressure.
+
+#### Passthrough
+
+
 
 ### Testbench components
 
