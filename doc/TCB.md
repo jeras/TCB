@@ -152,6 +152,11 @@ The reference implementation is written in SystemVerilog.
 
 #### Interface
 
+```mermaid
+flowchart LR
+    man -- tcb --> sub
+```
+
 #### Arbiter
 
 ```mermaid
@@ -189,6 +194,10 @@ It does not add backpressure.
 
 #### Passthrough
 
+```mermaid
+flowchart LR
+    man --> pas --> sub
+```
 
 
 ### Testbench components
