@@ -161,29 +161,45 @@ flowchart LR
 
 ```mermaid
 flowchart LR
-    man0 & man1 --> arb --> sub
+    tcb_man0(man) --> tcb_arb_sub0
+    tcb_man1(man) --> tcb_arb_sub1
+    subgraph tcb_arb[arb]
+        tcb_arb_sub0(sub) & tcb_arb_sub1(sub) -.-> tcb_arb_man(man)
+    end
+    tcb_arb_man --> tcb_sub(sub)
 ```
-
 
 #### Decoder
 
 ```mermaid
 flowchart LR
-    man --> dec --> sub0 & sub1
+    tcb_man(man) --> tcb_dec_sub
+    subgraph tcb_dec[dec]
+        tcb_dec_sub(sub) -.-> tcb_dec_man0(man) & tcb_dec_man1(man)
+    end
+    tcb_dec_man0 --> tcb_sub0(sub)
+    tcb_dec_man1 --> tcb_sub1(sub)
 ```
 
 #### Register
 
 ```mermaid
 flowchart LR
-    man --> reg --> sub
+    tcb_man(man) --> tcb_reg_sub
+    subgraph tcb_reg[reg]
+        tcb_reg_sub(sub) -.-> tcb_reg_man(man)
+    end
+    tcb_reg_man --> tcb_sub(sub)
 ```
 
 #### Error
 
 ```mermaid
 flowchart LR
-    man --> err
+    tcb_man(man) --> tcb_err_sub
+    subgraph tcb_err[err]
+        tcb_err_sub(sub)
+    end
 ```
 
 The error subordinate module `tcb_err` is used to close unused leaf interconnect manager ports.
@@ -196,9 +212,20 @@ It does not add backpressure.
 
 ```mermaid
 flowchart LR
-    man --> pas --> sub
+    tcb_man(man) --> tcb_pas_sub
+    subgraph tcb_err[err]
+        tcb_pas_sub(sub) -.-> tcb_pas_man(man)
+    end
+    tcb_pas_man --> tcb_sub(sub)
 ```
 
+#### Write buffer
+
+#### Decoupler
+
+#### Read hold
+
+#### Prefetch
 
 ### Testbench components
 
