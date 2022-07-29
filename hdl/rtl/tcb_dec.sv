@@ -37,7 +37,7 @@ module tcb_dec #(
 // camparing subordinate and manager interface parameters
 generate
 for (i=0; i<PN; i++) begin
-  if (sub.DW  != man[i].DW )  $error("ERROR: %m parameter DW  validation failed");
+  if (sub.AW  != man[i].AW )  $error("ERROR: %m parameter AW  validation failed");
   if (sub.DW  != man[i].DW )  $error("ERROR: %m parameter DW  validation failed");
   if (sub.BW  != man[i].BW )  $error("ERROR: %m parameter SW  validation failed");
   if (sub.DLY != man[i].DLY)  $error("ERROR: %m parameter DLY validation failed");

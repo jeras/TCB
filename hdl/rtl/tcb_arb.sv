@@ -42,7 +42,7 @@ module tcb_arb #(
 // camparing subordinate and manager interface parameters
 generate
 for (i=0; i<PN; i++) begin
-  if (sub[i].DW  != man.DW )  $error("ERROR: %m parameter DW  validation failed");
+  if (sub[i].AW  != man.AW )  $error("ERROR: %m parameter AW  validation failed");
   if (sub[i].DW  != man.DW )  $error("ERROR: %m parameter DW  validation failed");
   if (sub[i].SW  != man.SW )  $error("ERROR: %m parameter SW  validation failed");
   if (sub[i].DLY != man.DLY)  $error("ERROR: %m parameter DLY validation failed");
