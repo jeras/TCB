@@ -17,7 +17,7 @@ This description will start with a superset of features
 at least partially shared by both interfaces.
 
 The design is based on the following principles:
-* Intended for closely coupled memories and caches, and therefore based on synchronous memory (SRAM) interfaces.
+* Intended for closely coupled memories and caches, and therefore based on synchronous/static memory (SRAM) interfaces.
 * Support pipelining for both writes and reads to minimize stalling overhead.
   Meaning the handshake is done during the arbitration phase.
 * Handshake based on AXI4 (valid/ready).
@@ -95,14 +95,15 @@ into a module placed between the manager and the subordinate.
 
 | signal | width  | direction | description |
 |--------|--------|-----------|-------------|
-| `vld`  | 1      | M -> S    | Hanshake valid. |
+| `vld`  | 1      | M -> S    | Handshake valid. |
 | `wen`  | 1      | M -> S    | Write enable. |
+| `rpt`  | 1      | M -> S    | Repeat access (optional). |
 | `adr`  | `AW`   | M -> S    | Address. |
 | `ben`  | `DW`/8 | M -> S    | Byte enable (select). |
 | `wdt`  | `DW`   | M -> S    | Write data. |
 | `rdt`  | `DW`   | S -> M    | Read data. |
 | `err`  | 1      | S -> M    | Error response. |
-| `rdy`  | 1      | S -> M    | Hanshake ready. |
+| `rdy`  | 1      | S -> M    | Handshake ready. |
 
 Various implementations can add custom (user defined) signals to either the request or response,
 some examples of custom signals would be:
@@ -132,7 +133,9 @@ similar to a single direction data stream
 The base protocol does not have a mechanism for confirming
 write transfers reached their destination and were successfully applied.
 
-[image]
+![Write transfer (`DLY=1`)](https://svg.wavedrom.com/github/jeras/TCB/main/doc/tcb_write_dly1.json)
+
+![Write transfer (`DLY=2`)](https://svg.wavedrom.com/github/jeras/TCB/main/doc/tcb_write_dly2.json)
 
 ### Read transfer
 
@@ -143,6 +146,9 @@ The handshake is done during the arbitration phase, it is primarily
 about whether the address `adr` from the manager can reach the subordinate.
 
 Read data is available on `rdt` after a fixed delay of 1 clock cycle from the transfer.
+
+![Read transfer (`DLY=1`)](https://svg.wavedrom.com/github/jeras/TCB/main/doc/tcb_read_dly1.json)
+![Read transfer (`DLY=2`)](https://svg.wavedrom.com/github/jeras/TCB/main/doc/tcb_read_dly2.json)
 
 ## Reference implementation
 
