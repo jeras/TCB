@@ -190,7 +190,17 @@ it affects reproducibility of power consumption tests.
 
 ### Access cycles
 
-
+Read/write transfer cycles are shown with common response delays (parameter `DLY`) of 0, 1 and 2 clock periods.
+- `DLY=0` is the case with a combinational response to a request.
+  This can be used in case multiple simple subordinates are combined into an interconnect segment.
+  Such a segment can then be combined with a TCB register `tcb_reg`
+  to break long timing paths at either the request path, response path or both to improve timing.
+  Such collections can be used to achieve better area timing compromises,
+  compared to using subordinates with integrated registers.
+- `DLY=1` is the most common delay for subordinates with SRAM as an example.
+- `DLY=2` is the case where a single subordinate or a segment of the interconnect with `DLY=1`
+  would have an extra register added to the request path (address decoder)
+  or response path (read data multiplexer) to improve timing.
 
 #### Write transfer
 
@@ -222,6 +232,26 @@ about whether the address `adr` from the manager can reach the subordinate.
 Read data is available on `rdt` after a fixed delay of 1 clock cycle from the transfer.
 
 ![Read transfer](https://svg.wavedrom.com/github/jeras/TCB/main/doc/tcb_read.json)
+
+#### Repeat access transfer
+
+TODO: think this through.
+
+The basic idea behind the repeat access transfer
+is to avoid repeated reads from the same SRAM address.
+During a pipeline stall the CPU instruction fetch interface
+must remember the instruction by keeping it in a fetch register.
+A fetch register affects area and timing (admittedly not very much).
+
+The fetch register can be avoided by repeating the instruction read from the SRAM.
+This redundant read can be avoided by taking advantage of SRAM functionality,
+where the last data read remains available on the read data port
+till the next read or a power cycle.
+
+The repeat access signal `rpt` is intended to tell the SRAM
+to not perform another read from the same address.
+The interconnect would propagate the `rpt` as active only in case
+
 
 ## Reference implementation
 
