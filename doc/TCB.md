@@ -27,8 +27,8 @@ The design is based on the following principles:
 - Intended for closely coupled memories and caches, and therefore based on synchronous/static memory (SRAM) interfaces.
 - Support pipelining for both writes and reads to minimize stalling overhead.
   Meaning the handshake is done during the arbitration phase (explained later).
-- Handshake based on AXI4 (VALID/READY).
-- Low power consumption should be considered.
+- Handshake based on the AMBA AXI family of protocols (VALID/READY).
+- Low power consumption should be considered by reducing signal toggling and other means.
 
 What it is not intended for:
 - It is not optimized for clock domain crossing (CDC), which has a large delay between the start of a request and the response, and the delay has some unpredictability.
@@ -122,9 +122,10 @@ The remaining signals were added to support SoC features:
 |--------|--------|----------------|-------------|
 | `vld`  | `1`    | `man` -> `sub` | Handshake valid. |
 | `wen`  | `1`    | `man` -> `sub` | Write enable. |
+| `lck`  | `1`    | `man` -> `sub` | Arbitration lock (optional). |
 | `rpt`  | `1`    | `man` -> `sub` | Repeat access (optional). |
 | `adr`  | `AW`   | `man` -> `sub` | Address. |
-| `ben`  | `DW/8` | `man` -> `sub` | Byte enable (select). |
+| `ben`  | `DW/8` | `man` -> `sub` | Byte enable/select (optional). |
 | `wdt`  | `DW`   | `man` -> `sub` | Write data. |
 | `rdt`  | `DW`   | `sub` -> `man` | Read data. |
 | `err`  | `1`    | `sub` -> `man` | Error response. |

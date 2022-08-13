@@ -18,7 +18,7 @@ https://web.archive.org/web/20090129183058/http://www-01.ibm.com/chips/techlib/t
 3. [AMBA4 AHB4](https://developer.arm.com/documentation/ihi0033/latest/)
 4. [Wishbone B4](https://cdn.opencores.org/downloads/wbspec_b4.pdf)
 
-
+https://pulp-platform.github.io/snitch/rm/reqrsp_interface/
 
 ### AMBA
 
