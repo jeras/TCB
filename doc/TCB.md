@@ -222,7 +222,9 @@ write transfers reached their destination and were successfully applied.
 
 ![Write transfer](https://svg.wavedrom.com/github/jeras/TCB/main/doc/tcb_write.json)
 
-### Read transfer
+##### Write data byte enable
+
+#### Read transfer
 
 A read transfer is performed when both handshake signals `vld` and `rdy` are simultaneously active
 and the write enable signal `wen` is not active.
@@ -232,9 +234,15 @@ about whether the address `adr` from the manager can reach the subordinate.
 
 Read data is available on `rdt` after a fixed delay of 1 clock cycle from the transfer.
 
+**NOTE**: in contrast to most interconnect standards,
+TCB specifies the use of byte enable signals `ben` to
+enable or disable read from each byte.
+
 ![Read transfer](https://svg.wavedrom.com/github/jeras/TCB/main/doc/tcb_read.json)
 
-#### Repeat access transfer
+##### Read data byte enable
+
+##### Repeat access transfer
 
 TODO: think this through.
 
@@ -253,6 +261,9 @@ The repeat access signal `rpt` is intended to tell the SRAM
 to not perform another read from the same address.
 The interconnect would propagate the `rpt` as active only in case
 
+#### Arbitration locking mechanism
+
+Intended for read modify write and similar operations and for QoS control.
 
 ## Reference implementation
 
@@ -302,6 +313,9 @@ flowchart LR
     tcb_reg_man --> tcb_sub(sub)
 ```
 
+Must be able to enable the clock for each byte separately based on byte enable,
+on both the write and read path.
+
 #### Error
 
 ```mermaid
@@ -330,6 +344,12 @@ flowchart LR
 ```
 
 #### Write buffer
+
+#### Misalignment handler
+
+Two different implementations
+1. Performs 2 accesses and stitches them together, optionally caches one or more unused parts of previous accesses.
+2. Splits the bus into narrower busses, and increments the address.
 
 #### Decoupler
 
