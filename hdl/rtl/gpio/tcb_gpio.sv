@@ -44,10 +44,13 @@ module tcb_gpio #(
 
   localparam int unsigned DLY = 1;
 
+`ifdef ALTERA_RESERVED_QIS
+`else
 generate
   if (DLY != bus.DLY)  $error("ERROR: %m parameter DLY validation failed");
   if (GW   > bus.DW )  $error("ERROR: %m parameter GW exceeds the data bus width");
 endgenerate
+`endif
 
 ////////////////////////////////////////////////////////////////////////////////
 // clock domain crossing
@@ -118,7 +121,11 @@ end: gen_rsp_min
 // normal implementation
 else begin: gen_rsp_nrm
 
+`ifdef ALTERA_RESERVED_QIS
+  logic [$bits(bus.rdt)-1:0] bus_rdt;
+`else
   logic [bus.DW-1:0] bus_rdt;
+`endif
 
   // GPIO output/enable registers and GPIO input are decoded
   always_comb
@@ -160,7 +167,8 @@ endgenerate
   end else if (bus.trn) begin
     if (bus.wen) begin
       // write access
-      case (bus.adr[4-1:0])
+//      gpio_o <= bus.wdt[GW-1:0];
+      case (bus.adr[4-1+2:2])
         4'h0:    gpio_o <= bus.wdt[GW-1:0];
         4'h4:    gpio_e <= bus.wdt[GW-1:0];
         default: ;  // do nothing

@@ -39,6 +39,8 @@ module tcb_arb #(
 // parameter validation
 ////////////////////////////////////////////////////////////////////////////////
 
+`ifdef ALTERA_RESERVED_QIS
+`else
 // camparing subordinate and manager interface parameters
 generate
 for (i=0; i<PN; i++) begin
@@ -48,6 +50,7 @@ for (i=0; i<PN; i++) begin
   if (sub[i].DLY != man.DLY)  $error("ERROR: %m parameter DLY validation failed");
 end
 endgenerate
+`endif
 
 ////////////////////////////////////////////////////////////////////////////////
 // local parameters and functions

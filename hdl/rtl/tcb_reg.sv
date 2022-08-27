@@ -32,6 +32,8 @@ module tcb_reg #(
 // parameter validation
 ////////////////////////////////////////////////////////////////////////////////
 
+`ifdef ALTERA_RESERVED_QIS
+`else
 // camparing subordinate and manager interface parameters
 generate
   if (sub.AW  != man.AW )  $error("ERROR: %m parameter AW  validation failed");
@@ -39,6 +41,7 @@ generate
   if (sub.SW  != man.SW )  $error("ERROR: %m parameter SW  validation failed");
   if (sub.DLY != man.DLY)  $error("ERROR: %m parameter DLY validation failed");
 endgenerate
+`endif
 
 ////////////////////////////////////////////////////////////////////////////////
 // request

@@ -65,7 +65,11 @@ module tcb_uart #(
 // TCB access
 ////////////////////////////////////////////////////////////////////////////////
 
+`ifdef ALTERA_RESERVED_QIS
+  logic [$bits(bus.rdt)-1:0] bus_rdt;
+`else
   logic [bus.DW-1:0] bus_rdt;
+`endif
 
   // read configuration/status and RX data
   always_comb
@@ -86,6 +90,7 @@ module tcb_uart #(
     default: bus_rdt =                 'x             ;
   endcase
 
+generate
 // read data response is registered
 if (CFG_RSP_REG) begin: gen_rsp_reg
 
@@ -105,6 +110,7 @@ else begin: gen_rsp_cmb
   assign bus.rdt = bus_rdt;
 
 end: gen_rsp_cmb
+endgenerate
 
   // write configuration and TX data
   always_ff @(posedge bus.clk, posedge bus.rst)
