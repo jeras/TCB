@@ -79,11 +79,12 @@ sometimes 12-bits, the size of load/store immediate is relevant.
 Since TCB was designed with 32-bit CPU/SoC/peripherals in mind,
 32-bit is the default data width and 4-bit is the default byte enable width.
 
-| parameter | type | description |
-|-----------|------|-------------|
-| `AW`      | int unsigned | Address width. |
-| `DW`      | int unsigned | Data width. |
-| `BW=DW/8` | int unsigned | Byte select width. |
+| parameter  | type | description |
+|------------|------|-------------|
+| `AW`       | int unsigned | Address width. |
+| `DW`       | int unsigned | Data width. |
+| `BW`       | int unsigned | Byte width (should be 8). |
+| `SW=DW/BW` | int unsigned | Byte select width is the number of bytes fitting into the data width. |
 
 #### Protocol timing parameters
 
@@ -118,18 +119,18 @@ The remaining signals were added to support SoC features:
 - repeat access `rpt` is used to reduce power consumption,
 - error response `err` is used to enable clock/power gating support.
 
-| signal | width  | direction      | description |
-|--------|--------|----------------|-------------|
-| `vld`  | `1`    | `man` -> `sub` | Handshake valid. |
-| `wen`  | `1`    | `man` -> `sub` | Write enable. |
-| `lck`  | `1`    | `man` -> `sub` | Arbitration lock (optional). |
-| `rpt`  | `1`    | `man` -> `sub` | Repeat access (optional). |
-| `adr`  | `AW`   | `man` -> `sub` | Address. |
-| `ben`  | `DW/8` | `man` -> `sub` | Byte enable/select (optional). |
-| `wdt`  | `DW`   | `man` -> `sub` | Write data. |
-| `rdt`  | `DW`   | `sub` -> `man` | Read data. |
-| `err`  | `1`    | `sub` -> `man` | Error response. |
-| `rdy`  | `1`    | `sub` -> `man` | Handshake ready. |
+| signal | width | direction      | description |
+|--------|-------|----------------|-------------|
+| `vld`  | `1`   | `man` -> `sub` | Handshake valid. |
+| `wen`  | `1`   | `man` -> `sub` | Write enable. |
+| `lck`  | `1`   | `man` -> `sub` | Arbitration lock (optional). |
+| `rpt`  | `1`   | `man` -> `sub` | Repeat access (optional). |
+| `adr`  | `AW`  | `man` -> `sub` | Address. |
+| `ben`  | `SW`  | `man` -> `sub` | Byte enable/select (optional). |
+| `wdt`  | `DW`  | `man` -> `sub` | Write data. |
+| `rdt`  | `DW`  | `sub` -> `man` | Read data. |
+| `err`  | `1`   | `sub` -> `man` | Error response. |
+| `rdy`  | `1`   | `sub` -> `man` | Handshake ready. |
 
 Various implementations can add custom (user defined) signals to either the request or response,
 some examples of custom signals would be:
@@ -265,6 +266,20 @@ The interconnect would propagate the `rpt` as active only in case
 
 Intended for read modify write and similar operations and for QoS control.
 
+### Endianness and data alignment
+
+The TCB protocol is endianness agnostic, as long as the address is aligned to the data width.
+
+The address is aligned if `$clog2(BW)` least significant address bits are zero.
+
+TODO: check this.
+
+#### Misalignment handler
+
+Two different implementations
+1. Performs 2 accesses and stitches them together, optionally caches one or more unused parts of previous accesses.
+2. Splits the bus into narrower busses, and increments the address.
+
 ## Reference implementation
 
 The reference implementation is written in SystemVerilog.
@@ -337,7 +352,7 @@ It does not add backpressure.
 ```mermaid
 flowchart LR
     tcb_man(man) --> tcb_pas_sub
-    subgraph tcb_err[err]
+    subgraph tcb_pas[pas]
         tcb_pas_sub(sub) -.-> tcb_pas_man(man)
     end
     tcb_pas_man --> tcb_sub(sub)
@@ -345,13 +360,41 @@ flowchart LR
 
 #### Write buffer
 
-#### Misalignment handler
+Consider write ordering principles of RISC-V.
 
-Two different implementations
-1. Performs 2 accesses and stitches them together, optionally caches one or more unused parts of previous accesses.
-2. Splits the bus into narrower busses, and increments the address.
+```mermaid
+flowchart LR
+    tcb_man(man) --> tcb_wrb_sub
+    subgraph tcb_wrb[wrb]
+        tcb_wrb_sub(sub) -.-> tcb_wrb_man(man)
+    end
+    tcb_wrb_man --> tcb_sub(sub)
+```
+
+#### Data alignment cache
+
+```mermaid
+flowchart LR
+    tcb_man(man) --> tcb_dac_sub
+    subgraph tcb_dac[dac]
+        tcb_dac_sub(sub) -.-> tcb_dac_man(man)
+    end
+    tcb_dac_man --> tcb_sub(sub)
+```
+
+#### Data alignment splitter
+
 
 #### Decoupler
+
+Provides on request decoupling (separation) of
+manager and subordinate sides of a section of the interconnect.
+
+The main purpose is to allow for safe separation of
+clock gating and power gating domains.
+
+If a TCB manager requests a transfer from a decoupled segment of the interconnect,
+The decoupler subordinate port shall return an error response.
 
 #### Read hold
 
@@ -439,7 +482,7 @@ instead of attaching translators to the optimized native bus.
 
 ### Write confirmation
 
-Write confirmation could be returned with the same timing as read data.
+Write confirmation is returned with the same timing as read data.
 
 In case the native system bus is only used for the intend purpose
 of connecting tightly coupled memories, writes can be assumed to always succeed.

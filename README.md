@@ -5,6 +5,16 @@ Tightly Coupled Bus [documentation](doc/TCB.md).
 The purpose of TCB is to fill a niche for a low complexity system bus
 without unnecessary limitations on throughput.
 
+## Implementation status
+
+| module | status | description |
+|--------|--------|-------------|
+| [`tcb_if` ](hdl/rtl/tcb_if.sv ) | done | SystemVerilog interface. |
+| [`tcb_arb`](hdl/rtl/tcb_arb.sv) | done | Arbiter (manager multiplexer). |
+| [`tcb_dec`](hdl/rtl/tcb_dec.sv) | done | Decoder (subordinate demultiplexer). |
+| [`tcb_err`](hdl/rtl/tcb_err.sv) | done | Error response leaf subordinate. |
+
+
 ## References
 
 https://github.com/Wren6991/Hazard3/blob/master/hdl/hazard3_cpu_2port.v
