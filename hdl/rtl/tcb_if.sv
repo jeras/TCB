@@ -18,9 +18,10 @@
 
 interface tcb_if #(
   // bus widths
-  int unsigned AW = 32,    // address width
-  int unsigned DW = 32,    // data    width
-  int unsigned BW = DW/8,  // byte e. width
+  int unsigned AW = 32,     // address     width
+  int unsigned DW = 32,     // data        width
+  int unsigned SW =     8,  // selection   width
+  int unsigned BW = DW/SW,  // byte enable width
   // response delay
   int unsigned DLY = 1
 )(
@@ -29,26 +30,37 @@ interface tcb_if #(
   input  logic rst   // reset
 );
 
-  // system bus
-  logic          vld;  // valid
+////////////////////////////////////////////////////////////////////////////////
+// I/O ports
+////////////////////////////////////////////////////////////////////////////////
+
+  logic          vld;  // handshake valid
+  logic          lck;  // arbitration lock
+  logic          rpt;  // repeat access
   logic          wen;  // write enable
   logic [AW-1:0] adr;  // address
   logic [BW-1:0] ben;  // byte enable
   logic [DW-1:0] wdt;  // write data
   logic [DW-1:0] rdt;  // read data
-  logic          err;  // error
-  logic          rdy;  // ready
+  logic          err;  // error response
+  logic          rdy;  // handshake ready
 
-  // local signals
+////////////////////////////////////////////////////////////////////////////////
+// internal signals (never outpus on modports)
+////////////////////////////////////////////////////////////////////////////////
+
   logic          trn;  // transfer
   logic          idl;  // idle
   logic          rsp;  // response
 
   // transfer (valid and ready at the same time)
   assign trn = vld & rdy;
+
+  // TODO: improve description
   // idle (either not valid or ending a cycle with a transfer)
   assign idl = ~vld | trn;
-  // response (DLY clock periods after transfer)
+  
+  // response valid (DLY clock periods after transfer)
   generate
   if (DLY == 0) begin: gen_rsp
     assign rsp = trn;
@@ -69,7 +81,11 @@ interface tcb_if #(
     end: gen_dly
   end: gen_dly
   endgenerate
- 
+
+////////////////////////////////////////////////////////////////////////////////
+// modports
+////////////////////////////////////////////////////////////////////////////////
+
   // manager
   modport  man (
     // system signals

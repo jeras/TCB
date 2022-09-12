@@ -37,7 +37,9 @@ What it is not intended for:
 
 ## Terminology
 
-TCB terminology is mostly based on Verilog and AMBA.
+TCB terminology and syntax is mostly based on:
+- Verilog/SystemVerilog HDL languages,
+- AMBA AXI family of protocols.
 
 | Term | Description |
 |------|-------------|
@@ -83,8 +85,8 @@ Since TCB was designed with 32-bit CPU/SoC/peripherals in mind,
 |------------|------|-------------|
 | `AW`       | int unsigned | Address width. |
 | `DW`       | int unsigned | Data width. |
-| `BW`       | int unsigned | Byte width (should be 8). |
-| `SW=DW/BW` | int unsigned | Byte select width is the number of bytes fitting into the data width. |
+| `SW`       | int unsigned | Selection width (in most cases it should be 8, the size of a byte). |
+| `BW=DW/SW` | int unsigned | Byte enable width is the number of bytes fitting into the data width. |
 
 #### Protocol timing parameters
 
@@ -99,47 +101,73 @@ to managers and subordinates.
 
 | signal | description |
 |--------|-------------|
-| `clk`  | Clock. |
-| `rst`  | Reset. |
+| `clk`  | Clock (active on rising edge). |
+| `rst`  | Reset (active high). |
 
 ### Bus signals
 
-The SRAM signal chip select/enable is replaced with the AXI like handshake signal VALID `vld`.
-Backpressure is supported by adding the AXI like handshake signal READY `rdy`.
+The SRAM signal chip select/enable is replaced with the handshake signal VALID `vld`.
+Backpressure is supported by adding the handshake signal READY `rdy`.
+
+NOTE: The handshake signals intentionally use names from the AMBA AXI family of protocols.
+      Otherwise the TCB protocol bears no relation to AMBA.
 
 Signals going from manager to subordinate are part of the request,
 signals going in the opposite direction are part of the response.
 
-Most signals are designed to directly interface with SRAM ports:
+Most signals are designed to directly interface with SRAM (synchronous static RAM) ports:
 - address `adr`,
 - write enable `wen` and byte enable `ben`,
 - write data `wdt` and read data `rdt`.
 The remaining signals were added to support SoC features:
 - handshake signals `vld`/`rdy` are used to implement interconnect arbitration,
-- repeat access `rpt` is used to reduce power consumption,
+- arbitration lock `lck` is used to prevent interference with atomic accesses,
+- repeat access `rpt` is used to reduce power consumption on repeated read accesses to the same address,
 - error response `err` is used to enable clock/power gating support.
 
-| signal | width | direction      | description |
-|--------|-------|----------------|-------------|
-| `vld`  | `1`   | `man` -> `sub` | Handshake valid. |
-| `wen`  | `1`   | `man` -> `sub` | Write enable. |
-| `lck`  | `1`   | `man` -> `sub` | Arbitration lock (optional). |
-| `rpt`  | `1`   | `man` -> `sub` | Repeat access (optional). |
-| `adr`  | `AW`  | `man` -> `sub` | Address. |
-| `ben`  | `SW`  | `man` -> `sub` | Byte enable/select (optional). |
-| `wdt`  | `DW`  | `man` -> `sub` | Write data. |
-| `rdt`  | `DW`  | `sub` -> `man` | Read data. |
-| `err`  | `1`   | `sub` -> `man` | Error response. |
-| `rdy`  | `1`   | `sub` -> `man` | Handshake ready. |
+| signal | width | direction      | usage    | description |
+|--------|-------|----------------|----------|-------------|
+| `vld`  | `1`   | `man` -> `sub` | required | Handshake valid. |
+| `lck`  | `1`   | `man` -> `sub` | optional | Arbitration lock. |
+| `rpt`  | `1`   | `man` -> `sub` | optional | Repeat access. |
+| `wen`  | `1`   | `man` -> `sub` | optional | Write enable (can be omitted for read only devices). |
+| `adr`  | `AW`  | `man` -> `sub` | required | Address. |
+| `ben`  | `BW`  | `man` -> `sub` | optional | Byte enable/select (can be omitted if only full width transfers are allowed). |
+| `wdt`  | `DW`  | `man` -> `sub` | optional | Write data (can be omitted for read only devices). |
+| `rdt`  | `DW`  | `sub` -> `man` | required | Read data. |
+| `err`  | `1`   | `sub` -> `man` | optional | Error response (can be omitted if there are no error conditions). |
+| `rdy`  | `1`   | `sub` -> `man` | optional | Handshake ready (can be omitted if there is no backpressure). |
+
+ROM would be an example of a device with only the required ports.
+If less then the required signals are needed,
+other protocols (AXI-Stream, FIFO, ...) might be more appropriate.
+
+To connect a managers and a subordinates with a differing set of optional signals,
+an adapter is needed which would provide a default for outputs
+and a handler for inputs, which can either ignore the signal or cause an error condition.
+Default output values can always be ignored by a handler, or simply no handler is needed.
+
+| signal | default | handler |
+|--------|---------|---------|
+| `lck`  |  `1'b0` | If another manager can access the same segment, respond with error, otherwise ignore. |
+| `rpt`  |  `1'b0` | Subordinates can ignore it. |
+| `wen`  |  `1'b0` | Respond with error on write access to subordinate without write support. |
+| `ben`  | `BW'b1` | Access with less than the full width shall trigger an error. |
+| `wdt`  | `DW'bx` | Can be ignored, `wen` requires handling. |
+| `err`  |  `1'b0` | Can be ignored, if no error conditions are possible, otherwise requires and external handler (watchdog, ...). |
+| `rdy`  |  `1'b1` | Can be ignored, if no backpressure conditions are possible, otherwise requires and external handler (watchdog, ...). |
 
 Various implementations can add custom (user defined) signals to either the request or response,
 some examples of custom signals would be:
 - cache related signals,
-- multiple types of error responses.
+- burst support,
+- quality of service signals,
+- multiple types of error responses,
+- ...
 
 ## Handshake protocol and signal timing
 
-Handshake signals shall follow the basic principles defined for the AXI family of protocols.
+Handshake signals shall follow the basic principles defined for the AMBA AXI family of protocols.
 - While valid is not active all other signals shall be ignored (`X` in timing/waveform diagrams).
 - `vld` must be inactive during reset.
 - Once the manager asserts `vld`, it must not remove it till the cycle is completed by an active `rdy` signal.
@@ -349,6 +377,10 @@ It does not add backpressure.
 
 #### Passthrough
 
+The passthrough module `tcb_pas` does not provide any synthesizable functionality.
+Its main purpose if to allow the connection of two separate `tcb_if` SystemVerilog interfaces.
+This is usually necessary for connecting SystemVerilog interface arrays for different lengths.
+
 ```mermaid
 flowchart LR
     tcb_man(man) --> tcb_pas_sub
@@ -360,7 +392,7 @@ flowchart LR
 
 #### Write buffer
 
-Consider write ordering principles of RISC-V.
+TODO: Consider write ordering principles of RISC-V.
 
 ```mermaid
 flowchart LR
