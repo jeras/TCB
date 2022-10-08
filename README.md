@@ -17,6 +17,10 @@ without unnecessary limitations on throughput.
 
 ## References
 
+QMEM:
+https://somuch.guru/2016/06/28/qsoc-the-qmem-bus/
+https://github.com/rkrajnc/or1200-qmem
+
 https://github.com/Wren6991/Hazard3/blob/master/hdl/hazard3_cpu_2port.v
 https://en.wikipedia.org/wiki/Open_Core_Protocol
 https://web.archive.org/web/20090129183058/http://www-01.ibm.com/chips/techlib/techlib.nsf/products/CoreConnect_Bus_Architecture
