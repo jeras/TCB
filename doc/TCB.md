@@ -85,7 +85,7 @@ Since TCB was designed with 32-bit CPU/SoC/peripherals in mind,
 |------------|------|-------------|
 | `AW`       | int unsigned | Address width. |
 | `DW`       | int unsigned | Data width. |
-| `SW`       | int unsigned | Selection width (in most cases it should be 8, the size of a byte). |
+| `SW=8`     | int unsigned | Selection width (in most cases it should be 8, the size of a byte). |
 | `BW=DW/SW` | int unsigned | Byte enable width is the number of bytes fitting into the data width. |
 
 #### Protocol timing parameters

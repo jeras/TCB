@@ -87,8 +87,8 @@ endgenerate
   end else begin
     // pop response from queue
     if (~cyc | bus.trn) begin
-      if (rsp_que.size()) begin
-        rsp_tmp <= rsp_que.pop_front();
+      if (rsp_que.size() > 0) begin
+        rsp_tmp = rsp_que.pop_front();
         cyc <= 1'b1;
       end else begin
         cyc <= 1'b0;

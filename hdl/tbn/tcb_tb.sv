@@ -20,9 +20,10 @@ module tcb_tb
   import tcb_pkg::*;
 #(
   // bus widths
-  int unsigned AW = 32,    // address width
-  int unsigned DW = 32,    // data    width
-  int unsigned BW = DW/8,  // byte e. width
+  int unsigned AW = 32,     // address   width
+  int unsigned DW = 32,     // data      width
+  int unsigned SW = 8,      // selection width
+  int unsigned BW = DW/SW,  // byte ena. width
   // response delay
   int unsigned DLY = 1
 );
@@ -81,5 +82,15 @@ module tcb_tb
   ) sub (
     .bus  (bus)
   );
+
+////////////////////////////////////////////////////////////////////////////////
+// VCD/FST waveform trace
+////////////////////////////////////////////////////////////////////////////////
+
+initial
+begin
+  $dumpfile("test.fst");
+  $dumpvars;
+end
 
 endmodule: tcb_tb

@@ -91,8 +91,8 @@ endgenerate
   end else begin
     // pop request from queue
     if (~cyc | bus.trn) begin
-      if (req_que.size()) begin
-        req_tmp <= req_que.pop_front();
+      if (req_que.size() > 0) begin
+        req_tmp = req_que.pop_front();
         cyc <= 1'b1;
       end else begin
         cyc <= 1'b0;
