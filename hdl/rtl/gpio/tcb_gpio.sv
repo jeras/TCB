@@ -167,8 +167,7 @@ endgenerate
   end else if (bus.trn) begin
     if (bus.wen) begin
       // write access
-//      gpio_o <= bus.wdt[GW-1:0];
-      case (bus.adr[4-1+2:2])
+      case (bus.adr[4-1:0])
         4'h0:    gpio_o <= bus.wdt[GW-1:0];
         4'h4:    gpio_e <= bus.wdt[GW-1:0];
         default: ;  // do nothing
