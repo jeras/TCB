@@ -17,7 +17,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 module tcb_uart_ser #(
-  int unsigned CW = 8,  // baudrate counter width
+  int unsigned RW = 8,  // baudrate number width
   int unsigned DW = 8,  // shifter data width
   int unsigned SW = 1   // stop sequence width
 )(
@@ -25,7 +25,7 @@ module tcb_uart_ser #(
   input  logic          clk,
   input  logic          rst,
   // configuration
-  input  logic [CW-1:0] cfg_bdr,  // baudrate
+  input  logic [RW-1:0] cfg_bdr,  // baudrate
   // parallel stream
   input  logic          str_vld,  // valid
   input  logic [DW-1:0] str_dat,  // data
@@ -41,7 +41,7 @@ localparam int unsigned SL = 1 + DW + SW;
 logic          str_trn;
 
 // baudrate counter
-logic [CW-1:0] bdr_cnt;
+logic [RW-1:0] bdr_cnt;
 logic          bdr_end;
 
 // shifter bit counter and run status

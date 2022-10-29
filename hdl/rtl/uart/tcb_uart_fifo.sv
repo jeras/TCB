@@ -17,10 +17,10 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 module tcb_uart_fifo #(
-  int unsigned SZ = 32,  // size
-  int unsigned DW =  8,  // data width
-  int unsigned AW =  5,  // address width
-  int unsigned CW =  6   // counter width
+  int unsigned SZ = 32,            // size
+  int unsigned DW = 8,             // data width
+  int unsigned AW = $clog2(SZ),    // address width (clog2)
+  int unsigned CW = $clog2(SZ+1)   // counter width
 )(
   // system signals
   input  logic          clk,
@@ -41,7 +41,7 @@ module tcb_uart_fifo #(
 // parameter validation
 ////////////////////////////////////////////////////////////////////////////////
 
-// 
+//
 
 ////////////////////////////////////////////////////////////////////////////////
 // local signals
@@ -69,11 +69,11 @@ module tcb_uart_fifo #(
   // address
   always @ (posedge clk, posedge rst)
   if (rst)           sti_adr <= 'd0;
-  else if (sti_trn)  sti_adr <= (sti_adr == (SZ-1)) ? 'd0 : sti_adr + 'd1;
+  else if (sti_trn)  sti_adr <= (sti_adr == AW'(SZ-1)) ? 'd0 : sti_adr + 'd1;
 
   // memory write
   always @ (posedge clk)
-  if (sti_trn) mem [sti_adr] <= sti_dat;
+  if (sti_trn) mem [sti_adr[AW-1:0]] <= sti_dat;
 
 ////////////////////////////////////////////////////////////////////////////////
 // output port
@@ -85,10 +85,10 @@ module tcb_uart_fifo #(
   // address
   always @ (posedge clk, posedge rst)
   if (rst)           sto_adr <= 'd0;
-  else if (sto_trn)  sto_adr <= (sto_adr == (SZ-1)) ? 'd0 : sto_adr + 'd1;
+  else if (sto_trn)  sto_adr <= (sto_adr == AW'(SZ-1)) ? 'd0 : sto_adr + 'd1;
 
   // asynchronous memory read
-  assign sto_dat = mem [sto_adr];
+  assign sto_dat = mem [sto_adr[AW-1:0]];
 
 ////////////////////////////////////////////////////////////////////////////////
 // load counter
@@ -97,7 +97,7 @@ module tcb_uart_fifo #(
   // counter binary
   always @ (posedge clk, posedge rst)
   if (rst)  cnt <= 'd0;
-  else      cnt <= cnt + sti_trn - sto_trn;
+  else      cnt <= cnt + CW'(sti_trn) - CW'(sto_trn);
 
   // input ready (not full)
   assign sti_rdy = (cnt != CW'(SZ));
