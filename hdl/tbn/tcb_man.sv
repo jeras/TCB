@@ -39,10 +39,8 @@ generate
   if (DLY != bus.DLY)  $error("ERROR: %m parameter DLY checker failed");
 endgenerate
 
-//event evt_rsp;
-
 ////////////////////////////////////////////////////////////////////////////////
-// request/response
+// request/response (enable pipelined transfers with full throughput)
 ////////////////////////////////////////////////////////////////////////////////
 
   initial  bus.vld = 1'b0;
@@ -99,10 +97,10 @@ endgenerate
   endtask: rsp
 
 ////////////////////////////////////////////////////////////////////////////////
-// read/write
+// generic read/write (waits for response after each request)
 ////////////////////////////////////////////////////////////////////////////////
 
-  // write
+  // generic write
   task write (
     input  logic [AW-1:0] adr,
     input  logic [BW-1:0] ben,
@@ -127,7 +125,7 @@ endgenerate
     );
   endtask: write
 
-  // read
+  // generic read
   task read (
     input  logic [AW-1:0] adr,
     input  logic [BW-1:0] ben,
@@ -149,5 +147,18 @@ endgenerate
       .err (err)
     );
   endtask: read
+
+////////////////////////////////////////////////////////////////////////////////
+// BFM (Bus Functional Model) (emulates a RISC-V manager)
+////////////////////////////////////////////////////////////////////////////////
+
+// write64
+// write32
+// write16
+// write8
+// read64
+// read32
+// read16
+// read8
 
 endmodule: tcb_man
