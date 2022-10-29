@@ -30,11 +30,16 @@ module tcb_uart_tb
   // UART data width
   localparam int unsigned UDW = 8;
  
+  // UART baudrate
+  localparam int unsigned TX_BDR = 4;         // TX baudrate
+  localparam int unsigned RX_BDR = 4;         // RX baudrate
+  localparam int unsigned RX_SMP = RX_BDR/2;  // RX sample
+
   // TX string
-  localparam string str_tx = "Hello, World!";
-  localparam int    str_len = str_tx.len();
+  localparam string TX_STR = "Hello, World!";
+  localparam int    TX_LEN = TX_STR.len();
   // RX string
-  byte str_rx [str_len];
+  byte rx_str [TX_LEN];
 
   // system signals
   logic clk;  // clock
@@ -72,24 +77,24 @@ module tcb_uart_tb
     rst <= 1'b0;
     repeat (1) @(posedge clk);
     // write configuration
-    man.write('h08, 4'b1111, 32'h00000003, err);  // TX baudrate  (4)
-    man.write('h28, 4'b1111, 32'h00000003, err);  // RX baudrate  (4)
-    man.write('h2C, 4'b1111, 32'h00000001, err);  // RX sample    (2)
-    man.write('h30, 4'b1111, 32'(str_len-1), err);  // RX IRQ level
+    man.write('h08, 4'b1111, 32'(TX_BDR-1), err);  // TX baudrate
+    man.write('h28, 4'b1111, 32'(RX_BDR-1), err);  // RX baudrate
+    man.write('h2C, 4'b1111, 32'(RX_SMP-1), err);  // RX sample
+    man.write('h30, 4'b1111, 32'(TX_LEN-1), err);  // RX IRQ level
     // write TX data
-    for (int unsigned i=0; i<str_len; i++) begin
-      man.write('h00, 4'b1111, 32'(str_tx[i]), err);
+    for (int unsigned i=0; i<TX_LEN; i++) begin
+      man.write('h00, 4'b1111, 32'(TX_STR[i]), err);
     end
     // wait for RX IRQ
     do begin
       @(posedge clk);
     end while (!irq_rx);
     // read RX data
-    for (int unsigned i=0; i<str_len; i++) begin
+    for (int unsigned i=0; i<TX_LEN; i++) begin
       man.read('h20, 4'b1111, rdt, err);
-      str_rx[i] = rdt[UDW-1:0];
+      rx_str[i] = rdt[UDW-1:0];
     end
-    if (string'(str_rx) != str_tx)  $display("ERROR: RX '%s' differs from TX '%s'", str_rx, str_tx);
+    if (string'(rx_str) != TX_STR)  $display("ERROR: RX '%s' differs from TX '%s'", rx_str, TX_STR);
     // end simulation
     repeat (4) @(posedge clk);
     $finish();
@@ -98,7 +103,7 @@ module tcb_uart_tb
   // timeout
   initial
   begin
-    repeat (300) @(posedge clk);
+    repeat (TX_LEN*10*TX_BDR + 100) @(posedge clk);
     $finish();
   end
 
