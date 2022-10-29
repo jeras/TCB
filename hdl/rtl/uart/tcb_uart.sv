@@ -93,27 +93,30 @@ module tcb_uart #(
     default: bus_rdt =                 'x                  ;
   endcase
 
-generate
-// read data response is registered
-if (CFG_RSP_REG) begin: gen_rsp_reg
+  // RX FIFO read ready
+  assign rx_bus_rdy = bus.trn & ~bus.wen & (bus.adr[6-1:0] == 6'h20);
 
-  always_ff @(posedge bus.clk, posedge bus.rst)
-  if (bus.rst) begin
-    bus.rdt <= '0;
-  end else if (bus.trn ) begin
-    if (~bus.wen) begin
-      bus.rdt <= bus_rdt;
+  generate
+  // read data response is registered
+  if (CFG_RSP_REG) begin: gen_rsp_reg
+
+    always_ff @(posedge bus.clk, posedge bus.rst)
+    if (bus.rst) begin
+      bus.rdt <= '0;
+    end else if (bus.trn) begin
+      if (~bus.wen) begin
+        bus.rdt <= bus_rdt;
+      end
     end
-  end
 
-end: gen_rsp_reg
-// read data response is combinational
-else begin: gen_rsp_cmb
+  end: gen_rsp_reg
+  // read data response is combinational
+  else begin: gen_rsp_cmb
 
-  assign bus.rdt = bus_rdt;
+    assign bus.rdt = bus_rdt;
 
-end: gen_rsp_cmb
-endgenerate
+  end: gen_rsp_cmb
+  endgenerate
 
   // write configuration and TX data
   always_ff @(posedge bus.clk, posedge bus.rst)
