@@ -32,6 +32,9 @@ module tcb_tb
   logic clk;  // clock
   logic rst;  // reset
 
+  logic [DW-1:0] rdt;  // read data
+  logic          err;  // error response
+
 ////////////////////////////////////////////////////////////////////////////////
 // local signals
 ////////////////////////////////////////////////////////////////////////////////
@@ -46,25 +49,30 @@ module tcb_tb
   initial          clk = 1'b1;
   always #(20ns/2) clk = ~clk;
 
-  // reset
+  // test sequence
   initial
   begin
     // reset sequence
-    rst <= 1'b1;
-    repeat (4) @(posedge clk);
-    rst <= 1'b0;
+    rst = 1'b1;
+    repeat (2) @(posedge clk);
+    rst = 1'b0;
     repeat (1) @(posedge clk);
+    #1;
     fork
       begin: req
       //           wen,  adr,     ben,          wdt,          rdt,  err, len
-        man.req('{1'b1, 'h00, 4'b1111, 32'h01234567,                     0});
-        sub.rsp('{                                   32'h89abcdef, 1'b0, 0});
-        man.req('{1'b1, 'h01, 4'b1111, 32'h76543210,                     1});
-        sub.rsp('{                                   32'hfedcba98, 1'b0, 1});
+      man.write('h00, 4'b1111, 32'h01234567, err);
+      man.read ('h00, 4'b1111, rdt         , err);
+//        man.req('{1'b1, 'h00, 4'b1111, 32'h01234567,                     0});
+//        sub.rsp('{                                   32'h89abcdef, 1'b0, 0});
+//        man.req('{1'b1, 'h01, 4'b1111, 32'h76543210,                     1});
+//        sub.rsp('{                                   32'hfedcba98, 1'b0, 1});
       end: req
       begin: rsp
-  //    man.rsp(                                            rdt,  err);
-  //    sub.req( wen,  adr,     ben,          wdt,                   );
+        sub.rsp(32'h55xxxxxx, 1'b0);
+        sub.rsp(32'h76543210, 1'b0);
+//  //    man.rsp(                                            rdt,  err);
+//  //    sub.req( wen,  adr,     ben,          wdt,                   );
       end: rsp
     join
     repeat (8) @(posedge clk);
@@ -72,12 +80,20 @@ module tcb_tb
   end
 
   tcb_man #(
+    // bus widths
+    .AW   (AW),
+    .DW   (DW),
+    // response delay
     .DLY  (DLY)
   ) man (
     .bus  (bus)
   );
 
   tcb_sub #(
+    // bus widths
+    .AW   (AW),
+    .DW   (DW),
+    // response delay
     .DLY  (DLY)
   ) sub (
     .bus  (bus)
@@ -87,10 +103,10 @@ module tcb_tb
 // VCD/FST waveform trace
 ////////////////////////////////////////////////////////////////////////////////
 
-initial
-begin
-  $dumpfile("test.fst");
-  $dumpvars;
-end
+  initial
+  begin
+    $dumpfile("test.fst");
+    $dumpvars;
+  end
 
 endmodule: tcb_tb

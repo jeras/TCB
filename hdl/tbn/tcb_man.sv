@@ -19,6 +19,11 @@
 module tcb_man
   import tcb_pkg::*;
 #(
+  // bus widths
+  int unsigned AW = 32,     // address     width
+  int unsigned DW = 32,     // data        width
+  int unsigned SW =     8,  // selection   width
+  int unsigned BW = DW/SW,  // byte enable width
   // response delay
   int unsigned DLY = 1
 )(
@@ -31,99 +36,125 @@ module tcb_man
 ////////////////////////////////////////////////////////////////////////////////
 
 generate
-if (DLY != bus.DLY)  $error("ERROR: %m parameter DLY checker failed");
+  if (DLY != bus.DLY)  $error("ERROR: %m parameter DLY checker failed");
 endgenerate
 
+//event evt_rsp;
+
 ////////////////////////////////////////////////////////////////////////////////
-// request/response queues
+// request/response
 ////////////////////////////////////////////////////////////////////////////////
 
-  // queues
-  tcb_req_t req_que [$];  // request  queue
-  tcb_rsp_t rsp_que [$];  // response queue
+  initial  bus.vld = 1'b0;
 
-  // push a request into the queue
-  function void req (
-    input tcb_req_t req
+  // request
+  task req (
+    input  logic          wen,
+    input  logic [AW-1:0] adr,
+    input  logic [BW-1:0] ben,
+    input  logic [DW-1:0] wdt,
+    input  logic          lck = 1'b0,
+    input  logic          rpt = 1'b0,
+    // timing
+    input  int            tmg = 0
   );
-    req_que.push_back(req);
-  endfunction: req
+    $display("DEBUG: request start.");
+    // idle
+    repeat (tmg) @(posedge bus.clk);
+    $display("DEBUG: request tmg = %h.", tmg);
+    // request
+//    #1;
+    bus.vld = 1'b1;
+    bus.wen = wen;
+    bus.adr = adr;
+    bus.ben = ben;
+    bus.wdt = wdt;
+    bus.lck = lck;
+    bus.rpt = rpt;
+    $display("DEBUG: request vld = %b.", bus.vld);
+    // backpressure
+    do begin
+      @(posedge bus.clk);
+      $display("DEBUG: request rdy = %b.", bus.rdy);
+    end while (~bus.rdy);
+    // idle
+//    #1;
+    bus.vld = 1'b0;
+    bus.wen = 'x;
+    bus.adr = 'x;
+    bus.ben = 'x;
+    bus.wdt = 'x;
+    bus.lck = 'x;
+    bus.rpt = 'x;
+  endtask: req
 
-  // pop a response from the queue
+  // response
   task rsp (
-    output tcb_rsp_t rsp
+    output logic [DW-1:0] rdt,
+    output logic          err
   );
-    wait (rsp_que.size() > 0);
-    rsp = rsp_que.pop_front();
+    // response delay
+    do begin
+      @(posedge bus.clk);
+    end while (~bus.rsp);
+    // response
+    rdt = bus.rdt;
+    err = bus.err;
   endtask: rsp
 
-  // debug queue size
-  int unsigned req_siz;
-  int unsigned rsp_siz;
-  always @(posedge bus.clk)
-  begin
-    req_siz <= req_que.size();
-    rsp_siz <= rsp_que.size();
-  end
-
 ////////////////////////////////////////////////////////////////////////////////
-// transfer cycle
+// read/write
 ////////////////////////////////////////////////////////////////////////////////
 
-  // active cycle
-  bit cyc = 1'b0;
-
-  // cycle length counter
-  int unsigned cnt;
-
-  // temporary request/response structure
-  tcb_req_t req_tmp;
-  tcb_rsp_t rsp_tmp;
-
-  // initialization before the first clock edge
-  initial bus.vld <= 1'b0;
-
-  // valid/ready handshake and queue
-  always @(posedge bus.clk, posedge bus.rst)
-  if (bus.rst) begin
-    cyc <= 0;
-    cnt <= 0;
-  end else begin
-    // pop request from queue
-    if (~cyc | bus.trn) begin
-      if (req_que.size() > 0) begin
-        req_tmp = req_que.pop_front();
-        cyc <= 1'b1;
-      end else begin
-        cyc <= 1'b0;
-      end
-    end
-    // cycle length counter
-    if (cyc) begin
-      if (bus.trn)  cnt <= 0;
-      else          cnt <= cnt + 1;
-    end
-    // push response into queue
-    if (bus.rsp) begin
-      rsp_que.push_back(rsp_tmp);
-    end
-  end
-
-  // other bus signals
-  always_comb
-  begin
-    // handshake
-    bus.vld = cyc & (cnt >= req_tmp.len);
-    // cycle length
-    rsp_tmp.len = cnt;  // TODO: delay to DLY
+  // write
+  task write (
+    input  logic [AW-1:0] adr,
+    input  logic [BW-1:0] ben,
+    input  logic [DW-1:0] dat,
+    output logic          err
+  );
+    // ignored value
+    logic [DW-1:0] rdt;
+    $display("DEBUG: write start.");
     // request
-    bus.wen = bus.vld ? req_tmp.wen : 'x;
-    bus.adr = bus.vld ? req_tmp.adr : 'x;
-    bus.ben = bus.vld ? req_tmp.ben : 'x;
-    bus.wdt = bus.vld ? req_tmp.wdt : 'x;
+    req (
+      .wen (1'b1),
+      .adr (adr),
+      .ben (ben),
+      .wdt (dat),
+      .lck (1'b0),
+      .rpt (1'b0)
+    );
+    $display("DEBUG: write mid.");
     // response
-    rsp_tmp.rdt = bus.rdt;
-    rsp_tmp.err = bus.err;
-  end
+    rsp (
+      .rdt (rdt),
+      .err (err)
+    );
+    $display("DEBUG: write end.");
+endtask: write
+
+  // read
+  task read (
+    input  logic [AW-1:0] adr,
+    input  logic [BW-1:0] ben,
+    output logic [DW-1:0] dat,
+    output logic          err
+  );
+    // request
+    req (
+      .wen (1'b0),
+      .adr (adr),
+      .ben (ben),
+      .wdt ('x),
+      .lck (1'b0),
+      .rpt (1'b0)
+    );
+    // response
+    rsp (
+      .rdt (dat),
+      .err (err)
+    );
+  endtask: read
 
 endmodule: tcb_man

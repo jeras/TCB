@@ -60,6 +60,9 @@ TCB terminology and syntax is mostly based on:
 | control | Peripheral register/field used to control system operation at runtime, they are dynamic signals. |
 | status | Peripheral register/field used to monitor system operation at runtime, they are volatile signals. |
 
+| Acronym | Definition |
+| BFM     | Bus Functional Model |
+
 ## Naming conventions
 
 Mostly for aesthetic reasons (vertical alignment) all signal names are

@@ -78,6 +78,7 @@ interface tcb_if #(
         rsp <= 1'b0;
       end else begin
         rsp <= trn;
+        $display("%m | DEBUG: TCB response.");
       end
     end: gen_rsp
     else begin: gen_dly

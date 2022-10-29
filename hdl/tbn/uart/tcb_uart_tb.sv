@@ -37,12 +37,17 @@ module tcb_uart_tb
   // TCB interface
   tcb_if #(.AW (AW), .DW (DW)) bus (.clk (clk), .rst (rst));
 
-  // response check values
-  tcb_rsp_t rsp;
+  // TCB response check values
+  logic [DW-1:0] rdt;
+  logic          err;
 
   // UART signals
-  logic uart_o;
-  logic uart_e;
+  logic uart_rxd;  // receive
+  logic uart_txd;  // transmit
+
+  // interrupts
+  logic irq_tx;    // TX FIFO load is below limit
+  logic irq_rx;    // RX FIFO load is above limit
 
 ////////////////////////////////////////////////////////////////////////////////
 // test sequence
@@ -52,7 +57,7 @@ module tcb_uart_tb
   initial          clk = 1'b1;
   always #(20ns/2) clk = ~clk;
 
-  // reset
+  // test sequence
   initial
   begin
     // reset sequence
@@ -60,38 +65,31 @@ module tcb_uart_tb
     repeat (4) @(posedge clk);
     rst <= 1'b0;
     repeat (1) @(posedge clk);
-    fork
-      // start TCB requests
-      begin: test_req
-        //         wen,  adr,     ben,          wdt, len
-        man.req('{1'b1, 'h08, 4'b1111, 32'h00000003, 0});  // write TX baudrate (4)
-        man.req('{1'b1, 'h28, 4'b1111, 32'h00000003, 0});  // write RX baudrate (4)
-        man.req('{1'b1, 'h2C, 4'b1111, 32'h00000001, 0});  // write RX sample   (2)
-        man.req('{1'b1, 'h00, 4'b1111, 32'h000000A5, 0});  // write TX data
-        man.req('{1'b1, 'h00, 4'b1111, 32'h0000005A, 0});  // write TX data
-//        man.req('{1'b0, 'h08, 4'b1111, 32'hxxxxxxxx, 0});  // read input register
-//        man.req('{1'b0, 'h08, 4'b1111, 32'hxxxxxxxx, 0});  // read input register
-//        man.req('{1'b0, 'h08, 4'b1111, 32'hxxxxxxxx, 0});  // read input register
-      end: test_req
-      // set GPIO input values
-//      begin: test_gpio
-//        repeat (2) @(negedge clk);
-//        gpio_i <= GW'('h89abcdef);
-//        repeat (1) @(negedge clk);
-//        gpio_i <= GW'('hfedcba98);
-//      end: test_gpio
-      // check TCB responses
-      begin: test_rsp
-//        man.rsp(rsp);  if (rsp.rdt !== DW'('hxxxxxxxx))  $display("ERROR: readout error rdt=%8h, ref=%8h", rsp.rdt, DW'('hxxxxxxxx));
-//        man.rsp(rsp);  if (rsp.rdt !== DW'('h89abcdef))  $display("ERROR: readout error rdt=%8h, ref=%8h", rsp.rdt, DW'('h89abcdef));
-//        man.rsp(rsp);  if (rsp.rdt !== DW'('hfedcba98))  $display("ERROR: readout error rdt=%8h, ref=%8h", rsp.rdt, DW'('hfedcba98));
-      end: test_rsp
-    join
+    // write configuration
+    man.write('h08, 4'b1111, 32'h00000003, err);  // TX baudrate (4)
+//    $finish();
+    man.write('h28, 4'b1111, 32'h00000003, err);  // RX baudrate (4)
+    man.write('h2C, 4'b1111, 32'h00000001, err);  // RX sample   (2)
+    // write TX data
+    man.write('h00, 4'b1111, 32'h000000A5, err);  // TX data
+    man.write('h00, 4'b1111, 32'h0000005A, err);  // TX data
+    // end simulation
     repeat (200) @(posedge clk);
     $finish();
   end
 
+  // timeout
+  initial
+  begin
+    repeat (50) @(posedge clk);
+    $finish();
+  end
+
   tcb_man #(
+    // bus widths
+    .AW   (AW),
+    .DW   (DW),
+    // response delay
     .DLY  (DLY)
   ) man (
     .bus  (bus)
@@ -104,10 +102,23 @@ module tcb_uart_tb
     .uart_txd (uart_txd),
     .uart_rxd (uart_rxd),
     // system bus interface
-    .bus      (bus)
+    .bus      (bus),
+    // interrupts
+    .irq_tx   (irq_tx),
+    .irq_rx   (irq_rx)
   );
 
   // UART loopback
   assign uart_rxd = uart_txd;
+
+////////////////////////////////////////////////////////////////////////////////
+// VCD/FST waveform trace
+////////////////////////////////////////////////////////////////////////////////
+
+  initial
+  begin
+    $dumpfile("test.fst");
+    $dumpvars;
+  end
 
 endmodule: tcb_uart_tb

@@ -18,26 +18,4 @@
 
 package tcb_pkg;
 
-  localparam int unsigned AW = 32;    // address width
-  localparam int unsigned DW = 32;    // data    width
-  localparam int unsigned BW = DW/8;  // byte e. width
-
-  typedef struct packed {
-    // TCB signals
-    logic          wen;  // write enable
-    logic [AW-1:0] adr;  // address
-    logic [BW-1:0] ben;  // byte enable
-    logic [DW-1:0] wdt;  // write data
-    // timing
-    int unsigned   len;  // wait length
-  } tcb_req_t;
-
-  typedef struct packed {
-    // TCB signals
-    logic [DW-1:0] rdt;  // read data
-    logic          err;  // error
-    // timing
-    int unsigned   len;  // wait length
-  } tcb_rsp_t;
-
 endpackage: tcb_pkg

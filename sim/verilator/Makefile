@@ -33,9 +33,9 @@ TSV+=${PATH_HDL}/tbn/tcb_mon.sv
 TSV+=${PATH_HDL}/tbn/tcb_sub.sv
 TSV+=${PATH_HDL}/tbn/tcb_man.sv
 TSV+=${PATH_HDL}/tbn/tcb_tb.sv
-# GPIO testbench
+## GPIO testbench
 TSV+=${PATH_HDL}/tbn/gpio/tcb_gpio_tb.sv
-# UART testbench
+## UART testbench
 TSV+=${PATH_HDL}/tbn/uart/uart_model.sv
 TSV+=${PATH_HDL}/tbn/uart/uart_model_tb.sv
 TSV+=${PATH_HDL}/tbn/uart/tcb_uart_tb.sv

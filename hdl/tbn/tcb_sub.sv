@@ -19,6 +19,11 @@
 module tcb_sub
   import tcb_pkg::*;
 #(
+  // bus widths
+  int unsigned AW = 32,     // address     width
+  int unsigned DW = 32,     // data        width
+  int unsigned SW =     8,  // selection   width
+  int unsigned BW = DW/SW,  // byte enable width
   // response delay
   int unsigned DLY = 1
 )(
@@ -31,103 +36,84 @@ if (DLY != bus.DLY)  $error("%m parameter DLY validation failed");
 endgenerate
 
 ////////////////////////////////////////////////////////////////////////////////
-// request/response queues
+// loacal signals
 ////////////////////////////////////////////////////////////////////////////////
 
-  // queues
-  tcb_req_t req_que [$];  // request  queue
-  tcb_rsp_t rsp_que [$];  // response queue
+  // response pipeline
+  logic [DW-1:0] tmp_rdt;
+  logic          tmp_err;
+  logic [DW-1:0] pip_rdt [0:DLY-1];
+  logic          pip_err [0:DLY-1];
 
-  // push a response into the queue
-  function void rsp (
-    input tcb_rsp_t rsp
+////////////////////////////////////////////////////////////////////////////////
+// request/response
+////////////////////////////////////////////////////////////////////////////////
+
+  // request
+  task req (
+    output logic          wen,
+    output logic [AW-1:0] adr,
+    output logic [BW-1:0] ben,
+    output logic [DW-1:0] wdt,
+    output logic          lck,
+    output logic          rpt
   );
-    rsp_que.push_back(rsp);
-  endfunction: rsp
+    // check for backpressure
+    do begin
+      @(posedge bus.clk);
+    end while (~bus.rdy);
+    // idle
+    wen = bus.wen;
+    adr = bus.adr;
+    ben = bus.ben;
+    wdt = bus.wdt;
+    lck = bus.lck;
+    rpt = bus.rpt;
+  endtask: req
 
-  // pop a request from the queue
-  function tcb_req_t req ();
-    req = req_que.pop_front();
-  endfunction: req
-
-  // debug queue size
-  int unsigned req_siz;
-  int unsigned rsp_siz;
-  always @(posedge bus.clk)
-  begin
-    req_siz <= req_que.size();
-    rsp_siz <= rsp_que.size();
-  end
-
-////////////////////////////////////////////////////////////////////////////////
-// transfer cycle
-////////////////////////////////////////////////////////////////////////////////
-
-  // active cycle
-  bit cyc = 1'b0;
-
-  // cycle length counter
-  int unsigned cnt;
-
-  // temporary request/response structure
-  tcb_req_t req_tmp;
-  tcb_rsp_t rsp_tmp;
-
-  // response pipeline
-  tcb_rsp_t rsp_dly [0:DLY-1];
-
-  // initialization before the first clock edge
-  initial bus.rdy <= 1'b0;
-
-  // valid/ready handshake and queue
-  always @(posedge bus.clk, posedge bus.rst)
-  if (bus.rst) begin
-    cyc <= 0;
-    cnt <= 0;
-  end else begin
-    // pop response from queue
-    if (~cyc | bus.trn) begin
-      if (rsp_que.size() > 0) begin
-        rsp_tmp = rsp_que.pop_front();
-        cyc <= 1'b1;
-      end else begin
-        cyc <= 1'b0;
-      end
-    end
-    // cycle length counter
-//  if (cyc) begin
-    if (cyc & bus.vld) begin
-      if (bus.trn)  cnt <= 0;
-      else          cnt <= cnt + 1;
-    end
-    // push request into queue
-    if (bus.trn) begin
-      req_que.push_back(req_tmp);
-    end
-  end
-
-  // other bus signals
-  always_comb
-  begin
-    // handshake
-    bus.rdy = cyc & (cnt >= rsp_tmp.len);
-    // cycle length
-    req_tmp.len = cnt;
-    // request
-    req_tmp.wen = bus.wen;
-    req_tmp.adr = bus.adr;
-    req_tmp.ben = bus.ben;
-    req_tmp.wdt = bus.wdt;
+  // response
+  task rsp (
+    // bus signals
+    input  logic [DW-1:0] rdt,
+    input  logic          err,
+    // timing
+    input  int            tmg = 0
+  );
+    // idle
+    repeat (tmg) @(posedge bus.clk);
     // response
-    bus.rdt = rsp_dly[DLY-1].rdt;
-    bus.err = rsp_dly[DLY-1].err;
-  end
+    #1;
+    tmp_rdt = rdt;
+    tmp_err = err;
+    // ready
+    bus.rdy = 1'b1;
+    @(posedge bus.clk);
+//    #1;
+    bus.rdy = 1'b1;
+  endtask: rsp
 
-  // TODO
-  // response pipeline
-  always @(posedge bus.clk)
-  rsp_dly[0] <= bus.trn ? rsp_tmp : 'x;
-//  for (int unsigned i=0; i<DLY; i++) begin
-//  end
+////////////////////////////////////////////////////////////////////////////////
+// response pipeline
+////////////////////////////////////////////////////////////////////////////////
+
+  generate
+  if (DLY == 0) begin
+
+    assign bus.rdt = tmp_rdt;
+    assign bus.err = tmp_err;
+
+  end else  begin
+
+    always_ff @(posedge bus.clk)
+    if (bus.trn) begin
+      pip_rdt[0] <= tmp_rdt;
+      pip_err[0] <= tmp_err;
+    end
+
+    assign bus.rdt = pip_rdt[DLY-1];
+    assign bus.err = pip_err[DLY-1];
+
+  end
+  endgenerate
 
 endmodule: tcb_sub

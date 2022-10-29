@@ -22,7 +22,7 @@ module uart_model #(
   int unsigned DW     = 8,          // data width (sizes from 5 to 8 bits are supported)
   int unsigned SW     = 1,          // stop width (one or more stop bits are supported)
   string       PARITY = "NONE",     // parity ("NONE" , "EVEN", "ODD")
-  int unsigned BAUD   = 112_200,    // baud rate
+  longint      BAUD   = 112_200,    // baud rate
   // data streams
   string       FILE_I = "",         // program filename
   string       FILE_O = "",         // program filename
@@ -51,9 +51,9 @@ localparam time dly = 1_000_000_000/BAUD;
 logic run_tx, run_rx;
 
 //                 TX,     RX ;
-int             fp_tx , fp_rx ;
-int             fs_tx , fs_rx ;
-int             cnt_tx, cnt_rx;
+int             fp_tx , fp_rx ;  // file pointer
+int             fs_tx , fs_rx ;  // file status
+int             cnt_tx, cnt_rx;  // bit counter
 logic [DW-1:0]  c_tx  , c_rx  ;  // transferred character
 
 // transfer start condition and data sampling events for UART receiver
