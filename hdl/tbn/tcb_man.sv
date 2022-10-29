@@ -58,12 +58,10 @@ endgenerate
     // timing
     input  int            tmg = 0
   );
-    $display("DEBUG: request start.");
     // idle
     repeat (tmg) @(posedge bus.clk);
-    $display("DEBUG: request tmg = %h.", tmg);
     // request
-//    #1;
+    #1;
     bus.vld = 1'b1;
     bus.wen = wen;
     bus.adr = adr;
@@ -71,14 +69,12 @@ endgenerate
     bus.wdt = wdt;
     bus.lck = lck;
     bus.rpt = rpt;
-    $display("DEBUG: request vld = %b.", bus.vld);
     // backpressure
     do begin
       @(posedge bus.clk);
-      $display("DEBUG: request rdy = %b.", bus.rdy);
     end while (~bus.rdy);
     // idle
-//    #1;
+    #1;
     bus.vld = 1'b0;
     bus.wen = 'x;
     bus.adr = 'x;
@@ -115,7 +111,6 @@ endgenerate
   );
     // ignored value
     logic [DW-1:0] rdt;
-    $display("DEBUG: write start.");
     // request
     req (
       .wen (1'b1),
@@ -125,14 +120,12 @@ endgenerate
       .lck (1'b0),
       .rpt (1'b0)
     );
-    $display("DEBUG: write mid.");
     // response
     rsp (
       .rdt (rdt),
       .err (err)
     );
-    $display("DEBUG: write end.");
-endtask: write
+  endtask: write
 
   // read
   task read (

@@ -88,7 +88,7 @@ endgenerate
     // ready
     bus.rdy = 1'b1;
     @(posedge bus.clk);
-//    #1;
+    #1;
     bus.rdy = 1'b1;
   endtask: rsp
 
