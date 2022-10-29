@@ -13,141 +13,36 @@
    </db_ref_list>
    <zoom_setting>
       <ZoomStartTime time="0.000 ns"></ZoomStartTime>
-      <ZoomEndTime time="2,460.001 ns"></ZoomEndTime>
-      <Cursor1Time time="1,800.000 ns"></Cursor1Time>
+      <ZoomEndTime time="617.001 ns"></ZoomEndTime>
+      <Cursor1Time time="80.000 ns"></Cursor1Time>
    </zoom_setting>
    <column_width_setting>
       <NameColumnWidth column_width="192"></NameColumnWidth>
-      <ValueColumnWidth column_width="81"></ValueColumnWidth>
+      <ValueColumnWidth column_width="69"></ValueColumnWidth>
    </column_width_setting>
-   <WVObjectSize size="26" />
+   <WVObjectSize size="39" />
    <wave_markers>
       <marker label="" time="1518000" />
    </wave_markers>
-   <wvobject type="group" fp_name="group260">
-      <obj_property name="label">TCB</obj_property>
-      <obj_property name="DisplayName">label</obj_property>
-      <obj_property name="isExpanded"></obj_property>
-      <wvobject type="logic" fp_name="/tcb_uart_tb/bus/clk">
-         <obj_property name="ElementShortName">clk</obj_property>
-         <obj_property name="ObjectShortName">clk</obj_property>
-      </wvobject>
-      <wvobject type="logic" fp_name="/tcb_uart_tb/bus/rst">
-         <obj_property name="ElementShortName">rst</obj_property>
-         <obj_property name="ObjectShortName">rst</obj_property>
-      </wvobject>
-      <wvobject type="logic" fp_name="/tcb_uart_tb/bus/vld">
-         <obj_property name="ElementShortName">vld</obj_property>
-         <obj_property name="ObjectShortName">vld</obj_property>
-      </wvobject>
-      <wvobject type="logic" fp_name="/tcb_uart_tb/bus/wen">
-         <obj_property name="ElementShortName">wen</obj_property>
-         <obj_property name="ObjectShortName">wen</obj_property>
-      </wvobject>
-      <wvobject type="array" fp_name="/tcb_uart_tb/bus/adr">
-         <obj_property name="ElementShortName">adr[31:0]</obj_property>
-         <obj_property name="ObjectShortName">adr[31:0]</obj_property>
-      </wvobject>
-      <wvobject type="array" fp_name="/tcb_uart_tb/bus/wdt">
-         <obj_property name="ElementShortName">wdt[31:0]</obj_property>
-         <obj_property name="ObjectShortName">wdt[31:0]</obj_property>
-      </wvobject>
-      <wvobject type="array" fp_name="/tcb_uart_tb/bus/rdt">
-         <obj_property name="ElementShortName">rdt[31:0]</obj_property>
-         <obj_property name="ObjectShortName">rdt[31:0]</obj_property>
-      </wvobject>
-      <wvobject type="logic" fp_name="/tcb_uart_tb/bus/err">
-         <obj_property name="ElementShortName">err</obj_property>
-         <obj_property name="ObjectShortName">err</obj_property>
-      </wvobject>
-      <wvobject type="logic" fp_name="/tcb_uart_tb/bus/rdy">
-         <obj_property name="ElementShortName">rdy</obj_property>
-         <obj_property name="ObjectShortName">rdy</obj_property>
-      </wvobject>
-      <wvobject type="logic" fp_name="/tcb_uart_tb/bus/trn">
-         <obj_property name="ElementShortName">trn</obj_property>
-         <obj_property name="ObjectShortName">trn</obj_property>
-      </wvobject>
-      <wvobject type="logic" fp_name="/tcb_uart_tb/bus/idl">
-         <obj_property name="ElementShortName">idl</obj_property>
-         <obj_property name="ObjectShortName">idl</obj_property>
-      </wvobject>
-      <wvobject type="logic" fp_name="/tcb_uart_tb/bus/rsp">
-         <obj_property name="ElementShortName">rsp</obj_property>
-         <obj_property name="ObjectShortName">rsp</obj_property>
-      </wvobject>
-      <wvobject type="array" fp_name="/tcb_uart_tb/bus/ben">
-         <obj_property name="ElementShortName">ben[3:0]</obj_property>
-         <obj_property name="ObjectShortName">ben[3:0]</obj_property>
-      </wvobject>
-   </wvobject>
-   <wvobject type="logic" fp_name="/tcb_uart_tb/clk">
-      <obj_property name="ElementShortName">clk</obj_property>
-      <obj_property name="ObjectShortName">clk</obj_property>
-   </wvobject>
-   <wvobject type="logic" fp_name="/tcb_uart_tb/rst">
-      <obj_property name="ElementShortName">rst</obj_property>
-      <obj_property name="ObjectShortName">rst</obj_property>
+   <wvobject type="logic" fp_name="/tcb_uart_tb/uart/uart_rxd">
+      <obj_property name="ElementShortName">uart_rxd</obj_property>
+      <obj_property name="ObjectShortName">uart_rxd</obj_property>
    </wvobject>
    <wvobject type="logic" fp_name="/tcb_uart_tb/uart/uart_txd">
       <obj_property name="ElementShortName">uart_txd</obj_property>
       <obj_property name="ObjectShortName">uart_txd</obj_property>
    </wvobject>
-   <wvobject type="logic" fp_name="/tcb_uart_tb/uart/uart_rxd">
-      <obj_property name="ElementShortName">uart_rxd</obj_property>
-      <obj_property name="ObjectShortName">uart_rxd</obj_property>
+   <wvobject type="logic" fp_name="/tcb_uart_tb/uart/irq_tx">
+      <obj_property name="ElementShortName">irq_tx</obj_property>
+      <obj_property name="ObjectShortName">irq_tx</obj_property>
    </wvobject>
-   <wvobject type="array" fp_name="/tcb_uart_tb/uart/tx_sts_cnt">
-      <obj_property name="ElementShortName">tx_sts_cnt[5:0]</obj_property>
-      <obj_property name="ObjectShortName">tx_sts_cnt[5:0]</obj_property>
-   </wvobject>
-   <wvobject type="logic" fp_name="/tcb_uart_tb/uart/tx_str_vld">
-      <obj_property name="ElementShortName">tx_str_vld</obj_property>
-      <obj_property name="ObjectShortName">tx_str_vld</obj_property>
-   </wvobject>
-   <wvobject type="logic" fp_name="/tcb_uart_tb/uart/tx_str_rdy">
-      <obj_property name="ElementShortName">tx_str_rdy</obj_property>
-      <obj_property name="ObjectShortName">tx_str_rdy</obj_property>
-   </wvobject>
-   <wvobject type="array" fp_name="/tcb_uart_tb/uart/tx_str_dat">
-      <obj_property name="ElementShortName">tx_str_dat[7:0]</obj_property>
-      <obj_property name="ObjectShortName">tx_str_dat[7:0]</obj_property>
-   </wvobject>
-   <wvobject type="array" fp_name="/tcb_uart_tb/uart/tx_cfg_irq">
-      <obj_property name="ElementShortName">tx_cfg_irq[5:0]</obj_property>
-      <obj_property name="ObjectShortName">tx_cfg_irq[5:0]</obj_property>
+   <wvobject type="logic" fp_name="/tcb_uart_tb/uart/irq_rx">
+      <obj_property name="ElementShortName">irq_rx</obj_property>
+      <obj_property name="ObjectShortName">irq_rx</obj_property>
    </wvobject>
    <wvobject type="array" fp_name="/tcb_uart_tb/uart/tx_cfg_bdr">
       <obj_property name="ElementShortName">tx_cfg_bdr[7:0]</obj_property>
       <obj_property name="ObjectShortName">tx_cfg_bdr[7:0]</obj_property>
-   </wvobject>
-   <wvobject type="logic" fp_name="/tcb_uart_tb/uart/tx_bus_vld">
-      <obj_property name="ElementShortName">tx_bus_vld</obj_property>
-      <obj_property name="ObjectShortName">tx_bus_vld</obj_property>
-   </wvobject>
-   <wvobject type="logic" fp_name="/tcb_uart_tb/uart/tx_bus_rdy">
-      <obj_property name="ElementShortName">tx_bus_rdy</obj_property>
-      <obj_property name="ObjectShortName">tx_bus_rdy</obj_property>
-   </wvobject>
-   <wvobject type="array" fp_name="/tcb_uart_tb/uart/tx_bus_dat">
-      <obj_property name="ElementShortName">tx_bus_dat[7:0]</obj_property>
-      <obj_property name="ObjectShortName">tx_bus_dat[7:0]</obj_property>
-   </wvobject>
-   <wvobject type="array" fp_name="/tcb_uart_tb/uart/rx_sts_cnt">
-      <obj_property name="ElementShortName">rx_sts_cnt[5:0]</obj_property>
-      <obj_property name="ObjectShortName">rx_sts_cnt[5:0]</obj_property>
-   </wvobject>
-   <wvobject type="logic" fp_name="/tcb_uart_tb/uart/rx_str_vld">
-      <obj_property name="ElementShortName">rx_str_vld</obj_property>
-      <obj_property name="ObjectShortName">rx_str_vld</obj_property>
-   </wvobject>
-   <wvobject type="logic" fp_name="/tcb_uart_tb/uart/rx_str_rdy">
-      <obj_property name="ElementShortName">rx_str_rdy</obj_property>
-      <obj_property name="ObjectShortName">rx_str_rdy</obj_property>
-   </wvobject>
-   <wvobject type="array" fp_name="/tcb_uart_tb/uart/rx_str_dat">
-      <obj_property name="ElementShortName">rx_str_dat[7:0]</obj_property>
-      <obj_property name="ObjectShortName">rx_str_dat[7:0]</obj_property>
    </wvobject>
    <wvobject type="array" fp_name="/tcb_uart_tb/uart/rx_cfg_bdr">
       <obj_property name="ElementShortName">rx_cfg_bdr[7:0]</obj_property>
@@ -157,150 +52,132 @@
       <obj_property name="ElementShortName">rx_cfg_smp[7:0]</obj_property>
       <obj_property name="ObjectShortName">rx_cfg_smp[7:0]</obj_property>
    </wvobject>
+   <wvobject type="array" fp_name="/tcb_uart_tb/uart/tx_sts_cnt">
+      <obj_property name="ElementShortName">tx_sts_cnt[5:0]</obj_property>
+      <obj_property name="ObjectShortName">tx_sts_cnt[5:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/tcb_uart_tb/uart/rx_sts_cnt">
+      <obj_property name="ElementShortName">rx_sts_cnt[5:0]</obj_property>
+      <obj_property name="ObjectShortName">rx_sts_cnt[5:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/tcb_uart_tb/uart/tx_cfg_irq">
+      <obj_property name="ElementShortName">tx_cfg_irq[5:0]</obj_property>
+      <obj_property name="ObjectShortName">tx_cfg_irq[5:0]</obj_property>
+   </wvobject>
    <wvobject type="array" fp_name="/tcb_uart_tb/uart/rx_cfg_irq">
       <obj_property name="ElementShortName">rx_cfg_irq[5:0]</obj_property>
       <obj_property name="ObjectShortName">rx_cfg_irq[5:0]</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/tcb_uart_tb/uart/tx_bus_vld">
+      <obj_property name="ElementShortName">tx_bus_vld</obj_property>
+      <obj_property name="ObjectShortName">tx_bus_vld</obj_property>
    </wvobject>
    <wvobject type="logic" fp_name="/tcb_uart_tb/uart/rx_bus_vld">
       <obj_property name="ElementShortName">rx_bus_vld</obj_property>
       <obj_property name="ObjectShortName">rx_bus_vld</obj_property>
    </wvobject>
-   <wvobject type="logic" fp_name="/tcb_uart_tb/uart/rx_bus_rdy">
-      <obj_property name="ElementShortName">rx_bus_rdy</obj_property>
-      <obj_property name="ObjectShortName">rx_bus_rdy</obj_property>
+   <wvobject type="array" fp_name="/tcb_uart_tb/uart/tx_bus_dat">
+      <obj_property name="ElementShortName">tx_bus_dat[7:0]</obj_property>
+      <obj_property name="ObjectShortName">tx_bus_dat[7:0]</obj_property>
    </wvobject>
    <wvobject type="array" fp_name="/tcb_uart_tb/uart/rx_bus_dat">
       <obj_property name="ElementShortName">rx_bus_dat[7:0]</obj_property>
       <obj_property name="ObjectShortName">rx_bus_dat[7:0]</obj_property>
    </wvobject>
-   <wvobject type="group" fp_name="group672">
-      <obj_property name="label">TX ser</obj_property>
-      <obj_property name="DisplayName">label</obj_property>
-      <obj_property name="isExpanded"></obj_property>
-      <wvobject type="logic" fp_name="/tcb_uart_tb/uart/tx_ser/clk">
-         <obj_property name="ElementShortName">clk</obj_property>
-         <obj_property name="ObjectShortName">clk</obj_property>
-      </wvobject>
-      <wvobject type="logic" fp_name="/tcb_uart_tb/uart/tx_ser/rst">
-         <obj_property name="ElementShortName">rst</obj_property>
-         <obj_property name="ObjectShortName">rst</obj_property>
-      </wvobject>
-      <wvobject type="array" fp_name="/tcb_uart_tb/uart/tx_ser/cfg_bdr">
-         <obj_property name="ElementShortName">cfg_bdr[7:0]</obj_property>
-         <obj_property name="ObjectShortName">cfg_bdr[7:0]</obj_property>
-      </wvobject>
-      <wvobject type="logic" fp_name="/tcb_uart_tb/uart/tx_ser/str_vld">
-         <obj_property name="ElementShortName">str_vld</obj_property>
-         <obj_property name="ObjectShortName">str_vld</obj_property>
-      </wvobject>
-      <wvobject type="array" fp_name="/tcb_uart_tb/uart/tx_ser/str_dat">
-         <obj_property name="ElementShortName">str_dat[7:0]</obj_property>
-         <obj_property name="ObjectShortName">str_dat[7:0]</obj_property>
-      </wvobject>
-      <wvobject type="logic" fp_name="/tcb_uart_tb/uart/tx_ser/str_rdy">
-         <obj_property name="ElementShortName">str_rdy</obj_property>
-         <obj_property name="ObjectShortName">str_rdy</obj_property>
-      </wvobject>
-      <wvobject type="logic" fp_name="/tcb_uart_tb/uart/tx_ser/txd">
-         <obj_property name="ElementShortName">txd</obj_property>
-         <obj_property name="ObjectShortName">txd</obj_property>
-      </wvobject>
-      <wvobject type="logic" fp_name="/tcb_uart_tb/uart/tx_ser/str_trn">
-         <obj_property name="ElementShortName">str_trn</obj_property>
-         <obj_property name="ObjectShortName">str_trn</obj_property>
-      </wvobject>
-      <wvobject type="array" fp_name="/tcb_uart_tb/uart/tx_ser/bdr_cnt">
-         <obj_property name="ElementShortName">bdr_cnt[7:0]</obj_property>
-         <obj_property name="ObjectShortName">bdr_cnt[7:0]</obj_property>
-      </wvobject>
-      <wvobject type="logic" fp_name="/tcb_uart_tb/uart/tx_ser/bdr_end">
-         <obj_property name="ElementShortName">bdr_end</obj_property>
-         <obj_property name="ObjectShortName">bdr_end</obj_property>
-      </wvobject>
-      <wvobject type="array" fp_name="/tcb_uart_tb/uart/tx_ser/shf_cnt">
-         <obj_property name="ElementShortName">shf_cnt[3:0]</obj_property>
-         <obj_property name="ObjectShortName">shf_cnt[3:0]</obj_property>
-      </wvobject>
-      <wvobject type="logic" fp_name="/tcb_uart_tb/uart/tx_ser/shf_end">
-         <obj_property name="ElementShortName">shf_end</obj_property>
-         <obj_property name="ObjectShortName">shf_end</obj_property>
-      </wvobject>
-      <wvobject type="logic" fp_name="/tcb_uart_tb/uart/tx_ser/shf_run">
-         <obj_property name="ElementShortName">shf_run</obj_property>
-         <obj_property name="ObjectShortName">shf_run</obj_property>
-      </wvobject>
-      <wvobject type="array" fp_name="/tcb_uart_tb/uart/tx_ser/shf_dat">
-         <obj_property name="ElementShortName">shf_dat[8:0]</obj_property>
-         <obj_property name="ObjectShortName">shf_dat[8:0]</obj_property>
-      </wvobject>
+   <wvobject type="logic" fp_name="/tcb_uart_tb/uart/tx_bus_rdy">
+      <obj_property name="ElementShortName">tx_bus_rdy</obj_property>
+      <obj_property name="ObjectShortName">tx_bus_rdy</obj_property>
    </wvobject>
-   <wvobject type="group" fp_name="group75">
-      <obj_property name="label">RX des</obj_property>
-      <obj_property name="DisplayName">label</obj_property>
-      <obj_property name="isExpanded"></obj_property>
-      <wvobject type="logic" fp_name="/tcb_uart_tb/uart/rx_des/clk">
-         <obj_property name="ElementShortName">clk</obj_property>
-         <obj_property name="ObjectShortName">clk</obj_property>
-      </wvobject>
-      <wvobject type="logic" fp_name="/tcb_uart_tb/uart/rx_des/rst">
-         <obj_property name="ElementShortName">rst</obj_property>
-         <obj_property name="ObjectShortName">rst</obj_property>
-      </wvobject>
-      <wvobject type="logic" fp_name="/tcb_uart_tb/uart/rx_des/rxd">
-         <obj_property name="ElementShortName">rxd</obj_property>
-         <obj_property name="ObjectShortName">rxd</obj_property>
-      </wvobject>
-      <wvobject type="logic" fp_name="/tcb_uart_tb/uart/rx_des/rxd_dly">
-         <obj_property name="ElementShortName">rxd_dly</obj_property>
-         <obj_property name="ObjectShortName">rxd_dly</obj_property>
-      </wvobject>
-      <wvobject type="logic" fp_name="/tcb_uart_tb/uart/rx_des/rxd_edg">
-         <obj_property name="ElementShortName">rxd_edg</obj_property>
-         <obj_property name="ObjectShortName">rxd_edg</obj_property>
-      </wvobject>
-      <wvobject type="logic" fp_name="/tcb_uart_tb/uart/rx_des/bdr_end">
-         <obj_property name="ElementShortName">bdr_end</obj_property>
-         <obj_property name="ObjectShortName">bdr_end</obj_property>
-      </wvobject>
-      <wvobject type="logic" fp_name="/tcb_uart_tb/uart/rx_des/bdr_smp">
-         <obj_property name="ElementShortName">bdr_smp</obj_property>
-         <obj_property name="ObjectShortName">bdr_smp</obj_property>
-      </wvobject>
-      <wvobject type="logic" fp_name="/tcb_uart_tb/uart/rx_des/shf_run">
-         <obj_property name="ElementShortName">shf_run</obj_property>
-         <obj_property name="ObjectShortName">shf_run</obj_property>
-      </wvobject>
-      <wvobject type="array" fp_name="/tcb_uart_tb/uart/rx_des/bdr_cnt">
-         <obj_property name="ElementShortName">bdr_cnt[7:0]</obj_property>
-         <obj_property name="ObjectShortName">bdr_cnt[7:0]</obj_property>
-      </wvobject>
-      <wvobject type="array" fp_name="/tcb_uart_tb/uart/rx_des/shf_cnt">
-         <obj_property name="ElementShortName">shf_cnt[3:0]</obj_property>
-         <obj_property name="ObjectShortName">shf_cnt[3:0]</obj_property>
-      </wvobject>
-      <wvobject type="logic" fp_name="/tcb_uart_tb/uart/rx_des/shf_end">
-         <obj_property name="ElementShortName">shf_end</obj_property>
-         <obj_property name="ObjectShortName">shf_end</obj_property>
-      </wvobject>
-      <wvobject type="array" fp_name="/tcb_uart_tb/uart/rx_des/shf_dat">
-         <obj_property name="ElementShortName">shf_dat[8:0]</obj_property>
-         <obj_property name="ObjectShortName">shf_dat[8:0]</obj_property>
-      </wvobject>
-      <wvobject type="array" fp_name="/tcb_uart_tb/uart/rx_des/cfg_smp">
-         <obj_property name="ElementShortName">cfg_smp[7:0]</obj_property>
-         <obj_property name="ObjectShortName">cfg_smp[7:0]</obj_property>
-      </wvobject>
-      <wvobject type="array" fp_name="/tcb_uart_tb/uart/rx_des/cfg_bdr">
-         <obj_property name="ElementShortName">cfg_bdr[7:0]</obj_property>
-         <obj_property name="ObjectShortName">cfg_bdr[7:0]</obj_property>
-      </wvobject>
-      <wvobject type="logic" fp_name="/tcb_uart_tb/uart/rx_des/str_vld">
-         <obj_property name="ElementShortName">str_vld</obj_property>
-         <obj_property name="ObjectShortName">str_vld</obj_property>
-      </wvobject>
-      <wvobject type="array" fp_name="/tcb_uart_tb/uart/rx_des/str_dat">
-         <obj_property name="ElementShortName">str_dat[7:0]</obj_property>
-         <obj_property name="ObjectShortName">str_dat[7:0]</obj_property>
-      </wvobject>
+   <wvobject type="logic" fp_name="/tcb_uart_tb/uart/rx_bus_rdy">
+      <obj_property name="ElementShortName">rx_bus_rdy</obj_property>
+      <obj_property name="ObjectShortName">rx_bus_rdy</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/tcb_uart_tb/uart/tx_str_vld">
+      <obj_property name="ElementShortName">tx_str_vld</obj_property>
+      <obj_property name="ObjectShortName">tx_str_vld</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/tcb_uart_tb/uart/rx_str_vld">
+      <obj_property name="ElementShortName">rx_str_vld</obj_property>
+      <obj_property name="ObjectShortName">rx_str_vld</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/tcb_uart_tb/uart/tx_str_dat">
+      <obj_property name="ElementShortName">tx_str_dat[7:0]</obj_property>
+      <obj_property name="ObjectShortName">tx_str_dat[7:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/tcb_uart_tb/uart/rx_str_dat">
+      <obj_property name="ElementShortName">rx_str_dat[7:0]</obj_property>
+      <obj_property name="ObjectShortName">rx_str_dat[7:0]</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/tcb_uart_tb/uart/tx_str_rdy">
+      <obj_property name="ElementShortName">tx_str_rdy</obj_property>
+      <obj_property name="ObjectShortName">tx_str_rdy</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/tcb_uart_tb/uart/rx_str_rdy">
+      <obj_property name="ElementShortName">rx_str_rdy</obj_property>
+      <obj_property name="ObjectShortName">rx_str_rdy</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/tcb_uart_tb/uart/bus_rdt">
+      <obj_property name="ElementShortName">bus_rdt[31:0]</obj_property>
+      <obj_property name="ObjectShortName">bus_rdt[31:0]</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/tcb_uart_tb/bus/clk">
+      <obj_property name="ElementShortName">clk</obj_property>
+      <obj_property name="ObjectShortName">clk</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/tcb_uart_tb/bus/rst">
+      <obj_property name="ElementShortName">rst</obj_property>
+      <obj_property name="ObjectShortName">rst</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/tcb_uart_tb/bus/vld">
+      <obj_property name="ElementShortName">vld</obj_property>
+      <obj_property name="ObjectShortName">vld</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/tcb_uart_tb/bus/wen">
+      <obj_property name="ElementShortName">wen</obj_property>
+      <obj_property name="ObjectShortName">wen</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/tcb_uart_tb/bus/adr">
+      <obj_property name="ElementShortName">adr[31:0]</obj_property>
+      <obj_property name="ObjectShortName">adr[31:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/tcb_uart_tb/bus/ben">
+      <obj_property name="ElementShortName">ben[3:0]</obj_property>
+      <obj_property name="ObjectShortName">ben[3:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/tcb_uart_tb/bus/wdt">
+      <obj_property name="ElementShortName">wdt[31:0]</obj_property>
+      <obj_property name="ObjectShortName">wdt[31:0]</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/tcb_uart_tb/bus/lck">
+      <obj_property name="ElementShortName">lck</obj_property>
+      <obj_property name="ObjectShortName">lck</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/tcb_uart_tb/bus/rpt">
+      <obj_property name="ElementShortName">rpt</obj_property>
+      <obj_property name="ObjectShortName">rpt</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/tcb_uart_tb/bus/rdt">
+      <obj_property name="ElementShortName">rdt[31:0]</obj_property>
+      <obj_property name="ObjectShortName">rdt[31:0]</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/tcb_uart_tb/bus/err">
+      <obj_property name="ElementShortName">err</obj_property>
+      <obj_property name="ObjectShortName">err</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/tcb_uart_tb/bus/rdy">
+      <obj_property name="ElementShortName">rdy</obj_property>
+      <obj_property name="ObjectShortName">rdy</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/tcb_uart_tb/bus/trn">
+      <obj_property name="ElementShortName">trn</obj_property>
+      <obj_property name="ObjectShortName">trn</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/tcb_uart_tb/bus/idl">
+      <obj_property name="ElementShortName">idl</obj_property>
+      <obj_property name="ObjectShortName">idl</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/tcb_uart_tb/bus/rsp">
+      <obj_property name="ElementShortName">rsp</obj_property>
+      <obj_property name="ObjectShortName">rsp</obj_property>
    </wvobject>
 </wave_config>
