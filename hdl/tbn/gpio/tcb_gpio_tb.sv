@@ -69,17 +69,17 @@ module tcb_gpio_tb
 
     // read GPIO input status
     man.read('h08, 4'b1111, rdt, err);  // read input register
-    if (rdt != GW'('hxxxxxxxx))  $display("ERROR: readout error rdt=%8h, ref=%8h", rdt, GW'('hxxxxxxxx));
+    if (GW'(rdt) != GW'('hxxxxxxxx))  $display("ERROR: readout error rdt=%8h, ref=%8h", rdt, GW'('hxxxxxxxx));
 
     gpio_i <= GW'('h89abcdef);
     repeat (2) @(posedge clk);
     man.read('h08, 4'b1111, rdt, err);  // read input register
-    if (rdt != GW'('h89abcdef))  $display("ERROR: readout error rdt=%8h, ref=%8h", rdt, GW'('h89abcdef));
+    if (GW'(rdt) != GW'('h89abcdef))  $display("ERROR: readout error rdt=%8h, ref=%8h", rdt, GW'('h89abcdef));
 
     gpio_i <= GW'('hfedcba98);
     repeat (2) @(posedge clk);
     man.read('h08, 4'b1111, rdt, err);  // read input register
-    if (rdt != GW'('hfedcba98))  $display("ERROR: readout error rdt=%8h, ref=%8h", rdt, GW'('hfedcba98));
+    if (GW'(rdt) != GW'('hfedcba98))  $display("ERROR: readout error rdt=%8h, ref=%8h", rdt, GW'('hfedcba98));
 
     repeat (2) @(posedge clk);
     $finish();

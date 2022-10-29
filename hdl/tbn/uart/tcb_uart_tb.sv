@@ -29,6 +29,12 @@ module tcb_uart_tb
 
   // UART data width
   localparam int unsigned UDW = 8;
+ 
+  // TX string
+  localparam string str_tx = "Hello, World!";
+  localparam int    str_len = str_tx.len();
+  // RX string
+  byte str_rx [str_len];
 
   // system signals
   logic clk;  // clock
@@ -66,25 +72,37 @@ module tcb_uart_tb
     rst <= 1'b0;
     repeat (1) @(posedge clk);
     // write configuration
-    man.write('h08, 4'b1111, 32'h00000003, err);  // TX baudrate (4)
-//    $finish();
-    man.write('h28, 4'b1111, 32'h00000003, err);  // RX baudrate (4)
-    man.write('h2C, 4'b1111, 32'h00000001, err);  // RX sample   (2)
+    man.write('h08, 4'b1111, 32'h00000003, err);  // TX baudrate  (4)
+    man.write('h28, 4'b1111, 32'h00000003, err);  // RX baudrate  (4)
+    man.write('h2C, 4'b1111, 32'h00000001, err);  // RX sample    (2)
+    man.write('h30, 4'b1111, 32'(str_len-1), err);  // RX IRQ level
     // write TX data
-    man.write('h00, 4'b1111, 32'h000000A5, err);  // TX data
-    man.write('h00, 4'b1111, 32'h0000005A, err);  // TX data
+    for (int unsigned i=0; i<str_len; i++) begin
+      man.write('h00, 4'b1111, 32'(str_tx[i]), err);
+    end
+    // wait for RX IRQ
+    do begin
+      @(posedge clk);
+    end while (!irq_rx);
+    // read RX data
+    for (int unsigned i=0; i<str_len; i++) begin
+      man.read('h20, 4'b1111, rdt, err);
+      str_rx[i] = rdt[UDW-1:0];
+    end
+    if (string'(str_rx) != str_tx)  $display("ERROR: RX '%s' differs from TX '%s'", str_rx, str_tx);
     // end simulation
-    repeat (200) @(posedge clk);
+    repeat (4) @(posedge clk);
     $finish();
   end
 
   // timeout
   initial
   begin
-    repeat (50) @(posedge clk);
+    repeat (300) @(posedge clk);
     $finish();
   end
 
+  // TCB manager model
   tcb_man #(
     // bus widths
     .AW   (AW),
@@ -95,6 +113,7 @@ module tcb_uart_tb
     .bus  (bus)
   );
 
+  // TCB UART DUT
   tcb_uart #(
     .DW      (UDW)
   ) uart (
