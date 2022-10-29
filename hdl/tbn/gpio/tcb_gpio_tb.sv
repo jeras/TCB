@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// R5P testbench for core module
+// TCB GPIO testbench
 ////////////////////////////////////////////////////////////////////////////////
 // Copyright 2022 Iztok Jeras
 //
@@ -17,7 +17,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 module tcb_gpio_tb
-  import tcb_pkg::*;
+  import tcb_vip_pkg::*;
 #(
   // bus widths
   int unsigned AW = 32,    // address width
@@ -85,7 +85,7 @@ module tcb_gpio_tb
     $finish();
   end
 
-  tcb_man #(
+  tcb_vip_man #(
     // bus widths
     .AW   (AW),
     .DW   (DW),

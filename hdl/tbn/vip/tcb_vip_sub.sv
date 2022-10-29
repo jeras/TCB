@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// TCB: Tightly Coupled Bus subordinate
+// TCB: Tightly Coupled Bus VIP subordinate
 ////////////////////////////////////////////////////////////////////////////////
 // Copyright 2022 Iztok Jeras
 //
@@ -16,8 +16,8 @@
 // limitations under the License.
 ////////////////////////////////////////////////////////////////////////////////
 
-module tcb_sub
-  import tcb_pkg::*;
+module tcb_vip_sub
+  import tcb_vip_pkg::*;
 #(
   // bus widths
   int unsigned AW = 32,     // address     width
@@ -116,4 +116,4 @@ endgenerate
   end
   endgenerate
 
-endmodule: tcb_sub
+endmodule: tcb_vip_sub

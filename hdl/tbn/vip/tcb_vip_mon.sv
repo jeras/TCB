@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// TCB: Tightly Coupled Bus monitor
+// TCB: Tightly Coupled Bus VIP monitor
 ////////////////////////////////////////////////////////////////////////////////
 // Copyright 2022 Iztok Jeras
 //
@@ -16,7 +16,9 @@
 // limitations under the License.
 ////////////////////////////////////////////////////////////////////////////////
 
-module tcb_mon #(
+module tcb_vip_mon
+  import tcb_vip_pkg::*;
+#(
   string NAME = ""
 )(
   // system bus
@@ -44,6 +46,8 @@ if (bus.rst) begin
   dly.adr <= 'x;
   dly.ben <= 'x;
   dly.wdt <= 'x;
+  dly.lck <= 'x;
+  dly.rpt <= 'x;
   dly.rdt <= 'x;
   dly.err <= 'x;
   dly.rdy <= 'x;
@@ -53,6 +57,8 @@ end else begin
   dly.adr <= bus.adr;
   dly.ben <= bus.ben;
   dly.wdt <= bus.wdt;
+  dly.lck <= bus.lck;
+  dly.rpt <= bus.rpt;
   dly.rdt <= bus.rdt;
   dly.err <= bus.err;
   dly.rdy <= bus.rdy;
@@ -95,4 +101,5 @@ end
 ////////////////////////////////////////////////////////////////////////////////
 
 // TODO add delay counter, statistics
-endmodule: tcb_mon
+
+endmodule: tcb_vip_mon

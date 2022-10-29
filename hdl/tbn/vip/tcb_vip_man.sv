@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// TCB: Tightly Coupled Bus manager
+// TCB: Tightly Coupled Bus VIP manager
 ////////////////////////////////////////////////////////////////////////////////
 // Copyright 2022 Iztok Jeras
 //
@@ -16,8 +16,8 @@
 // limitations under the License.
 ////////////////////////////////////////////////////////////////////////////////
 
-module tcb_man
-  import tcb_pkg::*;
+module tcb_vip_man
+  import tcb_vip_pkg::*;
 #(
   // bus widths
   int unsigned AW = 32,     // address     width
@@ -161,4 +161,4 @@ endgenerate
 // read16
 // read8
 
-endmodule: tcb_man
+endmodule: tcb_vip_man

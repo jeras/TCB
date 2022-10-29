@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// R5P testbench for core module
+// TCB: Tightly Coupled Bus VIP manager/monitor/subordinate testbench
 ////////////////////////////////////////////////////////////////////////////////
 // Copyright 2022 Iztok Jeras
 //
@@ -16,8 +16,8 @@
 // limitations under the License.
 ////////////////////////////////////////////////////////////////////////////////
 
-module tcb_tb
-  import tcb_pkg::*;
+module tcb_vip_tb
+  import tcb_vip_pkg::*;
 #(
   // bus widths
   int unsigned AW = 32,     // address   width
@@ -79,7 +79,7 @@ module tcb_tb
     $finish();
   end
 
-  tcb_man #(
+  tcb_vip_man #(
     // bus widths
     .AW   (AW),
     .DW   (DW),
@@ -89,7 +89,7 @@ module tcb_tb
     .bus  (bus)
   );
 
-  tcb_sub #(
+  tcb_vip_sub #(
     // bus widths
     .AW   (AW),
     .DW   (DW),
@@ -109,4 +109,4 @@ module tcb_tb
     $dumpvars;
   end
 
-endmodule: tcb_tb
+endmodule: tcb_vip_tb

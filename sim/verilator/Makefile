@@ -28,11 +28,11 @@ RTL+=${PATH_HDL}/rtl/uart/tcb_uart_fifo.sv
 RTL+=${PATH_HDL}/rtl/uart/tcb_uart.sv
 
 # SystemVerilog testbench
-TSV+=${PATH_HDL}/tbn/tcb_pkg.sv
-TSV+=${PATH_HDL}/tbn/tcb_mon.sv
-TSV+=${PATH_HDL}/tbn/tcb_sub.sv
-TSV+=${PATH_HDL}/tbn/tcb_man.sv
-TSV+=${PATH_HDL}/tbn/tcb_tb.sv
+TSV+=${PATH_HDL}/tbn/vip/tcb_vip_pkg.sv
+TSV+=${PATH_HDL}/tbn/vip/tcb_vip_mon.sv
+TSV+=${PATH_HDL}/tbn/vip/tcb_vip_sub.sv
+TSV+=${PATH_HDL}/tbn/vip/tcb_vip_man.sv
+TSV+=${PATH_HDL}/tbn/vip/tcb_vip_tb.sv
 ## GPIO testbench
 TSV+=${PATH_HDL}/tbn/gpio/tcb_gpio_tb.sv
 ## UART testbench
