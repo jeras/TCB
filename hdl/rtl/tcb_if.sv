@@ -34,15 +34,20 @@ interface tcb_if #(
 // I/O ports
 ////////////////////////////////////////////////////////////////////////////////
 
+  // handshake
   logic          vld;  // handshake valid
-  logic          lck;  // arbitration lock
-  logic          rpt;  // repeat access
+  // request
   logic          wen;  // write enable
   logic [AW-1:0] adr;  // address
   logic [BW-1:0] ben;  // byte enable
   logic [DW-1:0] wdt;  // write data
+  // request optional
+  logic          lck;  // arbitration lock
+  logic          rpt;  // repeat access
+  // response
   logic [DW-1:0] rdt;  // read data
   logic          err;  // error response
+  // handshake
   logic          rdy;  // handshake ready
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -57,9 +62,9 @@ interface tcb_if #(
   assign trn = vld & rdy;
 
   // TODO: improve description
-  // idle (either not valid or ending a cycle with a transfer)
+  // idle (either not valid or currently ending a cycle with a transfer)
   assign idl = ~vld | trn;
-  
+
   // response valid (DLY clock periods after transfer)
   generate
   if (DLY == 0) begin: gen_rsp
@@ -69,15 +74,21 @@ interface tcb_if #(
   else begin: gen_dly
     if (DLY == 1) begin: gen_rsp
       always @(posedge clk, posedge rst)
-      if (rst)  rsp <= 1'b0;
-      else      rsp <= trn & ~wen;
+      if (rst) begin
+        rsp <= 1'b0;
+      end else begin
+        rsp <= trn;
+      end
     end: gen_rsp
     else begin: gen_dly
       logic [DLY-1:0] que;
       assign rsp = que[DLY-1];
       always @(posedge clk, posedge rst)
-      if (rst)  que <= '0;
-      else      que <= {que[DLY-2:0], trn & ~wen};
+      if (rst) begin
+        que <= '0;
+      end else begin
+        que <= {que[DLY-2:0], trn};
+      end
     end: gen_dly
   end: gen_dly
   endgenerate
@@ -97,6 +108,8 @@ interface tcb_if #(
     output adr,
     output ben,
     output wdt,
+    output lck,
+    output rpt,
     input  rdt,
     input  err,
     input  rdy,
@@ -117,6 +130,8 @@ interface tcb_if #(
     input  adr,
     input  ben,
     input  wdt,
+    input  lck,
+    input  rpt,
     input  rdt,
     input  err,
     input  rdy,
@@ -137,6 +152,8 @@ interface tcb_if #(
     input  adr,
     input  ben,
     input  wdt,
+    input  lck,
+    input  rpt,
     output rdt,
     output err,
     output rdy,
