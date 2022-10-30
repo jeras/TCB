@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// TCB error subordinate
+// TCB (Tightly Coupled Bus) interCONnect ERRor subordinate
 ////////////////////////////////////////////////////////////////////////////////
 // Copyright 2022 Iztok Jeras
 //
@@ -16,7 +16,7 @@
 // limitations under the License.
 ////////////////////////////////////////////////////////////////////////////////
 
-module tcb_err #(
+module tcb_con_err #(
   // response delay
   int unsigned DLY = 1
 )(
@@ -46,6 +46,6 @@ assign bus.rdy = 1'b1;
 assign bus.rdt = 'x;
 
 // the response is always an error
-assign bus.err = 1'b0;
+assign bus.err = 1'b1;
 
-endmodule: tcb_err
+endmodule: tcb_con_err

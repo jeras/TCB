@@ -14,11 +14,13 @@ PATH_HDL=../../hdl
 
 # SystemVerilog RTL
 RTL+=${PATH_HDL}/rtl/tcb_if.sv
-RTL+=${PATH_HDL}/rtl/tcb_pas.sv
-RTL+=${PATH_HDL}/rtl/tcb_arb.sv
-RTL+=${PATH_HDL}/rtl/tcb_dec.sv
-RTL+=${PATH_HDL}/rtl/tcb_reg.sv
-RTL+=${PATH_HDL}/rtl/tcb_err.sv
+RTL+=${PATH_HDL}/rtl/con/tcb_con_pas.sv
+RTL+=${PATH_HDL}/rtl/con/tcb_con_arb.sv
+RTL+=${PATH_HDL}/rtl/con/tcb_con_mux.sv
+RTL+=${PATH_HDL}/rtl/con/tcb_con_dec.sv
+RTL+=${PATH_HDL}/rtl/con/tcb_con_dmx.sv
+RTL+=${PATH_HDL}/rtl/con/tcb_con_reg.sv
+RTL+=${PATH_HDL}/rtl/con/tcb_con_err.sv
 # GPIO RTL
 RTL+=${PATH_HDL}/rtl/gpio/tcb_gpio.sv
 # UART RTL

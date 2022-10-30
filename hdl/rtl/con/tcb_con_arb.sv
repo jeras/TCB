@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// TCB: Tightly Coupled Bus passthrough
+// TCB (Tightly Coupled Bus) interCONnect ARBiter
 ////////////////////////////////////////////////////////////////////////////////
 // Copyright 2022 Iztok Jeras
 //
@@ -16,37 +16,49 @@
 // limitations under the License.
 ////////////////////////////////////////////////////////////////////////////////
 
-module tcb_pas (
-  tcb_if.sub sub,  // TCB subordinate port (manager     device connects here)
-  tcb_if.man man   // TCB manager     port (subordinate device connects here)
+module tcb_con_arb #(
+  // interconnect parameters
+  int unsigned PN = 2,  // port number
+  localparam   PL = $clog2(PN),
+  // arbitration priority mode
+  string       MD = "FX",  // "FX" - fixed priority
+                           // "RR" - round robin (TODO)
+  // port priorities (lower number is higher priority)
+  int unsigned PRI [0:PN-1] = '{0, 1}
+)(
+  // TCB interfaces
+  tcb_if.sub sub[PN-1:0],  // TCB subordinate ports (manager devices connect here)
+  // control
+  output logic [PL-1:0] sel   // select
 );
 
 ////////////////////////////////////////////////////////////////////////////////
 // parameter validation
 ////////////////////////////////////////////////////////////////////////////////
 
-// camparing subordinate and manager interface parameters
-if (sub.AW  != man.AW )  $error("ERROR: %m parameter AW  validation failed");
-if (sub.DW  != man.DW )  $error("ERROR: %m parameter DW  validation failed");
-if (sub.BW  != man.BW )  $error("ERROR: %m parameter SW  validation failed");
-if (sub.DLY != man.DLY)  $error("ERROR: %m parameter DLY validation failed");
+// report priority duplication
+// TODO
 
 ////////////////////////////////////////////////////////////////////////////////
-// request
+// fixed priority arbiter
 ////////////////////////////////////////////////////////////////////////////////
 
-assign man.vld = sub.vld;
-assign man.wen = sub.wen;
-assign man.ben = sub.ben;
-assign man.adr = sub.adr;
-assign man.wdt = sub.wdt;
+  // priority reorder
+  function [PN-1:0] reorder (logic [PN-1:0] val);
+    for (i=0; i<PN; i++) begin
+      assign sub_arb[i] = tmp_vld[PRI[i]];
+    end
+  endfunction: reorder
 
-////////////////////////////////////////////////////////////////////////////////
-// response
-////////////////////////////////////////////////////////////////////////////////
+  // priority encode
+  function logic [SW-1:0] encode (logic [PN-1:0] val);
+    encode = 'x;  // optimization of undefined encodings
+    for (int unsigned i=0; i<PN; i++) begin
+      if (val[i])  encode = i[SW-1:0];
+    end
+  endfunction: encode
 
-assign sub.rdt = man.rdt;
-assign sub.err = man.err;
-assign sub.rdy = man.rdy;
+  // simple priority arbiter
+  assign sel = PRI[encode(reorder(vld))];
 
-endmodule: tcb_pas
+endmodule: tcb_con_arb

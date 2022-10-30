@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// TCB: Tightly Coupled Bus request/response register
+// TCB (Tightly Coupled Bus) interCONnect request/response REGister
 ////////////////////////////////////////////////////////////////////////////////
 // Copyright 2022 Iztok Jeras
 //
@@ -16,7 +16,7 @@
 // limitations under the License.
 ////////////////////////////////////////////////////////////////////////////////
 
-module tcb_reg #(
+module tcb_con_reg #(
   // bus parameters
   int unsigned AW = 32,    // address width
   int unsigned DW = 32,    // data width
@@ -34,13 +34,16 @@ module tcb_reg #(
 
 `ifdef ALTERA_RESERVED_QIS
 `else
-// camparing subordinate and manager interface parameters
-generate
-  if (sub.AW  != man.AW )  $error("ERROR: %m parameter AW  validation failed");
-  if (sub.DW  != man.DW )  $error("ERROR: %m parameter DW  validation failed");
-  if (sub.SW  != man.SW )  $error("ERROR: %m parameter SW  validation failed");
-  if (sub.DLY != man.DLY)  $error("ERROR: %m parameter DLY validation failed");
-endgenerate
+  // camparing subordinate and manager interface parameters
+  generate
+    // bus widths
+    if (sub.AW  != man.AW )  $error("ERROR: %m parameter (sub.AW  = %d) != (man.AW  = %d)", sub.AW , man.AW );
+    if (sub.DW  != man.DW )  $error("ERROR: %m parameter (sub.DW  = %d) != (man.DW  = %d)", sub.DW , man.DW );
+    if (sub.SW  != man.SW )  $error("ERROR: %m parameter (sub.SW  = %d) != (man.SW  = %d)", sub.SW , man.SW );
+    if (sub.BW  != man.BW )  $error("ERROR: %m parameter (sub.BW  = %d) != (man.BW  = %d)", sub.BW , man.BW );
+    // response delay
+    if (sub.DLY != man.DLY)  $error("ERROR: %m parameter (sub.DLY = %d) != (man.DLY = %d)", sub.DLY, man.DLY);
+  endgenerate
 `endif
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -103,4 +106,4 @@ else begin: gen_rsp_cmb
 end: gen_rsp_cmb
 endgenerate
 
-endmodule: tcb_reg
+endmodule: tcb_con_reg
