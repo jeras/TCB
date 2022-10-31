@@ -18,32 +18,20 @@
 
 module tcb_vip_sub
   import tcb_vip_pkg::*;
-#(
-  // bus widths
-  int unsigned AW = 32,     // address     width
-  int unsigned DW = 32,     // data        width
-  int unsigned SW =     8,  // selection   width
-  int unsigned BW = DW/SW,  // byte enable width
-  // response delay
-  int unsigned DLY = 1
-)(
-  // system bus
-  tcb_if.sub bus
+(
+  // TCB interface
+  tcb_if.sub tcb
 );
-
-generate
-if (DLY != bus.DLY)  $error("%m parameter DLY validation failed");
-endgenerate
 
 ////////////////////////////////////////////////////////////////////////////////
 // local signals
 ////////////////////////////////////////////////////////////////////////////////
 
   // response pipeline
-  logic [DW-1:0] tmp_rdt;
-  logic          tmp_err;
-  logic [DW-1:0] pip_rdt [0:DLY-1];
-  logic          pip_err [0:DLY-1];
+  logic [tcb.DW-1:0] tmp_rdt;
+  logic              tmp_err;
+  logic [tcb.DW-1:0] pip_rdt [0:tcb.DLY-1];
+  logic              pip_err [0:tcb.DLY-1];
 
 ////////////////////////////////////////////////////////////////////////////////
 // request/response (enable pipelined transfers with full throughput)
@@ -51,45 +39,45 @@ endgenerate
 
   // request
   task req (
-    output logic          wen,
-    output logic [AW-1:0] adr,
-    output logic [BW-1:0] ben,
-    output logic [DW-1:0] wdt,
-    output logic          lck,
-    output logic          rpt
+    output logic              wen,
+    output logic [tcb.AW-1:0] adr,
+    output logic [tcb.BW-1:0] ben,
+    output logic [tcb.DW-1:0] wdt,
+    output logic              lck,
+    output logic              rpt
   );
     // check for backpressure
     do begin
-      @(posedge bus.clk);
-    end while (~bus.rdy);
+      @(posedge tcb.clk);
+    end while (~tcb.rdy);
     // idle
-    wen = bus.wen;
-    adr = bus.adr;
-    ben = bus.ben;
-    wdt = bus.wdt;
-    lck = bus.lck;
-    rpt = bus.rpt;
+    wen = tcb.wen;
+    adr = tcb.adr;
+    ben = tcb.ben;
+    wdt = tcb.wdt;
+    lck = tcb.lck;
+    rpt = tcb.rpt;
   endtask: req
 
   // response
   task rsp (
-    // bus signals
-    input  logic [DW-1:0] rdt,
-    input  logic          err,
+    // tcb signals
+    input  logic [tcb.DW-1:0] rdt,
+    input  logic              err,
     // timing
-    input  int            tmg = 0
+    input  int                tmg = 0
   );
     // idle
-    repeat (tmg) @(posedge bus.clk);
+    repeat (tmg) @(posedge tcb.clk);
     // response
     #1;
     tmp_rdt = rdt;
     tmp_err = err;
     // ready
-    bus.rdy = 1'b1;
-    @(posedge bus.clk);
+    tcb.rdy = 1'b1;
+    @(posedge tcb.clk);
     #1;
-    bus.rdy = 1'b1;
+    tcb.rdy = 1'b1;
   endtask: rsp
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -97,21 +85,21 @@ endgenerate
 ////////////////////////////////////////////////////////////////////////////////
 
   generate
-  if (DLY == 0) begin
+  if (tcb.DLY == 0) begin
 
-    assign bus.rdt = tmp_rdt;
-    assign bus.err = tmp_err;
+    assign tcb.rdt = tmp_rdt;
+    assign tcb.err = tmp_err;
 
   end else  begin
 
-    always_ff @(posedge bus.clk)
-    if (bus.trn) begin
+    always_ff @(posedge tcb.clk)
+    if (tcb.trn) begin
       pip_rdt[0] <= tmp_rdt;
       pip_err[0] <= tmp_err;
     end
 
-    assign bus.rdt = pip_rdt[DLY-1];
-    assign bus.err = pip_err[DLY-1];
+    assign tcb.rdt = pip_rdt[tcb.DLY-1];
+    assign tcb.err = pip_err[tcb.DLY-1];
 
   end
   endgenerate

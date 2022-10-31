@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// TCB (Tightly Coupled Bus) VIP (Verifivation IP) manager/monitor/subordinate TestBench
+// TCB (Tightly Coupled Bus) LIBrary MUltipleXer/ARBiter TestBench
 ////////////////////////////////////////////////////////////////////////////////
 // Copyright 2022 Iztok Jeras
 //
@@ -16,16 +16,19 @@
 // limitations under the License.
 ////////////////////////////////////////////////////////////////////////////////
 
-module tcb_vip_tb
+module tcb_lib_mux_tb
   import tcb_vip_pkg::*;
 #(
-  // TCB widths
+  // bus widths
   int unsigned AW = 32,     // address     width
   int unsigned DW = 32,     // data        width
   int unsigned SW =     8,  // selection   width
   int unsigned BW = DW/SW,  // byte enable width
   // response delay
-  int unsigned DLY = 1
+  int unsigned DLY = 1,
+  // interconnect parameters
+  int unsigned PN = 2,      // port number
+  localparam   PL = $clog2(PN)
 );
 
   // system signals
@@ -36,11 +39,15 @@ module tcb_vip_tb
   logic [DW-1:0] rdt;  // read data
   logic          err;  // error response
 
+  // control
+  logic [PL-1:0] sel;  // select
+
 ////////////////////////////////////////////////////////////////////////////////
 // local signals
 ////////////////////////////////////////////////////////////////////////////////
 
-  tcb_if #(.AW (AW), .DW (DW), .DLY (DLY)) tcb (.clk (clk), .rst (rst));
+  tcb_if #(.AW (AW), .DW (DW)) bus_man [PN-1:0] (.clk (clk), .rst (rst));
+  tcb_if #(.AW (AW), .DW (DW)) bus_sub          (.clk (clk), .rst (rst));
 
 ////////////////////////////////////////////////////////////////////////////////
 // test sequence
@@ -56,24 +63,17 @@ module tcb_vip_tb
     // reset sequence
     rst = 1'b1;
     repeat (2) @(posedge clk);
-    #1;
     rst = 1'b0;
     repeat (1) @(posedge clk);
+    #1;
     fork
       begin: req
-        //         adr,     ben,          wdt, err, len
-        man.write('h00, 4'b1111, 32'h01234567, err);
-        man.read ('h00, 4'b1111, rdt         , err);
-//        man.req('{1'b1, 'h00, 4'b1111, 32'h01234567,                     0});
-//        sub.rsp('{                                   32'h89abcdef, 1'b0, 0});
-//        man.req('{1'b1, 'h01, 4'b1111, 32'h76543210,                     1});
-//        sub.rsp('{                                   32'hfedcba98, 1'b0, 1});
+        man.write(32'h01234567, 4'b1111, 64'h89ABCDEF, err);
+        man.read (32'h76543210, 4'b1111, rdt         , err);
       end: req
       begin: rsp
-        sub.rsp(32'h55xxxxxx, 1'b0);
-        sub.rsp(32'h76543210, 1'b0);
-//  //    man.rsp(                                            rdt,  err);
-//  //    sub.req( wen,  adr,     ben,          wdt,                   );
+        sub.rsp(32'hXXXXXXXX, 1'b0);
+        sub.rsp(32'hFEDCBA98, 1'b0);
       end: rsp
     join
     repeat (8) @(posedge clk);
@@ -81,17 +81,60 @@ module tcb_vip_tb
   end
 
 ////////////////////////////////////////////////////////////////////////////////
-// VIP instances
+// instances
 ////////////////////////////////////////////////////////////////////////////////
 
-  // manager
-  tcb_vip_man man (.tcb (tcb));
+  // VIP managers
+  tcb_vip_man #(
+    // bus widths
+    .AW   (AW),
+    .DW   (DW),
+    // response delay
+    .DLY  (DLY)
+  ) man [PN-1:0] (
+    .bus  (bus_man)
+  );
 
-  // monitor
-  tcb_vip_mon mon (.tcb (tcb));
+  // RTL arbiter DUT
+  tcb_lib_pas #(
+    // interconnect parameters
+    .PN   (PN),
+    // arbitration priority mode
+//  .MD   (),
+    // port priorities (lower number is higher priority)
+    .PRI  ('{1, 0})
+  ) mux (
+    .sub  (bus_man),
+    .sel  (sel)
+  );
 
-  // subordinate
-  tcb_vip_sub sub (.tcb (tcb));
+  // RTL multiplexer DUT
+  tcb_lib_mux #(
+    // bus widths
+    .AW   (AW),
+    .DW   (DW),
+    // response delay
+    .DLY  (DLY),
+    // interconnect parameters
+    .PN   (PN)
+  ) mux (
+    // control
+    .sel  (sel),
+    // TCB interfaces
+    .sub  (bus_man),
+    .man  (bus_sub)
+  );
+
+  // VIP subordinate
+  tcb_vip_sub #(
+    // bus widths
+    .AW   (AW),
+    .DW   (DW),
+    // response delay
+    .DLY  (DLY)
+  ) sub (
+    .bus  (bus_sub)
+  );
 
 ////////////////////////////////////////////////////////////////////////////////
 // VCD/FST waveform trace
@@ -103,4 +146,4 @@ module tcb_vip_tb
     $dumpvars;
   end
 
-endmodule: tcb_vip_tb
+endmodule: tcb_lib_mux_tb

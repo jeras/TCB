@@ -34,8 +34,8 @@ module tcb_gpio #(
   output logic [GW-1:0] gpio_o,
   output logic [GW-1:0] gpio_e,
   input  logic [GW-1:0] gpio_i,
-  // system bus interface
-  tcb_if.sub bus
+  // TCB interface
+  tcb_if.sub tcb
 );
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -47,8 +47,8 @@ module tcb_gpio #(
 `ifdef ALTERA_RESERVED_QIS
 `else
 generate
-  if (DLY != bus.DLY)  $error("ERROR: %m parameter DLY validation failed");
-  if (GW   > bus.DW )  $error("ERROR: %m parameter GW exceeds the data bus width");
+  if (DLY != tcb.DLY)  $error("ERROR: %m parameter DLY validation failed");
+  if (GW   > tcb.DW )  $error("ERROR: %m parameter GW exceeds the data bus width");
 endgenerate
 `endif
 
@@ -74,9 +74,9 @@ if (CFG_CDC > 0) begin: gen_cdc
      .SRC_INPUT_REG  (0),        // DECIMAL; 0=do not register input, 1=register input
      .WIDTH          (GW)        // DECIMAL; range: 1-1024
     ) gpio_cdc (
-     .src_clk  (bus.clk),
+     .src_clk  (tcb.clk),
      .src_in   (gpio_i),
-     .dest_clk (bus.clk),
+     .dest_clk (tcb.clk),
      .dest_out (gpio_r)
     );
 
@@ -87,8 +87,8 @@ if (CFG_CDC > 0) begin: gen_cdc
     logic [CFG_CDC-2:0][GW-1:0] gpio_t;
 
     // asynchronous input synchronization
-    always_ff @(posedge bus.clk, posedge bus.rst)
-    if (bus.rst) begin
+    always_ff @(posedge tcb.clk, posedge tcb.rst)
+    if (tcb.rst) begin
       {gpio_r, gpio_t} <= '0;
     end else begin
       {gpio_r, gpio_t} <= {gpio_t, gpio_i};
@@ -115,36 +115,36 @@ generate
 if (CFG_RSP_MIN) begin: gen_rsp_min
 
   // only the GPIO input can be read
-  assign bus.rdt = gpio_r;
+  assign tcb.rdt = gpio_r;
 
 end: gen_rsp_min
 // normal implementation
 else begin: gen_rsp_nrm
 
 `ifdef ALTERA_RESERVED_QIS
-  logic [$bits(bus.rdt)-1:0] bus_rdt;
+  logic [$bits(tcb.rdt)-1:0] tcb_rdt;
 `else
-  logic [bus.DW-1:0] bus_rdt;
+  logic [tcb.DW-1:0] tcb_rdt;
 `endif
 
   // GPIO output/enable registers and GPIO input are decoded
   always_comb
-  case (bus.adr[4-1:0])
-    4'h0:    bus_rdt = gpio_o;
-    4'h4:    bus_rdt = gpio_e;
-    4'h8:    bus_rdt = gpio_r;
-    default: bus_rdt = 'x;
+  case (tcb.adr[4-1:0])
+    4'h0:    tcb_rdt = gpio_o;
+    4'h4:    tcb_rdt = gpio_e;
+    4'h8:    tcb_rdt = gpio_r;
+    default: tcb_rdt = 'x;
   endcase
 
   // read data response is registered
   if (CFG_RSP_REG) begin: gen_rsp_reg
 
-    always_ff @(posedge bus.clk, posedge bus.rst)
-    if (bus.rst) begin
-      bus.rdt <= '0;
-    end else if (bus.trn ) begin
-      if (~bus.wen) begin
-        bus.rdt <= bus_rdt;
+    always_ff @(posedge tcb.clk, posedge tcb.rst)
+    if (tcb.rst) begin
+      tcb.rdt <= '0;
+    end else if (tcb.trn ) begin
+      if (~tcb.wen) begin
+        tcb.rdt <= tcb_rdt;
       end
     end
 
@@ -152,7 +152,7 @@ else begin: gen_rsp_nrm
   // read data response is combinational
   else begin: gen_rsp_cmb
     
-    assign bus.rdt = bus_rdt;
+    assign tcb.rdt = tcb_rdt;
 
   end: gen_rsp_cmb
 
@@ -160,25 +160,25 @@ end: gen_rsp_nrm
 endgenerate
 
   // write output and output enable
-  always_ff @(posedge bus.clk, posedge bus.rst)
-  if (bus.rst) begin
+  always_ff @(posedge tcb.clk, posedge tcb.rst)
+  if (tcb.rst) begin
     gpio_o <= '0;
     gpio_e <= '0;
-  end else if (bus.trn) begin
-    if (bus.wen) begin
+  end else if (tcb.trn) begin
+    if (tcb.wen) begin
       // write access
-      case (bus.adr[4-1:0])
-        4'h0:    gpio_o <= bus.wdt[GW-1:0];
-        4'h4:    gpio_e <= bus.wdt[GW-1:0];
+      case (tcb.adr[4-1:0])
+        4'h0:    gpio_o <= tcb.wdt[GW-1:0];
+        4'h4:    gpio_e <= tcb.wdt[GW-1:0];
         default: ;  // do nothing
       endcase
     end
   end
 
   // controller response is immediate
-  assign bus.rdy = 1'b1;
+  assign tcb.rdy = 1'b1;
 
   // there are no error cases
-  assign bus.err = 1'b0;
+  assign tcb.err = 1'b0;
 
 endmodule: tcb_gpio

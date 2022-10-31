@@ -12,15 +12,16 @@ VERILATOR_COVERAGE?=verilator_coverage
 # HDL path
 PATH_HDL=../../hdl
 
-# SystemVerilog RTL
+# SystemVerilog interface
 RTL+=${PATH_HDL}/rtl/tcb_if.sv
-RTL+=${PATH_HDL}/rtl/con/tcb_con_pas.sv
-RTL+=${PATH_HDL}/rtl/con/tcb_con_arb.sv
-RTL+=${PATH_HDL}/rtl/con/tcb_con_mux.sv
-RTL+=${PATH_HDL}/rtl/con/tcb_con_dec.sv
-RTL+=${PATH_HDL}/rtl/con/tcb_con_dmx.sv
-RTL+=${PATH_HDL}/rtl/con/tcb_con_reg.sv
-RTL+=${PATH_HDL}/rtl/con/tcb_con_err.sv
+# LIBrary
+RTL+=${PATH_HDL}/rtl/lib/tcb_lib_pas.sv
+RTL+=${PATH_HDL}/rtl/lib/tcb_lib_reg.sv
+RTL+=${PATH_HDL}/rtl/lib/tcb_lib_arb.sv
+RTL+=${PATH_HDL}/rtl/lib/tcb_lib_mux.sv
+RTL+=${PATH_HDL}/rtl/lib/tcb_lib_dec.sv
+RTL+=${PATH_HDL}/rtl/lib/tcb_lib_dmx.sv
+RTL+=${PATH_HDL}/rtl/lib/tcb_lib_err.sv
 # GPIO RTL
 RTL+=${PATH_HDL}/rtl/gpio/tcb_gpio.sv
 # UART RTL
@@ -29,22 +30,24 @@ RTL+=${PATH_HDL}/rtl/uart/tcb_uart_des.sv
 RTL+=${PATH_HDL}/rtl/uart/tcb_uart_fifo.sv
 RTL+=${PATH_HDL}/rtl/uart/tcb_uart.sv
 
-# SystemVerilog testbench
-TSV+=${PATH_HDL}/tbn/vip/tcb_vip_pkg.sv
-TSV+=${PATH_HDL}/tbn/vip/tcb_vip_mon.sv
-TSV+=${PATH_HDL}/tbn/vip/tcb_vip_sub.sv
-TSV+=${PATH_HDL}/tbn/vip/tcb_vip_man.sv
-TSV+=${PATH_HDL}/tbn/vip/tcb_vip_tb.sv
+# SystemVerilog VIP
+TBN+=${PATH_HDL}/tbn/vip/tcb_vip_pkg.sv
+TBN+=${PATH_HDL}/tbn/vip/tcb_vip_mon.sv
+TBN+=${PATH_HDL}/tbn/vip/tcb_vip_sub.sv
+TBN+=${PATH_HDL}/tbn/vip/tcb_vip_man.sv
+TBN+=${PATH_HDL}/tbn/vip/tcb_vip_tb.sv
+# LIBrary
+TBN+=${PATH_HDL}/tbn/lib/tcb_lib_pas_tb.sv
 ## GPIO testbench
-TSV+=${PATH_HDL}/tbn/gpio/tcb_gpio_tb.sv
+TBN+=${PATH_HDL}/tbn/gpio/tcb_gpio_tb.sv
 ## UART testbench
-TSV+=${PATH_HDL}/tbn/uart/uart_model.sv
-TSV+=${PATH_HDL}/tbn/uart/uart_model_tb.sv
-TSV+=${PATH_HDL}/tbn/uart/tcb_uart_tb.sv
+TBN+=${PATH_HDL}/tbn/uart/uart_model.sv
+TBN+=${PATH_HDL}/tbn/uart/uart_model_tb.sv
+TBN+=${PATH_HDL}/tbn/uart/tcb_uart_tb.sv
 
 # combined HDL sources
 HDL =${RTL}
-HDL+=${TSV}
+HDL+=${TBN}
 
 # top level file
 TOP ?= tcb_tb

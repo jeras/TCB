@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// TCB GPIO testbench
+// TCB (Tightly Coupled Bus) LIBrary PASsthrough TestBench
 ////////////////////////////////////////////////////////////////////////////////
 // Copyright 2022 Iztok Jeras
 //
@@ -16,35 +16,32 @@
 // limitations under the License.
 ////////////////////////////////////////////////////////////////////////////////
 
-module tcb_gpio_tb
+module tcb_lib_pas_tb
   import tcb_vip_pkg::*;
 #(
-  // TCB widths
-  int unsigned AW = 32,    // address width
-  int unsigned DW = 32,    // data    width
-  int unsigned BW = DW/8,  // byte e. width
+  // bus widths
+  int unsigned AW = 64,     // address     width
+  int unsigned DW = 64,     // data        width
+  int unsigned SW =     8,  // selection   width
+  int unsigned BW = DW/SW,  // byte enable width
   // response delay
   int unsigned DLY = 1
 );
-
-  // GPIO width
-  localparam int unsigned GW = 32;
 
   // system signals
   logic clk;  // clock
   logic rst;  // reset
 
-  // TCB interface
-  tcb_if #(.AW (AW), .DW (DW), .DLY (DLY)) tcb (.clk (clk), .rst (rst));
+  // response
+  logic [DW-1:0] rdt;  // read data
+  logic          err;  // error response
 
-  // TCB response check values
-  logic [DW-1:0] rdt;
-  logic          err;
+////////////////////////////////////////////////////////////////////////////////
+// local signals
+////////////////////////////////////////////////////////////////////////////////
 
-  // GPIO signals
-  logic [GW-1:0] gpio_o;
-  logic [GW-1:0] gpio_e;
-  logic [GW-1:0] gpio_i;
+  tcb_if #(.AW (AW), .DW (DW), .DLY (DLY)) tcb_man (.clk (clk), .rst (rst));
+  tcb_if #(.AW (AW), .DW (DW), .DLY (DLY)) tcb_sub (.clk (clk), .rst (rst));
 
 ////////////////////////////////////////////////////////////////////////////////
 // test sequence
@@ -58,30 +55,22 @@ module tcb_gpio_tb
   initial
   begin
     // reset sequence
-    rst <= 1'b1;
+    rst = 1'b1;
     repeat (2) @(posedge clk);
-    rst <= 1'b0;
+    rst = 1'b0;
     repeat (1) @(posedge clk);
-
-    // configure outputs
-    man.write('h00, 4'b1111, 32'h01234567, err);  // write output register
-    man.write('h04, 4'b1111, 32'h76543210, err);  // write enable register
-
-    // read GPIO input status
-    man.read('h08, 4'b1111, rdt, err);  // read input register
-    if (GW'(rdt) != GW'('hxxxxxxxx))  $display("ERROR: readout error rdt=%8h, ref=%8h", rdt, GW'('hxxxxxxxx));
-
-    gpio_i <= GW'('h89abcdef);
-    repeat (2) @(posedge clk);
-    man.read('h08, 4'b1111, rdt, err);  // read input register
-    if (GW'(rdt) != GW'('h89abcdef))  $display("ERROR: readout error rdt=%8h, ref=%8h", rdt, GW'('h89abcdef));
-
-    gpio_i <= GW'('hfedcba98);
-    repeat (2) @(posedge clk);
-    man.read('h08, 4'b1111, rdt, err);  // read input register
-    if (GW'(rdt) != GW'('hfedcba98))  $display("ERROR: readout error rdt=%8h, ref=%8h", rdt, GW'('hfedcba98));
-
-    repeat (2) @(posedge clk);
+    #1;
+    fork
+      begin: req
+        man.write(64'h0123456789ABCDEF, 8'b11111111, 64'h0123456789ABCDEF, err);
+        man.read (64'hFEDCBA9876543210, 8'b11111111, rdt                 , err);
+      end: req
+      begin: rsp
+        sub.rsp(64'hXXXXXXXXXXXXXXXX, 1'b0);
+        sub.rsp(64'hFEDCBA9876543210, 1'b0);
+      end: rsp
+    join
+    repeat (8) @(posedge clk);
     $finish();
   end
 
@@ -92,24 +81,17 @@ module tcb_gpio_tb
   // manager
   tcb_vip_man man (.tcb (tcb_man));
 
+  // subordinate
+  tcb_vip_sub sub (.tcb (tcb_sub));
+
 ////////////////////////////////////////////////////////////////////////////////
 // DUT instances
 ////////////////////////////////////////////////////////////////////////////////
 
-  tcb_gpio #(
-    .GW      (GW),
-    // implementation details
-//    bit          CFG_MIN = 1'b0,  // minimalistic implementation
-    .CFG_CDC (2),
-    // implementation device (ASIC/FPGA vendor/device)
-    .CHIP    ("")
-  ) gpio (
-    // GPIO signals
-    .gpio_o (gpio_o),
-    .gpio_e (gpio_e),
-    .gpio_i (gpio_i),
-    // TCB interface
-    .tcb    (tcb)
+  // RTL passthrough
+  tcb_lib_pas pas (
+    .sub  (tcb_man),
+    .man  (tcb_sub)
   );
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -122,4 +104,4 @@ module tcb_gpio_tb
     $dumpvars;
   end
 
-endmodule: tcb_gpio_tb
+endmodule: tcb_lib_pas_tb

@@ -19,7 +19,7 @@
 module tcb_uart_tb
   import tcb_vip_pkg::*;
 #(
-  // bus widths
+  // tcb widths
   int unsigned AW = 32,    // address width
   int unsigned DW = 32,    // data    width
   int unsigned BW = DW/8,  // byte e. width
@@ -46,7 +46,7 @@ module tcb_uart_tb
   logic rst;  // reset
 
   // TCB interface
-  tcb_if #(.AW (AW), .DW (DW)) bus (.clk (clk), .rst (rst));
+  tcb_if #(.AW (AW), .DW (DW)) tcb (.clk (clk), .rst (rst));
 
   // TCB response check values
   logic [DW-1:0] rdt;
@@ -107,16 +107,16 @@ module tcb_uart_tb
     $finish();
   end
 
-  // TCB manager model
-  tcb_vip_man #(
-    // bus widths
-    .AW   (AW),
-    .DW   (DW),
-    // response delay
-    .DLY  (DLY)
-  ) man (
-    .bus  (bus)
-  );
+////////////////////////////////////////////////////////////////////////////////
+// VIP instances
+////////////////////////////////////////////////////////////////////////////////
+
+  // manager
+  tcb_vip_man man (.tcb (tcb_man));
+
+////////////////////////////////////////////////////////////////////////////////
+// DUT instances
+////////////////////////////////////////////////////////////////////////////////
 
   // TCB UART DUT
   tcb_uart #(
@@ -125,8 +125,8 @@ module tcb_uart_tb
     // UART signals
     .uart_txd (uart_txd),
     .uart_rxd (uart_rxd),
-    // system bus interface
-    .bus      (bus),
+    // system tcb interface
+    .tcb      (tcb),
     // interrupts
     .irq_tx   (irq_tx),
     .irq_rx   (irq_rx)

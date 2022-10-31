@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// TCB (Tightly Coupled Bus) interCONnect PASsthrough
+// TCB (Tightly Coupled Bus) LIBrary request/response REGister
 ////////////////////////////////////////////////////////////////////////////////
 // Copyright 2022 Iztok Jeras
 //
@@ -16,7 +16,14 @@
 // limitations under the License.
 ////////////////////////////////////////////////////////////////////////////////
 
-module tcb_con_pas (
+module tcb_lib_reg #(
+  // bus parameters
+  int unsigned AW = 32,    // address width
+  int unsigned DW = 32,    // data width
+  // TCB parameters
+  bit          CFG_REQ_REG = 1'b1,  // register request  path
+  bit          CFG_RSP_REG = 1'b1   // register response path
+)(
   tcb_if.sub sub,  // TCB subordinate port (manager     device connects here)
   tcb_if.man man   // TCB manager     port (subordinate device connects here)
 );
@@ -40,24 +47,63 @@ module tcb_con_pas (
 `endif
 
 ////////////////////////////////////////////////////////////////////////////////
-// passthrough
+// request
 ////////////////////////////////////////////////////////////////////////////////
 
-  // handshake
+// TODO: this is certainly missing some complexity
+generate
+if (CFG_REQ_REG) begin: gen_req_reg
+
+  always_ff @(posedge sub.clk, posedge sub.rst)
+  if (sub.rst) begin
+    man.vld <= 1'b0;
+  end else begin
+    man.vld <= sub.vld;
+  end
+
+  always_ff @(posedge sub.clk)
+  begin
+    man.wen <= sub.wen;
+    man.ben <= sub.ben;
+    man.adr <= sub.adr;
+    man.wdt <= sub.wdt;
+  end
+
+end: gen_req_reg
+else begin: gen_req_cmb
+
   assign man.vld = sub.vld;
-  // request
   assign man.wen = sub.wen;
   assign man.ben = sub.ben;
   assign man.adr = sub.adr;
   assign man.wdt = sub.wdt;
-  // request optional
-  assign man.lck = sub.lck;
-  assign man.rpt = sub.rpt;
 
-  // response
-  assign sub.rdt = man.rdt;
-  assign sub.err = man.err;
-  // handshake
+end: gen_req_cmb
+endgenerate
+
+////////////////////////////////////////////////////////////////////////////////
+// response
+////////////////////////////////////////////////////////////////////////////////
+
+generate
+if (CFG_RSP_REG) begin: gen_rsp_reg
+
+  always_ff @(posedge man.clk)
+  begin
+    sub.rdt <= man.rdt;
+    sub.err <= man.err;
+  end
+
   assign sub.rdy = man.rdy;
 
-endmodule: tcb_con_pas
+end: gen_rsp_reg
+else begin: gen_rsp_cmb
+
+  assign sub.rdt = man.rdt;
+  assign sub.err = man.err;
+  assign sub.rdy = man.rdy;
+
+end: gen_rsp_cmb
+endgenerate
+
+endmodule: tcb_lib_reg

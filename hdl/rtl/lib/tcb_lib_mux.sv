@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// TCB (Tightly Coupled Bus) interCONnect DeMultipleXer
+// TCB (Tightly Coupled Bus) LIBrary MUltipleXer
 ////////////////////////////////////////////////////////////////////////////////
 // Copyright 2022 Iztok Jeras
 //
@@ -16,7 +16,7 @@
 // limitations under the License.
 ////////////////////////////////////////////////////////////////////////////////
 
-module tcb_con_dmx #(
+module tcb_lib_mux #(
   // bus widths
   int unsigned AW = 32,     // address     width
   int unsigned DW = 32,     // data        width
@@ -31,8 +31,8 @@ module tcb_con_dmx #(
   // control
   input  logic [PL-1:0] sel,  // select
   // TCB interfaces
-  tcb_if.sub sub        ,  // TCB subordinate port  (manager     device connects here)
-  tcb_if.man man[PN-1:0]   // TCB manager     ports (subordinate devices connect here)
+  tcb_if.sub sub[PN-1:0],  // TCB subordinate ports (manager     devices connect here)
+  tcb_if.man man           // TCB manager     port  (subordinate device connects here)
 );
 
   genvar i;
@@ -47,12 +47,12 @@ module tcb_con_dmx #(
   generate
   for (i=0; i<PN; i++) begin: param
     // bus widths
-    if (sub.AW  != man[i].AW )  $error("ERROR: %m parameter (sub.AW  = %d) != (man[%d].AW  = %d)", sub.AW , i, man[i].AW );
-    if (sub.DW  != man[i].DW )  $error("ERROR: %m parameter (sub.DW  = %d) != (man[%d].DW  = %d)", sub.DW , i, man[i].DW );
-    if (sub.SW  != man[i].SW )  $error("ERROR: %m parameter (sub.SW  = %d) != (man[%d].SW  = %d)", sub.SW , i, man[i].SW );
-    if (sub.BW  != man[i].BW )  $error("ERROR: %m parameter (sub.BW  = %d) != (man[%d].BW  = %d)", sub.BW , i, man[i].BW );
+    if (sub[i].AW  != man.AW )  $error("ERROR: %m parameter (sub[%d].AW  = %d) != (man.AW  = %d)", i, sub[i].AW , man.AW );
+    if (sub[i].DW  != man.DW )  $error("ERROR: %m parameter (sub[%d].DW  = %d) != (man.DW  = %d)", i, sub[i].DW , man.DW );
+    if (sub[i].SW  != man.SW )  $error("ERROR: %m parameter (sub[%d].SW  = %d) != (man.SW  = %d)", i, sub[i].SW , man.SW );
+    if (sub[i].BW  != man.BW )  $error("ERROR: %m parameter (sub[%d].BW  = %d) != (man.BW  = %d)", i, sub[i].BW , man.BW );
     // response delay
-    if (sub.DLY != man[i].DLY)  $error("ERROR: %m parameter (sub.DLY = %d) != (man[%d].DLY = %d)", sub.DLY, i, man[i].DLY);
+    if (sub[i].DLY != man.DLY)  $error("ERROR: %m parameter (sub[%d].DLY = %d) != (man.DLY = %d)", i, sub[i].DLY, man.DLY);
   end: param
   endgenerate
 `endif
@@ -61,28 +61,33 @@ module tcb_con_dmx #(
 // local signals
 ////////////////////////////////////////////////////////////////////////////////
 
-  // demultiplexer signals
+  // multiplexer select
   logic [PL-1:0] sub_sel;
   logic [PL-1:0] man_sel;
 
-  // response
-  logic [DW-1:0] tmp_rdt [PN-1:0];  // read data
-  logic          tmp_err [PN-1:0];  // error
   // handshake
-  logic          tmp_rdy [PN-1:0];  // acknowledge
+  logic          tmp_vld [PN-1:0];  // valid
+  // request
+  logic          tmp_wen [PN-1:0];  // write enable
+  logic [AW-1:0] tmp_adr [PN-1:0];  // address
+  logic [BW-1:0] tmp_ben [PN-1:0];  // byte enable
+  logic [DW-1:0] tmp_wdt [PN-1:0];  // write data
+  // request optional
+  logic          tmp_lck [PN-1:0];  // arbitration lock
+  logic          tmp_rpt [PN-1:0];  // repeat access
 
 ////////////////////////////////////////////////////////////////////////////////
 // control
 ////////////////////////////////////////////////////////////////////////////////
 
-  // select
+  // subordinate (request) select
   assign sub_sel = sel;
 
-  // demultiplexer select
-  always_ff @(posedge sub.clk, posedge sub.rst)
-  if (sub.rst) begin
+  // multiplexer select
+  always_ff @(posedge man.clk, posedge man.rst)
+  if (man.rst) begin
     man_sel <= '0;
-  end else if (sub.trn) begin
+  end else if (man.trn) begin
     man_sel <= sub_sel;
   end
 
@@ -90,43 +95,48 @@ module tcb_con_dmx #(
 // request
 ////////////////////////////////////////////////////////////////////////////////
 
-  // replicate request signals
+  // organize request signals into indexable array
+  // since a dynamix index can't be used on an array of interfaces
   generate
   for (i=0; i<PN; i++) begin: gen_req
     // handshake
-    assign man[i].vld = (sub_sel == i) ? sub.vld : '0;
+    assign tmp_vld[i] = sub.vld[i];
     // request
-    assign man[i].wen = (sub_sel == i) ? sub.wen : 'x;
-    assign man[i].ben = (sub_sel == i) ? sub.ben : 'x;
-    assign man[i].adr = (sub_sel == i) ? sub.adr : 'x;
-    assign man[i].wdt = (sub_sel == i) ? sub.wdt : 'x;
+    assign tmp_wen[i] = sub.wen[i];
+    assign tmp_ben[i] = sub.ben[i];
+    assign tmp_adr[i] = sub.adr[i];
+    assign tmp_wdt[i] = sub.wdt[i];
     // request optional
-    assign man[i].lck = (sub_sel == i) ? sub.lck : 'x;
-    assign man[i].rpt = (sub_sel == i) ? sub.rpt : 'x;
+    assign tmp_lck[i] = sub.lck[i];
+    assign tmp_rpt[i] = sub.rpt[i];
   end: gen_req
   endgenerate
+
+  // multiplexer
+  // handshake
+  assign man.vld = tmp_vld[sub_sel];
+  // request
+  assign man.wen = tmp_wen[sub_sel];
+  assign man.ben = tmp_ben[sub_sel];
+  assign man.adr = tmp_adr[sub_sel];
+  assign man.wdt = tmp_wdt[sub_sel];
+  // request optional
+  assign man.lck = tmp_lck[sub_sel];
+  assign man.rpt = tmp_rpt[sub_sel];
 
 ////////////////////////////////////////////////////////////////////////////////
 // response
 ////////////////////////////////////////////////////////////////////////////////
 
-  // organize response signals into indexable array
-  // since a dynamic index can't be used on an array of interfaces
+  // replicate response signals
   generate
   for (i=0; i<PN; i++) begin: gen_rsp
     // response
-    assign tmp_rdt[i] = man[i].rdt;
-    assign tmp_err[i] = man[i].err;
+    assign sub[i].rdt = (man_sel == i[SW-1:0]) ? man.rdt : 'x;  // response phase
+    assign sub[i].err = (man_sel == i[SW-1:0]) ? man.err : 'x;  // response phase
     // handshake
-    assign tmp_rdy[i] = man[i].rdy;
+    assign sub[i].rdy = (sub_sel == i[SW-1:0]) ? man.rdy : '0;  // request  phase
   end: gen_rsp
   endgenerate
 
-  // multiplexer
-  // response
-  assign sub.rdt = tmp_rdt[man_sel];  // response phase
-  assign sub.err = tmp_err[man_sel];  // response phase
-  // handskake
-  assign sub.rdy = tmp_rdy[sub_sel];  // request  phase
-
-endmodule: tcb_con_dmx
+endmodule: tcb_lib_mux

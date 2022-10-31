@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// TCB (Tightly Coupled Bus) interCONnect DECoder
+// TCB (Tightly Coupled Bus) LIBrary DECoder
 ////////////////////////////////////////////////////////////////////////////////
 // Copyright 2022 Iztok Jeras
 //
@@ -16,7 +16,7 @@
 // limitations under the License.
 ////////////////////////////////////////////////////////////////////////////////
 
-module tcb_con_dec #(
+module tcb_lib_dec #(
   // bus parameters
   int unsigned AW = 32,    // address width
   // interconnect parameters
@@ -62,4 +62,4 @@ module tcb_con_dec #(
   // priority encoder
   assign sel = clog2(sub_dec);
 
-endmodule: tcb_con_dec
+endmodule: tcb_lib_dec

@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// TCB (Tightly Coupled Bus) interCONnect ARBiter
+// TCB (Tightly Coupled Bus) LIBrary ERRor subordinate
 ////////////////////////////////////////////////////////////////////////////////
 // Copyright 2022 Iztok Jeras
 //
@@ -16,49 +16,36 @@
 // limitations under the License.
 ////////////////////////////////////////////////////////////////////////////////
 
-module tcb_con_arb #(
-  // interconnect parameters
-  int unsigned PN = 2,  // port number
-  localparam   PL = $clog2(PN),
-  // arbitration priority mode
-  string       MD = "FX",  // "FX" - fixed priority
-                           // "RR" - round robin (TODO)
-  // port priorities (lower number is higher priority)
-  int unsigned PRI [0:PN-1] = '{0, 1}
+module tcb_lib_err #(
+  // response delay
+  int unsigned DLY = 1
 )(
-  // TCB interfaces
-  tcb_if.sub sub[PN-1:0],  // TCB subordinate ports (manager devices connect here)
-  // control
-  output logic [PL-1:0] sel   // select
+  // system bus interface
+  tcb_if.sub bus
 );
 
 ////////////////////////////////////////////////////////////////////////////////
 // parameter validation
 ////////////////////////////////////////////////////////////////////////////////
 
-// report priority duplication
-// TODO
+`ifdef ALTERA_RESERVED_QIS
+`else
+generate
+  if (DLY != bus.DLY)  $error("ERROR: %m parameter DLY validation failed");
+endgenerate
+`endif
 
 ////////////////////////////////////////////////////////////////////////////////
-// fixed priority arbiter
+// TCB access
 ////////////////////////////////////////////////////////////////////////////////
 
-  // priority reorder
-  function [PN-1:0] reorder (logic [PN-1:0] val);
-    for (i=0; i<PN; i++) begin
-      assign sub_arb[i] = tmp_vld[PRI[i]];
-    end
-  endfunction: reorder
+// response is immediate
+assign bus.rdy = 1'b1;
 
-  // priority encode
-  function logic [SW-1:0] encode (logic [PN-1:0] val);
-    encode = 'x;  // optimization of undefined encodings
-    for (int unsigned i=0; i<PN; i++) begin
-      if (val[i])  encode = i[SW-1:0];
-    end
-  endfunction: encode
+// data is don't care
+assign bus.rdt = 'x;
 
-  // simple priority arbiter
-  assign sel = PRI[encode(reorder(vld))];
+// the response is always an error
+assign bus.err = 1'b1;
 
-endmodule: tcb_con_arb
+endmodule: tcb_lib_err

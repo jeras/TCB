@@ -18,82 +18,74 @@
 
 module tcb_vip_man
   import tcb_vip_pkg::*;
-#(
-  // bus widths
-  int unsigned AW = 32,     // address     width
-  int unsigned DW = 32,     // data        width
-  int unsigned SW =     8,  // selection   width
-  int unsigned BW = DW/SW,  // byte enable width
-  // response delay
-  int unsigned DLY = 1
-)(
-  // system bus
-  tcb_if.man bus
+(
+  // TCB interface
+  tcb_if.man tcb
 );
-
-////////////////////////////////////////////////////////////////////////////////
-// parameter validation
-////////////////////////////////////////////////////////////////////////////////
-
-generate
-  if (DLY != bus.DLY)  $error("ERROR: %m parameter DLY checker failed");
-endgenerate
 
 ////////////////////////////////////////////////////////////////////////////////
 // request/response (enable pipelined transfers with full throughput)
 ////////////////////////////////////////////////////////////////////////////////
 
-  initial  bus.vld = 1'b0;
+  initial  tcb.vld = 1'b0;
 
   // request
   task req (
-    input  logic          wen,
-    input  logic [AW-1:0] adr,
-    input  logic [BW-1:0] ben,
-    input  logic [DW-1:0] wdt,
-    input  logic          lck = 1'b0,
-    input  logic          rpt = 1'b0,
-    // timing
-    input  int            tmg = 0
-  );
-    // idle
-    repeat (tmg) @(posedge bus.clk);
     // request
+    input  logic              wen,
+    input  logic [tcb.AW-1:0] adr,
+    input  logic [tcb.BW-1:0] ben,
+    input  logic [tcb.DW-1:0] wdt,
+    // request optional
+    input  logic              lck = 1'b0,
+    input  logic              rpt = 1'b0,
+    // timing idle
+    input  int                idl = 0
+  );
+    // request timing
+    repeat (idl) @(posedge tcb.clk);
+    // drive transfer
     #1;
-    bus.vld = 1'b1;
-    bus.wen = wen;
-    bus.adr = adr;
-    bus.ben = ben;
-    bus.wdt = wdt;
-    bus.lck = lck;
-    bus.rpt = rpt;
+    // hanshake
+    tcb.vld = 1'b1;
+    // request
+    tcb.wen = wen;
+    tcb.adr = adr;
+    tcb.ben = ben;
+    tcb.wdt = wdt;
+    // request optional
+    tcb.lck = lck;
+    tcb.rpt = rpt;
     // backpressure
     do begin
-      @(posedge bus.clk);
-    end while (~bus.rdy);
-    // idle
+      @(posedge tcb.clk);
+    end while (~tcb.rdy);
+    // drive idle/undefined
     #1;
-    bus.vld = 1'b0;
-    bus.wen = 'x;
-    bus.adr = 'x;
-    bus.ben = 'x;
-    bus.wdt = 'x;
-    bus.lck = 'x;
-    bus.rpt = 'x;
+    // handshake
+    tcb.vld = 1'b0;
+    // request
+    tcb.wen = 'x;
+    tcb.adr = 'x;
+    tcb.ben = 'x;
+    tcb.wdt = 'x;
+    // request optional
+    tcb.lck = 'x;
+    tcb.rpt = 'x;
   endtask: req
 
-  // response
+  // response task
   task rsp (
-    output logic [DW-1:0] rdt,
-    output logic          err
+    output logic [tcb.DW-1:0] rdt,
+    output logic              err
   );
     // response delay
     do begin
-      @(posedge bus.clk);
-    end while (~bus.rsp);
+      @(posedge tcb.clk);
+    end while (~tcb.rsp);
     // response
-    rdt = bus.rdt;
-    err = bus.err;
+    rdt = tcb.rdt;
+    err = tcb.err;
   endtask: rsp
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -102,21 +94,26 @@ endgenerate
 
   // generic write
   task write (
-    input  logic [AW-1:0] adr,
-    input  logic [BW-1:0] ben,
-    input  logic [DW-1:0] dat,
-    output logic          err
+    // request
+    input  logic [tcb.AW-1:0] adr,
+    input  logic [tcb.BW-1:0] ben,
+    input  logic [tcb.DW-1:0] dat,
+    // response
+    output logic              err,
+    // request optional
+    input  logic              lck = 1'b0,
+    input  logic              rpt = 1'b0
   );
     // ignored value
-    logic [DW-1:0] rdt;
+    logic [tcb.DW-1:0] rdt;
     // request
     req (
       .wen (1'b1),
       .adr (adr),
       .ben (ben),
       .wdt (dat),
-      .lck (1'b0),
-      .rpt (1'b0)
+      .lck (lck),
+      .rpt (rpt)
     );
     // response
     rsp (
@@ -127,10 +124,15 @@ endgenerate
 
   // generic read
   task read (
-    input  logic [AW-1:0] adr,
-    input  logic [BW-1:0] ben,
-    output logic [DW-1:0] dat,
-    output logic          err
+    // request
+    input  logic [tcb.AW-1:0] adr,
+    input  logic [tcb.BW-1:0] ben,
+    output logic [tcb.DW-1:0] dat,
+    // response
+    output logic              err,
+    // request optional
+    input  logic              lck = 1'b0,
+    input  logic              rpt = 1'b0
   );
     // request
     req (
@@ -138,8 +140,8 @@ endgenerate
       .adr (adr),
       .ben (ben),
       .wdt ('x),
-      .lck (1'b0),
-      .rpt (1'b0)
+      .lck (lck),
+      .rpt (rpt)
     );
     // response
     rsp (
