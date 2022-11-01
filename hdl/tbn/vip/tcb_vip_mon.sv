@@ -30,26 +30,26 @@ module tcb_vip_mon
   // request structure
   typedef struct packed {
     // request
-    logic              wen;  // write enable
-    logic [tcb.AW-1:0] adr;  // address
-    logic [tcb.BW-1:0] ben;  // byte enable
-    logic [tcb.DW-1:0] wdt;  // write data
+    logic               wen;  // write enable
+    logic [tcb.ABW-1:0] adr;  // address
+    logic [tcb.BEW-1:0] ben;  // byte enable
+    logic [tcb.DBW-1:0] wdt;  // write data
     // request optional
-    logic              lck;  // arbitration lock
-    logic              rpt;  // repeat access
+    logic               lck;  // arbitration lock
+    logic               rpt;  // repeat access
   } tcb_req_t;
 
   // response structure  
   typedef struct packed {
     // response
-    logic [tcb.DW-1:0] rdt;  // read data
-    logic              err;  // error
+    logic [tcb.DBW-1:0] rdt;  // read data
+    logic               err;  // error
   } tcb_rsp_t;
 
   // timing structure
   typedef struct packed {
-    int unsigned       idl;  // idle
-    int unsigned       bpr;  // backpressure
+    int unsigned        idl;  // idle
+    int unsigned        bpr;  // backpressure
   } tcb_tmg_t;
 
 ////////////////////////////////////////////////////////////////////////////////

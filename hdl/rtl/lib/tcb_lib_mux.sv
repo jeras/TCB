@@ -17,13 +17,6 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 module tcb_lib_mux #(
-  // bus widths
-  int unsigned AW = 32,     // address     width
-  int unsigned DW = 32,     // data        width
-  int unsigned SW =     8,  // selection   width
-  int unsigned BW = DW/SW,  // byte enable width
-  // response delay
-  int unsigned DLY = 1,
   // interconnect parameters
   int unsigned PN = 2,      // port number
   localparam   PL = $clog2(PN)
@@ -47,10 +40,10 @@ module tcb_lib_mux #(
   generate
   for (i=0; i<PN; i++) begin: param
     // bus widths
-    if (sub[i].AW  != man.AW )  $error("ERROR: %m parameter (sub[%d].AW  = %d) != (man.AW  = %d)", i, sub[i].AW , man.AW );
-    if (sub[i].DW  != man.DW )  $error("ERROR: %m parameter (sub[%d].DW  = %d) != (man.DW  = %d)", i, sub[i].DW , man.DW );
-    if (sub[i].SW  != man.SW )  $error("ERROR: %m parameter (sub[%d].SW  = %d) != (man.SW  = %d)", i, sub[i].SW , man.SW );
-    if (sub[i].BW  != man.BW )  $error("ERROR: %m parameter (sub[%d].BW  = %d) != (man.BW  = %d)", i, sub[i].BW , man.BW );
+    if (sub[i].ABW != man.ABW)  $error("ERROR: %m parameter (sub[%d].ABW = %d) != (man.ABW = %d)", i, sub[i].ABW, man.ABW);
+    if (sub[i].DBW != man.DBW)  $error("ERROR: %m parameter (sub[%d].DBW = %d) != (man.DBW = %d)", i, sub[i].DBW, man.DBW);
+    if (sub[i].SLW != man.SLW)  $error("ERROR: %m parameter (sub[%d].SLW = %d) != (man.SLW = %d)", i, sub[i].SLW, man.SLW);
+    if (sub[i].BEW != man.BEW)  $error("ERROR: %m parameter (sub[%d].BEW = %d) != (man.BEW = %d)", i, sub[i].BEW, man.BEW);
     // response delay
     if (sub[i].DLY != man.DLY)  $error("ERROR: %m parameter (sub[%d].DLY = %d) != (man.DLY = %d)", i, sub[i].DLY, man.DLY);
   end: param
@@ -66,15 +59,15 @@ module tcb_lib_mux #(
   logic [PL-1:0] man_sel;
 
   // handshake
-  logic          tmp_vld [PN-1:0];  // valid
+  logic               tmp_vld [PN-1:0];  // valid
   // request
-  logic          tmp_wen [PN-1:0];  // write enable
-  logic [AW-1:0] tmp_adr [PN-1:0];  // address
-  logic [BW-1:0] tmp_ben [PN-1:0];  // byte enable
-  logic [DW-1:0] tmp_wdt [PN-1:0];  // write data
+  logic               tmp_wen [PN-1:0];  // write enable
+  logic [man.ABW-1:0] tmp_adr [PN-1:0];  // address
+  logic [man.BEW-1:0] tmp_ben [PN-1:0];  // byte enable
+  logic [man.DBW-1:0] tmp_wdt [PN-1:0];  // write data
   // request optional
-  logic          tmp_lck [PN-1:0];  // arbitration lock
-  logic          tmp_rpt [PN-1:0];  // repeat access
+  logic               tmp_lck [PN-1:0];  // arbitration lock
+  logic               tmp_rpt [PN-1:0];  // repeat access
 
 ////////////////////////////////////////////////////////////////////////////////
 // control
@@ -100,15 +93,15 @@ module tcb_lib_mux #(
   generate
   for (i=0; i<PN; i++) begin: gen_req
     // handshake
-    assign tmp_vld[i] = sub.vld[i];
+    assign tmp_vld[i] = sub[i].vld;
     // request
-    assign tmp_wen[i] = sub.wen[i];
-    assign tmp_ben[i] = sub.ben[i];
-    assign tmp_adr[i] = sub.adr[i];
-    assign tmp_wdt[i] = sub.wdt[i];
+    assign tmp_wen[i] = sub[i].wen;
+    assign tmp_ben[i] = sub[i].ben;
+    assign tmp_adr[i] = sub[i].adr;
+    assign tmp_wdt[i] = sub[i].wdt;
     // request optional
-    assign tmp_lck[i] = sub.lck[i];
-    assign tmp_rpt[i] = sub.rpt[i];
+    assign tmp_lck[i] = sub[i].lck;
+    assign tmp_rpt[i] = sub[i].rpt;
   end: gen_req
   endgenerate
 
@@ -132,10 +125,10 @@ module tcb_lib_mux #(
   generate
   for (i=0; i<PN; i++) begin: gen_rsp
     // response
-    assign sub[i].rdt = (man_sel == i[SW-1:0]) ? man.rdt : 'x;  // response phase
-    assign sub[i].err = (man_sel == i[SW-1:0]) ? man.err : 'x;  // response phase
+    assign sub[i].rdt = (man_sel == i[PL-1:0]) ? man.rdt : 'x;  // response phase
+    assign sub[i].err = (man_sel == i[PL-1:0]) ? man.err : 'x;  // response phase
     // handshake
-    assign sub[i].rdy = (sub_sel == i[SW-1:0]) ? man.rdy : '0;  // request  phase
+    assign sub[i].rdy = (sub_sel == i[PL-1:0]) ? man.rdy : '0;  // request  phase
   end: gen_rsp
   endgenerate
 

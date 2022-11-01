@@ -17,11 +17,11 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 interface tcb_if #(
-  // bus widths
-  int unsigned AW = 32,     // address     width
-  int unsigned DW = 32,     // data        width
-  int unsigned SW =     8,  // selection   width
-  int unsigned BW = DW/SW,  // byte enable width
+  // TCB widths
+  int unsigned ABW = 32,       // address bus width
+  int unsigned DBW = 32,       // data    bus width
+  int unsigned SLW =       8,  // selection   width
+  int unsigned BEW = DBW/SLW,  // byte enable width
   // response delay
   int unsigned DLY = 1
 )(
@@ -35,28 +35,28 @@ interface tcb_if #(
 ////////////////////////////////////////////////////////////////////////////////
 
   // handshake
-  logic          vld;  // handshake valid
+  logic           vld;  // handshake valid
   // request
-  logic          wen;  // write enable
-  logic [AW-1:0] adr;  // address
-  logic [BW-1:0] ben;  // byte enable
-  logic [DW-1:0] wdt;  // write data
+  logic           wen;  // write enable
+  logic [ABW-1:0] adr;  // address
+  logic [BEW-1:0] ben;  // byte enable
+  logic [DBW-1:0] wdt;  // write data
   // request optional
-  logic          lck;  // arbitration lock
-  logic          rpt;  // repeat access
+  logic           lck;  // arbitration lock
+  logic           rpt;  // repeat access
   // response
-  logic [DW-1:0] rdt;  // read data
-  logic          err;  // error response
+  logic [DBW-1:0] rdt;  // read data
+  logic           err;  // error response
   // handshake
-  logic          rdy;  // handshake ready
+  logic           rdy;  // handshake ready
 
 ////////////////////////////////////////////////////////////////////////////////
 // internal signals (never outpus on modports)
 ////////////////////////////////////////////////////////////////////////////////
 
-  logic          trn;  // transfer
-  logic          idl;  // idle
-  logic          rsp;  // response
+  logic           trn;  // transfer
+  logic           idl;  // idle
+  logic           rsp;  // response
 
   // transfer (valid and ready at the same time)
   assign trn = vld & rdy;

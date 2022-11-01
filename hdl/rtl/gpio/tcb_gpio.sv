@@ -48,7 +48,7 @@ module tcb_gpio #(
 `else
 generate
   if (DLY != tcb.DLY)  $error("ERROR: %m parameter DLY validation failed");
-  if (GW   > tcb.DW )  $error("ERROR: %m parameter GW exceeds the data bus width");
+  if (GW   > tcb.DBW)  $error("ERROR: %m parameter GW exceeds the data bus width");
 endgenerate
 `endif
 
@@ -124,7 +124,7 @@ else begin: gen_rsp_nrm
 `ifdef ALTERA_RESERVED_QIS
   logic [$bits(tcb.rdt)-1:0] tcb_rdt;
 `else
-  logic [tcb.DW-1:0] tcb_rdt;
+  logic [tcb.DBW-1:0] tcb_rdt;
 `endif
 
   // GPIO output/enable registers and GPIO input are decoded

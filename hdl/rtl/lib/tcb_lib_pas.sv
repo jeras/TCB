@@ -30,10 +30,10 @@ module tcb_lib_pas (
   // camparing subordinate and manager interface parameters
   generate
     // bus widths
-    if (sub.AW  != man.AW )  $error("ERROR: %m parameter (sub.AW  = %d) != (man.AW  = %d)", sub.AW , man.AW );
-    if (sub.DW  != man.DW )  $error("ERROR: %m parameter (sub.DW  = %d) != (man.DW  = %d)", sub.DW , man.DW );
-    if (sub.SW  != man.SW )  $error("ERROR: %m parameter (sub.SW  = %d) != (man.SW  = %d)", sub.SW , man.SW );
-    if (sub.BW  != man.BW )  $error("ERROR: %m parameter (sub.BW  = %d) != (man.BW  = %d)", sub.BW , man.BW );
+    if (sub.ABW != man.ABW)  $error("ERROR: %m parameter (sub.AW  = %d) != (man.ABW = %d)", sub.ABW, man.ABW);
+    if (sub.DBW != man.DBW)  $error("ERROR: %m parameter (sub.DW  = %d) != (man.DBW = %d)", sub.DBW, man.DBW);
+    if (sub.SLW != man.SLW)  $error("ERROR: %m parameter (sub.SW  = %d) != (man.SLW = %d)", sub.SLW, man.SLW);
+    if (sub.BEW != man.BEW)  $error("ERROR: %m parameter (sub.BW  = %d) != (man.BEW = %d)", sub.BEW, man.BEW);
     // response delay
     if (sub.DLY != man.DLY)  $error("ERROR: %m parameter (sub.DLY = %d) != (man.DLY = %d)", sub.DLY, man.DLY);
   endgenerate

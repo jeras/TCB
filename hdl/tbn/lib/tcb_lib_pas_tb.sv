@@ -19,11 +19,11 @@
 module tcb_lib_pas_tb
   import tcb_vip_pkg::*;
 #(
-  // bus widths
-  int unsigned AW = 64,     // address     width
-  int unsigned DW = 64,     // data        width
-  int unsigned SW =     8,  // selection   width
-  int unsigned BW = DW/SW,  // byte enable width
+  // TCB widths
+  int unsigned ABW = 64,       // address bus width
+  int unsigned DBW = 64,       // data    bus width
+  int unsigned SLW =       8,  // selection   width
+  int unsigned BEW = DBW/SLW,  // byte enable width
   // response delay
   int unsigned DLY = 1
 );
@@ -33,15 +33,15 @@ module tcb_lib_pas_tb
   logic rst;  // reset
 
   // response
-  logic [DW-1:0] rdt;  // read data
-  logic          err;  // error response
+  logic [DBW-1:0] rdt;  // read data
+  logic           err;  // error response
 
 ////////////////////////////////////////////////////////////////////////////////
 // local signals
 ////////////////////////////////////////////////////////////////////////////////
 
-  tcb_if #(.AW (AW), .DW (DW), .DLY (DLY)) tcb_man (.clk (clk), .rst (rst));
-  tcb_if #(.AW (AW), .DW (DW), .DLY (DLY)) tcb_sub (.clk (clk), .rst (rst));
+  tcb_if #(.ABW (ABW), .DBW (DBW), .DLY (DLY)) tcb_man (.clk (clk), .rst (rst));
+  tcb_if #(.ABW (ABW), .DBW (DBW), .DLY (DLY)) tcb_sub (.clk (clk), .rst (rst));
 
 ////////////////////////////////////////////////////////////////////////////////
 // test sequence
@@ -79,10 +79,16 @@ module tcb_lib_pas_tb
 ////////////////////////////////////////////////////////////////////////////////
 
   // manager
-  tcb_vip_man man (.tcb (tcb_man));
+  tcb_vip_man man     (.tcb (tcb_man));
+
+  // manager monitor
+  tcb_vip_mon mon_man (.tcb (tcb_man));
+
+  // subordinate monitor
+  tcb_vip_mon mon_sub (.tcb (tcb_sub));
 
   // subordinate
-  tcb_vip_sub sub (.tcb (tcb_sub));
+  tcb_vip_sub sub     (.tcb (tcb_sub));
 
 ////////////////////////////////////////////////////////////////////////////////
 // DUT instances

@@ -20,9 +20,9 @@ module tcb_gpio_tb
   import tcb_vip_pkg::*;
 #(
   // TCB widths
-  int unsigned AW = 32,    // address width
-  int unsigned DW = 32,    // data    width
-  int unsigned BW = DW/8,  // byte e. width
+  int unsigned ABW = 32,     // address bus width
+  int unsigned DBW = 32,     // data    bus width
+  int unsigned BEW = DBW/8,  // byte enable width
   // response delay
   int unsigned DLY = 1
 );
@@ -35,11 +35,11 @@ module tcb_gpio_tb
   logic rst;  // reset
 
   // TCB interface
-  tcb_if #(.AW (AW), .DW (DW), .DLY (DLY)) tcb (.clk (clk), .rst (rst));
+  tcb_if #(.ABW (ABW), .DBW (DBW), .DLY (DLY)) tcb (.clk (clk), .rst (rst));
 
   // TCB response check values
-  logic [DW-1:0] rdt;
-  logic          err;
+  logic [DBW-1:0] rdt;
+  logic           err;
 
   // GPIO signals
   logic [GW-1:0] gpio_o;
@@ -90,7 +90,7 @@ module tcb_gpio_tb
 ////////////////////////////////////////////////////////////////////////////////
 
   // manager
-  tcb_vip_man man (.tcb (tcb_man));
+  tcb_vip_man man (.tcb (tcb));
 
 ////////////////////////////////////////////////////////////////////////////////
 // DUT instances

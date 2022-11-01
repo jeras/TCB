@@ -20,10 +20,10 @@ module tcb_vip_tb
   import tcb_vip_pkg::*;
 #(
   // TCB widths
-  int unsigned AW = 32,     // address     width
-  int unsigned DW = 32,     // data        width
-  int unsigned SW =     8,  // selection   width
-  int unsigned BW = DW/SW,  // byte enable width
+  int unsigned ABW = 32,       // address bus width
+  int unsigned DBW = 32,       // data    bus width
+  int unsigned SLW =       8,  // selection   width
+  int unsigned BEW = DBW/SLW,  // byte enable width
   // response delay
   int unsigned DLY = 1
 );
@@ -33,14 +33,14 @@ module tcb_vip_tb
   logic rst;  // reset
 
   // response
-  logic [DW-1:0] rdt;  // read data
-  logic          err;  // error response
+  logic [DBW-1:0] rdt;  // read data
+  logic           err;  // error response
 
 ////////////////////////////////////////////////////////////////////////////////
 // local signals
 ////////////////////////////////////////////////////////////////////////////////
 
-  tcb_if #(.AW (AW), .DW (DW), .DLY (DLY)) tcb (.clk (clk), .rst (rst));
+  tcb_if #(.ABW (ABW), .DBW (DBW), .DLY (DLY)) tcb (.clk (clk), .rst (rst));
 
 ////////////////////////////////////////////////////////////////////////////////
 // test sequence

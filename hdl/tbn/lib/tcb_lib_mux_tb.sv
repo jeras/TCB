@@ -19,16 +19,18 @@
 module tcb_lib_mux_tb
   import tcb_vip_pkg::*;
 #(
-  // bus widths
-  int unsigned AW = 32,     // address     width
-  int unsigned DW = 32,     // data        width
-  int unsigned SW =     8,  // selection   width
-  int unsigned BW = DW/SW,  // byte enable width
+  // TCB widths
+  int unsigned ABW = 32,       // address bus width
+  int unsigned DBW = 32,       // data    bus width
+  int unsigned SLW =       8,  // selection   width
+  int unsigned BEW = DBW/SLW,  // byte enable width
   // response delay
   int unsigned DLY = 1,
   // interconnect parameters
-  int unsigned PN = 2,      // port number
-  localparam   PL = $clog2(PN)
+  int unsigned PN = 3,      // port number
+  localparam   PL = $clog2(PN),
+  // port priorities (lower number is higher priority)
+  int unsigned PRI [PN-1:0] = '{2, 1, 0}
 );
 
   // system signals
@@ -36,18 +38,18 @@ module tcb_lib_mux_tb
   logic rst;  // reset
 
   // response
-  logic [DW-1:0] rdt;  // read data
-  logic          err;  // error response
+  logic [DBW-1:0] rdt;  // read data
+  logic           err;  // error response
 
   // control
-  logic [PL-1:0] sel;  // select
+  logic  [PL-1:0] sel;  // select
 
 ////////////////////////////////////////////////////////////////////////////////
 // local signals
 ////////////////////////////////////////////////////////////////////////////////
 
-  tcb_if #(.AW (AW), .DW (DW)) bus_man [PN-1:0] (.clk (clk), .rst (rst));
-  tcb_if #(.AW (AW), .DW (DW)) bus_sub          (.clk (clk), .rst (rst));
+  tcb_if #(.ABW (ABW), .DBW (DBW)) tcb_man  [PN-1:0] (.clk (clk), .rst (rst));
+  tcb_if #(.ABW (ABW), .DBW (DBW)) tcb_sub           (.clk (clk), .rst (rst));
 
 ////////////////////////////////////////////////////////////////////////////////
 // test sequence
@@ -68,72 +70,77 @@ module tcb_lib_mux_tb
     #1;
     fork
       begin: req
-        man.write(32'h01234567, 4'b1111, 64'h89ABCDEF, err);
-        man.read (32'h76543210, 4'b1111, rdt         , err);
+//        for (int unsigned i=0; i<PN; i++) begin
+//          man[i].write(32'h01234567, 4'b1111, 32'h89ABCDEF, err);
+//          man[i].read (32'h76543210, 4'b1111, rdt         , err);
+//        end
+          fork
+            begin  man[0].write(32'h01234567, 4'b1111, 32'h03020100, err);  end
+            begin  man[1].write(32'h01234567, 4'b1111, 32'h13121110, err);  end
+            begin  man[2].write(32'h01234567, 4'b1111, 32'h23222120, err);  end
+          join
       end: req
       begin: rsp
         sub.rsp(32'hXXXXXXXX, 1'b0);
-        sub.rsp(32'hFEDCBA98, 1'b0);
+//        sub.rsp(32'hXXXXXXXX, 1'b0);
+//        sub.rsp(32'hXXXXXXXX, 1'b0);
+//        sub.rsp(32'hFEDCBA98, 1'b0);
       end: rsp
     join
     repeat (8) @(posedge clk);
     $finish();
   end
 
+  // timeout
+  initial
+  begin
+    repeat (20) @(posedge clk);
+    $finish();
+  end
+
 ////////////////////////////////////////////////////////////////////////////////
-// instances
+// VIP instances
 ////////////////////////////////////////////////////////////////////////////////
 
-  // VIP managers
-  tcb_vip_man #(
-    // bus widths
-    .AW   (AW),
-    .DW   (DW),
-    // response delay
-    .DLY  (DLY)
-  ) man [PN-1:0] (
-    .bus  (bus_man)
-  );
+  // manager
+  tcb_vip_man man     [PN-1:0] (.tcb (tcb_man));
+
+  // manager monitor
+  tcb_vip_mon mon_man [PN-1:0] (.tcb (tcb_man));
+
+  // subordinate monitor
+  tcb_vip_mon mon_sub          (.tcb (tcb_sub));
+
+  // subordinate
+  tcb_vip_sub sub              (.tcb (tcb_sub));
+
+////////////////////////////////////////////////////////////////////////////////
+// DUT instances
+////////////////////////////////////////////////////////////////////////////////
 
   // RTL arbiter DUT
-  tcb_lib_pas #(
+  tcb_lib_arb #(
     // interconnect parameters
     .PN   (PN),
     // arbitration priority mode
 //  .MD   (),
     // port priorities (lower number is higher priority)
-    .PRI  ('{1, 0})
-  ) mux (
-    .sub  (bus_man),
+    .PRI  (PRI)
+  ) arb (
+    .tcb  (tcb_man),
     .sel  (sel)
   );
 
   // RTL multiplexer DUT
   tcb_lib_mux #(
-    // bus widths
-    .AW   (AW),
-    .DW   (DW),
-    // response delay
-    .DLY  (DLY),
     // interconnect parameters
     .PN   (PN)
   ) mux (
     // control
     .sel  (sel),
     // TCB interfaces
-    .sub  (bus_man),
-    .man  (bus_sub)
-  );
-
-  // VIP subordinate
-  tcb_vip_sub #(
-    // bus widths
-    .AW   (AW),
-    .DW   (DW),
-    // response delay
-    .DLY  (DLY)
-  ) sub (
-    .bus  (bus_sub)
+    .sub  (tcb_man),
+    .man  (tcb_sub)
   );
 
 ////////////////////////////////////////////////////////////////////////////////

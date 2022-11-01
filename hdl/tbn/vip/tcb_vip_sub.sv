@@ -28,10 +28,10 @@ module tcb_vip_sub
 ////////////////////////////////////////////////////////////////////////////////
 
   // response pipeline
-  logic [tcb.DW-1:0] tmp_rdt;
-  logic              tmp_err;
-  logic [tcb.DW-1:0] pip_rdt [0:tcb.DLY-1];
-  logic              pip_err [0:tcb.DLY-1];
+  logic [tcb.DBW-1:0] tmp_rdt;
+  logic               tmp_err;
+  logic [tcb.DBW-1:0] pip_rdt [0:tcb.DLY-1];
+  logic               pip_err [0:tcb.DLY-1];
 
 ////////////////////////////////////////////////////////////////////////////////
 // request/response (enable pipelined transfers with full throughput)
@@ -39,12 +39,12 @@ module tcb_vip_sub
 
   // request
   task req (
-    output logic              wen,
-    output logic [tcb.AW-1:0] adr,
-    output logic [tcb.BW-1:0] ben,
-    output logic [tcb.DW-1:0] wdt,
-    output logic              lck,
-    output logic              rpt
+    output logic               wen,
+    output logic [tcb.ABW-1:0] adr,
+    output logic [tcb.BEW-1:0] ben,
+    output logic [tcb.DBW-1:0] wdt,
+    output logic               lck,
+    output logic               rpt
   );
     // check for backpressure
     do begin
@@ -62,10 +62,10 @@ module tcb_vip_sub
   // response
   task rsp (
     // tcb signals
-    input  logic [tcb.DW-1:0] rdt,
-    input  logic              err,
+    input  logic [tcb.DBW-1:0] rdt,
+    input  logic               err,
     // timing
-    input  int                tmg = 0
+    input  int                 tmg = 0
   );
     // idle
     repeat (tmg) @(posedge tcb.clk);

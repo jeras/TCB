@@ -19,10 +19,10 @@
 module tcb_uart_tb
   import tcb_vip_pkg::*;
 #(
-  // tcb widths
-  int unsigned AW = 32,    // address width
-  int unsigned DW = 32,    // data    width
-  int unsigned BW = DW/8,  // byte e. width
+  // TCB widths
+  int unsigned ABW = 32,     // address bus width
+  int unsigned DBW = 32,     // data    bus width
+  int unsigned BEW = DBW/8,  // byte enable width
   // response delay
   int unsigned DLY = 1
 );
@@ -46,11 +46,11 @@ module tcb_uart_tb
   logic rst;  // reset
 
   // TCB interface
-  tcb_if #(.AW (AW), .DW (DW)) tcb (.clk (clk), .rst (rst));
+  tcb_if #(.ABW (ABW), .DBW (DBW)) tcb (.clk (clk), .rst (rst));
 
   // TCB response check values
-  logic [DW-1:0] rdt;
-  logic          err;
+  logic [DBW-1:0] rdt;
+  logic           err;
 
   // UART signals
   logic uart_rxd;  // receive
@@ -112,7 +112,7 @@ module tcb_uart_tb
 ////////////////////////////////////////////////////////////////////////////////
 
   // manager
-  tcb_vip_man man (.tcb (tcb_man));
+  tcb_vip_man man (.tcb (tcb));
 
 ////////////////////////////////////////////////////////////////////////////////
 // DUT instances

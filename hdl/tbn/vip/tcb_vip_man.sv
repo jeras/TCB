@@ -32,15 +32,15 @@ module tcb_vip_man
   // request
   task req (
     // request
-    input  logic              wen,
-    input  logic [tcb.AW-1:0] adr,
-    input  logic [tcb.BW-1:0] ben,
-    input  logic [tcb.DW-1:0] wdt,
+    input  logic               wen,
+    input  logic [tcb.ABW-1:0] adr,
+    input  logic [tcb.BEW-1:0] ben,
+    input  logic [tcb.DBW-1:0] wdt,
     // request optional
-    input  logic              lck = 1'b0,
-    input  logic              rpt = 1'b0,
+    input  logic               lck = 1'b0,
+    input  logic               rpt = 1'b0,
     // timing idle
-    input  int                idl = 0
+    input  int                 idl = 0
   );
     // request timing
     repeat (idl) @(posedge tcb.clk);
@@ -76,8 +76,8 @@ module tcb_vip_man
 
   // response task
   task rsp (
-    output logic [tcb.DW-1:0] rdt,
-    output logic              err
+    output logic [tcb.DBW-1:0] rdt,
+    output logic               err
   );
     // response delay
     do begin
@@ -95,17 +95,17 @@ module tcb_vip_man
   // generic write
   task write (
     // request
-    input  logic [tcb.AW-1:0] adr,
-    input  logic [tcb.BW-1:0] ben,
-    input  logic [tcb.DW-1:0] dat,
+    input  logic [tcb.ABW-1:0] adr,
+    input  logic [tcb.BEW-1:0] ben,
+    input  logic [tcb.DBW-1:0] dat,
     // response
-    output logic              err,
+    output logic               err,
     // request optional
-    input  logic              lck = 1'b0,
-    input  logic              rpt = 1'b0
+    input  logic               lck = 1'b0,
+    input  logic               rpt = 1'b0
   );
     // ignored value
-    logic [tcb.DW-1:0] rdt;
+    logic [tcb.DBW-1:0] rdt;
     // request
     req (
       .wen (1'b1),
@@ -125,14 +125,14 @@ module tcb_vip_man
   // generic read
   task read (
     // request
-    input  logic [tcb.AW-1:0] adr,
-    input  logic [tcb.BW-1:0] ben,
-    output logic [tcb.DW-1:0] dat,
+    input  logic [tcb.ABW-1:0] adr,
+    input  logic [tcb.BEW-1:0] ben,
+    output logic [tcb.DBW-1:0] dat,
     // response
-    output logic              err,
+    output logic               err,
     // request optional
-    input  logic              lck = 1'b0,
-    input  logic              rpt = 1'b0
+    input  logic               lck = 1'b0,
+    input  logic               rpt = 1'b0
   );
     // request
     req (

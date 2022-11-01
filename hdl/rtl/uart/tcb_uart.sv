@@ -71,7 +71,7 @@ module tcb_uart #(
 `ifdef ALTERA_RESERVED_QIS
   logic [$bits(tcb.rdt)-1:0] bus_rdt;
 `else
-  logic [tcb.DW-1:0] bus_rdt;
+  logic [tcb.DBW-1:0] bus_rdt;
 `endif
 
   // read configuration/status and RX data
