@@ -65,19 +65,35 @@ module tcb_vip_sub
     input  logic [tcb.DBW-1:0] rdt,
     input  logic               err,
     // timing
-    input  int                 tmg = 0
+    input  int unsigned        tmg = 0
   );
-    // idle
-    repeat (tmg) @(posedge tcb.clk);
     // response
-    #1;
     tmp_rdt = rdt;
     tmp_err = err;
-    // ready
-    tcb.rdy = 1'b1;
-    @(posedge tcb.clk);
+    if (tmg == 0) begin
+      // ready
+      tcb.rdy = 1'b1;
+      // wait for transfer
+      do begin
+        @(posedge tcb.clk);
+      end while (~tcb.trn);
+    end else begin
+    // TODO
+//    // wait for request
+//    do begin
+//      @(posedge tcb.clk);
+//    end while (~tcb.vld);
+//    // backpressure
+//    int i = tmg;
+//    for (int unsigned i=0; i<tmg; i+=int'(tcb.vld)) begin
+//      @(posedge tcb.clk);
+//    end
+//    repeat (tmg) @(posedge tcb.clk);
+    end
+    // idle
     #1;
-    tcb.rdy = 1'b1;
+    tmp_rdt = 'x;
+    tmp_err = 'x;
   endtask: rsp
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -87,19 +103,20 @@ module tcb_vip_sub
   generate
   if (tcb.DLY == 0) begin
 
-    assign tcb.rdt = tmp_rdt;
-    assign tcb.err = tmp_err;
+    assign tcb.rdt = tcb.rsp ? tmp_rdt : 'x;
+    assign tcb.err = tcb.rsp ? tmp_err : 'x;
 
   end else  begin
 
+    // TODO: support for DLY>1
     always_ff @(posedge tcb.clk)
     if (tcb.trn) begin
       pip_rdt[0] <= tmp_rdt;
       pip_err[0] <= tmp_err;
     end
 
-    assign tcb.rdt = pip_rdt[tcb.DLY-1];
-    assign tcb.err = pip_err[tcb.DLY-1];
+    assign tcb.rdt = tcb.rsp ? pip_rdt[tcb.DLY-1] : 'x;
+    assign tcb.err = tcb.rsp ? pip_err[tcb.DLY-1] : 'x;
 
   end
   endgenerate

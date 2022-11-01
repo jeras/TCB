@@ -40,7 +40,7 @@ module tcb_vip_man
     input  logic               lck = 1'b0,
     input  logic               rpt = 1'b0,
     // timing idle
-    input  int                 idl = 0
+    input  int unsigned        idl = 0
   );
     // request timing
     repeat (idl) @(posedge tcb.clk);

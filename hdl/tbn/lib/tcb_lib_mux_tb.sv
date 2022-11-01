@@ -38,6 +38,8 @@ module tcb_lib_mux_tb
   logic rst;  // reset
 
   // response
+  //logic [DBW-1:0] rdt [PN-1:0];  // read data
+  //logic           err [PN-1:0];  // error response
   logic [DBW-1:0] rdt;  // read data
   logic           err;  // error response
 
@@ -75,16 +77,29 @@ module tcb_lib_mux_tb
 //          man[i].read (32'h76543210, 4'b1111, rdt         , err);
 //        end
           fork
-            begin  man[0].write(32'h01234567, 4'b1111, 32'h03020100, err);  end
-            begin  man[1].write(32'h01234567, 4'b1111, 32'h13121110, err);  end
-            begin  man[2].write(32'h01234567, 4'b1111, 32'h23222120, err);  end
+//            begin  man[0].write(32'h00000000, 4'b1111, 32'h03020100, err[0]);  end
+//            begin  man[1].write(32'h00000004, 4'b1111, 32'h13121110, err[1]);  end
+//            begin  man[2].write(32'h0000000C, 4'b1111, 32'h23222120, err[2]);  end
+            begin  man[0].write(32'h00000000, 4'b1111, 32'h03020100, err);  end
+            begin  man[1].write(32'h00000004, 4'b1111, 32'h13121110, err);  end
+            begin  man[2].write(32'h0000000C, 4'b1111, 32'h23222120, err);  end
+          join
+          fork
+//            begin  man[0].read (32'h00000000, 4'b1111, rdt[0]      , err[0]);  end
+//            begin  man[1].read (32'h00000004, 4'b1111, rdt[1]      , err[1]);  end
+//            begin  man[2].read (32'h0000000C, 4'b1111, rdt[2]      , err[2]);  end
+            begin  man[0].read (32'h00000000, 4'b1111, rdt, err);  end
+            begin  man[1].read (32'h00000004, 4'b1111, rdt, err);  end
+            begin  man[2].read (32'h0000000C, 4'b1111, rdt, err);  end
           join
       end: req
       begin: rsp
         sub.rsp(32'hXXXXXXXX, 1'b0);
-//        sub.rsp(32'hXXXXXXXX, 1'b0);
-//        sub.rsp(32'hXXXXXXXX, 1'b0);
-//        sub.rsp(32'hFEDCBA98, 1'b0);
+        sub.rsp(32'hXXXXXXXX, 1'b0);
+        sub.rsp(32'hXXXXXXXX, 1'b0);
+        sub.rsp(32'h03020100, 1'b0);
+        sub.rsp(32'h13121110, 1'b0);
+        sub.rsp(32'h23222120, 1'b0);
       end: rsp
     join
     repeat (8) @(posedge clk);
