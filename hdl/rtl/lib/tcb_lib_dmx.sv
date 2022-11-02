@@ -25,8 +25,8 @@ module tcb_lib_dmx #(
   // response delay
   int unsigned DLY = 1,
   // interconnect parameters
-  int unsigned PN = 2,      // port number
-  localparam   PL = $clog2(PN)
+  parameter  int unsigned PN = 2,      // port number
+  localparam int unsigned PL = $clog2(PN)
 )(
   // control
   input  logic [PL-1:0] sel,  // select
@@ -34,8 +34,6 @@ module tcb_lib_dmx #(
   tcb_if.sub sub        ,  // TCB subordinate port  (manager     device connects here)
   tcb_if.man man[PN-1:0]   // TCB manager     ports (subordinate devices connect here)
 );
-
-  genvar i;
 
 ////////////////////////////////////////////////////////////////////////////////
 // parameter validation
@@ -45,12 +43,12 @@ module tcb_lib_dmx #(
 `else
   // camparing subordinate and manager interface parameters
   generate
-  for (i=0; i<PN; i++) begin: param
+  for (genvar i=0; i<PN; i++) begin: param
     // bus widths
-    if (sub.AW  != man[i].AW )  $error("ERROR: %m parameter (sub.AW  = %d) != (man[%d].AW  = %d)", sub.AW , i, man[i].AW );
-    if (sub.DW  != man[i].DW )  $error("ERROR: %m parameter (sub.DW  = %d) != (man[%d].DW  = %d)", sub.DW , i, man[i].DW );
-    if (sub.SW  != man[i].SW )  $error("ERROR: %m parameter (sub.SW  = %d) != (man[%d].SW  = %d)", sub.SW , i, man[i].SW );
-    if (sub.BW  != man[i].BW )  $error("ERROR: %m parameter (sub.BW  = %d) != (man[%d].BW  = %d)", sub.BW , i, man[i].BW );
+    if (sub.ABW != man[i].ABW)  $error("ERROR: %m parameter (sub.ABW = %d) != (man[%d].ABW = %d)", sub.ABW, i, man[i].ABW);
+    if (sub.DBW != man[i].DBW)  $error("ERROR: %m parameter (sub.DBW = %d) != (man[%d].DBW = %d)", sub.DBW, i, man[i].DBW);
+    if (sub.SLW != man[i].SLW)  $error("ERROR: %m parameter (sub.SLW = %d) != (man[%d].SLW = %d)", sub.SLW, i, man[i].SLW);
+    if (sub.BEW != man[i].BEW)  $error("ERROR: %m parameter (sub.BEW = %d) != (man[%d].BEW = %d)", sub.BEW, i, man[i].BEW);
     // response delay
     if (sub.DLY != man[i].DLY)  $error("ERROR: %m parameter (sub.DLY = %d) != (man[%d].DLY = %d)", sub.DLY, i, man[i].DLY);
   end: param
@@ -92,7 +90,7 @@ module tcb_lib_dmx #(
 
   // replicate request signals
   generate
-  for (i=0; i<PN; i++) begin: gen_req
+  for (genvar i=0; i<PN; i++) begin: gen_req
     // handshake
     assign man[i].vld = (sub_sel == i) ? sub.vld : '0;
     // request
@@ -113,7 +111,7 @@ module tcb_lib_dmx #(
   // organize response signals into indexable array
   // since a dynamic index can't be used on an array of interfaces
   generate
-  for (i=0; i<PN; i++) begin: gen_rsp
+  for (genvar i=0; i<PN; i++) begin: gen_rsp
     // response
     assign tmp_rdt[i] = man[i].rdt;
     assign tmp_err[i] = man[i].err;

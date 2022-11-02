@@ -38,7 +38,9 @@ TBN+=${PATH_HDL}/tbn/vip/tcb_vip_man.sv
 TBN+=${PATH_HDL}/tbn/vip/tcb_vip_tb.sv
 # LIBrary
 TBN+=${PATH_HDL}/tbn/lib/tcb_lib_pas_tb.sv
+TBN+=${PATH_HDL}/tbn/lib/tcb_lib_reg_tb.sv
 TBN+=${PATH_HDL}/tbn/lib/tcb_lib_mux_tb.sv
+TBN+=${PATH_HDL}/tbn/lib/tcb_lib_dmx_tb.sv
 ## GPIO testbench
 TBN+=${PATH_HDL}/tbn/gpio/tcb_gpio_tb.sv
 ## UART testbench

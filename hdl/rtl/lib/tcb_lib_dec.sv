@@ -17,21 +17,19 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 module tcb_lib_dec #(
-  // bus parameters
-  int unsigned AW = 32,    // address width
+  // TCB parameters
+  parameter  int unsigned ABW = 32,   // address width
   // interconnect parameters
-  int unsigned PN = 2,     // port number
-  localparam   PL = $clog2(PN),
-  // decoder addresses and masks
-  logic [PN-1:0] [AW-1:0] AS = PN'('x)
+  parameter  int unsigned PN = 2,     // port number
+  localparam int unsigned PL = $clog2(PN),
+  // decoder address and mask array
+  parameter  logic [ABW-1:0] DAM [PN-1:0] = '{PN{ABW'('x)}}
 )(
   // TCB interfaces
-  tcb_if.sub sub,  // TCB subordinate port (manager device connects here)
+  tcb_if.sub tcb,  // TCB subordinate port (manager device connects here)
   // control
   output logic [PL-1:0] sel   // select
 );
-
-  genvar i;
 
 ////////////////////////////////////////////////////////////////////////////////
 // parameter validation
@@ -41,25 +39,46 @@ module tcb_lib_dec #(
 // TODO
 
 ////////////////////////////////////////////////////////////////////////////////
+// local signals
+////////////////////////////////////////////////////////////////////////////////
+
+  logic [ABW-1:0] adr;
+
+  // extract address from TCB
+  assign adr = tcb.adr;
+
+////////////////////////////////////////////////////////////////////////////////
 // decoder
 ////////////////////////////////////////////////////////////////////////////////
 
-  // priority encoder
-  function [SW-1:0] clog2 (logic [PN-1:0] val);
-    clog2 = 'x;  // optimization of undefined encodings
-    for (int unsigned i=0; i<PN; i++) begin
-      if (val[i])  clog2 = i[SW-1:0];
-    end
-  endfunction: clog2
+//  // match
+//  function [PN-1:0] match (
+//    logic [ABW-1:0] val,           // input
+//    logic [ABW-1:0] mch [PN-1:0]   // matching reference
+//  );
+//    for (int unsigned i=0; i<PN; i++) begin
+//      assign match[i] = val ==? mch[i];
+//    end
+//  endfunction: match
 
-  // address range decoder into one hot vector
+  logic mch [PN-1:0];
+  // match
   generate
-  for (i=0; i<PN; i++) begin: gen_dec
-    assign sub_dec[i] = sub.adr ==? AS[i];
-  end: gen_dec
+    for (genvar i=0; i<PN; i++) begin
+      assign mch[i] = adr ==? DAM[i];
+    end
   endgenerate
 
-  // priority encoder
-  assign sel = clog2(sub_dec);
+  // encode
+  function logic [PL-1:0] encode (logic val [PN-1:0]);
+    encode = 'x;  // optimization of undefined encodings
+    for (int i=PN; i>=0; i--) begin
+      if (val[i])  encode = i[PL-1:0];
+    end
+  endfunction: encode
+
+  // address decoder
+//  assign sel = encode(match(adr, DAM));
+  assign sel = encode(mch);
 
 endmodule: tcb_lib_dec

@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// TCB (Tightly Coupled Bus) LIBrary MUltipleXer/ARBiter TestBench
+// TCB (Tightly Coupled Bus) LIBrary DeMultipleXer/DECoder TestBench
 ////////////////////////////////////////////////////////////////////////////////
 // Copyright 2022 Iztok Jeras
 //
@@ -16,7 +16,7 @@
 // limitations under the License.
 ////////////////////////////////////////////////////////////////////////////////
 
-module tcb_lib_mux_tb
+module tcb_lib_dmx_tb
   import tcb_vip_pkg::*;
 #(
   // TCB widths
@@ -29,8 +29,8 @@ module tcb_lib_mux_tb
   // interconnect parameters
   int unsigned PN = 3,      // port number
   int unsigned PL = $clog2(PN),
-  // port priorities (lower number is higher priority)
-  int unsigned PRI [PN-1:0] = '{2, 1, 0}
+  // decoder address and mask array
+  parameter  logic [ABW-1:0] DAM [PN-1:0] = '{PN{ABW'('x)}}
 );
 
   // system signals
@@ -38,8 +38,6 @@ module tcb_lib_mux_tb
   logic rst;  // reset
 
   // response
-  //logic [DBW-1:0] rdt [PN-1:0];  // read data
-  //logic           err [PN-1:0];  // error response
   logic [DBW-1:0] rdt;  // read data
   logic           err;  // error response
 
@@ -50,8 +48,8 @@ module tcb_lib_mux_tb
 // local signals
 ////////////////////////////////////////////////////////////////////////////////
 
-  tcb_if #(.ABW (ABW), .DBW (DBW)) tcb_man  [PN-1:0] (.clk (clk), .rst (rst));
-  tcb_if #(.ABW (ABW), .DBW (DBW)) tcb_sub           (.clk (clk), .rst (rst));
+  tcb_if #(.ABW (ABW), .DBW (DBW)) tcb_man           (.clk (clk), .rst (rst));
+  tcb_if #(.ABW (ABW), .DBW (DBW)) tcb_sub  [PN-1:0] (.clk (clk), .rst (rst));
 
 ////////////////////////////////////////////////////////////////////////////////
 // test sequence
@@ -72,35 +70,24 @@ module tcb_lib_mux_tb
     #1;
     fork
       begin: req
-//        for (int unsigned i=0; i<PN; i++) begin
-//          man[i].write(32'h01234567, 4'b1111, 32'h89ABCDEF, err);
-//          man[i].read (32'h76543210, 4'b1111, rdt         , err);
-//        end
-          // TODO: check why I could not drive an array element
-          fork
-//            begin  man[0].write(32'h00000000, 4'b1111, 32'h03020100, err[0]);  end
-//            begin  man[1].write(32'h00000004, 4'b1111, 32'h13121110, err[1]);  end
-//            begin  man[2].write(32'h0000000C, 4'b1111, 32'h23222120, err[2]);  end
-            begin  man[0].write(32'h00000000, 4'b1111, 32'h03020100, err);  end
-            begin  man[1].write(32'h00000004, 4'b1111, 32'h13121110, err);  end
-            begin  man[2].write(32'h0000000C, 4'b1111, 32'h23222120, err);  end
-          join
-          fork
-//            begin  man[0].read (32'h00000000, 4'b1111, rdt[0]      , err[0]);  end
-//            begin  man[1].read (32'h00000004, 4'b1111, rdt[1]      , err[1]);  end
-//            begin  man[2].read (32'h0000000C, 4'b1111, rdt[2]      , err[2]);  end
-            begin  man[0].read (32'h00000000, 4'b1111, rdt, err);  end
-            begin  man[1].read (32'h00000004, 4'b1111, rdt, err);  end
-            begin  man[2].read (32'h0000000C, 4'b1111, rdt, err);  end
-          join
+        man.write(32'h00000000, 4'b1111, 32'h03020100, err);
+        man.write(32'h00000004, 4'b1111, 32'h13121110, err);
+        man.write(32'h0000000C, 4'b1111, 32'h23222120, err);
+        man.read (32'h00000000, 4'b1111, rdt, err);
+        man.read (32'h00000004, 4'b1111, rdt, err);
+        man.read (32'h0000000C, 4'b1111, rdt, err);
       end: req
       begin: rsp
-        sub.rsp(32'hXXXXXXXX, 1'b0);
-        sub.rsp(32'hXXXXXXXX, 1'b0);
-        sub.rsp(32'hXXXXXXXX, 1'b0);
-        sub.rsp(32'h03020100, 1'b0);
-        sub.rsp(32'h13121110, 1'b0);
-        sub.rsp(32'h23222120, 1'b0);
+        fork
+          begin  sub[0].rsp(32'hXXXXXXXX, 1'b0);  end
+          begin  sub[1].rsp(32'hXXXXXXXX, 1'b0);  end
+          begin  sub[2].rsp(32'hXXXXXXXX, 1'b0);  end
+        join
+        fork
+          begin  sub[0].rsp(32'h03020100, 1'b0);  end
+          begin  sub[1].rsp(32'h13121110, 1'b0);  end
+          begin  sub[2].rsp(32'h23222120, 1'b0);  end
+        join
       end: rsp
     join
     repeat (8) @(posedge clk);
@@ -119,36 +106,36 @@ module tcb_lib_mux_tb
 ////////////////////////////////////////////////////////////////////////////////
 
   // manager
-  tcb_vip_man man     [PN-1:0] (.tcb (tcb_man));
+  tcb_vip_man man              (.tcb (tcb_man));
 
   // manager monitor
-  tcb_vip_mon mon_man [PN-1:0] (.tcb (tcb_man));
+  tcb_vip_mon mon_man          (.tcb (tcb_man));
 
   // subordinate monitor
-  tcb_vip_mon mon_sub          (.tcb (tcb_sub));
+  tcb_vip_mon mon_sub [PN-1:0] (.tcb (tcb_sub));
 
   // subordinate
-  tcb_vip_sub sub              (.tcb (tcb_sub));
+  tcb_vip_sub sub     [PN-1:0] (.tcb (tcb_sub));
 
 ////////////////////////////////////////////////////////////////////////////////
 // DUT instances
 ////////////////////////////////////////////////////////////////////////////////
 
-  // RTL arbiter DUT
-  tcb_lib_arb #(
+  // RTL decoder DUT
+  tcb_lib_dec #(
     // arbitration priority mode
 //  .MD   (),
     // interconnect parameters
     .PN   (PN),
-    // port priorities (lower number is higher priority)
-    .PRI  (PRI)
+    // decoder address and mask array
+    .DAM  (DAM)
   ) arb (
     .tcb  (tcb_man),
     .sel  (sel)
   );
 
-  // RTL multiplexer DUT
-  tcb_lib_mux #(
+  // RTL demultiplexer DUT
+  tcb_lib_dmx #(
     // interconnect parameters
     .PN   (PN)
   ) mux (
@@ -169,4 +156,4 @@ module tcb_lib_mux_tb
     $dumpvars;
   end
 
-endmodule: tcb_lib_mux_tb
+endmodule: tcb_lib_dmx_tb

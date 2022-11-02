@@ -17,14 +17,13 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 module tcb_lib_arb #(
-  // interconnect parameters
-  int unsigned PN = 2,  // port number
   // arbitration priority mode
-  string       MD = "FX",  // "FX" - fixed priority
-                           // "RR" - round robin (TODO)
+  parameter  string       MD = "FX",  // "FX" - fixed priority, "RR" - round robin (TODO)
+  // interconnect parameters
+  parameter  int unsigned PN = 2,  // port number
+  localparam int unsigned PL = $clog2(PN),
   // port priorities (lower number is higher priority)
-  bit unsigned [PL-1:0] PRI [PN-1:0] = '{1'd1, 1'd0},
-  localparam   PL = $clog2(PN)
+  parameter  bit unsigned [PL-1:0] PRI [PN-1:0] = '{1'd1, 1'd0}
 )(
   // TCB interfaces
   tcb_if.sub tcb [PN-1:0],  // TCB subordinate ports (manager devices connect here)
@@ -43,27 +42,34 @@ module tcb_lib_arb #(
 // local signals
 ////////////////////////////////////////////////////////////////////////////////
 
-  logic [PN-1:0] vld;
+  logic vld [PN-1:0];
 
   // extract valid from TCB
   generate
-    for (genvar i=0; i<PN; i++) begin
+    for (genvar i=0; i<PN; i++) begin: map
       assign vld[i] = tcb[i].vld;
-    end
+    end: map
   endgenerate
 
 ////////////////////////////////////////////////////////////////////////////////
 // fixed priority arbiter
 ////////////////////////////////////////////////////////////////////////////////
 
+  // TODO: try to create a function returning an unpacked array
+
   // priority reorder
-  function [PN-1:0] reorder (logic [PN-1:0] val);
+//  function logic reorder [PN-1:0] (
+  function logic [PN-1:0] reorder (
+    logic                 val [PN-1:0],  // input
+    bit unsigned [PL-1:0] ord [PN-1:0]   // order
+  );
     for (int unsigned i=0; i<PN; i++) begin
-      assign reorder[i] = val[PRI[i]];
+      assign reorder[i] = val[ord[i]];
     end
   endfunction: reorder
 
   // priority encode
+//  function logic [PL-1:0] encode (logic val [PN-1:0]);
   function logic [PL-1:0] encode (logic [PN-1:0] val);
     encode = 'x;  // optimization of undefined encodings
     for (int i=PN; i>=0; i--) begin
@@ -71,7 +77,7 @@ module tcb_lib_arb #(
     end
   endfunction: encode
 
-  // simple priority arbiter
-  assign sel = PRI[encode(reorder(vld))];
+  // priority arbiter
+  assign sel = PRI[encode(reorder(vld, PRI))];
 
 endmodule: tcb_lib_arb

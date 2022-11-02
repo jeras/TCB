@@ -28,8 +28,6 @@ module tcb_lib_mux #(
   tcb_if.man man           // TCB manager     port  (subordinate device connects here)
 );
 
-  genvar i;
-
 ////////////////////////////////////////////////////////////////////////////////
 // parameter validation
 ////////////////////////////////////////////////////////////////////////////////
@@ -38,7 +36,7 @@ module tcb_lib_mux #(
 `else
   // camparing subordinate and manager interface parameters
   generate
-  for (i=0; i<PN; i++) begin: param
+  for (genvar i=0; i<PN; i++) begin: param
     // bus widths
     if (sub[i].ABW != man.ABW)  $error("ERROR: %m parameter (sub[%d].ABW = %d) != (man.ABW = %d)", i, sub[i].ABW, man.ABW);
     if (sub[i].DBW != man.DBW)  $error("ERROR: %m parameter (sub[%d].DBW = %d) != (man.DBW = %d)", i, sub[i].DBW, man.DBW);
@@ -91,7 +89,7 @@ module tcb_lib_mux #(
   // organize request signals into indexable array
   // since a dynamix index can't be used on an array of interfaces
   generate
-  for (i=0; i<PN; i++) begin: gen_req
+  for (genvar i=0; i<PN; i++) begin: gen_req
     // handshake
     assign tmp_vld[i] = sub[i].vld;
     // request
@@ -123,7 +121,7 @@ module tcb_lib_mux #(
 
   // replicate response signals
   generate
-  for (i=0; i<PN; i++) begin: gen_rsp
+  for (genvar i=0; i<PN; i++) begin: gen_rsp
     // response
     assign sub[i].rdt = (man_sel == i[PL-1:0]) ? man.rdt : 'x;  // response phase
     assign sub[i].err = (man_sel == i[PL-1:0]) ? man.err : 'x;  // response phase
