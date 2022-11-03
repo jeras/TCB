@@ -7,13 +7,34 @@ without unnecessary limitations on throughput.
 
 ## Implementation status
 
-| module | status | description |
-|--------|--------|-------------|
-| [`tcb_if` ](hdl/rtl/tcb_if.sv ) | done | SystemVerilog interface. |
-| [`tcb_arb`](hdl/rtl/tcb_arb.sv) | done | Arbiter (manager multiplexer). |
-| [`tcb_dec`](hdl/rtl/tcb_dec.sv) | done | Decoder (subordinate demultiplexer). |
-| [`tcb_err`](hdl/rtl/tcb_err.sv) | done | Error response leaf subordinate. |
+### VIP
 
+| module                                      | status | description |
+|---------------------------------------------|--------|-------------|
+| [`tcb_vip_man`](hdl/tbn/vip/tcb_vip_man.sv) | done   | Manager model. |
+| [`tcb_vip_mon`](hdl/tbn/vip/tcb_vip_mon.sv) | done   | Monitor. |
+| [`tcb_vip_sub`](hdl/tbn/vip/tcb_vip_sub.sv) | done   | Subordinate model. |
+
+### Interconnect library
+
+| module                                      | status | description |
+|---------------------------------------------|--------|-------------|
+| [`tcb_if`     ](hdl/rtl/tcb_if.sv         ) | done   | SystemVerilog interface. |
+| [`tcb_lib_pas`](hdl/rtl/lib/tcb_lib_pas.sv) | done   | Trivial passthrough. |
+| [`tcb_lib_reg`](hdl/rtl/lib/tcb_lib_reg.sv) | planed | Register for request/response paths. |
+| [`tcb_lib_con`](hdl/rtl/lib/tcb_lib_con.sv) | planed | Interface connector with automatic handling of parameter differences. |
+| [`tcb_lib_arb`](hdl/rtl/lib/tcb_lib_arb.sv) | done   | Priority arbiter. |
+| [`tcb_lib_mux`](hdl/rtl/lib/tcb_lib_mux.sv) | done   | Multiplexer of multiple managers. |
+| [`tcb_lib_dec`](hdl/rtl/lib/tcb_lib_dec.sv) | done   | Address decoder. |
+| [`tcb_lib_dmx`](hdl/rtl/lib/tcb_lib_dmx.sv) | done   | Demultiplexer of multiple subordinates. |
+| [`tcb_lib_err`](hdl/rtl/lib/tcb_lib_err.sv) | done   | Error response leaf subordinate. |
+
+### Peipherals
+
+| module                                  | status | description |
+|-----------------------------------------|--------|-------------|
+| [`tcb_gpio` ](hdl/rtl/gpio/tcb_gpio.sv) | WIP    | GPIO controller. |
+| [`tcb_uart` ](hdl/rtl/uart/tcb_uart.sv) | WIP    | UART controller. |
 
 ## References
 
