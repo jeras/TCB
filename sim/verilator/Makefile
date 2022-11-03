@@ -111,9 +111,15 @@ endif
 # Verilog toplevel parameter override
 ################################################################################
 
-# set XLEN parameter
-#XLEN ?= 32
-#PAR += -GXLEN=${XLEN}
+# TCB address/data bus widths
+ABW ?= 32
+DBW ?= 32
+# TCB response delay
+DLY ?= 1
+
+#PAR += -GABW=${ABW}
+#PAR += -GDBW=${DBW}
+#PAR += -GDLY=${DLY}
 
 ################################################################################
 # Verilog $plusargs runtime arguments

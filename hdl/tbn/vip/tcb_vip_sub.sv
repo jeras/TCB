@@ -103,17 +103,51 @@ module tcb_vip_sub
   generate
   if (tcb.DLY == 0) begin
 
+    initial begin
+      $display("tcb.DLY == 0: DLY = %d", tcb.DLY);
+    end
+
     assign tcb.rdt = tcb.rsp ? tmp_rdt : 'x;
     assign tcb.err = tcb.rsp ? tmp_err : 'x;
 
-  end else  begin
+  end else begin
 
-    // TODO: support for DLY>1
+    initial begin
+      $display("else: DLY = %d", tcb.DLY);
+    end
+
     always_ff @(posedge tcb.clk)
     if (tcb.trn) begin
       pip_rdt[0] <= tmp_rdt;
       pip_err[0] <= tmp_err;
+    end else begin
+      pip_rdt[0] <= 'x;
+      pip_err[0] <= 1'bx;
     end
+
+    for (genvar i=1; i<tcb.DLY; i++) begin
+
+      initial begin
+        $display("for: DLY = %d, genvar i = %d", tcb.DLY, i);
+      end
+
+      always_ff @(posedge tcb.clk)
+      begin
+        // --Verilator debug line
+        $display("DLY = %d, genvar i = %d", tcb.DLY, i);
+        pip_rdt[i] <= pip_rdt[i-1];
+        pip_err[i] <= pip_err[i-1];
+      end
+
+    end
+
+//      always_ff @(posedge tcb.clk)
+//      begin
+//        $display("test");
+//        pip_rdt[1] <= pip_rdt[0];
+//        pip_err[1] <= pip_err[0];
+//      end
+
 
     assign tcb.rdt = tcb.rsp ? pip_rdt[tcb.DLY-1] : 'x;
     assign tcb.err = tcb.rsp ? pip_err[tcb.DLY-1] : 'x;

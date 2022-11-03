@@ -25,7 +25,7 @@ module tcb_vip_tb
   int unsigned SLW =       8,  // selection   width
   int unsigned BEW = DBW/SLW,  // byte enable width
   // response delay
-  int unsigned DLY = 1
+  int unsigned DLY = 2
 );
 
   // system signals
@@ -76,7 +76,7 @@ module tcb_vip_tb
 //  //    sub.req( wen,  adr,     ben,          wdt,                   );
       end: rsp
     join
-    repeat (8) @(posedge clk);
+    repeat (4) @(posedge clk);
     $finish();
   end
 
