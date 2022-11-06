@@ -14,21 +14,6 @@ PATH_HDL=../../hdl
 
 # SystemVerilog interface
 RTL+=${PATH_HDL}/rtl/tcb_if.sv
-# LIBrary
-RTL+=${PATH_HDL}/rtl/lib/tcb_lib_pas.sv
-RTL+=${PATH_HDL}/rtl/lib/tcb_lib_reg.sv
-RTL+=${PATH_HDL}/rtl/lib/tcb_lib_arb.sv
-RTL+=${PATH_HDL}/rtl/lib/tcb_lib_mux.sv
-RTL+=${PATH_HDL}/rtl/lib/tcb_lib_dec.sv
-RTL+=${PATH_HDL}/rtl/lib/tcb_lib_dmx.sv
-RTL+=${PATH_HDL}/rtl/lib/tcb_lib_err.sv
-# GPIO RTL
-RTL+=${PATH_HDL}/rtl/gpio/tcb_gpio.sv
-# UART RTL
-RTL+=${PATH_HDL}/rtl/uart/tcb_uart_ser.sv
-RTL+=${PATH_HDL}/rtl/uart/tcb_uart_des.sv
-RTL+=${PATH_HDL}/rtl/uart/tcb_uart_fifo.sv
-RTL+=${PATH_HDL}/rtl/uart/tcb_uart.sv
 
 # SystemVerilog VIP
 TBN+=${PATH_HDL}/tbn/vip/tcb_vip_pkg.sv
@@ -36,17 +21,6 @@ TBN+=${PATH_HDL}/tbn/vip/tcb_vip_mon.sv
 TBN+=${PATH_HDL}/tbn/vip/tcb_vip_sub.sv
 TBN+=${PATH_HDL}/tbn/vip/tcb_vip_man.sv
 TBN+=${PATH_HDL}/tbn/vip/tcb_vip_tb.sv
-# LIBrary
-TBN+=${PATH_HDL}/tbn/lib/tcb_lib_pas_tb.sv
-TBN+=${PATH_HDL}/tbn/lib/tcb_lib_reg_tb.sv
-TBN+=${PATH_HDL}/tbn/lib/tcb_lib_mux_tb.sv
-TBN+=${PATH_HDL}/tbn/lib/tcb_lib_dmx_tb.sv
-## GPIO testbench
-TBN+=${PATH_HDL}/tbn/gpio/tcb_gpio_tb.sv
-## UART testbench
-TBN+=${PATH_HDL}/tbn/uart/uart_model.sv
-TBN+=${PATH_HDL}/tbn/uart/uart_model_tb.sv
-TBN+=${PATH_HDL}/tbn/uart/tcb_uart_tb.sv
 
 # combined HDL sources
 HDL =${RTL}

@@ -20,22 +20,14 @@ module tcb_vip_sub
   import tcb_vip_pkg::*;
 (
   // TCB interface
-  tcb_if.sub tcb
+  tcb_if tcb
 );
-
-////////////////////////////////////////////////////////////////////////////////
-// local signals
-////////////////////////////////////////////////////////////////////////////////
 
   // response pipeline
   logic [tcb.DBW-1:0] tmp_rdt;
   logic               tmp_err;
   logic [tcb.DBW-1:0] pip_rdt [0:tcb.DLY-1];
   logic               pip_err [0:tcb.DLY-1];
-
-////////////////////////////////////////////////////////////////////////////////
-// request/response (enable pipelined transfers with full throughput)
-////////////////////////////////////////////////////////////////////////////////
 
   // request
   task req (
@@ -77,28 +69,12 @@ module tcb_vip_sub
       do begin
         @(posedge tcb.clk);
       end while (~tcb.trn);
-    end else begin
-    // TODO
-//    // wait for request
-//    do begin
-//      @(posedge tcb.clk);
-//    end while (~tcb.vld);
-//    // backpressure
-//    int i = tmg;
-//    for (int unsigned i=0; i<tmg; i+=int'(tcb.vld)) begin
-//      @(posedge tcb.clk);
-//    end
-//    repeat (tmg) @(posedge tcb.clk);
     end
     // idle
     #1;
     tmp_rdt = 'x;
     tmp_err = 'x;
   endtask: rsp
-
-////////////////////////////////////////////////////////////////////////////////
-// response pipeline
-////////////////////////////////////////////////////////////////////////////////
 
   generate
   if (tcb.DLY == 0) begin
@@ -140,14 +116,6 @@ module tcb_vip_sub
       end
 
     end
-
-//      always_ff @(posedge tcb.clk)
-//      begin
-//        $display("test");
-//        pip_rdt[1] <= pip_rdt[0];
-//        pip_err[1] <= pip_err[0];
-//      end
-
 
     assign tcb.rdt = tcb.rsp ? pip_rdt[tcb.DLY-1] : 'x;
     assign tcb.err = tcb.rsp ? pip_err[tcb.DLY-1] : 'x;

@@ -61,22 +61,17 @@ module tcb_vip_tb
     repeat (1) @(posedge clk);
     fork
       begin: req
-        //         adr,     ben,          wdt, err, len
-        man.write('h00, 4'b1111, 32'h01234567, err);
-        man.read ('h00, 4'b1111, rdt         , err);
-//        man.req('{1'b1, 'h00, 4'b1111, 32'h01234567,                     0});
-//        sub.rsp('{                                   32'h89abcdef, 1'b0, 0});
-//        man.req('{1'b1, 'h01, 4'b1111, 32'h76543210,                     1});
-//        sub.rsp('{                                   32'hfedcba98, 1'b0, 1});
+        man.req(1'b0, 32'h00000000, 4'b1111, 32'hXXXXXXXX);
+        man.rsp(rdt, err);
       end: req
       begin: rsp
-        sub.rsp(32'h55xxxxxx, 1'b0);
         sub.rsp(32'h76543210, 1'b0);
-//  //    man.rsp(                                            rdt,  err);
-//  //    sub.req( wen,  adr,     ben,          wdt,                   );
       end: rsp
     join
+    repeat (1) @(posedge clk);
+    if (rdt != 32'h76543210)  $stop;
     repeat (4) @(posedge clk);
+    $write("*-* All Finished *-*\n");
     $finish();
   end
 
@@ -86,9 +81,6 @@ module tcb_vip_tb
 
   // manager
   tcb_vip_man man (.tcb (tcb));
-
-  // monitor
-  tcb_vip_mon mon (.tcb (tcb));
 
   // subordinate
   tcb_vip_sub sub (.tcb (tcb));
