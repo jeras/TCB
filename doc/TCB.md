@@ -41,27 +41,65 @@ TCB terminology and syntax is mostly based on:
 - Verilog/SystemVerilog HDL languages,
 - AMBA AXI family of protocols.
 
-| Term | Description |
-|------|-------------|
-| period | The term _clock period_ is preferred over _clock cycle_ to avoid confusion with _access cycle_ which can be multiple clock periods long. |
-| manager | Managers are modules driving requests toward a subordinate and receiving a response from it. This term is equivalent to _master_. |
-| subordinate | Subordinates are module receiving requests from a manager and responding to it. This term is equivalent to _slave_. |
-| handshake | Exchange of `valid` and `ready` signals during between manager and subordinate. |
-| cycle | Or _access cycle_ is one or more clock periods long exchange between a master and a subordinate governed by a valid/ready handshake, and it ends with a transfer. TODO: clarify if the delayed response is also part of the access cycle. |
-| transfer | Each access cycle ends in a single clock period long transfer where valid and ready handshake signals are both active. |
-| request | The collective value of signals (address, write enable, byte enable, write data) driven by a manager toward a subordinate, while valid is active during an access cycle. |
-| response |  TODO: clarify whether a response can be held multiple clock periods. |
+### Interconnect terms
+
+| module      | short | description |
+|-------------|-------|-------------|
+| manager     | `man` | Managers are modules driving requests toward a subordinate and receiving a response from it. This term is equivalent to _master_. |
+| subordinate | `sub` | Subordinates are module receiving requests from a manager and responding to it. This term is equivalent to _slave_. |
+| monitor     | `mon` | Monitors do not drive any protocol signals, they only observe them for error checking, statistics and logging. |
+
+### Protocol timing terms
+
+| term         | description |
+|--------------|-------------|
+| clock period | The term _clock period_ is preferred over _clock cycle_ to avoid confusion with _access cycle_ which can be multiple clock periods long. |
+| handshake    | Exchange of `valid` and `ready` signals during between manager and subordinate. |
+| cycle        | Or _access cycle_ is one or more clock periods long exchange between a master and a subordinate governed by a valid/ready handshake, and it ends with a transfer. TODO: clarify if the delayed response is also part of the access cycle. |
+| transfer     | Each access cycle ends in a single clock period long transfer when valid and ready handshake signals are both active. |
+| request      | The collective value of signals (address, write enable, byte enable, write data) driven by a manager, while valid is active during an access cycle. And sampled by a subordinate during a transfer. |
+| response     | In the current protocol version, a response is a single clock period delayed by a fixed number of clock periods from each transfer, in it read data and error status are driven by a subordinate and sampled by a manager. Future versions of the protocol might have responses encompassing multiple clock periods. |
 | backpressure | A subordinate can delay the transfer by driving the ready signal low. |
 | back-to-back | Performing transfers continuously in each clock period, without idling the bus by waiting the for a response before issuing e new request. |
-| parameter | Static (compile time) configuration of a HDL/RTL module, `parameter` in Verilog or `generic` in VHDL. |
-| quasi-static | Can change at runtime during initialization, bus is static (not changing) during system operation. |
-| dynamic | Can change at runtime during system operation. |
-| configuration | Peripheral register/field containing configuration information, they are usually quasi-static, never volatile. |
-| control | Peripheral register/field used to control system operation at runtime, they are dynamic signals. |
-| status | Peripheral register/field used to monitor system operation at runtime, they are volatile signals. |
 
-| Acronym | Definition |
+### Transaction level terms
+
+| direction | description |
+|-----------|-------------|
+| write     | Used for CPU store operations. |
+| read      | Used for CPU load operations. |
+
+| size | description |
+|------|-------------|
+| byte | 8-bit wide data. |
+| hald | 16-bit wide data. |
+| word | 32-bit wide data. |
+| long | 64-bit wide data. |
+
+### Peripheral driver terms
+
+_Parameters_ are used in HDL code.
+Terms _quasi-static_, _dynamic_ and _volatile_ are used to describe properties of
+_configuration_, _control_ and _status_ registers of a peripheral.
+
+| term          | Description |
+|---------------|-------------|
+| parameter     | Static (compile time) configuration of a HDL/RTL module, `parameter` in Verilog or `generic` in VHDL. |
+| quasi-static  | Can be driven at runtime during initialization, but is static (not changing) during system operation. |
+| dynamic       | Can be driven at runtime during system operation, is expected to change. |
+| volatile      | Can change at runtime during system operation. |
+| configuration | Peripheral register/field containing configuration information, they are usually quasi-static, never volatile. |
+| control       | Peripheral register/field used to control system operation at runtime, they are dynamic signals. |
+| status        | Peripheral register/field used to monitor system operation at runtime, they are volatile signals. |
+
+### Acronyms
+
+| acronym | definition |
+|---------|------------|
+| TCB     | Tightly Coupled Bus |
 | BFM     | Bus Functional Model |
+| LSB     | Least Significant Bit/Byte |
+| MSB     | Most Significant Bit/Byte |
 
 ## Naming conventions
 
@@ -70,7 +108,7 @@ Mostly for aesthetic reasons (vertical alignment) all signal names are
 
 Suffixes specifying the direction of module ports as input/output (`in`/`out`, `i`/`o`) can be avoided.
 Instead the set of signals can have a prefix or is grouped into a SystemVerilog interface.
-This set name shall use specifiers like manager/subordinate (`man`/`sub`, `m`/`s`).
+This set name shall use specifiers like manager/subordinate (`man`/`sub`).
 
 ## Signals and parameters
 
@@ -84,18 +122,18 @@ sometimes 12-bits, the size of load/store immediate is relevant.
 Since TCB was designed with 32-bit CPU/SoC/peripherals in mind,
 32-bit is the default data width and 4-bit is the default byte enable width.
 
-| parameter  | type | description |
-|------------|------|-------------|
-| `AW`       | int unsigned | Address width. |
-| `DW`       | int unsigned | Data width. |
-| `SW=8`     | int unsigned | Selection width (in most cases it should be 8, the size of a byte). |
-| `BW=DW/SW` | int unsigned | Byte enable width is the number of bytes fitting into the data width. |
+| parameter     | type           | description |
+|---------------|----------------|-------------|
+| `ABW`         | `int unsigned` | Address bus width. |
+| `DBW`         | `int unsigned` | Data bus width. |
+| `SLW=8`       | `int unsigned` | Selection width (in most cases it should be 8, the size of a byte). |
+| `BEW=DBW/SLW` | `int unsigned` | Byte enable width is the number of selection width units fitting into the data width. |
 
 #### Protocol timing parameters
 
-| parameter | type | description |
-|-----------|------|-------------|
-| `DLY`     | int unsigned | Response delay. |
+| parameter | type           | description |
+|-----------|----------------|-------------|
+| `DLY`     | `int unsigned` | Response delay. |
 
 ### System signals
 
@@ -134,10 +172,10 @@ The remaining signals were added to support SoC features:
 | `lck`  | `1`   | `man` -> `sub` | optional | Arbitration lock. |
 | `rpt`  | `1`   | `man` -> `sub` | optional | Repeat access. |
 | `wen`  | `1`   | `man` -> `sub` | optional | Write enable (can be omitted for read only devices). |
-| `adr`  | `AW`  | `man` -> `sub` | required | Address. |
-| `ben`  | `BW`  | `man` -> `sub` | optional | Byte enable/select (can be omitted if only full width transfers are allowed). |
-| `wdt`  | `DW`  | `man` -> `sub` | optional | Write data (can be omitted for read only devices). |
-| `rdt`  | `DW`  | `sub` -> `man` | required | Read data. |
+| `adr`  | `ABW` | `man` -> `sub` | required | Address. |
+| `ben`  | `BEW` | `man` -> `sub` | optional | Byte enable/select (can be omitted if only full width transfers are allowed). |
+| `wdt`  | `DBW` | `man` -> `sub` | optional | Write data (can be omitted for read only devices). |
+| `rdt`  | `DBW` | `sub` -> `man` | required | Read data. |
 | `err`  | `1`   | `sub` -> `man` | optional | Error response (can be omitted if there are no error conditions). |
 | `rdy`  | `1`   | `sub` -> `man` | optional | Handshake ready (can be omitted if there is no backpressure). |
 
@@ -230,7 +268,7 @@ Read/write transfer cycles are shown with common response delays (parameter `DLY
   to break long timing paths at either the request path, response path or both to improve timing.
   Such collections can be used to achieve better area timing compromises,
   compared to using subordinates with integrated registers.
-- `DLY=1` is the most common delay for subordinates with SRAM as an example.
+- `DLY=1` is the most common delay for subordinates with SRAM as an example, this is also the **HDL default**.
 - `DLY=2` is the case where a single subordinate or a segment of the interconnect with `DLY=1`
   would have an extra register added to the request path (address decoder)
   or response path (read data multiplexer) to improve timing.
@@ -295,15 +333,77 @@ The interconnect would propagate the `rpt` as active only in case
 
 #### Arbitration locking mechanism
 
-Intended for read modify write and similar operations and for QoS control.
+Arbitration locking is used in the TCB reference implementation library to:
+- Keep atomicity in data bus width conversion from a wider manager to a narrower subordinate.
+- Keep atomicity while converting a missaligned access into multiple alligned accesses.
+
+It can also be used for read modify write, and similar operations and for QoS control.
 
 ### Endianness and data alignment
 
-The TCB protocol is endianness agnostic, as long as the address is aligned to the data width.
+The following table defines when an access is aligned depending on
+data transfer size and byte address LSB bits.
 
-The address is aligned if `$clog2(BW)` least significant address bits are zero.
+| transfer size | condition             |
+|---------------|-----------------------|
+| byte ( 8-bit) | none                  |
+| hald (16-bit) | $clog2(adr[0:0]) == 0 |
+| word (32-bit) | $clog2(adr[1:0]) == 0 |
+| long (64-bit) | $clog2(adr[2:0]) == 0 |
 
-TODO: check this.
+The protocol endianness can be either:
+- endianness agnostic, only supporting alligned transfers,
+- little endian,
+- big endian,
+- a special case is defined for RISC-V instruction fetch of compressed instructions.
+
+#### Endianness agnostic (alligned)
+
+The TCB protocol can be endianness agnostic,
+as long as the address is aligned to the data width.
+
+In this mode, address LSB bits `adr[$clog2(BEW)-1:0]` are
+undefined while driven by a manager and ignored while sampled by a subordinate.
+For consistency they should still be part of the address vector.
+
+The manager encodes the address of data transfers smaller than
+the full data bus width (`DBW`) using only byte enable (`BEN`).
+The mapping of alligned accesses for little/big endian managers
+is shown in the following chapters.
+
+#### Little endian (any allignment)
+
+| size | `adr[1:0]` | allignment  | `ben[3:0]` | `wdt[31:00]`/`rdt[31:00]` |
+|------|------------|-------------|------------|---------------------------|
+| byte | `2'd0`     |    alligned | `4'b0001`  | `{  8'bXX,   8'bXX,   8'bXX, [07:00]}` |
+| byte | `2'd1`     |    alligned | `4'b0010`  | `{  8'bXX,   8'bXX, [07:00],   8'bXX}` |
+| byte | `2'd2`     |    alligned | `4'b0100`  | `{  8'bXX, [07:00],   8'bXX,   8'bXX}` |
+| byte | `2'd3`     |    alligned | `4'b1000`  | `{[07:00],   8'bXX,   8'bXX,   8'bXX}` |
+| half | `2'd0`     |    alligned | `4'b0011`  | `{  8'bXX,   8'bXX, [15:08], [07:00]}` |
+| half | `2'd1`     | misalligned | `4'b0110`  | `{  8'bXX, [15:08], [07:00],   8'bXX}` |
+| half | `2'd2`     |    alligned | `4'b1100`  | `{[15:08], [07:00],   8'bXX,   8'bXX}` |
+| half | `2'd3`     | misalligned | `4'b1001`  | `{[07:00],   8'bXX,   8'bXX, [15:08]}` |
+| word | `2'd0`     |    alligned | `4'b1111`  | `{[31:24], [23:16], [15:08], [07:00]}` |
+| word | `2'd1`     | misalligned | `4'b1111`  | `{[23:16], [15:08], [07:00], [31:24]}` |
+| word | `2'd2`     | misalligned | `4'b1111`  | `{[15:08], [07:00], [31:24], [23:16]}` |
+| word | `2'd3`     | misalligned | `4'b1111`  | `{[07:00], [31:24], [23:16], [15:08]}` |
+
+#### Big endian (any allignment)
+
+| size | `adr[1:0]` | allignment  | `ben[0:3]` | `wdt[00:31]`/`rdt[00:31]` |
+|------|------------|-------------|------------|---------------------------|
+| byte | `2'd0`     |    alligned | `4'b1000`  | `{[00:07],   8'bXX,   8'bXX,   8'bXX}` |
+| byte | `2'd1`     |    alligned | `4'b0100`  | `{  8'bXX, [00:07],   8'bXX,   8'bXX}` |
+| byte | `2'd2`     |    alligned | `4'b0010`  | `{  8'bXX,   8'bXX, [00:07],   8'bXX}` |
+| byte | `2'd3`     |    alligned | `4'b0001`  | `{  8'bXX,   8'bXX,   8'bXX, [00:07]}` |
+| half | `2'd0`     |    alligned | `4'b1100`  | `{[00:07], [08:15],   8'bXX,   8'bXX}` |
+| half | `2'd1`     | misalligned | `4'b0110`  | `{  8'bXX, [00:07], [08:15],   8'bXX}` |
+| half | `2'd2`     |    alligned | `4'b0011`  | `{  8'bXX,   8'bXX, [00:07], [08:15]}` |
+| half | `2'd3`     | misalligned | `4'b1001`  | `{[08:15],   8'bXX,   8'bXX, [00:07]}` |
+| word | `2'd0`     |    alligned | `4'b1111`  | `{[00:07], [08:15], [16:23], [24:31]}` |
+| word | `2'd1`     | misalligned | `4'b1111`  | `{[24:31], [00:07], [08:15], [16:23]}` |
+| word | `2'd2`     | misalligned | `4'b1111`  | `{[16:23], [24:31], [00:07], [08:15]}` |
+| word | `2'd3`     | misalligned | `4'b1111`  | `{[08:15], [16:23], [24:31], [00:07]}` |
 
 #### Misalignment handler
 
