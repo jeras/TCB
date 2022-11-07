@@ -57,6 +57,7 @@ interface tcb_if #(
   logic           trn;  // transfer
   logic           idl;  // idle
   logic           rsp;  // response
+  // TODO: think whether it would make sense to implement delayed wen/ben signals here
 
   // transfer (valid and ready at the same time)
   assign trn = vld & rdy;

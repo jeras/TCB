@@ -80,9 +80,11 @@ module tcb_vip_man
     output logic               err
   );
     // response delay
-    do begin
-      @(posedge tcb.clk);
-    end while (~tcb.rsp);
+    if (tcb.DLY > 0) begin
+      do begin
+        @(posedge tcb.clk);
+      end while (~tcb.rsp);
+    end
     // response
     rdt = tcb.rdt;
     err = tcb.err;

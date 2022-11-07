@@ -93,6 +93,7 @@ VFLAGS += --assert
 
 # Make waveforms
 #ifdef TRACE
+#VFLAGS += --trace
 VFLAGS += --trace-fst
 VFLAGS += --trace-structs
 #endif
@@ -117,8 +118,8 @@ DBW ?= 32
 # TCB response delay
 DLY ?= 1
 
-#PAR += -GABW=${ABW}
-#PAR += -GDBW=${DBW}
+PAR += -GABW=${ABW}
+PAR += -GDBW=${DBW}
 #PAR += -GDLY=${DLY}
 
 ################################################################################

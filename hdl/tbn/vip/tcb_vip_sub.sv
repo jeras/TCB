@@ -30,8 +30,19 @@ module tcb_vip_sub
   // response pipeline
   logic [tcb.DBW-1:0] tmp_rdt;
   logic               tmp_err;
+  logic               pip_wen [0:tcb.DLY-1];
+  logic [tcb.BEW-1:0] pip_ben [0:tcb.DLY-1];
   logic [tcb.DBW-1:0] pip_rdt [0:tcb.DLY-1];
   logic               pip_err [0:tcb.DLY-1];
+
+////////////////////////////////////////////////////////////////////////////////
+// initialization
+////////////////////////////////////////////////////////////////////////////////
+
+  initial
+  begin
+    tcb.rdy = 1'b0;
+  end
 
 ////////////////////////////////////////////////////////////////////////////////
 // request/response (enable pipelined transfers with full throughput)
@@ -67,6 +78,7 @@ module tcb_vip_sub
     // timing
     input  int unsigned        tmg = 0
   );
+    #1;
     // response
     tmp_rdt = rdt;
     tmp_err = err;
@@ -78,22 +90,23 @@ module tcb_vip_sub
         @(posedge tcb.clk);
       end while (~tcb.trn);
     end else begin
-    // TODO
-//    // wait for request
-//    do begin
-//      @(posedge tcb.clk);
-//    end while (~tcb.vld);
-//    // backpressure
-//    int i = tmg;
-//    for (int unsigned i=0; i<tmg; i+=int'(tcb.vld)) begin
-//      @(posedge tcb.clk);
-//    end
-//    repeat (tmg) @(posedge tcb.clk);
+      // backpressure
+      for (int unsigned i=0; i<tmg; i+=int'(tcb.vld)) begin
+        @(posedge tcb.clk);
+      end
+      // ready
+      #1;
+      tcb.rdy = 1'b1;
+      // wait for transfer
+      do begin
+        @(posedge tcb.clk);
+      end while (~tcb.trn);
     end
     // idle
     #1;
     tmp_rdt = 'x;
-    tmp_err = 'x;
+    tmp_err = 1'bx;
+    tcb.rdy = 1'b0;
   endtask: rsp
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -103,21 +116,16 @@ module tcb_vip_sub
   generate
   if (tcb.DLY == 0) begin
 
-    initial begin
-      $display("tcb.DLY == 0: DLY = %d", tcb.DLY);
-    end
-
-    assign tcb.rdt = tcb.rsp ? tmp_rdt : 'x;
-    assign tcb.err = tcb.rsp ? tmp_err : 'x;
+    assign tcb.rdt = tcb.rsp & ~tcb.wen ? tmp_rdt : 'x;
+    assign tcb.err = tcb.rsp            ? tmp_err : 'x;
 
   end else begin
 
-    initial begin
-      $display("else: DLY = %d", tcb.DLY);
-    end
-
+    // TODO: try not to change "rdt" if there is no transfer
     always_ff @(posedge tcb.clk)
     if (tcb.trn) begin
+      pip_wen[0] <= tcb.wen;
+      pip_ben[0] <= tcb.ben;
       pip_rdt[0] <= tmp_rdt;
       pip_err[0] <= tmp_err;
     end else begin
@@ -127,30 +135,19 @@ module tcb_vip_sub
 
     for (genvar i=1; i<tcb.DLY; i++) begin
 
-      initial begin
-        $display("for: DLY = %d, genvar i = %d", tcb.DLY, i);
-      end
-
       always_ff @(posedge tcb.clk)
       begin
-        // --Verilator debug line
-        $display("DLY = %d, genvar i = %d", tcb.DLY, i);
+        pip_wen[i] <= pip_wen[i-1];
+        pip_ben[i] <= pip_ben[i-1];
         pip_rdt[i] <= pip_rdt[i-1];
         pip_err[i] <= pip_err[i-1];
       end
 
     end
 
-//      always_ff @(posedge tcb.clk)
-//      begin
-//        $display("test");
-//        pip_rdt[1] <= pip_rdt[0];
-//        pip_err[1] <= pip_err[0];
-//      end
-
-
-    assign tcb.rdt = tcb.rsp ? pip_rdt[tcb.DLY-1] : 'x;
-    assign tcb.err = tcb.rsp ? pip_err[tcb.DLY-1] : 'x;
+    // TODO: add byte enable
+    assign tcb.rdt = tcb.rsp & ~pip_wen[tcb.DLY-1] ? pip_rdt[tcb.DLY-1] : 'x;
+    assign tcb.err = tcb.rsp                       ? pip_err[tcb.DLY-1] : 'x;
 
   end
   endgenerate

@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// TCB (Tightly Coupled Bus) VIP (Verifivation IP) manager/monitor/subordinate TestBench
+// TCB (Tightly Coupled Bus) LIBrary REGister TestBench
 ////////////////////////////////////////////////////////////////////////////////
 // Copyright 2022 Iztok Jeras
 //
@@ -16,16 +16,16 @@
 // limitations under the License.
 ////////////////////////////////////////////////////////////////////////////////
 
-module tcb_vip_tb
+module tcb_lib_reg_tb
   import tcb_vip_pkg::*;
 #(
   // TCB widths
-  int unsigned ABW = 32,       // address bus width
-  int unsigned DBW = 32,       // data    bus width
+  int unsigned ABW = 64,       // address bus width
+  int unsigned DBW = 64,       // data    bus width
   int unsigned SLW =       8,  // selection   width
   int unsigned BEW = DBW/SLW,  // byte enable width
   // response delay
-  int unsigned DLY = 0
+  int unsigned DLY = 1
 );
 
   // system signals
@@ -40,7 +40,8 @@ module tcb_vip_tb
 // local signals
 ////////////////////////////////////////////////////////////////////////////////
 
-  tcb_if #(.ABW (ABW), .DBW (DBW), .DLY (DLY)) tcb (.clk (clk), .rst (rst));
+  tcb_if #(.ABW (ABW), .DBW (DBW), .DLY (DLY)) tcb_man (.clk (clk), .rst (rst));
+  tcb_if #(.ABW (ABW), .DBW (DBW), .DLY (DLY)) tcb_sub (.clk (clk), .rst (rst));
 
 ////////////////////////////////////////////////////////////////////////////////
 // test sequence
@@ -56,43 +57,20 @@ module tcb_vip_tb
     // reset sequence
     rst = 1'b1;
     repeat (2) @(posedge clk);
-    #1;
     rst = 1'b0;
     repeat (1) @(posedge clk);
-
-    // test BFM unsized read/write tasks
-    fork
-      begin: req_rw_unsized
-        //         adr,     ben,          wdt, err, lck, rpt
-        man.write('h00, 4'b1111, 32'h01234567, err);
-        man.read ('h00, 4'b1111, rdt         , err);
-        man.write('h00, 4'b1111, 32'h01234567, err);
-        man.read ('h00, 4'b1111, rdt         , err);
-      end: req_rw_unsized
-      begin: rsp_rw_unsized
-        //               rdt,  err, tmg
-        sub.rsp(32'h55xxxxxx, 1'b0);
-        sub.rsp(32'h76543210, 1'b0);
-        sub.rsp(32'h55xxxxxx, 1'b0, 1);
-        sub.rsp(32'h76543210, 1'b0, 1);
-      end: rsp_rw_unsized
-    join
-
-    // test low level req/rsp tasks
+    #1;
     fork
       begin: req
-        //         adr,     ben,          wdt, err, len
-//        man.req('{1'b1, 'h00, 4'b1111, 32'h01234567,                     0});
-//        sub.rsp('{                                   32'h89abcdef, 1'b0, 0});
-//        man.req('{1'b1, 'h01, 4'b1111, 32'h76543210,                     1});
-//        sub.rsp('{                                   32'hfedcba98, 1'b0, 1});
+        man.write(64'h0123456789ABCDEF, 8'b11111111, 64'h0123456789ABCDEF, err);
+        man.read (64'hFEDCBA9876543210, 8'b11111111, rdt                 , err);
       end: req
       begin: rsp
-//  //    man.rsp(                                            rdt,  err);
-//  //    sub.req( wen,  adr,     ben,          wdt,                   );
+        sub.rsp(64'hXXXXXXXXXXXXXXXX, 1'b0);
+        sub.rsp(64'hFEDCBA9876543210, 1'b0);
       end: rsp
     join
-    repeat (2) @(posedge clk);
+    repeat (8) @(posedge clk);
     $finish();
   end
 
@@ -101,13 +79,26 @@ module tcb_vip_tb
 ////////////////////////////////////////////////////////////////////////////////
 
   // manager
-  tcb_vip_man man (.tcb (tcb));
+  tcb_vip_man man     (.tcb (tcb_man));
 
-  // monitor
-  tcb_vip_mon mon (.tcb (tcb));
+  // manager monitor
+  tcb_vip_mon mon_man (.tcb (tcb_man));
+
+  // subordinate monitor
+  tcb_vip_mon mon_sub (.tcb (tcb_sub));
 
   // subordinate
-  tcb_vip_sub sub (.tcb (tcb));
+  tcb_vip_sub sub     (.tcb (tcb_sub));
+
+////////////////////////////////////////////////////////////////////////////////
+// DUT instances
+////////////////////////////////////////////////////////////////////////////////
+
+  // RTL passthrough
+  tcb_lib_reg pas (
+    .sub  (tcb_man),
+    .man  (tcb_sub)
+  );
 
 ////////////////////////////////////////////////////////////////////////////////
 // VCD/FST waveform trace
@@ -115,9 +106,8 @@ module tcb_vip_tb
 
   initial
   begin
-  //$dumpfile("test.vcd");
     $dumpfile("test.fst");
     $dumpvars;
   end
 
-endmodule: tcb_vip_tb
+endmodule: tcb_lib_reg_tb
