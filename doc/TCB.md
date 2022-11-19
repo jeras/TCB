@@ -71,10 +71,11 @@ TCB terminology and syntax is mostly based on:
 
 | size | description |
 |------|-------------|
-| byte | 8-bit wide data. |
-| hald | 16-bit wide data. |
-| word | 32-bit wide data. |
-| long | 64-bit wide data. |
+| byte |   8-bit wide data. |
+| half |  16-bit wide data. |
+| word |  32-bit wide data. |
+| dble |  64-bit wide data. |
+| long | 128-bit wide data. |
 
 ### Peripheral driver terms
 
@@ -97,9 +98,10 @@ _configuration_, _control_ and _status_ registers of a peripheral.
 | acronym | definition |
 |---------|------------|
 | TCB     | Tightly Coupled Bus |
-| BFM     | Bus Functional Model |
-| LSB     | Least Significant Bit/Byte |
-| MSB     | Most Significant Bit/Byte |
+| BFM     | [Bus Functional Model](https://en.wikipedia.org/wiki/Bus_functional_model) |
+| TLM     | [Transaction-level modeling](https://en.wikipedia.org/wiki/Transaction-level_modeling) |
+| LSB     | [Least Significant Bit/Byte](https://en.wikipedia.org/wiki/Bit_numbering) |
+| MSB     | [Most Significant Bit/Byte](https://en.wikipedia.org/wiki/Bit_numbering) |
 
 ## Naming conventions
 
@@ -169,8 +171,8 @@ The remaining signals were added to support SoC features:
 | signal | width | direction      | usage    | description |
 |--------|-------|----------------|----------|-------------|
 | `vld`  | `1`   | `man` -> `sub` | required | Handshake valid. |
-| `lck`  | `1`   | `man` -> `sub` | optional | Arbitration lock. |
 | `rpt`  | `1`   | `man` -> `sub` | optional | Repeat access. |
+| `lck`  | `1`   | `man` -> `sub` | optional | Arbitration lock. |
 | `wen`  | `1`   | `man` -> `sub` | optional | Write enable (can be omitted for read only devices). |
 | `adr`  | `ABW` | `man` -> `sub` | required | Address. |
 | `ben`  | `BEW` | `man` -> `sub` | optional | Byte enable/select (can be omitted if only full width transfers are allowed). |
@@ -335,7 +337,8 @@ The interconnect would propagate the `rpt` as active only in case
 
 Arbitration locking is used in the TCB reference implementation library to:
 - Keep atomicity in data bus width conversion from a wider manager to a narrower subordinate.
-- Keep atomicity while converting a missaligned access into multiple alligned accesses.
+  For example an atomic 64-bit read/write access over a 32-bit interconnect.
+- Keep atomicity while converting a misaligned access into multiple aligned accesses.
 
 It can also be used for read modify write, and similar operations and for QoS control.
 
@@ -347,7 +350,7 @@ data transfer size and byte address LSB bits.
 | transfer size | condition             |
 |---------------|-----------------------|
 | byte ( 8-bit) | none                  |
-| hald (16-bit) | $clog2(adr[0:0]) == 0 |
+| half (16-bit) | $clog2(adr[0:0]) == 0 |
 | word (32-bit) | $clog2(adr[1:0]) == 0 |
 | long (64-bit) | $clog2(adr[2:0]) == 0 |
 
@@ -368,42 +371,42 @@ For consistency they should still be part of the address vector.
 
 The manager encodes the address of data transfers smaller than
 the full data bus width (`DBW`) using only byte enable (`BEN`).
-The mapping of alligned accesses for little/big endian managers
+The mapping of aligned accesses for little/big endian managers
 is shown in the following chapters.
 
-#### Little endian (any allignment)
+#### Little endian (any alignment)
 
-| size | `adr[1:0]` | allignment  | `ben[3:0]` | `wdt[31:00]`/`rdt[31:00]` |
-|------|------------|-------------|------------|---------------------------|
-| byte | `2'd0`     |    alligned | `4'b0001`  | `{  8'bXX,   8'bXX,   8'bXX, [07:00]}` |
-| byte | `2'd1`     |    alligned | `4'b0010`  | `{  8'bXX,   8'bXX, [07:00],   8'bXX}` |
-| byte | `2'd2`     |    alligned | `4'b0100`  | `{  8'bXX, [07:00],   8'bXX,   8'bXX}` |
-| byte | `2'd3`     |    alligned | `4'b1000`  | `{[07:00],   8'bXX,   8'bXX,   8'bXX}` |
-| half | `2'd0`     |    alligned | `4'b0011`  | `{  8'bXX,   8'bXX, [15:08], [07:00]}` |
-| half | `2'd1`     | misalligned | `4'b0110`  | `{  8'bXX, [15:08], [07:00],   8'bXX}` |
-| half | `2'd2`     |    alligned | `4'b1100`  | `{[15:08], [07:00],   8'bXX,   8'bXX}` |
-| half | `2'd3`     | misalligned | `4'b1001`  | `{[07:00],   8'bXX,   8'bXX, [15:08]}` |
-| word | `2'd0`     |    alligned | `4'b1111`  | `{[31:24], [23:16], [15:08], [07:00]}` |
-| word | `2'd1`     | misalligned | `4'b1111`  | `{[23:16], [15:08], [07:00], [31:24]}` |
-| word | `2'd2`     | misalligned | `4'b1111`  | `{[15:08], [07:00], [31:24], [23:16]}` |
-| word | `2'd3`     | misalligned | `4'b1111`  | `{[07:00], [31:24], [23:16], [15:08]}` |
+| size | `adr[1:0]` | alignment  | `ben[3:0]` | `wdt[31:00]`/`rdt[31:00]` |
+|------|------------|------------|------------|---------------------------|
+| byte | `2'd0`     |    aligned | `4'b0001`  | `{  8'bXX,   8'bXX,   8'bXX, [07:00]}` |
+| byte | `2'd1`     |    aligned | `4'b0010`  | `{  8'bXX,   8'bXX, [07:00],   8'bXX}` |
+| byte | `2'd2`     |    aligned | `4'b0100`  | `{  8'bXX, [07:00],   8'bXX,   8'bXX}` |
+| byte | `2'd3`     |    aligned | `4'b1000`  | `{[07:00],   8'bXX,   8'bXX,   8'bXX}` |
+| half | `2'd0`     |    aligned | `4'b0011`  | `{  8'bXX,   8'bXX, [15:08], [07:00]}` |
+| half | `2'd1`     | misaligned | `4'b0110`  | `{  8'bXX, [15:08], [07:00],   8'bXX}` |
+| half | `2'd2`     |    aligned | `4'b1100`  | `{[15:08], [07:00],   8'bXX,   8'bXX}` |
+| half | `2'd3`     | misaligned | `4'b1001`  | `{[07:00],   8'bXX,   8'bXX, [15:08]}` |
+| word | `2'd0`     |    aligned | `4'b1111`  | `{[31:24], [23:16], [15:08], [07:00]}` |
+| word | `2'd1`     | misaligned | `4'b1111`  | `{[23:16], [15:08], [07:00], [31:24]}` |
+| word | `2'd2`     | misaligned | `4'b1111`  | `{[15:08], [07:00], [31:24], [23:16]}` |
+| word | `2'd3`     | misaligned | `4'b1111`  | `{[07:00], [31:24], [23:16], [15:08]}` |
 
 #### Big endian (any allignment)
 
-| size | `adr[1:0]` | allignment  | `ben[0:3]` | `wdt[00:31]`/`rdt[00:31]` |
-|------|------------|-------------|------------|---------------------------|
-| byte | `2'd0`     |    alligned | `4'b1000`  | `{[00:07],   8'bXX,   8'bXX,   8'bXX}` |
-| byte | `2'd1`     |    alligned | `4'b0100`  | `{  8'bXX, [00:07],   8'bXX,   8'bXX}` |
-| byte | `2'd2`     |    alligned | `4'b0010`  | `{  8'bXX,   8'bXX, [00:07],   8'bXX}` |
-| byte | `2'd3`     |    alligned | `4'b0001`  | `{  8'bXX,   8'bXX,   8'bXX, [00:07]}` |
-| half | `2'd0`     |    alligned | `4'b1100`  | `{[00:07], [08:15],   8'bXX,   8'bXX}` |
-| half | `2'd1`     | misalligned | `4'b0110`  | `{  8'bXX, [00:07], [08:15],   8'bXX}` |
-| half | `2'd2`     |    alligned | `4'b0011`  | `{  8'bXX,   8'bXX, [00:07], [08:15]}` |
-| half | `2'd3`     | misalligned | `4'b1001`  | `{[08:15],   8'bXX,   8'bXX, [00:07]}` |
-| word | `2'd0`     |    alligned | `4'b1111`  | `{[00:07], [08:15], [16:23], [24:31]}` |
-| word | `2'd1`     | misalligned | `4'b1111`  | `{[24:31], [00:07], [08:15], [16:23]}` |
-| word | `2'd2`     | misalligned | `4'b1111`  | `{[16:23], [24:31], [00:07], [08:15]}` |
-| word | `2'd3`     | misalligned | `4'b1111`  | `{[08:15], [16:23], [24:31], [00:07]}` |
+| size | `adr[1:0]` | alignment  | `ben[0:3]` | `wdt[00:31]`/`rdt[00:31]` |
+|------|------------|------------|------------|---------------------------|
+| byte | `2'd0`     |    aligned | `4'b1000`  | `{[00:07],   8'bXX,   8'bXX,   8'bXX}` |
+| byte | `2'd1`     |    aligned | `4'b0100`  | `{  8'bXX, [00:07],   8'bXX,   8'bXX}` |
+| byte | `2'd2`     |    aligned | `4'b0010`  | `{  8'bXX,   8'bXX, [00:07],   8'bXX}` |
+| byte | `2'd3`     |    aligned | `4'b0001`  | `{  8'bXX,   8'bXX,   8'bXX, [00:07]}` |
+| half | `2'd0`     |    aligned | `4'b1100`  | `{[00:07], [08:15],   8'bXX,   8'bXX}` |
+| half | `2'd1`     | misaligned | `4'b0110`  | `{  8'bXX, [00:07], [08:15],   8'bXX}` |
+| half | `2'd2`     |    aligned | `4'b0011`  | `{  8'bXX,   8'bXX, [00:07], [08:15]}` |
+| half | `2'd3`     | misaligned | `4'b1001`  | `{[08:15],   8'bXX,   8'bXX, [00:07]}` |
+| word | `2'd0`     |    aligned | `4'b1111`  | `{[00:07], [08:15], [16:23], [24:31]}` |
+| word | `2'd1`     | misaligned | `4'b1111`  | `{[24:31], [00:07], [08:15], [16:23]}` |
+| word | `2'd2`     | misaligned | `4'b1111`  | `{[16:23], [24:31], [00:07], [08:15]}` |
+| word | `2'd3`     | misaligned | `4'b1111`  | `{[08:15], [16:23], [24:31], [00:07]}` |
 
 #### Misalignment handler
 

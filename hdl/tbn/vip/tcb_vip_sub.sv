@@ -48,41 +48,29 @@ module tcb_vip_sub
 // request/response (enable pipelined transfers with full throughput)
 ////////////////////////////////////////////////////////////////////////////////
 
-  // request
-  task req (
+  // request/response
+  task req_rsp (
+    // request optional
+    output logic               rpt,
+    output logic               lck,
+    // request
     output logic               wen,
     output logic [tcb.ABW-1:0] adr,
     output logic [tcb.BEW-1:0] ben,
     output logic [tcb.DBW-1:0] wdt,
-    output logic               lck,
-    output logic               rpt
-  );
-    // check for backpressure
-    do begin
-      @(posedge tcb.clk);
-    end while (~tcb.rdy);
-    // idle
-    wen = tcb.wen;
-    adr = tcb.adr;
-    ben = tcb.ben;
-    wdt = tcb.wdt;
-    lck = tcb.lck;
-    rpt = tcb.rpt;
-  endtask: req
-
-  // response
-  task rsp (
-    // tcb signals
+    // response
     input  logic [tcb.DBW-1:0] rdt,
     input  logic               err,
-    // timing
-    input  int unsigned        tmg = 0
+    // timing idle/backpressure
+    output int unsigned        idl,
+    input  int unsigned        bpr
   );
     #1;
     // response
     tmp_rdt = rdt;
     tmp_err = err;
-    if (tmg == 0) begin
+    // request
+    if (bpr == 0) begin
       // ready
       tcb.rdy = 1'b1;
       // wait for transfer
@@ -91,7 +79,7 @@ module tcb_vip_sub
       end while (~tcb.trn);
     end else begin
       // backpressure
-      for (int unsigned i=0; i<tmg; i+=int'(tcb.vld)) begin
+      for (int unsigned i=0; i<bpr; i+=int'(tcb.vld)) begin
         @(posedge tcb.clk);
       end
       // ready
@@ -102,12 +90,15 @@ module tcb_vip_sub
         @(posedge tcb.clk);
       end while (~tcb.trn);
     end
-    // idle
-    #1;
-    tmp_rdt = 'x;
-    tmp_err = 1'bx;
-    tcb.rdy = 1'b0;
-  endtask: rsp
+    // request optional
+    rpt = tcb.rpt;
+    lck = tcb.lck;
+    // request
+    wen = tcb.wen;
+    adr = tcb.adr;
+    ben = tcb.ben;
+    wdt = tcb.wdt;
+  endtask: req_rsp
 
 ////////////////////////////////////////////////////////////////////////////////
 // response pipeline
@@ -116,8 +107,8 @@ module tcb_vip_sub
   generate
   if (tcb.DLY == 0) begin
 
-    assign tcb.rdt = tcb.rsp & ~tcb.wen ? tmp_rdt : 'x;
-    assign tcb.err = tcb.rsp            ? tmp_err : 'x;
+    assign tcb.rdt = tcb.rsp ? tmp_rdt : 'x;
+    assign tcb.err = tcb.rsp ? tmp_err : 'x;
 
   end else begin
 

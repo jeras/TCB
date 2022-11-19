@@ -27,20 +27,22 @@ module tcb_vip_man
 // request/response (enable pipelined transfers with full throughput)
 ////////////////////////////////////////////////////////////////////////////////
 
+  // initialize to idle state
   initial  tcb.vld = 1'b0;
 
   // request
-  task req (
+  task automatic req (
+    // request optional
+    input  logic               rpt,
+    input  logic               lck,
     // request
     input  logic               wen,
     input  logic [tcb.ABW-1:0] adr,
     input  logic [tcb.BEW-1:0] ben,
     input  logic [tcb.DBW-1:0] wdt,
-    // request optional
-    input  logic               lck = 1'b0,
-    input  logic               rpt = 1'b0,
-    // timing idle
-    input  int unsigned        idl = 0
+    // timing idle/backpressure
+    input  int unsigned        idl,
+    output int unsigned        bpr
   );
     // request timing
     repeat (idl) @(posedge tcb.clk);
@@ -48,37 +50,42 @@ module tcb_vip_man
     #1;
     // hanshake
     tcb.vld = 1'b1;
+    // request optional
+    tcb.rpt = rpt;
+    tcb.lck = lck;
     // request
     tcb.wen = wen;
     tcb.adr = adr;
     tcb.ben = ben;
     tcb.wdt = wdt;
-    // request optional
-    tcb.lck = lck;
-    tcb.rpt = rpt;
     // backpressure
+    bpr = 0;
     do begin
       @(posedge tcb.clk);
-    end while (~tcb.rdy);
+      if (~tcb.rdy) bpr++;
+    end while (~tcb.trn);
     // drive idle/undefined
     #1;
     // handshake
     tcb.vld = 1'b0;
+    // request optional
+    tcb.rpt = 'x;
+    tcb.lck = 'x;
     // request
     tcb.wen = 'x;
     tcb.adr = 'x;
     tcb.ben = 'x;
     tcb.wdt = 'x;
-    // request optional
-    tcb.lck = 'x;
-    tcb.rpt = 'x;
   endtask: req
 
   // response task
-  task rsp (
+  task automatic rsp (
     output logic [tcb.DBW-1:0] rdt,
     output logic               err
   );
+    do begin
+      @(posedge tcb.clk);
+    end while (~tcb.trn);
     // response delay
     if (tcb.DLY > 0) begin
       do begin
@@ -91,73 +98,126 @@ module tcb_vip_man
   endtask: rsp
 
 ////////////////////////////////////////////////////////////////////////////////
-// generic read/write (waits for response after each request)
-////////////////////////////////////////////////////////////////////////////////
-
-  // generic write
-  task write (
-    // request
-    input  logic [tcb.ABW-1:0] adr,
-    input  logic [tcb.BEW-1:0] ben,
-    input  logic [tcb.DBW-1:0] dat,
-    // response
-    output logic               err,
-    // request optional
-    input  logic               lck = 1'b0,
-    input  logic               rpt = 1'b0
-  );
-    // ignored value
-    logic [tcb.DBW-1:0] rdt;
-    // request
-    req (
-      .wen (1'b1),
-      .adr (adr),
-      .ben (ben),
-      .wdt (dat),
-      .lck (lck),
-      .rpt (rpt)
-    );
-    // response
-    rsp (
-      .rdt (rdt),
-      .err (err)
-    );
-  endtask: write
-
-  // generic read
-  task read (
-    // request
-    input  logic [tcb.ABW-1:0] adr,
-    input  logic [tcb.BEW-1:0] ben,
-    output logic [tcb.DBW-1:0] dat,
-    // response
-    output logic               err,
-    // request optional
-    input  logic               lck = 1'b0,
-    input  logic               rpt = 1'b0
-  );
-    // request
-    req (
-      .wen (1'b0),
-      .adr (adr),
-      .ben (ben),
-      .wdt ('x),
-      .lck (lck),
-      .rpt (rpt)
-    );
-    // response
-    rsp (
-      .rdt (dat),
-      .err (err)
-    );
-  endtask: read
-
-////////////////////////////////////////////////////////////////////////////////
 // BFM (Bus Functional Model) (emulates a RISC-V manager)
 ////////////////////////////////////////////////////////////////////////////////
 
-// write64
-// write32
+  // native write
+  task automatic transaction (
+    // request optional
+    input  logic               rpt,
+    input  logic               lck,
+    // data length
+    input  int unsigned        len,
+    // request
+    input  logic               wen,
+    input  logic [tcb.ABW-1:0] adr,
+    ref    logic [tcb.SLW-1:0] dat [],
+    // response
+    output logic               err,
+    // timing idle/backpressure
+    input  int unsigned        idl,
+    output int unsigned        bpr
+  );
+    // local signals
+    logic [tcb.BEW-1:0]              ben = '0;
+    logic [tcb.BEW-1:0][tcb.SLW-1:0] wdt;
+    logic [tcb.BEW-1:0][tcb.SLW-1:0] rdt;
+    $display("Transaction starts here.");
+    // mapping
+    for (int unsigned i=0; i<len; i++) begin
+      ben = '1;
+      wdt[i] = dat[i];
+    end
+    // transaction
+    fork
+      begin
+        $display("Request expected here.");
+        // request
+        req (
+          .rpt (rpt),
+          .lck (lck),
+          .wen (wen),
+          .adr (adr),
+          .ben (ben),
+          .wdt (wdt),
+          .idl (idl),
+          .bpr (bpr)
+        );
+      end
+      begin
+        // response
+        rsp (
+          .rdt (rdt),
+          .err (err)
+        );
+      end
+    join
+    // mapping
+    for (int unsigned i=0; i<len; i++) begin
+      dat[i] = rdt[i];
+    end
+  endtask: transaction
+
+////////////////////////////////////////////////////////////////////////////////
+// native data width read/write (waits for response after each request)
+////////////////////////////////////////////////////////////////////////////////
+
+//  // native write
+//  task write (
+//    // request
+//    input  logic [tcb.ABW-1:0] adr,
+//    input  logic [tcb.BEW-1:0] ben,
+//    input  logic [tcb.DBW-1:0] dat,
+//    // response
+//    output logic               err
+//  );
+//    // ignored value
+//    logic [tcb.DBW-1:0] rdt;
+//    // request
+//    req (
+//      .rpt (1'b0),
+//      .lck (1'b0),
+//      .wen (1'b1),
+//      .adr (adr),
+//      .ben (ben),
+//      .wdt (dat)
+//    );
+//    // response
+//    rsp (
+//      .rdt (rdt),
+//      .err (err)
+//    );
+//  endtask: write
+//
+//  // native read
+//  task read (
+//    // request
+//    input  logic [tcb.ABW-1:0] adr,
+//    input  logic [tcb.BEW-1:0] ben,
+//    output logic [tcb.DBW-1:0] dat,
+//    // response
+//    output logic               err
+//  );
+//    // request
+//    req (
+//      .rpt (1'b0),
+//      .lck (1'b0),
+//      .wen (1'b0),
+//      .adr (adr),
+//      .ben (ben),
+//      .wdt ('x)
+//    );
+//    // response
+//    rsp (
+//      .rdt (dat),
+//      .err (err)
+//    );
+//  endtask: read
+//
+//
+//
+//// write64
+//// write32
 // write16
 // write8
 // read64

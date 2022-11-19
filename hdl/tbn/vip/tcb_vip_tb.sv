@@ -28,19 +28,156 @@ module tcb_vip_tb
   int unsigned DLY = 0
 );
 
-  // system signals
-  logic clk;  // clock
-  logic rst;  // reset
+////////////////////////////////////////////////////////////////////////////////
+// local functions
+////////////////////////////////////////////////////////////////////////////////
 
-  // response
-  logic [DBW-1:0] rdt;  // read data
-  logic           err;  // error response
+  typedef logic [BEW-1:0][SLW-1:0] data_t;
+
+  function automatic data_t data_f (
+    input logic [SLW/2-1:0] val = 'x
+  );
+    for (int unsigned i=0; i<BEW; i++) begin
+      data_f[i] = {val, i[SLW/2-1:0]};
+    end
+  endfunction: data_f;
 
 ////////////////////////////////////////////////////////////////////////////////
 // local signals
 ////////////////////////////////////////////////////////////////////////////////
 
-  tcb_if #(.ABW (ABW), .DBW (DBW), .DLY (DLY)) tcb (.clk (clk), .rst (rst));
+  // system signals
+  logic clk;  // clock
+  logic rst;  // reset
+
+  // physical layer data
+  int unsigned    len = BEW;
+  dat_t           dat;
+
+  // supported data widths
+  data8_t         data8;
+  data16_t        data16;
+  data32_t        data32;
+  data64_t        data64;
+  data128_t       data128;
+  // native data width
+  data_t          data;
+
+  // temporary variables
+  logic [BEW-1:0] ben;  // byte enable
+  logic [DBW-1:0] rdt;  // read data
+  logic           err;  // error response
+  // timing idle/backpressure
+  int unsigned    idl;
+  int unsigned    bpr;
+
+  // TCB interface
+  tcb_if #(.ABW (ABW), .DBW (DBW), .SLW (SLW), .DLY (DLY)) tcb (.clk (clk), .rst (rst));
+
+  // ERROR counter
+  int unsigned error;
+
+////////////////////////////////////////////////////////////////////////////////
+// test low level req/rsp tasks
+////////////////////////////////////////////////////////////////////////////////
+
+  // request structure
+  typedef struct {
+    // request optional
+    logic                            rpt;  // repeat access
+    logic                            lck;  // arbitration lock
+    // request
+    logic                            wen;  // write enable
+    logic              [tcb.ABW-1:0] adr;  // address
+    logic              [tcb.BEW-1:0] ben;  // byte enable
+    logic [tcb.BEW-1:0][tcb.SLW-1:0] wdt;  // write data
+    // response
+    logic [tcb.BEW-1:0][tcb.SLW-1:0] rdt;  // read data
+    logic                            err;  // error
+    // timing idle/backpressure
+    int unsigned                     idl;  // idle
+    int unsigned                     bpr;  // backpressure
+  } tcb_t;
+
+  task automatic test_req_rsp;
+    // local variables
+    bit lst_wen [2] = '{1'b0, 1'b1};
+
+    int unsigned tst_num = 2;
+
+    tcb_t        tst_ref [$size(lst_wen)];
+    tcb_t        tst_tmp [$size(lst_wen)];
+
+    // prepare transactions
+    foreach (lst_wen[idx_wen]) begin
+      $display("lst_wen[idx_wen=%d] = %b", idx_wen, lst_wen[idx_wen]);
+      tst_ref[idx_wen] = '{
+        rpt: 1'b0,
+        lck: 1'b0,
+        wen: lst_wen[idx_wen],
+        adr: 'h00,
+        ben: '1,
+        wdt: data_f((SLW/2)'(2*idx_wen+0)),
+        rdt: data_f((SLW/2)'(2*idx_wen+1)),
+        err: 1'b0,
+        idl: 0,
+        bpr: 0
+      };
+    end
+
+    // drive transactions
+    fork
+      begin: man_req
+        for (int unsigned i=0; i<tst_num; i++) begin
+          man.req(
+            .rpt  (tst_ref[i].rpt),
+            .lck  (tst_ref[i].lck),
+            .wen  (tst_ref[i].wen),
+            .adr  (tst_ref[i].adr),
+            .ben  (tst_ref[i].ben),
+            .wdt  (tst_ref[i].wdt),
+            .idl  (tst_ref[i].idl),
+            .bpr  (tst_tmp[i].bpr)
+          );
+        end
+      end: man_req
+      begin: man_rsp
+        for (int unsigned i=0; i<tst_num; i++) begin
+          man.rsp(
+            .rdt  (tst_tmp[i].rdt),
+            .err  (tst_tmp[i].err)
+          );
+        end
+      end: man_rsp
+      begin: sub_req_rsp
+        for (int unsigned i=0; i<tst_num; i++) begin
+          sub.req_rsp(
+            .rpt  (tst_tmp[i].rpt),
+            .lck  (tst_tmp[i].lck),
+            .wen  (tst_tmp[i].wen),
+            .adr  (tst_tmp[i].adr),
+            .ben  (tst_tmp[i].ben),
+            .wdt  (tst_tmp[i].wdt),
+            .rdt  (tst_ref[i].rdt),
+            .err  (tst_ref[i].err),
+            .idl  (tst_tmp[i].idl),
+            .bpr  (tst_tmp[i].bpr)
+          );
+        end
+      end: sub_req_rsp
+    join
+
+    // check transactions
+    for (int unsigned i=0; i<tst_num; i++) begin
+      if (tst_tmp[i] != tst_ref[i]) begin
+        error++;
+        $display("i=%d, REF: %p", i, tst_ref[i]);
+        $display("i=%d, TMP: %p", i, tst_tmp[i]);
+      end
+    end
+
+  endtask: test_req_rsp
+
 
 ////////////////////////////////////////////////////////////////////////////////
 // test sequence
@@ -60,39 +197,47 @@ module tcb_vip_tb
     rst = 1'b0;
     repeat (1) @(posedge clk);
 
-    // test BFM unsized read/write tasks
-    fork
-      begin: req_rw_unsized
-        //         adr,     ben,          wdt, err, lck, rpt
-        man.write('h00, 4'b1111, 32'h01234567, err);
-        man.read ('h00, 4'b1111, rdt         , err);
-        man.write('h00, 4'b1111, 32'h01234567, err);
-        man.read ('h00, 4'b1111, rdt         , err);
-      end: req_rw_unsized
-      begin: rsp_rw_unsized
-        //               rdt,  err, tmg
-        sub.rsp(32'h55xxxxxx, 1'b0);
-        sub.rsp(32'h76543210, 1'b0);
-        sub.rsp(32'h55xxxxxx, 1'b0, 1);
-        sub.rsp(32'h76543210, 1'b0, 1);
-      end: rsp_rw_unsized
-    join
+    test_req_rsp;
 
-    // test low level req/rsp tasks
-    fork
-      begin: req
-        //         adr,     ben,          wdt, err, len
-//        man.req('{1'b1, 'h00, 4'b1111, 32'h01234567,                     0});
-//        sub.rsp('{                                   32'h89abcdef, 1'b0, 0});
-//        man.req('{1'b1, 'h01, 4'b1111, 32'h76543210,                     1});
-//        sub.rsp('{                                   32'hfedcba98, 1'b0, 1});
-      end: req
-      begin: rsp
-//  //    man.rsp(                                            rdt,  err);
-//  //    sub.req( wen,  adr,     ben,          wdt,                   );
-      end: rsp
-    join
+//    // test low level transaction tasks
+//    len = BEW;
+//    // prepare data
+//    dat = dat_f(4, 1);
+//    data = data_f(2);
+//    // transaction
+//    idl = 0;
+//    fork
+//      begin: req_transaction
+//        man.transaction(1'b0, 1'b0, len, 1'b1, 16, dat, err, idl, bpr);
+//      end: req_transaction
+//      begin: rsp_transaction
+//        sub.rsp(data, 1'b0);
+//      end: rsp_transaction
+//    join
+//    // check data
+//    if (dat != dat_f(4, 2)) error++;
+//
+//    // test BFM read/write tasks
+//    fork
+//      begin: req_rw
+//        //         adr,     ben,          wdt, err, lck, rpt
+//        man.write('h00, 4'b1111, 32'h01234567, err);
+//        man.read ('h00, 4'b1111, rdt         , err);
+//        man.write('h00, 4'b1111, 32'h01234567, err);
+//        man.read ('h00, 4'b1111, rdt         , err);
+//      end: req_rw
+//      begin: rsp_rw
+//        //               rdt,  err, tmg
+//        sub.rsp(32'h55xxxxxx, 1'b0);
+//        sub.rsp(32'h76543210, 1'b0);
+//        sub.rsp(32'h55xxxxxx, 1'b0, 1);
+//        sub.rsp(32'h76543210, 1'b0, 1);
+//      end: rsp_rw
+//    join
+
     repeat (2) @(posedge clk);
+    if (error>0)  $display("FAILURE: there were %d errors.", error);
+    else          $display("SUCCESS.");
     $finish();
   end
 

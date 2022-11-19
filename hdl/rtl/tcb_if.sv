@@ -36,14 +36,14 @@ interface tcb_if #(
 
   // handshake
   logic           vld;  // handshake valid
+  // request optional
+  logic           rpt;  // repeat access
+  logic           lck;  // arbitration lock
   // request
   logic           wen;  // write enable
   logic [ABW-1:0] adr;  // address
   logic [BEW-1:0] ben;  // byte enable
   logic [DBW-1:0] wdt;  // write data
-  // request optional
-  logic           lck;  // arbitration lock
-  logic           rpt;  // repeat access
   // response
   logic [DBW-1:0] rdt;  // read data
   logic           err;  // error response
@@ -105,12 +105,12 @@ interface tcb_if #(
     input  rst,
     // system bus
     output vld,
+    output rpt,
+    output lck,
     output wen,
     output adr,
     output ben,
     output wdt,
-    output lck,
-    output rpt,
     input  rdt,
     input  err,
     input  rdy,
@@ -127,12 +127,12 @@ interface tcb_if #(
     input  rst,
     // system bus
     input  vld,
+    input  rpt,
+    input  lck,
     input  wen,
     input  adr,
     input  ben,
     input  wdt,
-    input  lck,
-    input  rpt,
     input  rdt,
     input  err,
     input  rdy,
@@ -149,12 +149,12 @@ interface tcb_if #(
     input  rst,
     // system bus
     input  vld,
+    input  rpt,
+    input  lck,
     input  wen,
     input  adr,
     input  ben,
     input  wdt,
-    input  lck,
-    input  rpt,
     output rdt,
     output err,
     output rdy,

@@ -29,14 +29,14 @@ module tcb_vip_mon
 
   // request structure
   typedef struct packed {
+    // request optional
+    logic               rpt;  // repeat access
+    logic               lck;  // arbitration lock
     // request
     logic               wen;  // write enable
     logic [tcb.ABW-1:0] adr;  // address
     logic [tcb.BEW-1:0] ben;  // byte enable
     logic [tcb.DBW-1:0] wdt;  // write data
-    // request optional
-    logic               lck;  // arbitration lock
-    logic               rpt;  // repeat access
   } tcb_req_t;
 
   // response structure  
@@ -46,7 +46,7 @@ module tcb_vip_mon
     logic               err;  // error
   } tcb_rsp_t;
 
-  // timing structure
+  // timing idle/backpressure structure
   typedef struct packed {
     int unsigned        idl;  // idle
     int unsigned        bpr;  // backpressure
@@ -82,14 +82,14 @@ module tcb_vip_mon
       wra <= (wra + 1) % tcb.DLY;
       // request
       req[wra] <= '{
+        // request optional
+        rpt: tcb.rpt,
+        lck: tcb.lck,
         // request
         wen: tcb.wen,
         adr: tcb.adr,
         ben: tcb.ben,
-        wdt: tcb.wdt,
-        // request optional
-        lck: tcb.lck,
-        rpt: tcb.rpt
+        wdt: tcb.wdt
       };
       // timing
       tmg[wra] <= '{
@@ -118,7 +118,7 @@ module tcb_vip_mon
 // protocol check
 ////////////////////////////////////////////////////////////////////////////////
 
-// TODO: on reads where byte enables bits are not active
+// TODO: on reads where byte enable bits are not active
 
 ////////////////////////////////////////////////////////////////////////////////
 // logging
