@@ -81,7 +81,7 @@ module tcb_vip_tb
 // test low level req/rsp tasks
 ////////////////////////////////////////////////////////////////////////////////
 
-  // request structure
+  // TCB transaction structure
   typedef struct {
     // request optional
     logic                            rpt;  // repeat access
@@ -102,27 +102,36 @@ module tcb_vip_tb
   task automatic test_req_rsp;
     // local variables
     bit lst_wen [2] = '{1'b0, 1'b1};
+    int lst_idl [3] = '{0, 1, 2};
+    int lst_bpr [3] = '{0, 1, 2};
 
-    int unsigned tst_num = 2;
+    const int unsigned tst_num = $size(lst_wen) * $size(lst_idl) * $size(lst_bpr);
 
-    tcb_t        tst_ref [$size(lst_wen)];
-    tcb_t        tst_tmp [$size(lst_wen)];
+    tcb_t tst_ref [] = new[tst_num];
+    tcb_t tst_tmp [] = new[tst_num];
 
     // prepare transactions
+    int unsigned i;
     foreach (lst_wen[idx_wen]) begin
-      $display("lst_wen[idx_wen=%d] = %b", idx_wen, lst_wen[idx_wen]);
-      tst_ref[idx_wen] = '{
-        rpt: 1'b0,
-        lck: 1'b0,
-        wen: lst_wen[idx_wen],
-        adr: 'h00,
-        ben: '1,
-        wdt: data_f((SLW/2)'(2*idx_wen+0)),
-        rdt: data_f((SLW/2)'(2*idx_wen+1)),
-        err: 1'b0,
-        idl: 0,
-        bpr: 0
-      };
+      foreach (lst_idl[idx_idl]) begin
+        foreach (lst_bpr[idx_bpr]) begin
+          $display("lst_wen[idx_wen=%d] = %b", idx_wen, lst_wen[idx_wen]);
+          $display("lst_idl[idx_idl=%d] = %b", idx_idl, lst_idl[idx_idl]);
+          $display("lst_bpr[idx_bpr=%d] = %b", idx_bpr, lst_bpr[idx_bpr]);
+          tst_ref[i] = '{
+            rpt: 1'b0,
+            lck: 1'b0,
+            wen: lst_wen[idx_wen],
+            adr: 'h00,
+            ben: '1,
+            wdt: data_f((SLW/2)'(2*i+0)),
+            rdt: data_f((SLW/2)'(2*i+1)),
+            err: 1'b0,
+            idl: lst_idl[idx_idl],
+            bpr: lst_bpr[idx_bpr]
+          };
+        end
+      end
     end
 
     // drive transactions
@@ -130,12 +139,15 @@ module tcb_vip_tb
       begin: man_req
         for (int unsigned i=0; i<tst_num; i++) begin
           man.req(
+            // request optional
             .rpt  (tst_ref[i].rpt),
             .lck  (tst_ref[i].lck),
+            // request
             .wen  (tst_ref[i].wen),
             .adr  (tst_ref[i].adr),
             .ben  (tst_ref[i].ben),
             .wdt  (tst_ref[i].wdt),
+            // timing idle/backpressure
             .idl  (tst_ref[i].idl),
             .bpr  (tst_tmp[i].bpr)
           );
@@ -144,6 +156,7 @@ module tcb_vip_tb
       begin: man_rsp
         for (int unsigned i=0; i<tst_num; i++) begin
           man.rsp(
+            // response
             .rdt  (tst_tmp[i].rdt),
             .err  (tst_tmp[i].err)
           );
@@ -152,16 +165,20 @@ module tcb_vip_tb
       begin: sub_req_rsp
         for (int unsigned i=0; i<tst_num; i++) begin
           sub.req_rsp(
+            // request optional
             .rpt  (tst_tmp[i].rpt),
             .lck  (tst_tmp[i].lck),
+            // request
             .wen  (tst_tmp[i].wen),
             .adr  (tst_tmp[i].adr),
             .ben  (tst_tmp[i].ben),
             .wdt  (tst_tmp[i].wdt),
+            // response
             .rdt  (tst_ref[i].rdt),
             .err  (tst_ref[i].err),
+            // timing idle/backpressure
             .idl  (tst_tmp[i].idl),
-            .bpr  (tst_tmp[i].bpr)
+            .bpr  (tst_ref[i].bpr)
           );
         end
       end: sub_req_rsp
@@ -196,7 +213,8 @@ module tcb_vip_tb
     #1;
     rst = 1'b0;
     repeat (1) @(posedge clk);
-
+    
+    // test low level req/rsp tests
     test_req_rsp;
 
 //    // test low level transaction tasks

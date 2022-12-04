@@ -28,6 +28,7 @@ module tcb_vip_sub
 ////////////////////////////////////////////////////////////////////////////////
 
   // response pipeline
+  logic [tcb.DBW-1:0] tmp_rdy;
   logic [tcb.DBW-1:0] tmp_rdt;
   logic               tmp_err;
   logic               pip_wen [0:tcb.DLY-1];
@@ -66,6 +67,7 @@ module tcb_vip_sub
     input  int unsigned        bpr
   );
     #1;
+    tcb.rdy = 1'b0;
     // response
     tmp_rdt = rdt;
     tmp_err = err;
