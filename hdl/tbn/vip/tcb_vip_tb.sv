@@ -28,19 +28,8 @@ module tcb_vip_tb
   int unsigned DLY = 0
 );
 
-////////////////////////////////////////////////////////////////////////////////
-// local functions
-////////////////////////////////////////////////////////////////////////////////
-
-  typedef logic [BEW-1:0][SLW-1:0] data_t;
-
-  function automatic data_t data_f (
-    input logic [SLW/2-1:0] val = 'x
-  );
-    for (int unsigned i=0; i<BEW; i++) begin
-      data_f[i] = {val, i[SLW/2-1:0]};
-    end
-  endfunction: data_f;
+  // transaction type (parameterized class specialization)
+  typedef tcb_c #(ABW, DBW, SLW)::transaction_t transaction_t;
 
 ////////////////////////////////////////////////////////////////////////////////
 // local signals
@@ -49,27 +38,6 @@ module tcb_vip_tb
   // system signals
   logic clk;  // clock
   logic rst;  // reset
-
-  // physical layer data
-  int unsigned    len = BEW;
-  dat_t           dat;
-
-  // supported data widths
-  data8_t         data8;
-  data16_t        data16;
-  data32_t        data32;
-  data64_t        data64;
-  data128_t       data128;
-  // native data width
-  data_t          data;
-
-  // temporary variables
-  logic [BEW-1:0] ben;  // byte enable
-  logic [DBW-1:0] rdt;  // read data
-  logic           err;  // error response
-  // timing idle/backpressure
-  int unsigned    idl;
-  int unsigned    bpr;
 
   // TCB interface
   tcb_if #(.ABW (ABW), .DBW (DBW), .SLW (SLW), .DLY (DLY)) tcb (.clk (clk), .rst (rst));
@@ -81,34 +49,17 @@ module tcb_vip_tb
 // test low level req/rsp tasks
 ////////////////////////////////////////////////////////////////////////////////
 
-  // TCB transaction structure
-  typedef struct {
-    // request optional
-    logic                            rpt;  // repeat access
-    logic                            lck;  // arbitration lock
-    // request
-    logic                            wen;  // write enable
-    logic              [tcb.ABW-1:0] adr;  // address
-    logic              [tcb.BEW-1:0] ben;  // byte enable
-    logic [tcb.BEW-1:0][tcb.SLW-1:0] wdt;  // write data
-    // response
-    logic [tcb.BEW-1:0][tcb.SLW-1:0] rdt;  // read data
-    logic                            err;  // error
-    // timing idle/backpressure
-    int unsigned                     idl;  // idle
-    int unsigned                     bpr;  // backpressure
-  } tcb_t;
-
   task automatic test_req_rsp;
     // local variables
     bit lst_wen [2] = '{1'b0, 1'b1};
     int lst_idl [3] = '{0, 1, 2};
     int lst_bpr [3] = '{0, 1, 2};
 
-    const int unsigned tst_num = $size(lst_wen) * $size(lst_idl) * $size(lst_bpr);
+    int unsigned tst_num = $size(lst_wen) * $size(lst_idl) * $size(lst_bpr);
 
-    tcb_t tst_ref [] = new[tst_num];
-    tcb_t tst_tmp [] = new[tst_num];
+    transaction_t tst_ref [] = new[tst_num];
+    transaction_t tst_man [];
+    transaction_t tst_sub [];
 
     // prepare transactions
     int unsigned i;
@@ -124,8 +75,8 @@ module tcb_vip_tb
             wen: lst_wen[idx_wen],
             adr: 'h00,
             ben: '1,
-            wdt: data_f((SLW/2)'(2*i+0)),
-            rdt: data_f((SLW/2)'(2*i+1)),
+            wdt: tcb_c #(ABW, DBW, SLW)::data_test_f((SLW/2)'(2*i+0)),
+            rdt: tcb_c #(ABW, DBW, SLW)::data_test_f((SLW/2)'(2*i+1)),
             err: 1'b0,
             idl: lst_idl[idx_idl],
             bpr: lst_bpr[idx_bpr]
@@ -133,6 +84,9 @@ module tcb_vip_tb
         end
       end
     end
+
+    tst_man = new[tst_ref.size()](tst_ref);
+    tst_sub = new[tst_ref.size()](tst_ref);
 
     // drive transactions
     fork
@@ -149,7 +103,7 @@ module tcb_vip_tb
             .wdt  (tst_ref[i].wdt),
             // timing idle/backpressure
             .idl  (tst_ref[i].idl),
-            .bpr  (tst_tmp[i].bpr)
+            .bpr  (tst_man[i].bpr)
           );
         end
       end: man_req
@@ -157,27 +111,28 @@ module tcb_vip_tb
         for (int unsigned i=0; i<tst_num; i++) begin
           man.rsp(
             // response
-            .rdt  (tst_tmp[i].rdt),
-            .err  (tst_tmp[i].err)
+            .rdt  (tst_man[i].rdt),
+            .err  (tst_man[i].err)
           );
         end
       end: man_rsp
       begin: sub_req_rsp
+//        sub.sequence_driver(tst_ref, tst_sub);
         for (int unsigned i=0; i<tst_num; i++) begin
           sub.req_rsp(
             // request optional
-            .rpt  (tst_tmp[i].rpt),
-            .lck  (tst_tmp[i].lck),
+            .rpt  (tst_sub[i].rpt),
+            .lck  (tst_sub[i].lck),
             // request
-            .wen  (tst_tmp[i].wen),
-            .adr  (tst_tmp[i].adr),
-            .ben  (tst_tmp[i].ben),
-            .wdt  (tst_tmp[i].wdt),
+            .wen  (tst_sub[i].wen),
+            .adr  (tst_sub[i].adr),
+            .ben  (tst_sub[i].ben),
+            .wdt  (tst_sub[i].wdt),
             // response
             .rdt  (tst_ref[i].rdt),
             .err  (tst_ref[i].err),
             // timing idle/backpressure
-            .idl  (tst_tmp[i].idl),
+            .idl  (tst_sub[i].idl),
             .bpr  (tst_ref[i].bpr)
           );
         end
@@ -186,10 +141,15 @@ module tcb_vip_tb
 
     // check transactions
     for (int unsigned i=0; i<tst_num; i++) begin
-      if (tst_tmp[i] != tst_ref[i]) begin
+      if (tst_man[i] != tst_ref[i]) begin
         error++;
         $display("i=%d, REF: %p", i, tst_ref[i]);
-        $display("i=%d, TMP: %p", i, tst_tmp[i]);
+        $display("i=%d, MAN: %p", i, tst_man[i]);
+      end
+      if (tst_sub[i] != tst_ref[i]) begin
+        error++;
+        $display("i=%d, REF: %p", i, tst_ref[i]);
+        $display("i=%d, SUB: %p", i, tst_sub[i]);
       end
     end
 

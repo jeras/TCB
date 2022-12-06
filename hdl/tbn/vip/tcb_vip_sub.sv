@@ -23,6 +23,9 @@ module tcb_vip_sub
   tcb_if.sub tcb
 );
 
+  // transaction type (parameterized class specialization)
+  typedef tcb_c #(tcb.ABW, tcb.DBW, tcb.SLW)::transaction_t transaction_t;
+
 ////////////////////////////////////////////////////////////////////////////////
 // local signals
 ////////////////////////////////////////////////////////////////////////////////
@@ -50,7 +53,7 @@ module tcb_vip_sub
 ////////////////////////////////////////////////////////////////////////////////
 
   // request/response
-  task req_rsp (
+  task automatic req_rsp (
     // request optional
     output logic               rpt,
     output logic               lck,
@@ -101,6 +104,35 @@ module tcb_vip_sub
     ben = tcb.ben;
     wdt = tcb.wdt;
   endtask: req_rsp
+
+////////////////////////////////////////////////////////////////////////////////
+// transaction sequence
+////////////////////////////////////////////////////////////////////////////////
+
+  // request/response
+  task automatic sequence_driver (
+    const ref transaction_t transactions_i [],
+          ref transaction_t transactions_o []
+  );
+    for (int unsigned i=0; i<transactions_i.size(); i++) begin
+      sub.req_rsp(
+        // request optional
+        .rpt  (transactions_o[i].rpt),  // output
+        .lck  (transactions_o[i].lck),  // output
+        // request
+        .wen  (transactions_o[i].wen),  // output
+        .adr  (transactions_o[i].adr),  // output
+        .ben  (transactions_o[i].ben),  // output
+        .wdt  (transactions_o[i].wdt),  // output
+        // response
+        .rdt  (transactions_i[i].rdt),  // input
+        .err  (transactions_i[i].err),  // input
+        // timing idle/backpressure
+        .idl  (transactions_o[i].idl),  // output
+        .bpr  (transactions_i[i].bpr)   // input
+      );
+    end
+  endtask: sequence_driver
 
 ////////////////////////////////////////////////////////////////////////////////
 // response pipeline
