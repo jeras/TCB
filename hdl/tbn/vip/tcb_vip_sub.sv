@@ -111,8 +111,10 @@ module tcb_vip_sub
 
   // request/response
   task automatic sequence_driver (
-    const ref transaction_t transactions_i [],
-          ref transaction_t transactions_o []
+//    const ref transaction_t transactions_i [],
+//          ref transaction_t transactions_o []
+    input  transaction_t transactions_i [],
+    output transaction_t transactions_o []
   );
     for (int unsigned i=0; i<transactions_i.size(); i++) begin
       req_rsp(

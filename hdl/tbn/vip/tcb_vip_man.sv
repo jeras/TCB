@@ -106,8 +106,10 @@ module tcb_vip_man
 
   // request/response
   task automatic sequence_driver (
-    const ref transaction_t transactions_i [],
-          ref transaction_t transactions_o []
+//    const ref transaction_t transactions_i [],
+//          ref transaction_t transactions_o []
+    input  transaction_t transactions_i [],
+    output transaction_t transactions_o []
   );
     fork
       begin: fork_req

@@ -66,9 +66,6 @@ module tcb_vip_tb
     foreach (lst_wen[idx_wen]) begin
       foreach (lst_idl[idx_idl]) begin
         foreach (lst_bpr[idx_bpr]) begin
-          $display("lst_wen[idx_wen=%d] = %b", idx_wen, lst_wen[idx_wen]);
-          $display("lst_idl[idx_idl=%d] = %b", idx_idl, lst_idl[idx_idl]);
-          $display("lst_bpr[idx_bpr=%d] = %b", idx_bpr, lst_bpr[idx_bpr]);
           tst_ref[i] = '{
             rpt: 1'b0,
             lck: 1'b0,
@@ -81,6 +78,7 @@ module tcb_vip_tb
             idl: lst_idl[idx_idl],
             bpr: lst_bpr[idx_bpr]
           };
+          i++;
         end
       end
     end
@@ -88,7 +86,11 @@ module tcb_vip_tb
     tst_man = new[tst_ref.size()](tst_ref);
     tst_sub = new[tst_ref.size()](tst_ref);
 
-/*
+    // DEBUG printout
+    $display("REF: %p", tst_ref);
+    $display("MAN: %p", tst_man);
+    $display("SUB: %p", tst_sub);
+
     // drive transactions
     fork
       begin: fork_man
@@ -98,62 +100,12 @@ module tcb_vip_tb
         sub.sequence_driver(tst_ref, tst_sub);
       end: fork_sub
     join
-*/
-    // drive transactions
-    fork
-      begin: man_req
-        for (int unsigned i=0; i<tst_num; i++) begin
-          man.req(
-            // request optional
-            .rpt  (tst_ref[i].rpt),
-            .lck  (tst_ref[i].lck),
-            // request
-            .wen  (tst_ref[i].wen),
-            .adr  (tst_ref[i].adr),
-            .ben  (tst_ref[i].ben),
-            .wdt  (tst_ref[i].wdt),
-            // timing idle/backpressure
-            .idl  (tst_ref[i].idl),
-            .bpr  (tst_man[i].bpr)
-          );
-        end
-      end: man_req
-      begin: man_rsp
-        for (int unsigned i=0; i<tst_num; i++) begin
-          man.rsp(
-            // response
-            .rdt  (tst_man[i].rdt),
-            .err  (tst_man[i].err)
-          );
-        end
-      end: man_rsp
-      begin: sub_req_rsp
-        for (int unsigned i=0; i<tst_num; i++) begin
-          sub.req_rsp(
-            // request optional
-            .rpt  (tst_sub[i].rpt),
-            .lck  (tst_sub[i].lck),
-            // request
-            .wen  (tst_sub[i].wen),
-            .adr  (tst_sub[i].adr),
-            .ben  (tst_sub[i].ben),
-            .wdt  (tst_sub[i].wdt),
-            // response
-            .rdt  (tst_ref[i].rdt),
-            .err  (tst_ref[i].err),
-            // timing idle/backpressure
-            .idl  (tst_sub[i].idl),
-            .bpr  (tst_ref[i].bpr)
-          );
-        end
-      end: sub_req_rsp
-    join
 
     // check transactions
     for (int unsigned i=0; i<tst_num; i++) begin
+//      $display("i=%d, REF: %p", i, tst_ref[i]);
       if (tst_man[i] != tst_ref[i]) begin
         error++;
-        $display("i=%d, REF: %p", i, tst_ref[i]);
         $display("i=%d, MAN: %p", i, tst_man[i]);
       end
       if (tst_sub[i] != tst_ref[i]) begin
