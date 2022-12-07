@@ -23,6 +23,9 @@ module tcb_vip_man
   tcb_if.man tcb
 );
 
+  // transaction type (parameterized class specialization)
+  typedef tcb_c #(tcb.ABW, tcb.DBW, tcb.SLW)::transaction_t transaction_t;
+
 ////////////////////////////////////////////////////////////////////////////////
 // request/response (enable pipelined transfers with full throughput)
 ////////////////////////////////////////////////////////////////////////////////
@@ -96,6 +99,47 @@ module tcb_vip_man
     rdt = tcb.rdt;
     err = tcb.err;
   endtask: rsp
+
+////////////////////////////////////////////////////////////////////////////////
+// transaction sequence
+////////////////////////////////////////////////////////////////////////////////
+
+  // request/response
+  task automatic sequence_driver (
+    const ref transaction_t transactions_i [],
+          ref transaction_t transactions_o []
+  );
+    fork
+      begin: fork_req
+        for (int unsigned i=0; i<transactions_i.size(); i++) begin
+          req(
+            // request optional
+            .rpt  (transactions_i[i].rpt),  // input
+            .lck  (transactions_i[i].lck),  // input
+            // request
+            .wen  (transactions_i[i].wen),  // input
+            .adr  (transactions_i[i].adr),  // input
+            .ben  (transactions_i[i].ben),  // input
+            .wdt  (transactions_i[i].wdt),  // input
+            // timing idle/backpressure
+            .idl  (transactions_i[i].idl),  // input
+            .bpr  (transactions_o[i].bpr)   // output
+//            .bpr  (transactions_o[i].bpr),  // output
+//            .idl  (transactions_i[i].idl)  // input
+          );
+        end
+      end: fork_req
+      begin: fork_rsp
+        for (int unsigned i=0; i<transactions_i.size(); i++) begin
+          rsp(
+            // response
+            .rdt  (transactions_o[i].rdt),  // output
+            .err  (transactions_o[i].err)   // output
+          );
+        end
+      end: fork_rsp
+    join
+  endtask: sequence_driver
 
 ////////////////////////////////////////////////////////////////////////////////
 // BFM (Bus Functional Model) (emulates a RISC-V manager)

@@ -115,7 +115,7 @@ module tcb_vip_sub
           ref transaction_t transactions_o []
   );
     for (int unsigned i=0; i<transactions_i.size(); i++) begin
-      sub.req_rsp(
+      req_rsp(
         // request optional
         .rpt  (transactions_o[i].rpt),  // output
         .lck  (transactions_o[i].lck),  // output

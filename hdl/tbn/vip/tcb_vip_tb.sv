@@ -88,6 +88,17 @@ module tcb_vip_tb
     tst_man = new[tst_ref.size()](tst_ref);
     tst_sub = new[tst_ref.size()](tst_ref);
 
+/*
+    // drive transactions
+    fork
+      begin: fork_man
+        man.sequence_driver(tst_ref, tst_man);
+      end: fork_man
+      begin: fork_sub
+        sub.sequence_driver(tst_ref, tst_sub);
+      end: fork_sub
+    join
+*/
     // drive transactions
     fork
       begin: man_req
@@ -117,7 +128,6 @@ module tcb_vip_tb
         end
       end: man_rsp
       begin: sub_req_rsp
-//        sub.sequence_driver(tst_ref, tst_sub);
         for (int unsigned i=0; i<tst_num; i++) begin
           sub.req_rsp(
             // request optional
