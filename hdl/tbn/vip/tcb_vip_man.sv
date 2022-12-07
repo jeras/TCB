@@ -35,37 +35,27 @@ module tcb_vip_man
 
   // request
   task automatic req (
-    // request optional
-    input  logic               rpt,
-    input  logic               lck,
-    // request
-    input  logic               wen,
-    input  logic [tcb.ABW-1:0] adr,
-    input  logic [tcb.BEW-1:0] ben,
-    input  logic [tcb.DBW-1:0] wdt,
-    // timing idle/backpressure
-    input  int unsigned        idl,
-    output int unsigned        bpr
+    inout  transaction_t seq
   );
     // request timing
-    repeat (idl) @(posedge tcb.clk);
+    repeat (seq.idl) @(posedge tcb.clk);
     // drive transfer
     #1;
     // hanshake
     tcb.vld = 1'b1;
     // request optional
-    tcb.rpt = rpt;
-    tcb.lck = lck;
+    tcb.rpt = seq.rpt;
+    tcb.lck = seq.lck;
     // request
-    tcb.wen = wen;
-    tcb.adr = adr;
-    tcb.ben = ben;
-    tcb.wdt = wdt;
+    tcb.wen = seq.wen;
+    tcb.adr = seq.adr;
+    tcb.ben = seq.ben;
+    tcb.wdt = seq.wdt;
     // backpressure
-    bpr = 0;
+    seq.bpr = 0;
     do begin
       @(posedge tcb.clk);
-      if (~tcb.rdy) bpr++;
+      if (~tcb.rdy) seq.bpr++;
     end while (~tcb.trn);
     // drive idle/undefined
     #1;
@@ -83,8 +73,7 @@ module tcb_vip_man
 
   // response task
   task automatic rsp (
-    output logic [tcb.DBW-1:0] rdt,
-    output logic               err
+    inout  transaction_t seq
   );
     do begin
       @(posedge tcb.clk);
@@ -96,8 +85,8 @@ module tcb_vip_man
       end while (~tcb.rsp);
     end
     // response
-    rdt = tcb.rdt;
-    err = tcb.err;
+    seq.rdt = tcb.rdt;
+    seq.err = tcb.err;
   endtask: rsp
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -106,39 +95,14 @@ module tcb_vip_man
 
   // request/response
   task automatic sequence_driver (
-//    const ref transaction_t transactions_i [],
-//          ref transaction_t transactions_o []
-    input  transaction_t transactions_i [],
-    output transaction_t transactions_o []
+    inout  transaction_t transactions []
   );
     fork
       begin: fork_req
-        for (int unsigned i=0; i<transactions_i.size(); i++) begin
-          req(
-            // request optional
-            .rpt  (transactions_i[i].rpt),  // input
-            .lck  (transactions_i[i].lck),  // input
-            // request
-            .wen  (transactions_i[i].wen),  // input
-            .adr  (transactions_i[i].adr),  // input
-            .ben  (transactions_i[i].ben),  // input
-            .wdt  (transactions_i[i].wdt),  // input
-            // timing idle/backpressure
-            .idl  (transactions_i[i].idl),  // input
-            .bpr  (transactions_o[i].bpr)   // output
-//            .bpr  (transactions_o[i].bpr),  // output
-//            .idl  (transactions_i[i].idl)  // input
-          );
-        end
+        foreach (transactions[i])  req(transactions[i]);
       end: fork_req
       begin: fork_rsp
-        for (int unsigned i=0; i<transactions_i.size(); i++) begin
-          rsp(
-            // response
-            .rdt  (transactions_o[i].rdt),  // output
-            .err  (transactions_o[i].err)   // output
-          );
-        end
+        foreach (transactions[i])  rsp(transactions[i]);
       end: fork_rsp
     join
   endtask: sequence_driver
@@ -147,6 +111,7 @@ module tcb_vip_man
 // BFM (Bus Functional Model) (emulates a RISC-V manager)
 ////////////////////////////////////////////////////////////////////////////////
 
+/*
   // native write
   task automatic transaction (
     // request optional
@@ -203,6 +168,7 @@ module tcb_vip_man
       dat[i] = rdt[i];
     end
   endtask: transaction
+*/
 
 ////////////////////////////////////////////////////////////////////////////////
 // native data width read/write (waits for response after each request)

@@ -94,10 +94,10 @@ module tcb_vip_tb
     // drive transactions
     fork
       begin: fork_man
-        man.sequence_driver(tst_ref, tst_man);
+        man.sequence_driver(tst_man);
       end: fork_man
       begin: fork_sub
-        sub.sequence_driver(tst_ref, tst_sub);
+        sub.sequence_driver(tst_sub);
       end: fork_sub
     join
 

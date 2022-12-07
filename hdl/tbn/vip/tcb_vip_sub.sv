@@ -54,28 +54,17 @@ module tcb_vip_sub
 
   // request/response
   task automatic req_rsp (
-    // request optional
-    output logic               rpt,
-    output logic               lck,
-    // request
-    output logic               wen,
-    output logic [tcb.ABW-1:0] adr,
-    output logic [tcb.BEW-1:0] ben,
-    output logic [tcb.DBW-1:0] wdt,
-    // response
-    input  logic [tcb.DBW-1:0] rdt,
-    input  logic               err,
-    // timing idle/backpressure
-    output int unsigned        idl,
-    input  int unsigned        bpr
+    inout  transaction_t seq
   );
     #1;
     tcb.rdy = 1'b0;
     // response
-    tmp_rdt = rdt;
-    tmp_err = err;
+    tmp_rdt = seq.rdt;
+    tmp_err = seq.err;
+    // TODO: mesure idle time
+    seq.idl = 0;
     // request
-    if (bpr == 0) begin
+    if (seq.bpr == 0) begin
       // ready
       tcb.rdy = 1'b1;
       // wait for transfer
@@ -84,7 +73,7 @@ module tcb_vip_sub
       end while (~tcb.trn);
     end else begin
       // backpressure
-      for (int unsigned i=0; i<bpr; i+=int'(tcb.vld)) begin
+      for (int unsigned i=0; i<seq.bpr; i+=int'(tcb.vld)) begin
         @(posedge tcb.clk);
       end
       // ready
@@ -96,13 +85,13 @@ module tcb_vip_sub
       end while (~tcb.trn);
     end
     // request optional
-    rpt = tcb.rpt;
-    lck = tcb.lck;
+    seq.rpt = tcb.rpt;
+    seq.lck = tcb.lck;
     // request
-    wen = tcb.wen;
-    adr = tcb.adr;
-    ben = tcb.ben;
-    wdt = tcb.wdt;
+    seq.wen = tcb.wen;
+    seq.adr = tcb.adr;
+    seq.ben = tcb.ben;
+    seq.wdt = tcb.wdt;
   endtask: req_rsp
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -111,29 +100,9 @@ module tcb_vip_sub
 
   // request/response
   task automatic sequence_driver (
-//    const ref transaction_t transactions_i [],
-//          ref transaction_t transactions_o []
-    input  transaction_t transactions_i [],
-    output transaction_t transactions_o []
+    inout  transaction_t transactions []
   );
-    for (int unsigned i=0; i<transactions_i.size(); i++) begin
-      req_rsp(
-        // request optional
-        .rpt  (transactions_o[i].rpt),  // output
-        .lck  (transactions_o[i].lck),  // output
-        // request
-        .wen  (transactions_o[i].wen),  // output
-        .adr  (transactions_o[i].adr),  // output
-        .ben  (transactions_o[i].ben),  // output
-        .wdt  (transactions_o[i].wdt),  // output
-        // response
-        .rdt  (transactions_i[i].rdt),  // input
-        .err  (transactions_i[i].err),  // input
-        // timing idle/backpressure
-        .idl  (transactions_o[i].idl),  // output
-        .bpr  (transactions_i[i].bpr)   // input
-      );
-    end
+    foreach (transactions[i])  req_rsp(transactions[i]);
   endtask: sequence_driver
 
 ////////////////////////////////////////////////////////////////////////////////
