@@ -23,8 +23,8 @@ module tcb_vip_sub
   tcb_if.sub tcb
 );
 
-  // transaction type (parameterized class specialization)
-  typedef tcb_c #(tcb.ABW, tcb.DBW, tcb.SLW)::transaction_t transaction_t;
+  // parameterized class specialization
+  typedef tcb_c #(tcb.ABW, tcb.DBW, tcb.SLW) tcb_s;
 
 ////////////////////////////////////////////////////////////////////////////////
 // local signals
@@ -54,7 +54,7 @@ module tcb_vip_sub
 
   // request/response
   task automatic req_rsp (
-    inout  transaction_t seq
+    inout  tcb_s::transaction_t seq
   );
     #1;
     tcb.rdy = 1'b0;
@@ -100,7 +100,7 @@ module tcb_vip_sub
 
   // request/response
   task automatic sequence_driver (
-    inout  transaction_t transactions []
+    inout  tcb_s::transaction_t transactions []
   );
     foreach (transactions[i])  req_rsp(transactions[i]);
   endtask: sequence_driver

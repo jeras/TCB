@@ -58,6 +58,24 @@ package tcb_vip_pkg;
     } transaction_t;
     /* verilator lint_on UNPACKED */
 
+    // constants
+    static const transaction_t TRANSACTION_INIT = '{
+      // request optional
+      rpt: 1'b0,
+      lck: 1'b0,
+      // request
+      wen: 'x,
+      adr: 'x,
+      ben: 'x,
+      wdt: 'x,
+      // response
+      rdt: 'x,
+      err: 'x,
+      // timing idle/backpressure
+      idl: 0,
+      bpr: 0
+    };
+   
   endclass: tcb_c
 
 endpackage: tcb_vip_pkg

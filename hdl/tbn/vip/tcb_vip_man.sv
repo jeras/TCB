@@ -23,8 +23,8 @@ module tcb_vip_man
   tcb_if.man tcb
 );
 
-  // transaction type (parameterized class specialization)
-  typedef tcb_c #(tcb.ABW, tcb.DBW, tcb.SLW)::transaction_t transaction_t;
+  // parameterized class specialization
+  typedef tcb_c #(tcb.ABW, tcb.DBW, tcb.SLW) tcb_s;
 
 ////////////////////////////////////////////////////////////////////////////////
 // request/response (enable pipelined transfers with full throughput)
@@ -35,7 +35,7 @@ module tcb_vip_man
 
   // request
   task automatic req (
-    inout  transaction_t seq
+    inout  tcb_s::transaction_t seq
   );
     // request timing
     repeat (seq.idl) @(posedge tcb.clk);
@@ -73,7 +73,7 @@ module tcb_vip_man
 
   // response task
   task automatic rsp (
-    inout  transaction_t seq
+    inout  tcb_s::transaction_t seq
   );
     do begin
       @(posedge tcb.clk);
@@ -95,7 +95,7 @@ module tcb_vip_man
 
   // request/response
   task automatic sequence_driver (
-    inout  transaction_t transactions []
+    inout  tcb_s::transaction_t transactions []
   );
     fork
       begin: fork_req
@@ -111,12 +111,8 @@ module tcb_vip_man
 // BFM (Bus Functional Model) (emulates a RISC-V manager)
 ////////////////////////////////////////////////////////////////////////////////
 
-/*
-  // native write
-  task automatic transaction (
-    // request optional
-    input  logic               rpt,
-    input  logic               lck,
+  // read/write access of any size
+  task automatic access (
     // data length
     input  int unsigned        len,
     // request
@@ -124,110 +120,46 @@ module tcb_vip_man
     input  logic [tcb.ABW-1:0] adr,
     ref    logic [tcb.SLW-1:0] dat [],
     // response
-    output logic               err,
-    // timing idle/backpressure
-    input  int unsigned        idl,
-    output int unsigned        bpr
+    output logic               err
   );
-    // local signals
-    logic [tcb.BEW-1:0]              ben = '0;
-    logic [tcb.BEW-1:0][tcb.SLW-1:0] wdt;
-    logic [tcb.BEW-1:0][tcb.SLW-1:0] rdt;
+    int unsigned num;
+    tcb_s::transaction_t transactions [];
+    int unsigned idx_trn = 0;
+    int unsigned idx_ben = adr % tcb.BEW;
+    // the number of transactions is
+    // = the access length + missalligned part of the address
+    // / divided by bus native byte enable width
+    // + plus one, if there is a reinder to the division.
+    num = len + adr % tcb.BEW;
+    num = (num / tcb.BEW) + ((num % tcb.BEW) ? 1 : 0);
+    // local transactions
+    transactions = new[num];
     $display("Transaction starts here.");
     // mapping
+    transactions = '{default: tcb_s::TRANSACTION_INIT};
     for (int unsigned i=0; i<len; i++) begin
-      ben = '1;
-      wdt[i] = dat[i];
+      // request optional
+      transactions[idx_trn].rpt = 1'b0;
+      transactions[idx_trn].lck = (idx_trn < num) ? 1'b1 : 1'b0;
+      // request
+      transactions[idx_trn].wen = wen;
+      transactions[idx_trn].adr = adr + idx_trn * tcb.BEW;
+      transactions[idx_trn].ben[idx_ben] = 1'b1;
+      transactions[idx_trn].wdt[idx_ben] = dat[i];
+      // timing idle/backpressure
+      transactions[idx_trn].idl = 0;
+      // index increments
+      idx_ben = (idx_ben + 1) % tcb.BEW;
+      if (idx_ben == 0) idx_trn++;
     end
     // transaction
-    fork
-      begin
-        $display("Request expected here.");
-        // request
-        req (
-          .rpt (rpt),
-          .lck (lck),
-          .wen (wen),
-          .adr (adr),
-          .ben (ben),
-          .wdt (wdt),
-          .idl (idl),
-          .bpr (bpr)
-        );
-      end
-      begin
-        // response
-        rsp (
-          .rdt (rdt),
-          .err (err)
-        );
-      end
-    join
-    // mapping
-    for (int unsigned i=0; i<len; i++) begin
-      dat[i] = rdt[i];
-    end
-  endtask: transaction
-*/
+    sequence_driver(transactions);
+  endtask: access
 
 ////////////////////////////////////////////////////////////////////////////////
 // native data width read/write (waits for response after each request)
 ////////////////////////////////////////////////////////////////////////////////
 
-//  // native write
-//  task write (
-//    // request
-//    input  logic [tcb.ABW-1:0] adr,
-//    input  logic [tcb.BEW-1:0] ben,
-//    input  logic [tcb.DBW-1:0] dat,
-//    // response
-//    output logic               err
-//  );
-//    // ignored value
-//    logic [tcb.DBW-1:0] rdt;
-//    // request
-//    req (
-//      .rpt (1'b0),
-//      .lck (1'b0),
-//      .wen (1'b1),
-//      .adr (adr),
-//      .ben (ben),
-//      .wdt (dat)
-//    );
-//    // response
-//    rsp (
-//      .rdt (rdt),
-//      .err (err)
-//    );
-//  endtask: write
-//
-//  // native read
-//  task read (
-//    // request
-//    input  logic [tcb.ABW-1:0] adr,
-//    input  logic [tcb.BEW-1:0] ben,
-//    output logic [tcb.DBW-1:0] dat,
-//    // response
-//    output logic               err
-//  );
-//    // request
-//    req (
-//      .rpt (1'b0),
-//      .lck (1'b0),
-//      .wen (1'b0),
-//      .adr (adr),
-//      .ben (ben),
-//      .wdt ('x)
-//    );
-//    // response
-//    rsp (
-//      .rdt (dat),
-//      .err (err)
-//    );
-//  endtask: read
-//
-//
-//
 //// write64
 //// write32
 // write16

@@ -28,8 +28,8 @@ module tcb_vip_tb
   int unsigned DLY = 0
 );
 
-  // transaction type (parameterized class specialization)
-  typedef tcb_c #(ABW, DBW, SLW)::transaction_t transaction_t;
+  // parameterized class specialization
+  typedef tcb_c #(tcb.ABW, tcb.DBW, tcb.SLW) tcb_s;
 
 ////////////////////////////////////////////////////////////////////////////////
 // local signals
@@ -57,9 +57,9 @@ module tcb_vip_tb
 
     int unsigned tst_num = $size(lst_wen) * $size(lst_idl) * $size(lst_bpr);
 
-    transaction_t tst_ref [] = new[tst_num];
-    transaction_t tst_man [];
-    transaction_t tst_sub [];
+    tcb_s::transaction_t tst_ref [] = new[tst_num];
+    tcb_s::transaction_t tst_man [];
+    tcb_s::transaction_t tst_sub [];
 
     // prepare transactions
     int unsigned i;
@@ -72,8 +72,8 @@ module tcb_vip_tb
             wen: lst_wen[idx_wen],
             adr: 'h00,
             ben: '1,
-            wdt: tcb_c #(ABW, DBW, SLW)::data_test_f((SLW/2)'(2*i+0)),
-            rdt: tcb_c #(ABW, DBW, SLW)::data_test_f((SLW/2)'(2*i+1)),
+            wdt: tcb_s::data_test_f((SLW/2)'(2*i+0)),
+            rdt: tcb_s::data_test_f((SLW/2)'(2*i+1)),
             err: 1'b0,
             idl: lst_idl[idx_idl],
             bpr: lst_bpr[idx_bpr]
