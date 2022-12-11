@@ -87,9 +87,9 @@ module tcb_vip_tb
     tst_sub = new[tst_ref.size()](tst_ref);
 
     // DEBUG printout
-    $display("REF: %p", tst_ref);
-    $display("MAN: %p", tst_man);
-    $display("SUB: %p", tst_sub);
+//    $display("REF: %p", tst_ref);
+//    $display("MAN: %p", tst_man);
+//    $display("SUB: %p", tst_sub);
 
     // drive transactions
     fork

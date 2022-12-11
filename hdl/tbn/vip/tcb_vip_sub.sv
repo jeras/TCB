@@ -70,11 +70,13 @@ module tcb_vip_sub
       // wait for transfer
       do begin
         @(posedge tcb.clk);
+        seq.idl += tcb.vld ? 0 : 1;
       end while (~tcb.trn);
     end else begin
       // backpressure
-      for (int unsigned i=0; i<seq.bpr; i+=int'(tcb.vld)) begin
+      for (int unsigned i=0; i<seq.bpr; i+=(tcb.vld?1:0)) begin
         @(posedge tcb.clk);
+        seq.idl += tcb.vld ? 0 : 1;
       end
       // ready
       #1;
