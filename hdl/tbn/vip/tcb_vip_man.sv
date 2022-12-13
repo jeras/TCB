@@ -27,14 +27,14 @@ module tcb_vip_man
   typedef tcb_c #(tcb.ABW, tcb.DBW, tcb.SLW) tcb_s;
 
 ////////////////////////////////////////////////////////////////////////////////
-// request/response (enable pipelined transfers with full throughput)
+// request/response (enable pipelined transactions with full throughput)
 ////////////////////////////////////////////////////////////////////////////////
 
   // initialize to idle state
   initial  tcb.vld = 1'b0;
 
-  // request
-  task automatic req (
+  // request driver
+  task automatic req_drv (
     inout  tcb_s::transaction_t seq
   );
     // request timing
@@ -69,10 +69,10 @@ module tcb_vip_man
     tcb.adr = 'x;
     tcb.ben = 'x;
     tcb.wdt = 'x;
-  endtask: req
+  endtask: req_drv
 
-  // response task
-  task automatic rsp (
+  // response listener
+  task automatic rsp_lsn (
     inout  tcb_s::transaction_t seq
   );
     do begin
@@ -87,7 +87,7 @@ module tcb_vip_man
     // response
     seq.rdt = tcb.rdt;
     seq.err = tcb.err;
-  endtask: rsp
+  endtask: rsp_lsn
 
 ////////////////////////////////////////////////////////////////////////////////
 // transaction sequence
@@ -98,12 +98,12 @@ module tcb_vip_man
     inout  tcb_s::transaction_t transactions []
   );
     fork
-      begin: fork_req
-        foreach (transactions[i])  req(transactions[i]);
-      end: fork_req
-      begin: fork_rsp
-        foreach (transactions[i])  rsp(transactions[i]);
-      end: fork_rsp
+      begin: fork_req_drv
+        foreach (transactions[i])  req_drv(transactions[i]);
+      end: fork_req_drv
+      begin: fork_rsp_lsn
+        foreach (transactions[i])  rsp_lsn(transactions[i]);
+      end: fork_rsp_lsn
     join
   endtask: sequence_driver
 
