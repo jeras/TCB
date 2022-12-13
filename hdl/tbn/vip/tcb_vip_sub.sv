@@ -31,13 +31,8 @@ module tcb_vip_sub
 ////////////////////////////////////////////////////////////////////////////////
 
   // response pipeline
-  logic [tcb.DBW-1:0] tmp_rdy;
   logic [tcb.DBW-1:0] tmp_rdt;
   logic               tmp_err;
-  logic               pip_wen [0:tcb.DLY-1];
-  logic [tcb.BEW-1:0] pip_ben [0:tcb.DLY-1];
-  logic [tcb.DBW-1:0] pip_rdt [0:tcb.DLY-1];
-  logic               pip_err [0:tcb.DLY-1];
 
 ////////////////////////////////////////////////////////////////////////////////
 // initialization
@@ -56,9 +51,6 @@ module tcb_vip_sub
   );
     #1;
     tcb.rdy = 1'b0;
-    // response
-    tmp_rdt = seq.rdt;
-    tmp_err = seq.err;
     // TODO: mesure idle time
     seq.idl = 0;
     // request
@@ -107,6 +99,10 @@ module tcb_vip_sub
     end while (~tcb.rsp);
   endtask: rsp_drv
 
+  // response signal driver
+  assign tcb.rdt = tcb.rsp ? tmp_rdt : 'x;
+  assign tcb.err = tcb.rsp ? tmp_err : 'x;
+
 ////////////////////////////////////////////////////////////////////////////////
 // transaction sequence
 ////////////////////////////////////////////////////////////////////////////////
@@ -119,55 +115,12 @@ module tcb_vip_sub
       begin: fork_req_lsn
         foreach (transactions[i])  req_lsn(transactions[i]);
       end: fork_req_lsn
-//      begin: fork_rsp_drv
-//        TODO: maybe put a response delay here
-//        repeat(tcb.DLY) @(posedge clk);
-//        foreach (transactions[i])  rsp_drv(transactions[i]);
-//      end: fork_rsp_drv
+      begin: fork_rsp_drv
+        // response delay to avoid interfering with previous sequence
+        repeat(tcb.DLY) @(posedge tcb.clk);
+        foreach (transactions[i])  rsp_drv(transactions[i]);
+      end: fork_rsp_drv
     join
   endtask: sequencer
-
-////////////////////////////////////////////////////////////////////////////////
-// response pipeline
-////////////////////////////////////////////////////////////////////////////////
-
-  generate
-  if (tcb.DLY == 0) begin
-
-    assign tcb.rdt = tcb.rsp ? tmp_rdt : 'x;
-    assign tcb.err = tcb.rsp ? tmp_err : 'x;
-
-  end else begin
-
-    // TODO: try not to change "rdt" if there is no transfer
-    always_ff @(posedge tcb.clk)
-    if (tcb.trn) begin
-      pip_wen[0] <= tcb.wen;
-      pip_ben[0] <= tcb.ben;
-      pip_rdt[0] <= tmp_rdt;
-      pip_err[0] <= tmp_err;
-    end else begin
-      pip_rdt[0] <= 'x;
-      pip_err[0] <= 1'bx;
-    end
-
-    for (genvar i=1; i<tcb.DLY; i++) begin
-
-      always_ff @(posedge tcb.clk)
-      begin
-        pip_wen[i] <= pip_wen[i-1];
-        pip_ben[i] <= pip_ben[i-1];
-        pip_rdt[i] <= pip_rdt[i-1];
-        pip_err[i] <= pip_err[i-1];
-      end
-
-    end
-
-    // TODO: add byte enable
-    assign tcb.rdt = tcb.rsp & ~pip_wen[tcb.DLY-1] ? pip_rdt[tcb.DLY-1] : 'x;
-    assign tcb.err = tcb.rsp                       ? pip_err[tcb.DLY-1] : 'x;
-
-  end
-  endgenerate
 
 endmodule: tcb_vip_sub

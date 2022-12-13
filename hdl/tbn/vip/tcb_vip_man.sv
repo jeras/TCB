@@ -92,32 +92,18 @@ module tcb_vip_man
 // transaction sequence
 ////////////////////////////////////////////////////////////////////////////////
 
-  int unsigned req_i;
-  int unsigned rsp_i;
-
   // request/response
   task automatic sequencer (
     inout  tcb_s::transaction_t transactions []
   );
-    $display("DEBUG: transactions.size = %d", transactions.size);
     fork
       begin: fork_req_drv
-//        foreach (transactions[i])  req_drv(transactions[i]);
-        foreach (transactions[i]) begin
-          req_i = i;
-          req_drv(transactions[i]);
-        end
-        $display("DEBUG: END of manager request");
+        foreach (transactions[i])  req_drv(transactions[i]);
       end: fork_req_drv
       begin: fork_rsp_lsn
-        // TODO: maybe put a response delay here
-        //repeat(tcb.DLY) @(posedge clk);
-//        foreach (transactions[i])  rsp_lsn(transactions[i]);
-        foreach (transactions[i]) begin
-          rsp_i = i;
-          rsp_lsn(transactions[i]);
-        end
-        $display("DEBUG: END of manager response");
+        // response delay to avoid interfering with previous sequence
+        repeat(tcb.DLY) @(posedge tcb.clk);
+        foreach (transactions[i])  rsp_lsn(transactions[i]);
       end: fork_rsp_lsn
     join
   endtask: sequencer
