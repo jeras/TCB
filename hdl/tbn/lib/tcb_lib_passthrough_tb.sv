@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// TCB (Tightly Coupled Bus) LIBrary DeMultipleXer/DECoder TestBench
+// TCB (Tightly Coupled Bus) library passthrough testbench
 ////////////////////////////////////////////////////////////////////////////////
 // Copyright 2022 Iztok Jeras
 //
@@ -16,21 +16,16 @@
 // limitations under the License.
 ////////////////////////////////////////////////////////////////////////////////
 
-module tcb_lib_dmx_tb
+module tcb_lib_passthrough_tb
   import tcb_vip_pkg::*;
 #(
   // TCB widths
-  int unsigned ABW = 32,       // address bus width
-  int unsigned DBW = 32,       // data    bus width
+  int unsigned ABW = 64,       // address bus width
+  int unsigned DBW = 64,       // data    bus width
   int unsigned SLW =       8,  // selection   width
   int unsigned BEW = DBW/SLW,  // byte enable width
   // response delay
-  int unsigned DLY = 1,
-  // interconnect parameters
-  int unsigned PN = 3,      // port number
-  int unsigned PL = $clog2(PN),
-  // decoder address and mask array
-  parameter  logic [ABW-1:0] DAM [PN-1:0] = '{PN{ABW'('x)}}
+  int unsigned DLY = 1
 );
 
   // system signals
@@ -41,15 +36,12 @@ module tcb_lib_dmx_tb
   logic [DBW-1:0] rdt;  // read data
   logic           err;  // error response
 
-  // control
-  logic  [PL-1:0] sel;  // select
-
 ////////////////////////////////////////////////////////////////////////////////
 // local signals
 ////////////////////////////////////////////////////////////////////////////////
 
-  tcb_if #(.ABW (ABW), .DBW (DBW)) tcb_man           (.clk (clk), .rst (rst));
-  tcb_if #(.ABW (ABW), .DBW (DBW)) tcb_sub  [PN-1:0] (.clk (clk), .rst (rst));
+  tcb_if #(.ABW (ABW), .DBW (DBW), .DLY (DLY)) tcb_man (.clk (clk), .rst (rst));
+  tcb_if #(.ABW (ABW), .DBW (DBW), .DLY (DLY)) tcb_sub (.clk (clk), .rst (rst));
 
 ////////////////////////////////////////////////////////////////////////////////
 // test sequence
@@ -70,34 +62,15 @@ module tcb_lib_dmx_tb
     #1;
     fork
       begin: req
-        man.write(32'h00000000, 4'b1111, 32'h03020100, err);
-        man.write(32'h00000004, 4'b1111, 32'h13121110, err);
-        man.write(32'h0000000C, 4'b1111, 32'h23222120, err);
-        man.read (32'h00000000, 4'b1111, rdt, err);
-        man.read (32'h00000004, 4'b1111, rdt, err);
-        man.read (32'h0000000C, 4'b1111, rdt, err);
+        man.write(64'h0123456789ABCDEF, 8'b11111111, 64'h0123456789ABCDEF, err);
+        man.read (64'hFEDCBA9876543210, 8'b11111111, rdt                 , err);
       end: req
       begin: rsp
-        fork
-          begin  sub[0].rsp(32'hXXXXXXXX, 1'b0);  end
-          begin  sub[1].rsp(32'hXXXXXXXX, 1'b0);  end
-          begin  sub[2].rsp(32'hXXXXXXXX, 1'b0);  end
-        join
-        fork
-          begin  sub[0].rsp(32'h03020100, 1'b0);  end
-          begin  sub[1].rsp(32'h13121110, 1'b0);  end
-          begin  sub[2].rsp(32'h23222120, 1'b0);  end
-        join
+        sub.rsp(64'hXXXXXXXXXXXXXXXX, 1'b0);
+        sub.rsp(64'hFEDCBA9876543210, 1'b0);
       end: rsp
     join
     repeat (8) @(posedge clk);
-    $finish();
-  end
-
-  // timeout
-  initial
-  begin
-    repeat (20) @(posedge clk);
     $finish();
   end
 
@@ -105,43 +78,17 @@ module tcb_lib_dmx_tb
 // VIP instances
 ////////////////////////////////////////////////////////////////////////////////
 
-  // manager
-  tcb_vip_man man              (.tcb (tcb_man));
-
-  // manager monitor
-  tcb_vip_mon mon_man          (.tcb (tcb_man));
-
-  // subordinate monitor
-  tcb_vip_mon mon_sub [PN-1:0] (.tcb (tcb_sub));
-
-  // subordinate
-  tcb_vip_sub sub     [PN-1:0] (.tcb (tcb_sub));
+  tcb_vip_man man     [PN-1:0] (.tcb (tcb_man));  // manager
+  tcb_vip_mon mon_man [PN-1:0] (.tcb (tcb_man));  // manager monitor
+  tcb_vip_mon mon_sub          (.tcb (tcb_sub));  // subordinate monitor
+  tcb_vip_sub sub              (.tcb (tcb_sub));  // subordinate
 
 ////////////////////////////////////////////////////////////////////////////////
 // DUT instances
 ////////////////////////////////////////////////////////////////////////////////
 
-  // RTL decoder DUT
-  tcb_lib_dec #(
-    // arbitration priority mode
-//  .MD   (),
-    // interconnect parameters
-    .PN   (PN),
-    // decoder address and mask array
-    .DAM  (DAM)
-  ) arb (
-    .tcb  (tcb_man),
-    .sel  (sel)
-  );
-
-  // RTL demultiplexer DUT
-  tcb_lib_dmx #(
-    // interconnect parameters
-    .PN   (PN)
-  ) mux (
-    // control
-    .sel  (sel),
-    // TCB interfaces
+  // RTL passthrough
+  tcb_lib_passthrough dut (
     .sub  (tcb_man),
     .man  (tcb_sub)
   );
@@ -156,4 +103,4 @@ module tcb_lib_dmx_tb
     $dumpvars;
   end
 
-endmodule: tcb_lib_dmx_tb
+endmodule: tcb_lib_passthrough_tb

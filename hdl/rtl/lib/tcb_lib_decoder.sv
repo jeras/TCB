@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// TCB (Tightly Coupled Bus) LIBrary ARBiter
+// TCB (Tightly Coupled Bus) library decoder
 ////////////////////////////////////////////////////////////////////////////////
 // Copyright 2022 Iztok Jeras
 //
@@ -16,17 +16,17 @@
 // limitations under the License.
 ////////////////////////////////////////////////////////////////////////////////
 
-module tcb_lib_arb #(
-  // arbitration priority mode
-  parameter  string       MD = "FX",  // "FX" - fixed priority, "RR" - round robin (TODO)
+module tcb_lib_decoder #(
+  // TCB parameters
+  parameter  int unsigned ABW = 32,   // address width
   // interconnect parameters
-  parameter  int unsigned PN = 2,  // port number
+  parameter  int unsigned PN = 2,     // port number
   localparam int unsigned PL = $clog2(PN),
-  // port priorities (lower number is higher priority)
-  parameter  bit unsigned [PL-1:0] PRI [PN-1:0] = '{1'd1, 1'd0}
+  // decoder address and mask array
+  parameter  logic [ABW-1:0] DAM [PN-1:0] = '{PN{ABW'('x)}}
 )(
   // TCB interfaces
-  tcb_if.sub tcb [PN-1:0],  // TCB subordinate ports (manager devices connect here)
+  tcb_if.sub tcb,  // TCB subordinate port (manager device connects here)
   // control
   output logic [PL-1:0] sel   // select
 );
@@ -35,49 +35,50 @@ module tcb_lib_arb #(
 // parameter validation
 ////////////////////////////////////////////////////////////////////////////////
 
-// report priority duplication
+// report address range overlapping
 // TODO
 
 ////////////////////////////////////////////////////////////////////////////////
 // local signals
 ////////////////////////////////////////////////////////////////////////////////
 
-  logic vld [PN-1:0];
+  logic [ABW-1:0] adr;
 
-  // extract valid from TCB
+  // extract address from TCB
+  assign adr = tcb.adr;
+
+////////////////////////////////////////////////////////////////////////////////
+// decoder
+////////////////////////////////////////////////////////////////////////////////
+
+//  // match
+//  function [PN-1:0] match (
+//    logic [ABW-1:0] val,           // input
+//    logic [ABW-1:0] mch [PN-1:0]   // matching reference
+//  );
+//    for (int unsigned i=0; i<PN; i++) begin
+//      assign match[i] = val ==? mch[i];
+//    end
+//  endfunction: match
+
+  logic mch [PN-1:0];
+  // match
   generate
-    for (genvar i=0; i<PN; i++) begin: map
-      assign vld[i] = tcb[i].vld;
-    end: map
+    for (genvar i=0; i<PN; i++) begin
+      assign mch[i] = adr ==? DAM[i];
+    end
   endgenerate
 
-////////////////////////////////////////////////////////////////////////////////
-// fixed priority arbiter
-////////////////////////////////////////////////////////////////////////////////
-
-  // TODO: try to create a function returning an unpacked array
-
-  // priority reorder
-//  function logic reorder [PN-1:0] (
-  function logic [PN-1:0] reorder (
-    logic                 val [PN-1:0],  // input
-    bit unsigned [PL-1:0] ord [PN-1:0]   // order
-  );
-    for (int unsigned i=0; i<PN; i++) begin
-      assign reorder[i] = val[ord[i]];
-    end
-  endfunction: reorder
-
-  // priority encode
-//  function logic [PL-1:0] encode (logic val [PN-1:0]);
-  function logic [PL-1:0] encode (logic [PN-1:0] val);
+  // encode
+  function logic [PL-1:0] encode (logic val [PN-1:0]);
     encode = 'x;  // optimization of undefined encodings
     for (int i=PN; i>=0; i--) begin
       if (val[i])  encode = i[PL-1:0];
     end
   endfunction: encode
 
-  // priority arbiter
-  assign sel = PRI[encode(reorder(vld, PRI))];
+  // address decoder
+//  assign sel = encode(match(adr, DAM));
+  assign sel = encode(mch);
 
-endmodule: tcb_lib_arb
+endmodule: tcb_lib_decoder

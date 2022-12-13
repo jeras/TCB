@@ -15,13 +15,13 @@ PATH_HDL=../../hdl
 # SystemVerilog interface
 RTL+=${PATH_HDL}/rtl/tcb_if.sv
 # LIBrary
-RTL+=${PATH_HDL}/rtl/lib/tcb_lib_pas.sv
-RTL+=${PATH_HDL}/rtl/lib/tcb_lib_reg.sv
-RTL+=${PATH_HDL}/rtl/lib/tcb_lib_arb.sv
-RTL+=${PATH_HDL}/rtl/lib/tcb_lib_mux.sv
-RTL+=${PATH_HDL}/rtl/lib/tcb_lib_dec.sv
-RTL+=${PATH_HDL}/rtl/lib/tcb_lib_dmx.sv
-RTL+=${PATH_HDL}/rtl/lib/tcb_lib_err.sv
+RTL+=${PATH_HDL}/rtl/lib/tcb_lib_passthrough.sv
+RTL+=${PATH_HDL}/rtl/lib/tcb_lib_register.sv
+RTL+=${PATH_HDL}/rtl/lib/tcb_lib_arbiter.sv
+RTL+=${PATH_HDL}/rtl/lib/tcb_lib_multiplexer.sv
+RTL+=${PATH_HDL}/rtl/lib/tcb_lib_decoder.sv
+RTL+=${PATH_HDL}/rtl/lib/tcb_lib_demultiplexer.sv
+RTL+=${PATH_HDL}/rtl/lib/tcb_lib_error.sv
 # GPIO RTL
 RTL+=${PATH_HDL}/rtl/gpio/tcb_gpio.sv
 # UART RTL
@@ -37,10 +37,10 @@ TBN+=${PATH_HDL}/tbn/vip/tcb_vip_sub.sv
 TBN+=${PATH_HDL}/tbn/vip/tcb_vip_man.sv
 TBN+=${PATH_HDL}/tbn/vip/tcb_vip_tb.sv
 # LIBrary
-TBN+=${PATH_HDL}/tbn/lib/tcb_lib_pas_tb.sv
-TBN+=${PATH_HDL}/tbn/lib/tcb_lib_reg_tb.sv
-TBN+=${PATH_HDL}/tbn/lib/tcb_lib_mux_tb.sv
-TBN+=${PATH_HDL}/tbn/lib/tcb_lib_dmx_tb.sv
+TBN+=${PATH_HDL}/tbn/lib/tcb_lib_passthrough_tb.sv
+TBN+=${PATH_HDL}/tbn/lib/tcb_lib_register_tb.sv
+TBN+=${PATH_HDL}/tbn/lib/tcb_lib_multiplexer_tb.sv
+TBN+=${PATH_HDL}/tbn/lib/tcb_lib_demultiplexer_tb.sv
 ## GPIO testbench
 TBN+=${PATH_HDL}/tbn/gpio/tcb_gpio_tb.sv
 ## UART testbench

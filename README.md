@@ -11,23 +11,24 @@ without unnecessary limitations on throughput.
 
 | module                                      | status | description |
 |---------------------------------------------|--------|-------------|
+| [`tcb_vip_pkg`](hdl/tbn/vip/tcb_vip_pkg.sv) | done   | Package containing shared code. |
 | [`tcb_vip_man`](hdl/tbn/vip/tcb_vip_man.sv) | done   | Manager model. |
 | [`tcb_vip_mon`](hdl/tbn/vip/tcb_vip_mon.sv) | done   | Monitor. |
 | [`tcb_vip_sub`](hdl/tbn/vip/tcb_vip_sub.sv) | done   | Subordinate model. |
 
 ### Interconnect library
 
-| module                                      | status | description |
-|---------------------------------------------|--------|-------------|
-| [`tcb_if`     ](hdl/rtl/tcb_if.sv         ) | done   | SystemVerilog interface. |
-| [`tcb_lib_pas`](hdl/rtl/lib/tcb_lib_pas.sv) | done   | Trivial passthrough. |
-| [`tcb_lib_reg`](hdl/rtl/lib/tcb_lib_reg.sv) | planed | Register for request/response paths. |
-| [`tcb_lib_con`](hdl/rtl/lib/tcb_lib_con.sv) | planed | Interface connector with automatic handling of parameter differences. |
-| [`tcb_lib_arb`](hdl/rtl/lib/tcb_lib_arb.sv) | done   | Priority arbiter. |
-| [`tcb_lib_mux`](hdl/rtl/lib/tcb_lib_mux.sv) | done   | Multiplexer of multiple managers. |
-| [`tcb_lib_dec`](hdl/rtl/lib/tcb_lib_dec.sv) | done   | Address decoder. |
-| [`tcb_lib_dmx`](hdl/rtl/lib/tcb_lib_dmx.sv) | done   | Demultiplexer of multiple subordinates. |
-| [`tcb_lib_err`](hdl/rtl/lib/tcb_lib_err.sv) | done   | Error response leaf subordinate. |
+| module                                                          | status | description |
+|-----------------------------------------------------------------|--------|-------------|
+| [`tcb_if`               ](hdl/rtl/tcb_if.sv                   ) | done   | SystemVerilog interface. |
+| [`tcb_lib_passthrough`  ](hdl/rtl/lib/tcb_lib_pasthrough.sv   ) | done   | Trivial passthrough. |
+| [`tcb_lib_register`     ](hdl/rtl/lib/tcb_lib_register.sv     ) | planed | Register for request/response paths. |
+| [`tcb_lib_connector`    ](hdl/rtl/lib/tcb_lib_conector.sv     ) | planed | Interface connector with automatic handling of parameter differences. |
+| [`tcb_lib_arbiter`      ](hdl/rtl/lib/tcb_lib_arbiter.sv      ) | done   | Priority arbiter. |
+| [`tcb_lib_multiplexer`  ](hdl/rtl/lib/tcb_lib_multipleser.sv  ) | done   | Multiplexer of multiple managers. |
+| [`tcb_lib_decoder`      ](hdl/rtl/lib/tcb_lib_decoder.sv      ) | done   | Address decoder. |
+| [`tcb_lib_demultiplexer`](hdl/rtl/lib/tcb_lib_demultiplexer.sv) | done   | Demultiplexer of multiple subordinates. |
+| [`tcb_lib_error`        ](hdl/rtl/lib/tcb_lib_error.sv        ) | done   | Error response leaf subordinate. |
 
 ### Peipherals
 

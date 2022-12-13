@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// TCB (Tightly Coupled Bus) LIBrary PASsthrough TestBench
+// TCB (Tightly Coupled Bus) library register testbench
 ////////////////////////////////////////////////////////////////////////////////
 // Copyright 2022 Iztok Jeras
 //
@@ -16,7 +16,7 @@
 // limitations under the License.
 ////////////////////////////////////////////////////////////////////////////////
 
-module tcb_lib_pas_tb
+module tcb_lib_register_tb
   import tcb_vip_pkg::*;
 #(
   // TCB widths
@@ -78,24 +78,17 @@ module tcb_lib_pas_tb
 // VIP instances
 ////////////////////////////////////////////////////////////////////////////////
 
-  // manager
-  tcb_vip_man man     (.tcb (tcb_man));
-
-  // manager monitor
-  tcb_vip_mon mon_man (.tcb (tcb_man));
-
-  // subordinate monitor
-  tcb_vip_mon mon_sub (.tcb (tcb_sub));
-
-  // subordinate
-  tcb_vip_sub sub     (.tcb (tcb_sub));
+  tcb_vip_man man     [PN-1:0] (.tcb (tcb_man));  // manager
+  tcb_vip_mon mon_man [PN-1:0] (.tcb (tcb_man));  // manager monitor
+  tcb_vip_mon mon_sub          (.tcb (tcb_sub));  // subordinate monitor
+  tcb_vip_sub sub              (.tcb (tcb_sub));  // subordinate
 
 ////////////////////////////////////////////////////////////////////////////////
 // DUT instances
 ////////////////////////////////////////////////////////////////////////////////
 
   // RTL passthrough
-  tcb_lib_pas pas (
+  tcb_lib_reg pas (
     .sub  (tcb_man),
     .man  (tcb_sub)
   );
@@ -110,4 +103,4 @@ module tcb_lib_pas_tb
     $dumpvars;
   end
 
-endmodule: tcb_lib_pas_tb
+endmodule: tcb_lib_register_tb

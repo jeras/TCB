@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// TCB (Tightly Coupled Bus) LIBrary request/response REGister
+// TCB (Tightly Coupled Bus) library passthrough
 ////////////////////////////////////////////////////////////////////////////////
 // Copyright 2022 Iztok Jeras
 //
@@ -16,14 +16,7 @@
 // limitations under the License.
 ////////////////////////////////////////////////////////////////////////////////
 
-module tcb_lib_reg #(
-  // bus parameters
-  int unsigned AW = 32,    // address width
-  int unsigned DW = 32,    // data width
-  // TCB parameters
-  bit          CFG_REQ_REG = 1'b1,  // register request  path
-  bit          CFG_RSP_REG = 1'b1   // register response path
-)(
+module tcb_lib_passthrough (
   tcb_if.sub sub,  // TCB subordinate port (manager     device connects here)
   tcb_if.man man   // TCB manager     port (subordinate device connects here)
 );
@@ -37,73 +30,33 @@ module tcb_lib_reg #(
   // camparing subordinate and manager interface parameters
   generate
     // bus widths
-    if (sub.AW  != man.AW )  $error("ERROR: %m parameter (sub.AW  = %d) != (man.AW  = %d)", sub.AW , man.AW );
-    if (sub.DW  != man.DW )  $error("ERROR: %m parameter (sub.DW  = %d) != (man.DW  = %d)", sub.DW , man.DW );
-    if (sub.SW  != man.SW )  $error("ERROR: %m parameter (sub.SW  = %d) != (man.SW  = %d)", sub.SW , man.SW );
-    if (sub.BW  != man.BW )  $error("ERROR: %m parameter (sub.BW  = %d) != (man.BW  = %d)", sub.BW , man.BW );
+    if (sub.ABW != man.ABW)  $error("ERROR: %m parameter (sub.AW  = %d) != (man.ABW = %d)", sub.ABW, man.ABW);
+    if (sub.DBW != man.DBW)  $error("ERROR: %m parameter (sub.DW  = %d) != (man.DBW = %d)", sub.DBW, man.DBW);
+    if (sub.SLW != man.SLW)  $error("ERROR: %m parameter (sub.SW  = %d) != (man.SLW = %d)", sub.SLW, man.SLW);
+    if (sub.BEW != man.BEW)  $error("ERROR: %m parameter (sub.BW  = %d) != (man.BEW = %d)", sub.BEW, man.BEW);
     // response delay
     if (sub.DLY != man.DLY)  $error("ERROR: %m parameter (sub.DLY = %d) != (man.DLY = %d)", sub.DLY, man.DLY);
   endgenerate
 `endif
 
 ////////////////////////////////////////////////////////////////////////////////
-// request
+// passthrough
 ////////////////////////////////////////////////////////////////////////////////
 
-// TODO: this is certainly missing some complexity
-generate
-if (CFG_REQ_REG) begin: gen_req_reg
-
-  always_ff @(posedge sub.clk, posedge sub.rst)
-  if (sub.rst) begin
-    man.vld <= 1'b0;
-  end else begin
-    man.vld <= sub.vld;
-  end
-
-  always_ff @(posedge sub.clk)
-  begin
-    man.wen <= sub.wen;
-    man.ben <= sub.ben;
-    man.adr <= sub.adr;
-    man.wdt <= sub.wdt;
-  end
-
-end: gen_req_reg
-else begin: gen_req_cmb
-
+  // handshake
   assign man.vld = sub.vld;
+  // request optional
+  assign man.lck = sub.lck;
+  assign man.rpt = sub.rpt;
+  // request
   assign man.wen = sub.wen;
   assign man.ben = sub.ben;
   assign man.adr = sub.adr;
   assign man.wdt = sub.wdt;
-
-end: gen_req_cmb
-endgenerate
-
-////////////////////////////////////////////////////////////////////////////////
-// response
-////////////////////////////////////////////////////////////////////////////////
-
-generate
-if (CFG_RSP_REG) begin: gen_rsp_reg
-
-  always_ff @(posedge man.clk)
-  begin
-    sub.rdt <= man.rdt;
-    sub.err <= man.err;
-  end
-
-  assign sub.rdy = man.rdy;
-
-end: gen_rsp_reg
-else begin: gen_rsp_cmb
-
+  // response
   assign sub.rdt = man.rdt;
   assign sub.err = man.err;
+  // handshake
   assign sub.rdy = man.rdy;
 
-end: gen_rsp_cmb
-endgenerate
-
-endmodule: tcb_lib_reg
+endmodule: tcb_lib_passthrough

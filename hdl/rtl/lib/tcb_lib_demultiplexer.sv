@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// TCB (Tightly Coupled Bus) LIBrary DeMultipleXer
+// TCB (Tightly Coupled Bus) library demultiplexer
 ////////////////////////////////////////////////////////////////////////////////
 // Copyright 2022 Iztok Jeras
 //
@@ -16,7 +16,7 @@
 // limitations under the License.
 ////////////////////////////////////////////////////////////////////////////////
 
-module tcb_lib_dmx #(
+module tcb_lib_demultiplexer #(
   // bus widths
   int unsigned AW = 32,     // address     width
   int unsigned DW = 32,     // data        width
@@ -127,4 +127,4 @@ module tcb_lib_dmx #(
   // handskake
   assign sub.rdy = tmp_rdy[sub_sel];  // request  phase
 
-endmodule: tcb_lib_dmx
+endmodule: tcb_lib_demultiplexer

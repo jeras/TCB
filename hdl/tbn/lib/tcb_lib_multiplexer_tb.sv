@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// TCB (Tightly Coupled Bus) LIBrary MUltipleXer/ARBiter TestBench
+// TCB (Tightly Coupled Bus) library multiplexer/arbiter testbench
 ////////////////////////////////////////////////////////////////////////////////
 // Copyright 2022 Iztok Jeras
 //
@@ -16,7 +16,7 @@
 // limitations under the License.
 ////////////////////////////////////////////////////////////////////////////////
 
-module tcb_lib_mux_tb
+module tcb_lib_multiplexer_tb
   import tcb_vip_pkg::*;
 #(
   // TCB widths
@@ -115,27 +115,20 @@ module tcb_lib_mux_tb
   end
 
 ////////////////////////////////////////////////////////////////////////////////
-// VIP instances
+// VIP component instances
 ////////////////////////////////////////////////////////////////////////////////
 
-  // manager
-  tcb_vip_man man     [PN-1:0] (.tcb (tcb_man));
-
-  // manager monitor
-  tcb_vip_mon mon_man [PN-1:0] (.tcb (tcb_man));
-
-  // subordinate monitor
-  tcb_vip_mon mon_sub          (.tcb (tcb_sub));
-
-  // subordinate
-  tcb_vip_sub sub              (.tcb (tcb_sub));
+  tcb_vip_man man     [PN-1:0] (.tcb (tcb_man));  // manager
+  tcb_vip_mon mon_man [PN-1:0] (.tcb (tcb_man));  // manager monitor
+  tcb_vip_mon mon_sub          (.tcb (tcb_sub));  // subordinate monitor
+  tcb_vip_sub sub              (.tcb (tcb_sub));  // subordinate
 
 ////////////////////////////////////////////////////////////////////////////////
 // DUT instances
 ////////////////////////////////////////////////////////////////////////////////
 
   // RTL arbiter DUT
-  tcb_lib_arb #(
+  tcb_lib_arbiter #(
     // arbitration priority mode
 //  .MD   (),
     // interconnect parameters
@@ -148,7 +141,7 @@ module tcb_lib_mux_tb
   );
 
   // RTL multiplexer DUT
-  tcb_lib_mux #(
+  tcb_lib_multiplexer #(
     // interconnect parameters
     .PN   (PN)
   ) mux (
@@ -169,4 +162,4 @@ module tcb_lib_mux_tb
     $dumpvars;
   end
 
-endmodule: tcb_lib_mux_tb
+endmodule: tcb_lib_multiplexer_tb

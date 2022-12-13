@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// TCB (Tightly Coupled Bus) LIBrary MUltipleXer
+// TCB (Tightly Coupled Bus) library multiplexer
 ////////////////////////////////////////////////////////////////////////////////
 // Copyright 2022 Iztok Jeras
 //
@@ -16,7 +16,7 @@
 // limitations under the License.
 ////////////////////////////////////////////////////////////////////////////////
 
-module tcb_lib_mux #(
+module tcb_lib_multiplexer #(
   // interconnect parameters
   int unsigned PN = 2,      // port number
   localparam   PL = $clog2(PN)
@@ -130,4 +130,4 @@ module tcb_lib_mux #(
   end: gen_rsp
   endgenerate
 
-endmodule: tcb_lib_mux
+endmodule: tcb_lib_multiplexer
