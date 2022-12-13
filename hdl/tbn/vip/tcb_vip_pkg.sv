@@ -26,6 +26,10 @@ package tcb_vip_pkg;
     int unsigned BEW = DBW/SLW   // byte enable width
   );
 
+////////////////////////////////////////////////////////////////////////////////
+// reference data for tests
+////////////////////////////////////////////////////////////////////////////////
+
     // data organized into packed bytes
     typedef logic [BEW-1:0][SLW-1:0] data_byte_t;
 
@@ -37,6 +41,10 @@ package tcb_vip_pkg;
         data_test_f[i] = {val, i[SLW/2-1:0]};
       end
     endfunction: data_test_f;
+
+////////////////////////////////////////////////////////////////////////////////
+// transacion
+////////////////////////////////////////////////////////////////////////////////
 
     /* verilator lint_off UNPACKED */
     // TCB transaction structure
@@ -75,7 +83,17 @@ package tcb_vip_pkg;
       idl: 0,
       bpr: 0
     };
-   
+
+    // transaction equivalence checke
+    static function automatic logic transaction_check (
+      // transactions
+      input  transaction_t trn_tst,  // test
+      input  transaction_t trn_ref,  // reference
+      input  transaction_t trn_msk   // mask
+    );
+//      transaction_check = (trn_tst ==? (trn_ref ~^ trn_msk));
+    endfunction: transaction_check
+
   endclass: tcb_c
 
 endpackage: tcb_vip_pkg

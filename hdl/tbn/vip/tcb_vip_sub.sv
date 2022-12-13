@@ -43,17 +43,15 @@ module tcb_vip_sub
 // initialization
 ////////////////////////////////////////////////////////////////////////////////
 
-  initial
-  begin
-    tcb.rdy = 1'b0;
-  end
+  // initialize to idle state
+  initial  tcb.rdy = 1'b0;
 
 ////////////////////////////////////////////////////////////////////////////////
-// request/response (enable pipelined transfers with full throughput)
+// request/response (enable pipelined transactions with full throughput)
 ////////////////////////////////////////////////////////////////////////////////
 
-  // request/response
-  task automatic req_rsp (
+  // request listener
+  task automatic req_lsn (
     inout  tcb_s::transaction_t seq
   );
     #1;
@@ -94,18 +92,40 @@ module tcb_vip_sub
     seq.adr = tcb.adr;
     seq.ben = tcb.ben;
     seq.wdt = tcb.wdt;
-  endtask: req_rsp
+  endtask: req_lsn
+
+  // response driver
+  task automatic rsp_drv (
+    inout  tcb_s::transaction_t seq
+  );
+    // response
+    tmp_rdt = seq.rdt;
+    tmp_err = seq.err;
+    // wait for response
+    do begin
+      @(posedge tcb.clk);
+    end while (~tcb.rsp);
+  endtask: rsp_drv
 
 ////////////////////////////////////////////////////////////////////////////////
 // transaction sequence
 ////////////////////////////////////////////////////////////////////////////////
 
   // request/response
-  task automatic sequence_driver (
+  task automatic sequencer (
     inout  tcb_s::transaction_t transactions []
   );
-    foreach (transactions[i])  req_rsp(transactions[i]);
-  endtask: sequence_driver
+    fork
+      begin: fork_req_lsn
+        foreach (transactions[i])  req_lsn(transactions[i]);
+      end: fork_req_lsn
+//      begin: fork_rsp_drv
+//        TODO: maybe put a response delay here
+//        repeat(tcb.DLY) @(posedge clk);
+//        foreach (transactions[i])  rsp_drv(transactions[i]);
+//      end: fork_rsp_drv
+    join
+  endtask: sequencer
 
 ////////////////////////////////////////////////////////////////////////////////
 // response pipeline

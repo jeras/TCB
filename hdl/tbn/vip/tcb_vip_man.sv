@@ -27,11 +27,15 @@ module tcb_vip_man
   typedef tcb_c #(tcb.ABW, tcb.DBW, tcb.SLW) tcb_s;
 
 ////////////////////////////////////////////////////////////////////////////////
-// request/response (enable pipelined transactions with full throughput)
+// initialization
 ////////////////////////////////////////////////////////////////////////////////
 
   // initialize to idle state
   initial  tcb.vld = 1'b0;
+
+////////////////////////////////////////////////////////////////////////////////
+// request/response (enable pipelined transactions with full throughput)
+////////////////////////////////////////////////////////////////////////////////
 
   // request driver
   task automatic req_drv (
@@ -75,15 +79,10 @@ module tcb_vip_man
   task automatic rsp_lsn (
     inout  tcb_s::transaction_t seq
   );
+    // wait for response
     do begin
       @(posedge tcb.clk);
-    end while (~tcb.trn);
-    // response delay
-    if (tcb.DLY > 0) begin
-      do begin
-        @(posedge tcb.clk);
-      end while (~tcb.rsp);
-    end
+    end while (~tcb.rsp);
     // response
     seq.rdt = tcb.rdt;
     seq.err = tcb.err;
@@ -93,19 +92,35 @@ module tcb_vip_man
 // transaction sequence
 ////////////////////////////////////////////////////////////////////////////////
 
+  int unsigned req_i;
+  int unsigned rsp_i;
+
   // request/response
-  task automatic sequence_driver (
+  task automatic sequencer (
     inout  tcb_s::transaction_t transactions []
   );
+    $display("DEBUG: transactions.size = %d", transactions.size);
     fork
       begin: fork_req_drv
-        foreach (transactions[i])  req_drv(transactions[i]);
+//        foreach (transactions[i])  req_drv(transactions[i]);
+        foreach (transactions[i]) begin
+          req_i = i;
+          req_drv(transactions[i]);
+        end
+        $display("DEBUG: END of manager request");
       end: fork_req_drv
       begin: fork_rsp_lsn
-        foreach (transactions[i])  rsp_lsn(transactions[i]);
+        // TODO: maybe put a response delay here
+        //repeat(tcb.DLY) @(posedge clk);
+//        foreach (transactions[i])  rsp_lsn(transactions[i]);
+        foreach (transactions[i]) begin
+          rsp_i = i;
+          rsp_lsn(transactions[i]);
+        end
+        $display("DEBUG: END of manager response");
       end: fork_rsp_lsn
     join
-  endtask: sequence_driver
+  endtask: sequencer
 
 ////////////////////////////////////////////////////////////////////////////////
 // BFM (Bus Functional Model) (emulates a RISC-V manager)
@@ -153,7 +168,7 @@ module tcb_vip_man
       if (idx_ben == 0) idx_trn++;
     end
     // transaction
-    sequence_driver(transactions);
+    sequencer(transactions);
   endtask: access
 
 ////////////////////////////////////////////////////////////////////////////////

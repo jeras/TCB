@@ -25,7 +25,7 @@ module tcb_vip_tb
   int unsigned SLW =       8,  // selection   width
   int unsigned BEW = DBW/SLW,  // byte enable width
   // response delay
-  int unsigned DLY = 0
+  int unsigned DLY = 1
 );
 
   // parameterized class specialization
@@ -94,10 +94,12 @@ module tcb_vip_tb
     // drive transactions
     fork
       begin: fork_man
-        man.sequence_driver(tst_man);
+        man.sequencer(tst_man);
+        $display("DEBUG: END of manager");
       end: fork_man
       begin: fork_sub
-        sub.sequence_driver(tst_sub);
+        sub.sequencer(tst_sub);
+        $display("DEBUG: END of subordinate");
       end: fork_sub
     join
 
