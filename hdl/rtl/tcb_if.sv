@@ -57,6 +57,8 @@ interface tcb_if #(
   logic           trn;  // transfer
   logic           idl;  // idle
   logic           rsp;  // response
+  logic [BEW-1:0] rbe;  // read byte enable
+
   // TODO: think whether it would make sense to implement delayed wen/ben signals here
 
   // transfer (valid and ready at the same time)

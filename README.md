@@ -12,9 +12,7 @@ without unnecessary limitations on throughput.
 | module                                      | status | description |
 |---------------------------------------------|--------|-------------|
 | [`tcb_vip_pkg`](hdl/tbn/vip/tcb_vip_pkg.sv) | done   | Package containing shared code. |
-| [`tcb_vip_man`](hdl/tbn/vip/tcb_vip_man.sv) | done   | Manager model. |
-| [`tcb_vip_mon`](hdl/tbn/vip/tcb_vip_mon.sv) | done   | Monitor. |
-| [`tcb_vip_sub`](hdl/tbn/vip/tcb_vip_sub.sv) | done   | Subordinate model. |
+| [`tcb_vip_dwc`](hdl/tbn/vip/tcb_vip_dev.sv) | done   | Device model for manager/monitor/subordinate model. |
 
 ### Interconnect library
 
@@ -30,7 +28,7 @@ without unnecessary limitations on throughput.
 | [`tcb_lib_demultiplexer`](hdl/rtl/lib/tcb_lib_demultiplexer.sv) | done   | Demultiplexer of multiple subordinates. |
 | [`tcb_lib_error`        ](hdl/rtl/lib/tcb_lib_error.sv        ) | done   | Error response leaf subordinate. |
 
-### Peipherals
+### Peripherals
 
 | module                                  | status | description |
 |-----------------------------------------|--------|-------------|

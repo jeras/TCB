@@ -118,10 +118,10 @@ module tcb_lib_multiplexer_tb
 // VIP component instances
 ////////////////////////////////////////////////////////////////////////////////
 
-  tcb_vip_man man     [PN-1:0] (.tcb (tcb_man));  // manager
-  tcb_vip_mon mon_man [PN-1:0] (.tcb (tcb_man));  // manager monitor
-  tcb_vip_mon mon_sub          (.tcb (tcb_sub));  // subordinate monitor
-  tcb_vip_sub sub              (.tcb (tcb_sub));  // subordinate
+  tcb_vip_dev #("MAN") man     [PN-1:0] (.tcb (tcb_man));  // manager
+  tcb_vip_dev #("MON") mon_man [PN-1:0] (.tcb (tcb_man));  // manager monitor
+  tcb_vip_dev #("MON") mon_sub          (.tcb (tcb_sub));  // subordinate monitor
+  tcb_vip_dev #("SUB") sub              (.tcb (tcb_sub));  // subordinate
 
 ////////////////////////////////////////////////////////////////////////////////
 // DUT instances
@@ -144,7 +144,7 @@ module tcb_lib_multiplexer_tb
   tcb_lib_multiplexer #(
     // interconnect parameters
     .PN   (PN)
-  ) mux (
+  ) dut (
     // control
     .sel  (sel),
     // TCB interfaces

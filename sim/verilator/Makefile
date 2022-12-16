@@ -32,9 +32,7 @@ RTL+=${PATH_HDL}/rtl/uart/tcb_uart.sv
 
 # SystemVerilog VIP
 TBN+=${PATH_HDL}/tbn/vip/tcb_vip_pkg.sv
-TBN+=${PATH_HDL}/tbn/vip/tcb_vip_mon.sv
-TBN+=${PATH_HDL}/tbn/vip/tcb_vip_sub.sv
-TBN+=${PATH_HDL}/tbn/vip/tcb_vip_man.sv
+TBN+=${PATH_HDL}/tbn/vip/tcb_vip_dev.sv
 TBN+=${PATH_HDL}/tbn/vip/tcb_vip_tb.sv
 # LIBrary
 TBN+=${PATH_HDL}/tbn/lib/tcb_lib_passthrough_tb.sv

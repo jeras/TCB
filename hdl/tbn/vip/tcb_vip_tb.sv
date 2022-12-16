@@ -86,20 +86,13 @@ module tcb_vip_tb
     tst_man = new[tst_ref.size()](tst_ref);
     tst_sub = new[tst_ref.size()](tst_ref);
 
-    // DEBUG printout
-//    $display("REF: %p", tst_ref);
-//    $display("MAN: %p", tst_man);
-//    $display("SUB: %p", tst_sub);
-
     // drive transactions
     fork
       begin: fork_man
         man.sequencer(tst_man);
-        $display("DEBUG: END of manager");
       end: fork_man
       begin: fork_sub
         sub.sequencer(tst_sub);
-        $display("DEBUG: END of subordinate");
       end: fork_sub
     join
 
@@ -187,14 +180,9 @@ module tcb_vip_tb
 // VIP instances
 ////////////////////////////////////////////////////////////////////////////////
 
-  // manager
-  tcb_vip_man man (.tcb (tcb));
-
-  // monitor
-  tcb_vip_mon mon (.tcb (tcb));
-
-  // subordinate
-  tcb_vip_sub sub (.tcb (tcb));
+  tcb_vip_dev #("MAN") man (.tcb (tcb));  // manager
+  tcb_vip_dev #("MON") mon (.tcb (tcb));  // monitor
+  tcb_vip_dev #("SUB") sub (.tcb (tcb));  // subordinate
 
 ////////////////////////////////////////////////////////////////////////////////
 // VCD/FST waveform trace
