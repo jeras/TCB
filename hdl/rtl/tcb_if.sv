@@ -22,8 +22,10 @@ interface tcb_if #(
   int unsigned DBW = 32,       // data    bus width
   int unsigned SLW =       8,  // selection   width
   int unsigned BEW = DBW/SLW,  // byte enable width
-  // response delay
-  int unsigned DLY = 1
+  // TCB functionality
+  int unsigned DLY = 1,        // response delay
+  bit          MIS = 1'b0,     // missalligned access enable
+  bit          END = 1'b0      // endianness (0 - little, 1 - big)
 )(
   // system signals
   input  logic clk,  // clock

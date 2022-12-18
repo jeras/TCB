@@ -25,11 +25,13 @@ module tcb_vip_tb
   int unsigned SLW =       8,  // selection   width
   int unsigned BEW = DBW/SLW,  // byte enable width
   // response delay
-  int unsigned DLY = 0
+  int unsigned DLY = 0,
+  // memory port number
+  int unsigned PN = 1
 );
 
   // parameterized class specialization
-  typedef tcb_c #(tcb.ABW, tcb.DBW, tcb.SLW) tcb_s;
+  typedef tcb_c #(ABW, DBW, SLW) tcb_s;
 
 ////////////////////////////////////////////////////////////////////////////////
 // local signals
@@ -40,16 +42,17 @@ module tcb_vip_tb
   logic rst;  // reset
 
   // TCB interface
-  tcb_if #(.ABW (ABW), .DBW (DBW), .SLW (SLW), .DLY (DLY)) tcb (.clk (clk), .rst (rst));
+  tcb_if #(.ABW (ABW), .DBW (DBW), .SLW (SLW), .DLY (DLY)) tcb          (.clk (clk), .rst (rst));
+  tcb_if #(.ABW (ABW), .DBW (DBW), .SLW (SLW), .DLY (DLY)) bus [0:PN-1] (.clk (clk), .rst (rst));
 
   // ERROR counter
   int unsigned error;
 
 ////////////////////////////////////////////////////////////////////////////////
-// test low level req/rsp tasks
+// test non-blobking API
 ////////////////////////////////////////////////////////////////////////////////
 
-  task automatic test_req_rsp;
+  task automatic test_nonblocking;
     // local variables
     bit lst_wen [2] = '{1'b0, 1'b1};
     int lst_idl [3] = '{0, 1, 2};
@@ -59,6 +62,7 @@ module tcb_vip_tb
 
     tcb_s::transaction_t tst_ref [] = new[tst_num];
     tcb_s::transaction_t tst_man [];
+    tcb_s::transaction_t tst_mon [];
     tcb_s::transaction_t tst_sub [];
 
     // prepare transactions
@@ -84,13 +88,20 @@ module tcb_vip_tb
     end
 
     tst_man = new[tst_ref.size()](tst_ref);
+    tst_mon = new[tst_ref.size()](tst_ref);
     tst_sub = new[tst_ref.size()](tst_ref);
 
     // drive transactions
     fork
+      // manager
       begin: fork_man
         man.sequencer(tst_man);
       end: fork_man
+      // monitor
+      begin: fork_mon
+        mon.sequencer(tst_mon);
+      end: fork_mon
+      // subordinate
       begin: fork_sub
         sub.sequencer(tst_sub);
       end: fork_sub
@@ -98,11 +109,19 @@ module tcb_vip_tb
 
     // check transactions
     for (int unsigned i=0; i<tst_num; i++) begin
-//      $display("i=%d, REF: %p", i, tst_ref[i]);
+      // manager
       if (tst_man[i] != tst_ref[i]) begin
         error++;
+        $display("i=%d, REF: %p", i, tst_ref[i]);
         $display("i=%d, MAN: %p", i, tst_man[i]);
       end
+      // monitor
+      if (tst_mon[i] != tst_ref[i]) begin
+        error++;
+        $display("i=%d, REF: %p", i, tst_ref[i]);
+        $display("i=%d, MON: %p", i, tst_mon[i]);
+      end
+      // subordinate
       if (tst_sub[i] != tst_ref[i]) begin
         error++;
         $display("i=%d, REF: %p", i, tst_ref[i]);
@@ -110,8 +129,29 @@ module tcb_vip_tb
       end
     end
 
-  endtask: test_req_rsp
+  endtask: test_nonblocking
 
+////////////////////////////////////////////////////////////////////////////////
+// test blobking API
+////////////////////////////////////////////////////////////////////////////////
+
+  logic [  8-1:0] dat8;
+  logic [ 16-1:0] dat16;
+  logic [ 32-1:0] dat32;
+  logic [ 64-1:0] dat64;
+  logic [128-1:0] dat128;
+
+  logic [DBW-1:0] dat;
+  logic           err;
+
+  task automatic test_blocking;
+    //            adr,          dat, err
+    cpu[0].write('h00, 32'h01234567, err);
+    cpu[0].read ('h00, dat         , err);
+    
+    cpu[0].write('h11, 32'h01234567, err);
+    cpu[0].read ('h11, dat         , err);
+  endtask: test_blocking
 
 ////////////////////////////////////////////////////////////////////////////////
 // test sequence
@@ -131,44 +171,10 @@ module tcb_vip_tb
     rst = 1'b0;
     repeat (1) @(posedge clk);
     
-    // test low level req/rsp tests
-    test_req_rsp;
-
-//    // test low level transaction tasks
-//    len = BEW;
-//    // prepare data
-//    dat = dat_f(4, 1);
-//    data = data_f(2);
-//    // transaction
-//    idl = 0;
-//    fork
-//      begin: req_transaction
-//        man.transaction(1'b0, 1'b0, len, 1'b1, 16, dat, err, idl, bpr);
-//      end: req_transaction
-//      begin: rsp_transaction
-//        sub.rsp(data, 1'b0);
-//      end: rsp_transaction
-//    join
-//    // check data
-//    if (dat != dat_f(4, 2)) error++;
-//
-//    // test BFM read/write tasks
-//    fork
-//      begin: req_rw
-//        //         adr,     ben,          wdt, err, lck, rpt
-//        man.write('h00, 4'b1111, 32'h01234567, err);
-//        man.read ('h00, 4'b1111, rdt         , err);
-//        man.write('h00, 4'b1111, 32'h01234567, err);
-//        man.read ('h00, 4'b1111, rdt         , err);
-//      end: req_rw
-//      begin: rsp_rw
-//        //               rdt,  err, tmg
-//        sub.rsp(32'h55xxxxxx, 1'b0);
-//        sub.rsp(32'h76543210, 1'b0);
-//        sub.rsp(32'h55xxxxxx, 1'b0, 1);
-//        sub.rsp(32'h76543210, 1'b0, 1);
-//      end: rsp_rw
-//    join
+    // test non_blobking API
+    test_nonblocking;
+    repeat (2) @(posedge clk);
+    test_blocking;
 
     repeat (2) @(posedge clk);
     if (error>0)  $display("FAILURE: there were %d errors.", error);
@@ -184,13 +190,15 @@ module tcb_vip_tb
   tcb_vip_dev #("MON") mon (.tcb (tcb));  // monitor
   tcb_vip_dev #("SUB") sub (.tcb (tcb));  // subordinate
 
+  tcb_vip_dev #("MAN") cpu [0:PN-1] (.tcb (bus));  // CPU model
+  tcb_vip_mem          mem          (.tcb (bus));  // memory
+
 ////////////////////////////////////////////////////////////////////////////////
 // VCD/FST waveform trace
 ////////////////////////////////////////////////////////////////////////////////
 
   initial
   begin
-  //$dumpfile("test.vcd");
     $dumpfile("test.fst");
     $dumpvars;
   end

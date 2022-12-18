@@ -18,6 +18,10 @@
 
 package tcb_vip_pkg;
 
+////////////////////////////////////////////////////////////////////////////////
+// TCB class
+////////////////////////////////////////////////////////////////////////////////
+
   virtual class tcb_c #(
     // TCB widths
     int unsigned ABW = 32,       // address bus width
@@ -55,7 +59,7 @@ package tcb_vip_pkg;
       // request
       logic                    wen;  // write enable
       logic          [ABW-1:0] adr;  // address
-      logic          [BEW-1:0] ben;  // byte enable
+      logic [BEW-1:0]          ben;  // byte enable
       logic [BEW-1:0][SLW-1:0] wdt;  // write data
       // response
       logic [BEW-1:0][SLW-1:0] rdt;  // read data
@@ -84,7 +88,7 @@ package tcb_vip_pkg;
       bpr: 0
     };
 
-    // transaction equivalence checke
+    // transaction equivalence check
     static function automatic logic transaction_check (
       // transactions
       input  transaction_t trn_tst,  // test
@@ -95,5 +99,37 @@ package tcb_vip_pkg;
     endfunction: transaction_check
 
   endclass: tcb_c
+
+////////////////////////////////////////////////////////////////////////////////
+// packet class
+////////////////////////////////////////////////////////////////////////////////
+
+  virtual class packet_c #(
+    // TCB widths
+    int unsigned SLW = 8,  // selection width (byte size)
+    int unsigned NUM = 4   // number of bytes
+  );
+
+    // type definitions
+    typedef logic [NUM-1:0][SLW-1:0] dat_t          ;  //   packed byte array
+//  typedef logic          [SLW-1:0] pkt_t [NUM-1:0];  // unpacked byte array
+    typedef logic          [SLW-1:0] pkt_t [];         // dynamic  byte array
+
+    // convert dynamic array
+    static function automatic dat_t dat (
+      pkt_t pkt
+    );
+      for (int unsigned i=0; i<1; i++)  dat[i] = pkt[i];
+    endfunction: dat
+
+    // convert dynamic array
+    static function automatic pkt_t pkt (
+      dat_t dat
+    );
+      pkt = new[NUM];
+      for (int unsigned i=0; i<1; i++)  pkt[i] = dat[i];
+    endfunction: pkt
+
+  endclass: packet_c
 
 endpackage: tcb_vip_pkg
