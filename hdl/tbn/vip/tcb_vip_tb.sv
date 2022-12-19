@@ -71,6 +71,7 @@ module tcb_vip_tb
       foreach (lst_idl[idx_idl]) begin
         foreach (lst_bpr[idx_bpr]) begin
           tst_ref[i] = '{
+            inc: 1'b0,
             rpt: 1'b0,
             lck: 1'b0,
             wen: lst_wen[idx_wen],

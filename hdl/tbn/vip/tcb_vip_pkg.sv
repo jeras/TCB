@@ -54,7 +54,8 @@ package tcb_vip_pkg;
     // TCB transaction structure
     typedef struct {
       // request optional
-      logic                    rpt;  // repeat access
+      logic                    inc;  // incremented address
+      logic                    rpt;  // repeated address
       logic                    lck;  // arbitration lock
       // request
       logic                    wen;  // write enable
@@ -73,6 +74,7 @@ package tcb_vip_pkg;
     // constants
     static const transaction_t TRANSACTION_INIT = '{
       // request optional
+      inc: 1'b0,
       rpt: 1'b0,
       lck: 1'b0,
       // request

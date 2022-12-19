@@ -39,7 +39,8 @@ interface tcb_if #(
   // handshake
   logic           vld;  // handshake valid
   // request optional
-  logic           rpt;  // repeat access
+  logic           inc;  // incremented address
+  logic           rpt;  // repeated address
   logic           lck;  // arbitration lock
   // request
   logic           wen;  // write enable
@@ -109,6 +110,7 @@ interface tcb_if #(
     input  rst,
     // system bus
     output vld,
+    output inc,
     output rpt,
     output lck,
     output wen,
@@ -131,6 +133,7 @@ interface tcb_if #(
     input  rst,
     // system bus
     input  vld,
+    input  inc,
     input  rpt,
     input  lck,
     input  wen,
@@ -153,6 +156,7 @@ interface tcb_if #(
     input  rst,
     // system bus
     input  vld,
+    input  inc,
     input  rpt,
     input  lck,
     input  wen,

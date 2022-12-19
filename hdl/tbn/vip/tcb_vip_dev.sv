@@ -78,6 +78,7 @@ module tcb_vip_dev
     // hanshake
     tcb.vld = 1'b1;
     // request optional
+    tcb.inc = seq.inc;
     tcb.rpt = seq.rpt;
     tcb.lck = seq.lck;
     // request
@@ -96,6 +97,7 @@ module tcb_vip_dev
     // handshake
     tcb.vld = 1'b0;
     // request optional
+    tcb.inc = 'x;
     tcb.rpt = 'x;
     tcb.lck = 'x;
     // request
@@ -150,6 +152,7 @@ module tcb_vip_dev
       end while (~tcb.trn);
     end
     // request optional
+    seq.inc = tcb.inc;
     seq.rpt = tcb.rpt;
     seq.lck = tcb.lck;
     // request
@@ -247,6 +250,7 @@ module tcb_vip_dev
         transactions = '{default: tcb_s::TRANSACTION_INIT};
         for (int unsigned i=0; i<len; i++) begin
           // request optional
+          transactions[idx_trn].inc = 1'b0;
           transactions[idx_trn].rpt = 1'b0;
           transactions[idx_trn].lck = (idx_trn < num) ? 1'b1 : 1'b0;
           // request
@@ -276,6 +280,7 @@ module tcb_vip_dev
         transactions = '{default: tcb_s::TRANSACTION_INIT};
         for (int unsigned i=0; i<len; i++) begin
           // request optional
+          transactions[idx_trn].inc = 1'b0;
           transactions[idx_trn].rpt = 1'b0;
           transactions[idx_trn].lck = (idx_trn < num) ? 1'b1 : 1'b0;
           // request
