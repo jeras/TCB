@@ -132,7 +132,9 @@ module tcb_vip_mem
     for (genvar d=1; d<=tcb[i].DLY; d++) begin
       always @(posedge tcb[i].clk)
       begin
-        tmp_rdt[d-1] <= tmp_rdt[d];
+        for (int unsigned b=0; b<tcb[i].BEW; b++) begin
+          if (tcb[i-1].ren[b])  tmp_rdt[d][b] <= tmp_rdt[d-1][b];
+        end
       end
     end
 

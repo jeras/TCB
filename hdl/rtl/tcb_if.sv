@@ -57,12 +57,10 @@ interface tcb_if #(
 // internal signals (never outpus on modports)
 ////////////////////////////////////////////////////////////////////////////////
 
-  logic           trn;  // transfer
-  logic           idl;  // idle
-  logic           rsp;  // response
-  logic [BEW-1:0] rbe;  // read byte enable
-
-  // TODO: think whether it would make sense to implement delayed wen/ben signals here
+  logic           trn        ;  // transfer
+  logic           idl        ;  // idle
+  logic           rsp [0:DLY];  // response status
+  logic [BEW-1:0] rbe [0:DLY];  // read byte enable
 
   // transfer (valid and ready at the same time)
   assign trn = vld & rdy;
@@ -71,32 +69,19 @@ interface tcb_if #(
   // idle (either not valid or currently ending a cycle with a transfer)
   assign idl = ~vld | trn;
 
-  // response valid (DLY clock periods after transfer)
+  // response combinational
+  assign rsp[0] = trn                  ;  // response valid
+  assign rbe[0] = trn & ~wen ? ben : '0;  // read byte enable
+
+  // response pipeline
   generate
-  if (DLY == 0) begin: gen_rsp
-    assign rsp = trn;
+  for (genvar d=1; d<=DLY; d++) begin: gen_rsp
+    always @(posedge clk)
+    begin
+      rsp[d] <= rsp[d-1];
+      rbe[d] <= rbe[d-1];
+    end
   end: gen_rsp
-  // response delay queue
-  else begin: gen_dly
-    if (DLY == 1) begin: gen_rsp
-      always @(posedge clk, posedge rst)
-      if (rst) begin
-        rsp <= 1'b0;
-      end else begin
-        rsp <= trn;
-      end
-    end: gen_rsp
-    else begin: gen_dly
-      logic [DLY-1:0] que;
-      assign rsp = que[DLY-1];
-      always @(posedge clk, posedge rst)
-      if (rst) begin
-        que <= '0;
-      end else begin
-        que <= {que[DLY-2:0], trn};
-      end
-    end: gen_dly
-  end: gen_dly
   endgenerate
 
 ////////////////////////////////////////////////////////////////////////////////

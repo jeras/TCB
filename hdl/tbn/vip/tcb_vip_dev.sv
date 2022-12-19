@@ -178,8 +178,8 @@ module tcb_vip_dev
   generate
   if (MODE == "SUB") begin
     // response signal driver
-    assign tcb.rdt = tcb.rsp ? tmp_rdt : 'x;
-    assign tcb.err = tcb.rsp ? tmp_err : 'x;
+    assign tcb.rdt = tcb.rsp[tcb.DLY] ? tmp_rdt : 'x;
+    assign tcb.err = tcb.rsp[tcb.DLY] ? tmp_err : 'x;
   end
   endgenerate
 
