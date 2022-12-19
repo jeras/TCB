@@ -99,34 +99,57 @@ module tcb_vip_mem
 ////////////////////////////////////////////////////////////////////////////////
 
   generate
-  for (genvar i=0; i<PN; i++) begin
+  for (genvar i=0; i<PN; i++) begin: port
+
+    // read/write data packed arrays
+    logic [tcb[i].BEW-1:0][tcb[i].SLW-1:0] tmp_wdt               ;
+    logic [tcb[i].BEW-1:0][tcb[i].SLW-1:0] tmp_rdt [0:tcb[i].DLY];
 
     assign tcb[i].rdy = 1'b1;
     assign tcb[i].err = 1'b0;
+
+    // map write data to a packed array
+    assign tmp_wdt = tcb[i].wdt;
 
     // write access
     always @(posedge tcb[i].clk)
     if (tcb[i].trn) begin
       if (tcb[i].wen) begin
         for (int unsigned b=0; b<tcb[i].BEW; b++) begin
-          if (tcb[i].ben[b])  mem[(int'(tcb[i].adr)+b)%SZ] <= tcb[i].wdt[((b+int'(tcb[i].adr))%tcb[i].BEW)*8+:8];
+          if (tcb[i].ben[b])  mem[(b+int'(tcb[i].adr))%SZ] <= tmp_wdt[(b+int'(tcb[i].adr))%tcb[i].BEW];
         end
       end
     end
 
-    // read access
-    always @(posedge tcb[i].clk)
+    // map read data from a packed array
+    assign tcb[i].rdt = tmp_rdt[tcb[i].DLY];
+
+    initial begin
+      tmp_rdt <= '{default: 'x};
+    end
+
+    // read data pipeline
+    for (genvar d=1; d<=tcb[i].DLY; d++) begin
+      always @(posedge tcb[i].clk)
+      begin
+        tmp_rdt[d-1] <= tmp_rdt[d];
+      end
+    end
+
+    // combinational read
+    // TODO: think about the correct assignment operator, read data is supposed to be held till the next transfer
+    always @(*)
     if (tcb[i].trn) begin
       if (~tcb[i].wen) begin
         for (int unsigned b=0; b<tcb[i].BEW; b++) begin
-//          tcb[i].rdt[(((b+int'(tcb[i].adr))%tcb[i].BEW)*8+:8] <= (tcb[i].ben[b] ==? CFG_BEN_RD) ? mem[(int'(tcb[i].adr)+b)%SZ] : 'x;
+//          tmp_rdt[0][((b+int'(tcb[i].adr))%tcb[i].BEW] <= (tcb[i].ben[b] ==? CFG_BEN_RD) ? mem[(b+int'(tcb[i].adr))%SZ] : 'x;
           $display("DEBUG: byte = 8'b%08h", mem[(int'(tcb[i].adr)+b)%SZ]);
-          tcb[i].rdt[((b+int'(tcb[i].adr))%tcb[i].BEW)*8+:8] <= tcb[i].ben[b] ? mem[(int'(tcb[i].adr)+b)%SZ] : 'x;
+          tmp_rdt[0][(b+int'(tcb[i].adr))%tcb[i].BEW] <= tcb[i].ben[b] ? mem[(b+int'(tcb[i].adr))%SZ] : 'x;
         end
       end
     end
 
-  end
+  end: port
   endgenerate
 
 endmodule: tcb_vip_mem
