@@ -22,6 +22,7 @@ interface tcb_if #(
   int unsigned DBW = 32,       // data    bus width
   int unsigned SLW =       8,  // selection   width
   int unsigned BEW = DBW/SLW,  // byte enable width
+  int unsigned SZW = $clog2($clog2(BEW)+1),  // logarithmic size width
   // TCB functionality
   int unsigned DLY = 1,        // response delay
   bit          MIS = 1'b0,     // missalligned access enable
@@ -45,6 +46,7 @@ interface tcb_if #(
   // request
   logic           wen;  // write enable
   logic [ABW-1:0] adr;  // address
+  logic [SZW-1:0] siz;  // logarithmic size
   logic [BEW-1:0] ben;  // byte enable
   logic [DBW-1:0] wdt;  // write data
   // response
@@ -100,6 +102,7 @@ interface tcb_if #(
     output lck,
     output wen,
     output adr,
+    output siz,
     output ben,
     output wdt,
     input  rdt,
@@ -108,7 +111,8 @@ interface tcb_if #(
     // local signals
     input  trn,
     input  idl,
-    input  rsp
+    input  rsp,
+    input  rbe
   );
 
   // monitor
@@ -123,6 +127,7 @@ interface tcb_if #(
     input  lck,
     input  wen,
     input  adr,
+    input  siz,
     input  ben,
     input  wdt,
     input  rdt,
@@ -131,7 +136,8 @@ interface tcb_if #(
     // local signals
     input  trn,
     input  idl,
-    input  rsp
+    input  rsp,
+    input  rbe
   );
 
   // subordinate
@@ -146,6 +152,7 @@ interface tcb_if #(
     input  lck,
     input  wen,
     input  adr,
+    input  siz,
     input  ben,
     input  wdt,
     output rdt,
@@ -154,7 +161,8 @@ interface tcb_if #(
     // local signals
     input  trn,
     input  idl,
-    input  rsp
+    input  rsp,
+    input  rbe
   );
 
 endinterface: tcb_if

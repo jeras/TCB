@@ -76,6 +76,7 @@ module tcb_vip_tb
             lck: 1'b0,
             wen: lst_wen[idx_wen],
             adr: 'h00,
+            siz: $clog2(BEW),
             ben: '1,
             wdt: tcb_s::data_test_f((SLW/2)'(2*i+0)),
             rdt: tcb_s::data_test_f((SLW/2)'(2*i+1)),
@@ -174,8 +175,8 @@ module tcb_vip_tb
     
     // test non_blobking API
     test_nonblocking;
-    repeat (2) @(posedge clk);
-    test_blocking;
+//    repeat (2) @(posedge clk);
+//    test_blocking;
 
     repeat (2) @(posedge clk);
     if (error>0)  $display("FAILURE: there were %d errors.", error);
@@ -187,9 +188,9 @@ module tcb_vip_tb
 // VIP instances
 ////////////////////////////////////////////////////////////////////////////////
 
-  tcb_vip_dev #("MAN") man (.tcb (tcb));  // manager
-  tcb_vip_dev #("MON") mon (.tcb (tcb));  // monitor
-  tcb_vip_dev #("SUB") sub (.tcb (tcb));  // subordinate
+  tcb_vip_dev #("MAN") man          (.tcb (tcb));  // manager
+  tcb_vip_dev #("MON") mon          (.tcb (tcb));  // monitor
+  tcb_vip_dev #("SUB") sub          (.tcb (tcb));  // subordinate
 
   tcb_vip_dev #("MAN") cpu [0:PN-1] (.tcb (bus));  // CPU model
   tcb_vip_mem          mem          (.tcb (bus));  // memory

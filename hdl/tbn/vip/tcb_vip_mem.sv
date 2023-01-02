@@ -102,7 +102,7 @@ module tcb_vip_mem
   for (genvar i=0; i<PN; i++) begin: port
 
     // read/write data packed arrays
-    logic [tcb[i].BEW-1:0][tcb[i].SLW-1:0] tmp_wdt               ;
+    logic [tcb[i].BEW-1:0][tcb[i].SLW-1:0] tmp_wdt;
     logic [tcb[i].BEW-1:0][tcb[i].SLW-1:0] tmp_rdt [0:tcb[i].DLY];
 
     assign tcb[i].rdy = 1'b1;
@@ -133,7 +133,7 @@ module tcb_vip_mem
       always @(posedge tcb[i].clk)
       begin
         for (int unsigned b=0; b<tcb[i].BEW; b++) begin
-          if (tcb[i-1].ren[b])  tmp_rdt[d][b] <= tmp_rdt[d-1][b];
+          if (tcb[i].rbe[d][b])  tmp_rdt[d][b] <= tmp_rdt[d-1][b];
         end
       end
     end

@@ -114,7 +114,7 @@ module tcb_vip_dev
     // wait for response
     do begin
       @(posedge tcb.clk);
-    end while (~tcb.rsp);
+    end while (~tcb.rsp[tcb.DLY]);
     // response
     seq.rdt = tcb.rdt;
     seq.err = tcb.err;
@@ -158,6 +158,7 @@ module tcb_vip_dev
     // request
     seq.wen = tcb.wen;
     seq.adr = tcb.adr;
+    seq.siz = tcb.siz;
     seq.ben = tcb.ben;
     seq.wdt = tcb.wdt;
   endtask: req_lsn
@@ -172,7 +173,7 @@ module tcb_vip_dev
     // wait for response
     do begin
       @(posedge tcb.clk);
-    end while (~tcb.rsp);
+    end while (~tcb.rsp[tcb.DLY]);
   endtask: rsp_drv
 
   generate
@@ -219,8 +220,8 @@ module tcb_vip_dev
 
   // read/write access of any size
   task automatic access (
-    // data length
-    input  int unsigned        len,
+    // data size
+    input  int unsigned        siz,
     // request
     input  logic               wen,
     input  logic [tcb.ABW-1:0] adr,
@@ -238,17 +239,17 @@ module tcb_vip_dev
       // missalligned accesses are split into alligned accesses
       1'b0: begin
         // the number of transactions is
-        // = the access length + missalligned part of the address
+        // = the access size + missalligned part of the address
         // / divided by bus native byte enable width
         // + plus one, if therr is a reinder to the division.
-        num = len + adr % tcb.BEW;
+        num = siz + adr % tcb.BEW;
         num = (num / tcb.BEW) + ((num % tcb.BEW) ? 1 : 0);
         // local transactions
         transactions = new[num];
-        $display("Transaction start.");
+//        $display("Transaction start.");
         // mapping
         transactions = '{default: tcb_s::TRANSACTION_INIT};
-        for (int unsigned i=0; i<len; i++) begin
+        for (int unsigned i=0; i<siz; i++) begin
           // request optional
           transactions[idx_trn].inc = 1'b0;
           transactions[idx_trn].rpt = 1'b0;
@@ -268,17 +269,17 @@ module tcb_vip_dev
       // missalligned access is supported
       1'b1: begin
         // the number of transactions is
-        // = the access length + missalligned part of the address
+        // = the access size + missalligned part of the address
         // / divided by bus native byte enable width
         // + plus one, if therr is a reinder to the division.
-        num = len;
+        num = siz;
         num = (num / tcb.BEW);
         // local transactions
         transactions = new[num];
-        $display("Transaction start.");
+//        $display("Transaction start.");
         // mapping
         transactions = '{default: tcb_s::TRANSACTION_INIT};
-        for (int unsigned i=0; i<len; i++) begin
+        for (int unsigned i=0; i<siz; i++) begin
           // request optional
           transactions[idx_trn].inc = 1'b0;
           transactions[idx_trn].rpt = 1'b0;
@@ -323,7 +324,7 @@ module tcb_vip_dev
     logic [tcb.SLW-1:0] dat [];
     dat = new[tcb.BEW];
     for (int unsigned i=0; i<tcb.BEW; i++)  dat[i] = wdt[i];
-    //          len,  wen, adr, dat, err
+    //          siz,  wen, adr, dat, err
     access (tcb.BEW, 1'b1, adr, dat, err);
   endtask: write
 
@@ -336,7 +337,7 @@ module tcb_vip_dev
   );
     logic [tcb.SLW-1:0] dat [];
     dat = new[tcb.BEW];
-    //          len,  wen, adr, dat, err
+    //          siz,  wen, adr, dat, err
     access (tcb.BEW, 1'b0, adr, dat, err);
     for (int unsigned i=0; i<tcb.BEW; i++)  rdt[i] = dat[i];
   endtask: read

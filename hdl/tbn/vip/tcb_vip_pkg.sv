@@ -27,7 +27,8 @@ package tcb_vip_pkg;
     int unsigned ABW = 32,       // address bus width
     int unsigned DBW = 32,       // data    bus width
     int unsigned SLW =       8,  // selection   width
-    int unsigned BEW = DBW/SLW   // byte enable width
+    int unsigned BEW = DBW/SLW,  // byte enable width
+    int unsigned SZW = $clog2($clog2(BEW)+1)  // logarithmic size width
   );
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -60,6 +61,7 @@ package tcb_vip_pkg;
       // request
       logic                    wen;  // write enable
       logic          [ABW-1:0] adr;  // address
+      logic          [SZW-1:0] siz;  // logarithmic size
       logic [BEW-1:0]          ben;  // byte enable
       logic [BEW-1:0][SLW-1:0] wdt;  // write data
       // response
@@ -80,6 +82,7 @@ package tcb_vip_pkg;
       // request
       wen: 'x,
       adr: 'x,
+      siz: 'x,
       ben: 'x,
       wdt: 'x,
       // response
