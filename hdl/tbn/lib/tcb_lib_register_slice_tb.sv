@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// TCB (Tightly Coupled Bus) library register testbench
+// TCB (Tightly Coupled Bus) library register slice request/response testbench
 ////////////////////////////////////////////////////////////////////////////////
 // Copyright 2022 Iztok Jeras
 //
@@ -16,7 +16,7 @@
 // limitations under the License.
 ////////////////////////////////////////////////////////////////////////////////
 
-module tcb_lib_register_tb
+module tcb_lib_register_slice_tb
   import tcb_vip_pkg::*;
 #(
   // TCB widths
@@ -89,7 +89,7 @@ module tcb_lib_register_tb
 ////////////////////////////////////////////////////////////////////////////////
 
   // RTL passthrough
-  tcb_lib_register #(
+  tcb_lib_register_slice #(
     .CFG_REQ_REG (CFG_REQ_REG),
     .CFG_RSP_REG (CFG_RSP_REG)
   ) dut (
@@ -107,4 +107,4 @@ module tcb_lib_register_tb
     $dumpvars;
   end
 
-endmodule: tcb_lib_register_tb
+endmodule: tcb_lib_register_slice_tb

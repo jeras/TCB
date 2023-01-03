@@ -25,6 +25,7 @@ interface tcb_if #(
   int unsigned SZW = $clog2($clog2(BEW)+1),  // logarithmic size width
   // TCB functionality
   int unsigned DLY = 1,        // response delay
+  bit          NTV = 1'b0,     // CPU native allignment
   bit          MIS = 1'b0,     // missalligned access enable
   bit          END = 1'b0      // endianness (0 - little, 1 - big)
 )(

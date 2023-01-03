@@ -121,21 +121,9 @@ module tcb_vip_mem
       end
     end
 
-    // map read data from a packed array
-    assign tcb[i].rdt = tmp_rdt[tcb[i].DLY];
-
+    // initialize read data array
     initial begin
       tmp_rdt <= '{default: 'x};
-    end
-
-    // read data pipeline
-    for (genvar d=1; d<=tcb[i].DLY; d++) begin
-      always @(posedge tcb[i].clk)
-      begin
-        for (int unsigned b=0; b<tcb[i].BEW; b++) begin
-          if (tcb[i].rbe[d][b])  tmp_rdt[d][b] <= tmp_rdt[d-1][b];
-        end
-      end
     end
 
     // combinational read
@@ -150,6 +138,19 @@ module tcb_vip_mem
         end
       end
     end
+
+    // read data pipeline
+    for (genvar d=1; d<=tcb[i].DLY; d++) begin
+      always @(posedge tcb[i].clk)
+      begin
+        for (int unsigned b=0; b<tcb[i].BEW; b++) begin
+          if (tcb[i].rbe[d-1][b])  tmp_rdt[d][b] <= tmp_rdt[d-1][b];
+        end
+      end
+    end
+
+    // map read data from a packed array
+    assign tcb[i].rdt = tmp_rdt[tcb[i].DLY];
 
   end: port
   endgenerate

@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// TCB (Tightly Coupled Bus) library request/response register slice
+// TCB (Tightly Coupled Bus) library register slice request/response
 ////////////////////////////////////////////////////////////////////////////////
 // Copyright 2022 Iztok Jeras
 //
@@ -16,7 +16,7 @@
 // limitations under the License.
 ////////////////////////////////////////////////////////////////////////////////
 
-module tcb_lib_register #(
+module tcb_lib_register_slice #(
   // register slice parameters
   bit CFG_REQ_REG = 1'b1,  // register request  path
   bit CFG_RSP_REG = 1'b1   // register response path
@@ -121,4 +121,4 @@ else begin: gen_rsp_cmb
 end: gen_rsp_cmb
 endgenerate
 
-endmodule: tcb_lib_register
+endmodule: tcb_lib_register_slice

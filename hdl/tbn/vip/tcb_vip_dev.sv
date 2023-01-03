@@ -227,47 +227,15 @@ module tcb_vip_dev
     input  logic [tcb.ABW-1:0] adr,
     ref    logic [tcb.SLW-1:0] dat [],
     // response
-    output logic               err,
-    // options
-    input  bit                 mis = tcb.MIS
+    output logic               err
   );
     int unsigned num;
     tcb_s::transaction_t transactions [];
     int unsigned idx_trn = 0;
     int unsigned idx_ben = adr % tcb.BEW;
-    case (mis)
-      // missalligned accesses are split into alligned accesses
-      1'b0: begin
-        // the number of transactions is
-        // = the access size + missalligned part of the address
-        // / divided by bus native byte enable width
-        // + plus one, if therr is a reinder to the division.
-        num = siz + adr % tcb.BEW;
-        num = (num / tcb.BEW) + ((num % tcb.BEW) ? 1 : 0);
-        // local transactions
-        transactions = new[num];
-//        $display("Transaction start.");
-        // mapping
-        transactions = '{default: tcb_s::TRANSACTION_INIT};
-        for (int unsigned i=0; i<siz; i++) begin
-          // request optional
-          transactions[idx_trn].inc = 1'b0;
-          transactions[idx_trn].rpt = 1'b0;
-          transactions[idx_trn].lck = (idx_trn < num) ? 1'b1 : 1'b0;
-          // request
-          transactions[idx_trn].wen = wen;
-          transactions[idx_trn].adr = adr + idx_trn * tcb.BEW;
-          transactions[idx_trn].ben[idx_ben] = 1'b1;
-          transactions[idx_trn].wdt[idx_ben] = dat[i];
-          // timing idle/backpressure
-          transactions[idx_trn].idl = 0;
-          // index increments
-          idx_ben = (idx_ben + 1) % tcb.BEW;
-          if (idx_ben == 0) idx_trn++;
-        end
-      end
-      // missalligned access is supported
-      1'b1: begin
+    // TODO: check if missalligned access is supported
+    //if (tcb.MIS)
+
         // the number of transactions is
         // = the access size + missalligned part of the address
         // / divided by bus native byte enable width
@@ -295,8 +263,8 @@ module tcb_vip_dev
           idx_ben = (idx_ben + 1) % tcb.BEW;
           if (idx_ben == adr % tcb.BEW) idx_trn++;
         end
-      end
-    endcase
+      //end
+    //endcase
     // transaction
     sequencer(transactions);
   endtask: access
