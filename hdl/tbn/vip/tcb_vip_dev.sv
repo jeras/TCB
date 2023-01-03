@@ -231,42 +231,42 @@ module tcb_vip_dev
   );
     int unsigned num;
     tcb_s::transaction_t transactions [];
-    int unsigned idx_trn = 0;
-    int unsigned idx_ben = adr % tcb.BEW;
     // TODO: check if missalligned access is supported
     //if (tcb.MIS)
 
-        // the number of transactions is
-        // = the access size + missalligned part of the address
-        // / divided by bus native byte enable width
-        // + plus one, if therr is a reinder to the division.
-        num = siz;
-        num = (num / tcb.BEW);
-        // local transactions
+        // number of transactions
+        num = (siz / tcb.BEW);
         transactions = new[num];
 //        $display("Transaction start.");
         // mapping
         transactions = '{default: tcb_s::TRANSACTION_INIT};
-        for (int unsigned i=0; i<siz; i++) begin
+        for (int unsigned i=0; i<num; i++) begin
           // request optional
-          transactions[idx_trn].inc = 1'b0;
-          transactions[idx_trn].rpt = 1'b0;
-          transactions[idx_trn].lck = (idx_trn < num) ? 1'b1 : 1'b0;
+          transactions[i].inc = 1'b0;
+          transactions[i].rpt = 1'b0;
+          transactions[i].lck = (i == num) ? 1'b0 : 1'b1;
           // request
-          transactions[idx_trn].wen = wen;
-          transactions[idx_trn].adr = adr + idx_trn * tcb.BEW;
-          transactions[idx_trn].ben[idx_ben] = 1'b1;
-          transactions[idx_trn].wdt[idx_ben] = dat[i];
-          // timing idle/backpressure
-          transactions[idx_trn].idl = 0;
-          // index increments
-          idx_ben = (idx_ben + 1) % tcb.BEW;
-          if (idx_ben == adr % tcb.BEW) idx_trn++;
+          transactions[i].wen = wen;
+          transactions[i].adr = adr + i * tcb.BEW;
+          for (int unsigned b=0; b<tcb.BEW; b++) begin
+            transactions[i].ben[b] = 1'b1;
+            transactions[i].wdt[b] = dat[b + i * tcb.BEW];
+          end
+          // timing idle (no backpressure)
+          transactions[i].idl = 0;
         end
       //end
     //endcase
     // transaction
     sequencer(transactions);
+    // response
+    err = 1'b0;
+    for (int unsigned i=0; i<num; i++) begin
+      for (int unsigned b=0; b<tcb.BEW; b++) begin
+        dat[b + i * tcb.BEW] = transactions[i].rdt[b];
+        err                 |= transactions[i].err;
+      end
+    end
   endtask: access
 
 ////////////////////////////////////////////////////////////////////////////////
