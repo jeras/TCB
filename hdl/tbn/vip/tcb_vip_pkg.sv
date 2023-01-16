@@ -73,6 +73,8 @@ package tcb_vip_pkg;
     } transaction_t;
     /* verilator lint_on UNPACKED */
 
+    typedef transaction_t transactions_t [];
+
     // constants
     static const transaction_t TRANSACTION_INIT = '{
       // request optional
@@ -106,67 +108,85 @@ package tcb_vip_pkg;
 ////////////////////////////////////////////////////////////////////////////////
 // access
 ////////////////////////////////////////////////////////////////////////////////
-
+/*
     virtual class access_c #(
       // TCB widths
       int unsigned SIZ = BEW  // access size in bytes
     );
 
-/*
+
       // read/write access of any size
-      task automatic access (
+      function automatic transactions_t access_req (
         // request
         input  logic               wen,
         input  logic [tcb.ABW-1:0] adr,
-        ref    logic [tcb.SLW-1:0] dat [],
-        // response
-        output logic               err
+        ref    logic [tcb.SLW-1:0] wdt [SIZ]
       );
-        int unsigned num;
-        tcb_s::transaction_t transactions [];
-        int unsigned idx_trn = 0;
-        int unsigned idx_ben = adr % tcb.BEW;
-        case (tcb.MIS)
-          // missalligned accesses are split into alligned accesses
-          1'b0: begin
+        transaction_t transactions [];
+        // address offset from native bus allignment
+        int unsigned off = adr % BEW;
+        // number of transactions
+        if (SIZ < BEW) begin
+          transactions = new[1];
+          transactions = '{default: TRANSACTION_INIT};
+          // request optional
+          transactions[0].inc = 1'b0;
+          transactions[0].rpt = 1'b0;
+          transactions[0].lck = 1'b0;
+          // request
+          transactions[0].wen = wen;
+          transactions[0].adr = adr;
+          transactions[0].ben = '0;
+          for (int unsigned b=0; b<SIZ; b++) begin
+            transactions[0].ben[(b+off)%BEW] = 1'b1;
+            transactions[0].wdt[(b+off)%BEW] = wdt[b];
           end
-          // missalligned access is supported
-          1'b1: begin
-            // the number of transactions is
-            // = the access size + missalligned part of the address
-            // / divided by bus native byte enable width
-            // + plus one, if therr is a reinder to the division.
-            num = siz;
-            num = (num / tcb.BEW);
-            // local transactions
-            transactions = new[num];
-    //        $display("Transaction start.");
-            // mapping
-            transactions = '{default: tcb_s::TRANSACTION_INIT};
-            for (int unsigned i=0; i<siz; i++) begin
-              // request optional
-              transactions[idx_trn].inc = 1'b0;
-              transactions[idx_trn].rpt = 1'b0;
-              transactions[idx_trn].lck = (idx_trn < num) ? 1'b1 : 1'b0;
-              // request
-              transactions[idx_trn].wen = wen;
-              transactions[idx_trn].adr = adr + idx_trn * tcb.BEW;
-              transactions[idx_trn].ben[idx_ben] = 1'b1;
-              transactions[idx_trn].wdt[idx_ben] = dat[i];
-              // timing idle/backpressure
-              transactions[idx_trn].idl = 0;
-              // index increments
-              idx_ben = (idx_ben + 1) % tcb.BEW;
-              if (idx_ben == adr % tcb.BEW) idx_trn++;
+          // timing idle (no backpressure)
+          transactions[0].idl = 0;
+        end else begin
+          int unsigned num;
+          num = (SIZ / tcb.BEW);
+          transactions = new[num];
+          transactions = '{default: TRANSACTION_INIT};
+          for (int unsigned i=0; i<num; i++) begin
+            // request optional
+            transactions[i].inc = 1'b0;
+            transactions[i].rpt = 1'b0;
+            transactions[i].lck = (i == num) ? 1'b0 : 1'b1;
+            // request
+            transactions[i].wen = wen;
+            transactions[i].adr = adr + i * tcb.BEW;
+            for (int unsigned b=0; b<tcb.BEW; b++) begin
+              transactions[i].ben[(b+off)%BEW] = 1'b1;
+              transactions[i].wdt[(b+off)%BEW] = wdt[b + i * tcb.BEW];
             end
+            // timing idle (no backpressure)
+            transactions[i].idl = 0;
           end
-        endcase
-        // transaction
-        sequencer(transactions);
-      endtask: access
-*/
-    endclass: access_c
+        end
+        return(transactions);
+      endfunction: access_req
 
+//      function automatic transactions_t access_rsp (
+//        // response
+//        ref    logic [tcb.SLW-1:0] wdt [SIZ],
+//        output logic               err
+//      );
+//        // number of transactions
+//        if (SIZ < BEW) begin
+//        end else begin
+//          err = 1'b0;
+//          for (int unsigned i=0; i<num; i++) begin
+//            for (int unsigned b=0; b<tcb.BEW; b++) begin
+//              dat[b + i * tcb.BEW] = transactions[i].rdt[b];
+//              err                 |= transactions[i].err;
+//            end
+//          end
+//        end
+//      endfunction: access_rsp
+
+    endclass: access_c
+*/
   endclass: tcb_c
 
 ////////////////////////////////////////////////////////////////////////////////
