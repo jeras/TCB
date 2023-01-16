@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// TCB (Tightly Coupled Bus) library register slice request/response testbench
+// TCB (Tightly Coupled Bus) library register slice for request path
 ////////////////////////////////////////////////////////////////////////////////
 // Copyright 2022 Iztok Jeras
 //
@@ -16,7 +16,7 @@
 // limitations under the License.
 ////////////////////////////////////////////////////////////////////////////////
 
-module tcb_lib_register_slice_tb
+module tcb_lib_register_request_tb
   import tcb_vip_pkg::*;
 #(
   // TCB widths
@@ -26,12 +26,11 @@ module tcb_lib_register_slice_tb
   int unsigned BEW = DBW/SLW,  // byte enable width
   // response delay
   int unsigned DLY = 1,
-  // register slice parameters
-  bit CFG_REQ_REG = 1'b1,  // register request  path
-  bit CFG_RSP_REG = 1'b1   // register response path
+  // bus hold granularity (byte granularity by default)
+  int unsigned GRN = 1
 );
 
-  localparam DLY_MAN = DLY + (CFG_REQ_REG ? 1 : 0) + (CFG_RSP_REG ? 1 : 0);
+  localparam DLY_MAN = DLY+1;
   localparam DLY_SUB = DLY;
 
   // system signals
@@ -85,13 +84,11 @@ module tcb_lib_register_slice_tb
   tcb_lib_passthrough pas [0:0] (.sub (tcb_sub), .man (tcb_mem));
 
 ////////////////////////////////////////////////////////////////////////////////
-// DUT instances
+// DUT instance
 ////////////////////////////////////////////////////////////////////////////////
 
-  // RTL passthrough
-  tcb_lib_register_slice #(
-    .CFG_REQ_REG (CFG_REQ_REG),
-    .CFG_RSP_REG (CFG_RSP_REG)
+  tcb_lib_register_request #(
+    .GRN  (GRN)
   ) dut (
     .sub  (tcb_man),
     .man  (tcb_sub)
@@ -107,4 +104,4 @@ module tcb_lib_register_slice_tb
     $dumpvars;
   end
 
-endmodule: tcb_lib_register_slice_tb
+endmodule: tcb_lib_register_request_tb

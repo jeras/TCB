@@ -3,22 +3,22 @@
    <wave_state>
    </wave_state>
    <db_ref_list>
-      <db_ref path="tcb_lib_register_slice_tb_behav.wdb" id="1">
+      <db_ref path="tcb_lib_register_request_tb_behav.wdb" id="1">
          <top_modules>
             <top_module name="glbl" />
-            <top_module name="tcb_lib_register_slice_tb" />
+            <top_module name="tcb_lib_register_request_tb" />
             <top_module name="tcb_vip_pkg" />
          </top_modules>
       </db_ref>
    </db_ref_list>
    <zoom_setting>
-      <ZoomStartTime time="16.450 ns"></ZoomStartTime>
-      <ZoomEndTime time="452.710 ns"></ZoomEndTime>
-      <Cursor1Time time="380.000 ns"></Cursor1Time>
+      <ZoomStartTime time="56.666 ns"></ZoomStartTime>
+      <ZoomEndTime time="396.667 ns"></ZoomEndTime>
+      <Cursor1Time time="340.000 ns"></Cursor1Time>
    </zoom_setting>
    <column_width_setting>
       <NameColumnWidth column_width="208"></NameColumnWidth>
-      <ValueColumnWidth column_width="93"></ValueColumnWidth>
+      <ValueColumnWidth column_width="89"></ValueColumnWidth>
    </column_width_setting>
    <WVObjectSize size="3" />
    <wave_markers>
@@ -27,111 +27,112 @@
    <wvobject type="group" fp_name="group53">
       <obj_property name="label">TCB bus manager</obj_property>
       <obj_property name="DisplayName">label</obj_property>
-      <wvobject type="logic" fp_name="/tcb_lib_register_slice_tb/tcb_man/clk">
+      <obj_property name="isExpanded"></obj_property>
+      <wvobject type="logic" fp_name="/tcb_lib_register_request_tb/tcb_man/clk">
          <obj_property name="ElementShortName">clk</obj_property>
          <obj_property name="ObjectShortName">clk</obj_property>
       </wvobject>
-      <wvobject type="logic" fp_name="/tcb_lib_register_slice_tb/tcb_man/rst">
+      <wvobject type="logic" fp_name="/tcb_lib_register_request_tb/tcb_man/rst">
          <obj_property name="ElementShortName">rst</obj_property>
          <obj_property name="ObjectShortName">rst</obj_property>
       </wvobject>
-      <wvobject type="logic" fp_name="/tcb_lib_register_slice_tb/tcb_man/vld">
+      <wvobject type="logic" fp_name="/tcb_lib_register_request_tb/tcb_man/vld">
          <obj_property name="ElementShortName">vld</obj_property>
          <obj_property name="ObjectShortName">vld</obj_property>
       </wvobject>
-      <wvobject type="logic" fp_name="/tcb_lib_register_slice_tb/tcb_man/inc">
+      <wvobject type="logic" fp_name="/tcb_lib_register_request_tb/tcb_man/inc">
          <obj_property name="ElementShortName">inc</obj_property>
          <obj_property name="ObjectShortName">inc</obj_property>
       </wvobject>
-      <wvobject type="logic" fp_name="/tcb_lib_register_slice_tb/tcb_man/rpt">
+      <wvobject type="logic" fp_name="/tcb_lib_register_request_tb/tcb_man/rpt">
          <obj_property name="ElementShortName">rpt</obj_property>
          <obj_property name="ObjectShortName">rpt</obj_property>
       </wvobject>
-      <wvobject type="logic" fp_name="/tcb_lib_register_slice_tb/tcb_man/lck">
+      <wvobject type="logic" fp_name="/tcb_lib_register_request_tb/tcb_man/lck">
          <obj_property name="ElementShortName">lck</obj_property>
          <obj_property name="ObjectShortName">lck</obj_property>
       </wvobject>
-      <wvobject type="logic" fp_name="/tcb_lib_register_slice_tb/tcb_man/wen">
+      <wvobject type="logic" fp_name="/tcb_lib_register_request_tb/tcb_man/wen">
          <obj_property name="ElementShortName">wen</obj_property>
          <obj_property name="ObjectShortName">wen</obj_property>
       </wvobject>
-      <wvobject type="array" fp_name="/tcb_lib_register_slice_tb/tcb_man/adr">
+      <wvobject type="array" fp_name="/tcb_lib_register_request_tb/tcb_man/adr">
          <obj_property name="ElementShortName">adr[31:0]</obj_property>
          <obj_property name="ObjectShortName">adr[31:0]</obj_property>
       </wvobject>
-      <wvobject type="array" fp_name="/tcb_lib_register_slice_tb/tcb_man/siz">
+      <wvobject type="array" fp_name="/tcb_lib_register_request_tb/tcb_man/siz">
          <obj_property name="ElementShortName">siz[1:0]</obj_property>
          <obj_property name="ObjectShortName">siz[1:0]</obj_property>
       </wvobject>
-      <wvobject type="array" fp_name="/tcb_lib_register_slice_tb/tcb_man/ben">
+      <wvobject type="array" fp_name="/tcb_lib_register_request_tb/tcb_man/ben">
          <obj_property name="ElementShortName">ben[3:0]</obj_property>
          <obj_property name="ObjectShortName">ben[3:0]</obj_property>
       </wvobject>
-      <wvobject type="array" fp_name="/tcb_lib_register_slice_tb/tcb_man/wdt">
+      <wvobject type="array" fp_name="/tcb_lib_register_request_tb/tcb_man/wdt">
          <obj_property name="ElementShortName">wdt[31:0]</obj_property>
          <obj_property name="ObjectShortName">wdt[31:0]</obj_property>
       </wvobject>
-      <wvobject type="array" fp_name="/tcb_lib_register_slice_tb/tcb_man/rdt">
+      <wvobject type="array" fp_name="/tcb_lib_register_request_tb/tcb_man/rdt">
          <obj_property name="ElementShortName">rdt[31:0]</obj_property>
          <obj_property name="ObjectShortName">rdt[31:0]</obj_property>
       </wvobject>
-      <wvobject type="logic" fp_name="/tcb_lib_register_slice_tb/tcb_man/err">
+      <wvobject type="logic" fp_name="/tcb_lib_register_request_tb/tcb_man/err">
          <obj_property name="ElementShortName">err</obj_property>
          <obj_property name="ObjectShortName">err</obj_property>
       </wvobject>
-      <wvobject type="logic" fp_name="/tcb_lib_register_slice_tb/tcb_man/rdy">
+      <wvobject type="logic" fp_name="/tcb_lib_register_request_tb/tcb_man/rdy">
          <obj_property name="ElementShortName">rdy</obj_property>
          <obj_property name="ObjectShortName">rdy</obj_property>
       </wvobject>
-      <wvobject type="logic" fp_name="/tcb_lib_register_slice_tb/tcb_man/trn">
+      <wvobject type="logic" fp_name="/tcb_lib_register_request_tb/tcb_man/trn">
          <obj_property name="ElementShortName">trn</obj_property>
          <obj_property name="ObjectShortName">trn</obj_property>
       </wvobject>
-      <wvobject type="logic" fp_name="/tcb_lib_register_slice_tb/tcb_man/idl">
+      <wvobject type="logic" fp_name="/tcb_lib_register_request_tb/tcb_man/idl">
          <obj_property name="ElementShortName">idl</obj_property>
          <obj_property name="ObjectShortName">idl</obj_property>
       </wvobject>
-      <wvobject type="array" fp_name="/tcb_lib_register_slice_tb/tcb_man/rsp">
-         <obj_property name="ElementShortName">rsp[0:3]</obj_property>
-         <obj_property name="ObjectShortName">rsp[0:3]</obj_property>
+      <wvobject type="array" fp_name="/tcb_lib_register_request_tb/tcb_man/rsp">
+         <obj_property name="ElementShortName">rsp[0:2]</obj_property>
+         <obj_property name="ObjectShortName">rsp[0:2]</obj_property>
       </wvobject>
-      <wvobject type="array" fp_name="/tcb_lib_register_slice_tb/tcb_man/rbe">
-         <obj_property name="ElementShortName">rbe[0:3][3:0]</obj_property>
-         <obj_property name="ObjectShortName">rbe[0:3][3:0]</obj_property>
+      <wvobject type="array" fp_name="/tcb_lib_register_request_tb/tcb_man/rbe">
+         <obj_property name="ElementShortName">rbe[0:2][3:0]</obj_property>
+         <obj_property name="ObjectShortName">rbe[0:2][3:0]</obj_property>
       </wvobject>
-      <wvobject type="array" fp_name="/tcb_lib_register_slice_tb/tcb_man/ABW">
+      <wvobject type="array" fp_name="/tcb_lib_register_request_tb/tcb_man/ABW">
          <obj_property name="ElementShortName">ABW[31:0]</obj_property>
          <obj_property name="ObjectShortName">ABW[31:0]</obj_property>
       </wvobject>
-      <wvobject type="array" fp_name="/tcb_lib_register_slice_tb/tcb_man/DBW">
+      <wvobject type="array" fp_name="/tcb_lib_register_request_tb/tcb_man/DBW">
          <obj_property name="ElementShortName">DBW[31:0]</obj_property>
          <obj_property name="ObjectShortName">DBW[31:0]</obj_property>
       </wvobject>
-      <wvobject type="array" fp_name="/tcb_lib_register_slice_tb/tcb_man/SLW">
+      <wvobject type="array" fp_name="/tcb_lib_register_request_tb/tcb_man/SLW">
          <obj_property name="ElementShortName">SLW[31:0]</obj_property>
          <obj_property name="ObjectShortName">SLW[31:0]</obj_property>
       </wvobject>
-      <wvobject type="array" fp_name="/tcb_lib_register_slice_tb/tcb_man/BEW">
+      <wvobject type="array" fp_name="/tcb_lib_register_request_tb/tcb_man/BEW">
          <obj_property name="ElementShortName">BEW[31:0]</obj_property>
          <obj_property name="ObjectShortName">BEW[31:0]</obj_property>
       </wvobject>
-      <wvobject type="array" fp_name="/tcb_lib_register_slice_tb/tcb_man/SZW">
+      <wvobject type="array" fp_name="/tcb_lib_register_request_tb/tcb_man/SZW">
          <obj_property name="ElementShortName">SZW[31:0]</obj_property>
          <obj_property name="ObjectShortName">SZW[31:0]</obj_property>
       </wvobject>
-      <wvobject type="array" fp_name="/tcb_lib_register_slice_tb/tcb_man/DLY">
+      <wvobject type="array" fp_name="/tcb_lib_register_request_tb/tcb_man/DLY">
          <obj_property name="ElementShortName">DLY[31:0]</obj_property>
          <obj_property name="ObjectShortName">DLY[31:0]</obj_property>
       </wvobject>
-      <wvobject type="logic" fp_name="/tcb_lib_register_slice_tb/tcb_man/NTV">
+      <wvobject type="logic" fp_name="/tcb_lib_register_request_tb/tcb_man/NTV">
          <obj_property name="ElementShortName">NTV</obj_property>
          <obj_property name="ObjectShortName">NTV</obj_property>
       </wvobject>
-      <wvobject type="logic" fp_name="/tcb_lib_register_slice_tb/tcb_man/MIS">
+      <wvobject type="logic" fp_name="/tcb_lib_register_request_tb/tcb_man/MIS">
          <obj_property name="ElementShortName">MIS</obj_property>
          <obj_property name="ObjectShortName">MIS</obj_property>
       </wvobject>
-      <wvobject type="logic" fp_name="/tcb_lib_register_slice_tb/tcb_man/END">
+      <wvobject type="logic" fp_name="/tcb_lib_register_request_tb/tcb_man/END">
          <obj_property name="ElementShortName">END</obj_property>
          <obj_property name="ObjectShortName">END</obj_property>
       </wvobject>
@@ -139,111 +140,112 @@
    <wvobject type="group" fp_name="group81">
       <obj_property name="label">TCB bus subordinate</obj_property>
       <obj_property name="DisplayName">label</obj_property>
-      <wvobject type="logic" fp_name="/tcb_lib_register_slice_tb/tcb_sub/clk">
+      <obj_property name="isExpanded"></obj_property>
+      <wvobject type="logic" fp_name="/tcb_lib_register_request_tb/tcb_sub/clk">
          <obj_property name="ElementShortName">clk</obj_property>
          <obj_property name="ObjectShortName">clk</obj_property>
       </wvobject>
-      <wvobject type="logic" fp_name="/tcb_lib_register_slice_tb/tcb_sub/rst">
+      <wvobject type="logic" fp_name="/tcb_lib_register_request_tb/tcb_sub/rst">
          <obj_property name="ElementShortName">rst</obj_property>
          <obj_property name="ObjectShortName">rst</obj_property>
       </wvobject>
-      <wvobject type="logic" fp_name="/tcb_lib_register_slice_tb/tcb_sub/vld">
+      <wvobject type="logic" fp_name="/tcb_lib_register_request_tb/tcb_sub/vld">
          <obj_property name="ElementShortName">vld</obj_property>
          <obj_property name="ObjectShortName">vld</obj_property>
       </wvobject>
-      <wvobject type="logic" fp_name="/tcb_lib_register_slice_tb/tcb_sub/inc">
+      <wvobject type="logic" fp_name="/tcb_lib_register_request_tb/tcb_sub/inc">
          <obj_property name="ElementShortName">inc</obj_property>
          <obj_property name="ObjectShortName">inc</obj_property>
       </wvobject>
-      <wvobject type="logic" fp_name="/tcb_lib_register_slice_tb/tcb_sub/rpt">
+      <wvobject type="logic" fp_name="/tcb_lib_register_request_tb/tcb_sub/rpt">
          <obj_property name="ElementShortName">rpt</obj_property>
          <obj_property name="ObjectShortName">rpt</obj_property>
       </wvobject>
-      <wvobject type="logic" fp_name="/tcb_lib_register_slice_tb/tcb_sub/lck">
+      <wvobject type="logic" fp_name="/tcb_lib_register_request_tb/tcb_sub/lck">
          <obj_property name="ElementShortName">lck</obj_property>
          <obj_property name="ObjectShortName">lck</obj_property>
       </wvobject>
-      <wvobject type="logic" fp_name="/tcb_lib_register_slice_tb/tcb_sub/wen">
+      <wvobject type="logic" fp_name="/tcb_lib_register_request_tb/tcb_sub/wen">
          <obj_property name="ElementShortName">wen</obj_property>
          <obj_property name="ObjectShortName">wen</obj_property>
       </wvobject>
-      <wvobject type="array" fp_name="/tcb_lib_register_slice_tb/tcb_sub/adr">
+      <wvobject type="array" fp_name="/tcb_lib_register_request_tb/tcb_sub/adr">
          <obj_property name="ElementShortName">adr[31:0]</obj_property>
          <obj_property name="ObjectShortName">adr[31:0]</obj_property>
       </wvobject>
-      <wvobject type="array" fp_name="/tcb_lib_register_slice_tb/tcb_sub/siz">
+      <wvobject type="array" fp_name="/tcb_lib_register_request_tb/tcb_sub/siz">
          <obj_property name="ElementShortName">siz[1:0]</obj_property>
          <obj_property name="ObjectShortName">siz[1:0]</obj_property>
       </wvobject>
-      <wvobject type="array" fp_name="/tcb_lib_register_slice_tb/tcb_sub/ben">
+      <wvobject type="array" fp_name="/tcb_lib_register_request_tb/tcb_sub/ben">
          <obj_property name="ElementShortName">ben[3:0]</obj_property>
          <obj_property name="ObjectShortName">ben[3:0]</obj_property>
       </wvobject>
-      <wvobject type="array" fp_name="/tcb_lib_register_slice_tb/tcb_sub/wdt">
+      <wvobject type="array" fp_name="/tcb_lib_register_request_tb/tcb_sub/wdt">
          <obj_property name="ElementShortName">wdt[31:0]</obj_property>
          <obj_property name="ObjectShortName">wdt[31:0]</obj_property>
       </wvobject>
-      <wvobject type="array" fp_name="/tcb_lib_register_slice_tb/tcb_sub/rdt">
+      <wvobject type="array" fp_name="/tcb_lib_register_request_tb/tcb_sub/rdt">
          <obj_property name="ElementShortName">rdt[31:0]</obj_property>
          <obj_property name="ObjectShortName">rdt[31:0]</obj_property>
       </wvobject>
-      <wvobject type="logic" fp_name="/tcb_lib_register_slice_tb/tcb_sub/err">
+      <wvobject type="logic" fp_name="/tcb_lib_register_request_tb/tcb_sub/err">
          <obj_property name="ElementShortName">err</obj_property>
          <obj_property name="ObjectShortName">err</obj_property>
       </wvobject>
-      <wvobject type="logic" fp_name="/tcb_lib_register_slice_tb/tcb_sub/rdy">
+      <wvobject type="logic" fp_name="/tcb_lib_register_request_tb/tcb_sub/rdy">
          <obj_property name="ElementShortName">rdy</obj_property>
          <obj_property name="ObjectShortName">rdy</obj_property>
       </wvobject>
-      <wvobject type="logic" fp_name="/tcb_lib_register_slice_tb/tcb_sub/trn">
+      <wvobject type="logic" fp_name="/tcb_lib_register_request_tb/tcb_sub/trn">
          <obj_property name="ElementShortName">trn</obj_property>
          <obj_property name="ObjectShortName">trn</obj_property>
       </wvobject>
-      <wvobject type="logic" fp_name="/tcb_lib_register_slice_tb/tcb_sub/idl">
+      <wvobject type="logic" fp_name="/tcb_lib_register_request_tb/tcb_sub/idl">
          <obj_property name="ElementShortName">idl</obj_property>
          <obj_property name="ObjectShortName">idl</obj_property>
       </wvobject>
-      <wvobject type="array" fp_name="/tcb_lib_register_slice_tb/tcb_sub/rsp">
+      <wvobject type="array" fp_name="/tcb_lib_register_request_tb/tcb_sub/rsp">
          <obj_property name="ElementShortName">rsp[0:1]</obj_property>
          <obj_property name="ObjectShortName">rsp[0:1]</obj_property>
       </wvobject>
-      <wvobject type="array" fp_name="/tcb_lib_register_slice_tb/tcb_sub/rbe">
+      <wvobject type="array" fp_name="/tcb_lib_register_request_tb/tcb_sub/rbe">
          <obj_property name="ElementShortName">rbe[0:1][3:0]</obj_property>
          <obj_property name="ObjectShortName">rbe[0:1][3:0]</obj_property>
       </wvobject>
-      <wvobject type="array" fp_name="/tcb_lib_register_slice_tb/tcb_sub/ABW">
+      <wvobject type="array" fp_name="/tcb_lib_register_request_tb/tcb_sub/ABW">
          <obj_property name="ElementShortName">ABW[31:0]</obj_property>
          <obj_property name="ObjectShortName">ABW[31:0]</obj_property>
       </wvobject>
-      <wvobject type="array" fp_name="/tcb_lib_register_slice_tb/tcb_sub/DBW">
+      <wvobject type="array" fp_name="/tcb_lib_register_request_tb/tcb_sub/DBW">
          <obj_property name="ElementShortName">DBW[31:0]</obj_property>
          <obj_property name="ObjectShortName">DBW[31:0]</obj_property>
       </wvobject>
-      <wvobject type="array" fp_name="/tcb_lib_register_slice_tb/tcb_sub/SLW">
+      <wvobject type="array" fp_name="/tcb_lib_register_request_tb/tcb_sub/SLW">
          <obj_property name="ElementShortName">SLW[31:0]</obj_property>
          <obj_property name="ObjectShortName">SLW[31:0]</obj_property>
       </wvobject>
-      <wvobject type="array" fp_name="/tcb_lib_register_slice_tb/tcb_sub/BEW">
+      <wvobject type="array" fp_name="/tcb_lib_register_request_tb/tcb_sub/BEW">
          <obj_property name="ElementShortName">BEW[31:0]</obj_property>
          <obj_property name="ObjectShortName">BEW[31:0]</obj_property>
       </wvobject>
-      <wvobject type="array" fp_name="/tcb_lib_register_slice_tb/tcb_sub/SZW">
+      <wvobject type="array" fp_name="/tcb_lib_register_request_tb/tcb_sub/SZW">
          <obj_property name="ElementShortName">SZW[31:0]</obj_property>
          <obj_property name="ObjectShortName">SZW[31:0]</obj_property>
       </wvobject>
-      <wvobject type="array" fp_name="/tcb_lib_register_slice_tb/tcb_sub/DLY">
+      <wvobject type="array" fp_name="/tcb_lib_register_request_tb/tcb_sub/DLY">
          <obj_property name="ElementShortName">DLY[31:0]</obj_property>
          <obj_property name="ObjectShortName">DLY[31:0]</obj_property>
       </wvobject>
-      <wvobject type="logic" fp_name="/tcb_lib_register_slice_tb/tcb_sub/NTV">
+      <wvobject type="logic" fp_name="/tcb_lib_register_request_tb/tcb_sub/NTV">
          <obj_property name="ElementShortName">NTV</obj_property>
          <obj_property name="ObjectShortName">NTV</obj_property>
       </wvobject>
-      <wvobject type="logic" fp_name="/tcb_lib_register_slice_tb/tcb_sub/MIS">
+      <wvobject type="logic" fp_name="/tcb_lib_register_request_tb/tcb_sub/MIS">
          <obj_property name="ElementShortName">MIS</obj_property>
          <obj_property name="ObjectShortName">MIS</obj_property>
       </wvobject>
-      <wvobject type="logic" fp_name="/tcb_lib_register_slice_tb/tcb_sub/END">
+      <wvobject type="logic" fp_name="/tcb_lib_register_request_tb/tcb_sub/END">
          <obj_property name="ElementShortName">END</obj_property>
          <obj_property name="ObjectShortName">END</obj_property>
       </wvobject>
@@ -251,111 +253,111 @@
    <wvobject type="group" fp_name="group109">
       <obj_property name="label">TCB memory</obj_property>
       <obj_property name="DisplayName">label</obj_property>
-      <wvobject type="logic" fp_name="/tcb_lib_register_slice_tb/\tcb_mem[0] /clk">
+      <wvobject type="logic" fp_name="/tcb_lib_register_request_tb/\tcb_mem[0] /clk">
          <obj_property name="ElementShortName">clk</obj_property>
          <obj_property name="ObjectShortName">clk</obj_property>
       </wvobject>
-      <wvobject type="logic" fp_name="/tcb_lib_register_slice_tb/\tcb_mem[0] /rst">
+      <wvobject type="logic" fp_name="/tcb_lib_register_request_tb/\tcb_mem[0] /rst">
          <obj_property name="ElementShortName">rst</obj_property>
          <obj_property name="ObjectShortName">rst</obj_property>
       </wvobject>
-      <wvobject type="logic" fp_name="/tcb_lib_register_slice_tb/\tcb_mem[0] /vld">
+      <wvobject type="logic" fp_name="/tcb_lib_register_request_tb/\tcb_mem[0] /vld">
          <obj_property name="ElementShortName">vld</obj_property>
          <obj_property name="ObjectShortName">vld</obj_property>
       </wvobject>
-      <wvobject type="logic" fp_name="/tcb_lib_register_slice_tb/\tcb_mem[0] /inc">
+      <wvobject type="logic" fp_name="/tcb_lib_register_request_tb/\tcb_mem[0] /inc">
          <obj_property name="ElementShortName">inc</obj_property>
          <obj_property name="ObjectShortName">inc</obj_property>
       </wvobject>
-      <wvobject type="logic" fp_name="/tcb_lib_register_slice_tb/\tcb_mem[0] /rpt">
+      <wvobject type="logic" fp_name="/tcb_lib_register_request_tb/\tcb_mem[0] /rpt">
          <obj_property name="ElementShortName">rpt</obj_property>
          <obj_property name="ObjectShortName">rpt</obj_property>
       </wvobject>
-      <wvobject type="logic" fp_name="/tcb_lib_register_slice_tb/\tcb_mem[0] /lck">
+      <wvobject type="logic" fp_name="/tcb_lib_register_request_tb/\tcb_mem[0] /lck">
          <obj_property name="ElementShortName">lck</obj_property>
          <obj_property name="ObjectShortName">lck</obj_property>
       </wvobject>
-      <wvobject type="logic" fp_name="/tcb_lib_register_slice_tb/\tcb_mem[0] /wen">
+      <wvobject type="logic" fp_name="/tcb_lib_register_request_tb/\tcb_mem[0] /wen">
          <obj_property name="ElementShortName">wen</obj_property>
          <obj_property name="ObjectShortName">wen</obj_property>
       </wvobject>
-      <wvobject type="array" fp_name="/tcb_lib_register_slice_tb/\tcb_mem[0] /adr">
+      <wvobject type="array" fp_name="/tcb_lib_register_request_tb/\tcb_mem[0] /adr">
          <obj_property name="ElementShortName">adr[31:0]</obj_property>
          <obj_property name="ObjectShortName">adr[31:0]</obj_property>
       </wvobject>
-      <wvobject type="array" fp_name="/tcb_lib_register_slice_tb/\tcb_mem[0] /siz">
+      <wvobject type="array" fp_name="/tcb_lib_register_request_tb/\tcb_mem[0] /siz">
          <obj_property name="ElementShortName">siz[1:0]</obj_property>
          <obj_property name="ObjectShortName">siz[1:0]</obj_property>
       </wvobject>
-      <wvobject type="array" fp_name="/tcb_lib_register_slice_tb/\tcb_mem[0] /ben">
+      <wvobject type="array" fp_name="/tcb_lib_register_request_tb/\tcb_mem[0] /ben">
          <obj_property name="ElementShortName">ben[3:0]</obj_property>
          <obj_property name="ObjectShortName">ben[3:0]</obj_property>
       </wvobject>
-      <wvobject type="array" fp_name="/tcb_lib_register_slice_tb/\tcb_mem[0] /wdt">
+      <wvobject type="array" fp_name="/tcb_lib_register_request_tb/\tcb_mem[0] /wdt">
          <obj_property name="ElementShortName">wdt[31:0]</obj_property>
          <obj_property name="ObjectShortName">wdt[31:0]</obj_property>
       </wvobject>
-      <wvobject type="array" fp_name="/tcb_lib_register_slice_tb/\tcb_mem[0] /rdt">
+      <wvobject type="array" fp_name="/tcb_lib_register_request_tb/\tcb_mem[0] /rdt">
          <obj_property name="ElementShortName">rdt[31:0]</obj_property>
          <obj_property name="ObjectShortName">rdt[31:0]</obj_property>
       </wvobject>
-      <wvobject type="logic" fp_name="/tcb_lib_register_slice_tb/\tcb_mem[0] /err">
+      <wvobject type="logic" fp_name="/tcb_lib_register_request_tb/\tcb_mem[0] /err">
          <obj_property name="ElementShortName">err</obj_property>
          <obj_property name="ObjectShortName">err</obj_property>
       </wvobject>
-      <wvobject type="logic" fp_name="/tcb_lib_register_slice_tb/\tcb_mem[0] /rdy">
+      <wvobject type="logic" fp_name="/tcb_lib_register_request_tb/\tcb_mem[0] /rdy">
          <obj_property name="ElementShortName">rdy</obj_property>
          <obj_property name="ObjectShortName">rdy</obj_property>
       </wvobject>
-      <wvobject type="logic" fp_name="/tcb_lib_register_slice_tb/\tcb_mem[0] /trn">
+      <wvobject type="logic" fp_name="/tcb_lib_register_request_tb/\tcb_mem[0] /trn">
          <obj_property name="ElementShortName">trn</obj_property>
          <obj_property name="ObjectShortName">trn</obj_property>
       </wvobject>
-      <wvobject type="logic" fp_name="/tcb_lib_register_slice_tb/\tcb_mem[0] /idl">
+      <wvobject type="logic" fp_name="/tcb_lib_register_request_tb/\tcb_mem[0] /idl">
          <obj_property name="ElementShortName">idl</obj_property>
          <obj_property name="ObjectShortName">idl</obj_property>
       </wvobject>
-      <wvobject type="array" fp_name="/tcb_lib_register_slice_tb/\tcb_mem[0] /rsp">
+      <wvobject type="array" fp_name="/tcb_lib_register_request_tb/\tcb_mem[0] /rsp">
          <obj_property name="ElementShortName">rsp[0:1]</obj_property>
          <obj_property name="ObjectShortName">rsp[0:1]</obj_property>
       </wvobject>
-      <wvobject type="array" fp_name="/tcb_lib_register_slice_tb/\tcb_mem[0] /rbe">
+      <wvobject type="array" fp_name="/tcb_lib_register_request_tb/\tcb_mem[0] /rbe">
          <obj_property name="ElementShortName">rbe[0:1][3:0]</obj_property>
          <obj_property name="ObjectShortName">rbe[0:1][3:0]</obj_property>
       </wvobject>
-      <wvobject type="array" fp_name="/tcb_lib_register_slice_tb/\tcb_mem[0] /ABW">
+      <wvobject type="array" fp_name="/tcb_lib_register_request_tb/\tcb_mem[0] /ABW">
          <obj_property name="ElementShortName">ABW[31:0]</obj_property>
          <obj_property name="ObjectShortName">ABW[31:0]</obj_property>
       </wvobject>
-      <wvobject type="array" fp_name="/tcb_lib_register_slice_tb/\tcb_mem[0] /DBW">
+      <wvobject type="array" fp_name="/tcb_lib_register_request_tb/\tcb_mem[0] /DBW">
          <obj_property name="ElementShortName">DBW[31:0]</obj_property>
          <obj_property name="ObjectShortName">DBW[31:0]</obj_property>
       </wvobject>
-      <wvobject type="array" fp_name="/tcb_lib_register_slice_tb/\tcb_mem[0] /SLW">
+      <wvobject type="array" fp_name="/tcb_lib_register_request_tb/\tcb_mem[0] /SLW">
          <obj_property name="ElementShortName">SLW[31:0]</obj_property>
          <obj_property name="ObjectShortName">SLW[31:0]</obj_property>
       </wvobject>
-      <wvobject type="array" fp_name="/tcb_lib_register_slice_tb/\tcb_mem[0] /BEW">
+      <wvobject type="array" fp_name="/tcb_lib_register_request_tb/\tcb_mem[0] /BEW">
          <obj_property name="ElementShortName">BEW[31:0]</obj_property>
          <obj_property name="ObjectShortName">BEW[31:0]</obj_property>
       </wvobject>
-      <wvobject type="array" fp_name="/tcb_lib_register_slice_tb/\tcb_mem[0] /SZW">
+      <wvobject type="array" fp_name="/tcb_lib_register_request_tb/\tcb_mem[0] /SZW">
          <obj_property name="ElementShortName">SZW[31:0]</obj_property>
          <obj_property name="ObjectShortName">SZW[31:0]</obj_property>
       </wvobject>
-      <wvobject type="array" fp_name="/tcb_lib_register_slice_tb/\tcb_mem[0] /DLY">
+      <wvobject type="array" fp_name="/tcb_lib_register_request_tb/\tcb_mem[0] /DLY">
          <obj_property name="ElementShortName">DLY[31:0]</obj_property>
          <obj_property name="ObjectShortName">DLY[31:0]</obj_property>
       </wvobject>
-      <wvobject type="logic" fp_name="/tcb_lib_register_slice_tb/\tcb_mem[0] /NTV">
+      <wvobject type="logic" fp_name="/tcb_lib_register_request_tb/\tcb_mem[0] /NTV">
          <obj_property name="ElementShortName">NTV</obj_property>
          <obj_property name="ObjectShortName">NTV</obj_property>
       </wvobject>
-      <wvobject type="logic" fp_name="/tcb_lib_register_slice_tb/\tcb_mem[0] /MIS">
+      <wvobject type="logic" fp_name="/tcb_lib_register_request_tb/\tcb_mem[0] /MIS">
          <obj_property name="ElementShortName">MIS</obj_property>
          <obj_property name="ObjectShortName">MIS</obj_property>
       </wvobject>
-      <wvobject type="logic" fp_name="/tcb_lib_register_slice_tb/\tcb_mem[0] /END">
+      <wvobject type="logic" fp_name="/tcb_lib_register_request_tb/\tcb_mem[0] /END">
          <obj_property name="ElementShortName">END</obj_property>
          <obj_property name="ObjectShortName">END</obj_property>
       </wvobject>

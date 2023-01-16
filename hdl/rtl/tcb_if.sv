@@ -16,6 +16,12 @@
 // limitations under the License.
 ////////////////////////////////////////////////////////////////////////////////
 
+// MODES:
+// - processor
+// - agnostic
+// - big-endian
+// - little endian
+
 interface tcb_if #(
   // TCB widths
   int unsigned ABW = 32,       // address bus width
