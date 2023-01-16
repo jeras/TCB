@@ -132,8 +132,6 @@ module tcb_vip_mem
     if (tcb[i].trn) begin
       if (~tcb[i].wen) begin
         for (int unsigned b=0; b<tcb[i].BEW; b++) begin
-//          tmp_rdt[0][((b+int'(tcb[i].adr))%tcb[i].BEW] <= (tcb[i].ben[b] ==? CFG_BEN_RD) ? mem[(b+int'(tcb[i].adr))%SZ] : 'x;
-          $display("DEBUG: byte = 8'b%08h", mem[(int'(tcb[i].adr)+b)%SZ]);
           tmp_rdt[0][(b+int'(tcb[i].adr))%tcb[i].BEW] <= tcb[i].ben[b] ? mem[(b+int'(tcb[i].adr))%SZ] : 'x;
         end
       end
