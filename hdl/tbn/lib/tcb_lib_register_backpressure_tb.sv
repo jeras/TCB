@@ -30,7 +30,7 @@ module tcb_lib_register_backpressure_tb
   int unsigned GRN = 1
 );
 
-  localparam DLY_MAN = DLY+1;
+  localparam DLY_MAN = DLY+0;
   localparam DLY_SUB = DLY;
 
   // system signals
@@ -67,7 +67,7 @@ module tcb_lib_register_backpressure_tb
     repeat (1) @(posedge clk);
     man.write(32'h00000010, 64'h01234567, err);
     man.read (32'h00000010, rdt         , err);
-    repeat (8) @(posedge clk);
+    repeat (4) @(posedge clk);
     $finish();
   end
 

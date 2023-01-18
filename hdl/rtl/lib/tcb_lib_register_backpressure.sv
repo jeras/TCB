@@ -45,32 +45,62 @@ module tcb_lib_register_backpressure #(
 // register backpressure path
 ////////////////////////////////////////////////////////////////////////////////
 
-  // handshake
-  always_ff @(posedge sub.clk, posedge sub.rst)
-  if (sub.rst) begin
-    man.vld <= 1'b0;
-  end else begin
-    man.vld <= sub.vld;
-  end
+  // request optional
+  logic               tmp_inc;  // incremented address
+  logic               tmp_rpt;  // repeated address
+  logic               tmp_lck;  // arbitration lock
+  // request
+  logic               tmp_wen;  // write enable
+  logic [sub.ABW-1:0] tmp_adr;  // address
+  logic [sub.SZW-1:0] tmp_siz;  // logarithmic size
+  logic [sub.BEW-1:0] tmp_ben;  // byte enable
+  logic [sub.DBW-1:0] tmp_wdt;  // write data
 
   always_ff @(posedge sub.clk)
   begin
-    // request optional
-    man.inc = sub.inc;
-    man.rpt = sub.rpt;
-    man.lck = sub.lck;
-    // request
-    man.wen <= sub.wen;
-    man.siz <= sub.siz;
-    man.ben <= sub.ben;
-    man.adr <= sub.adr;
-    // data granularity
-    for (int unsigned i=0; i<sub.BEW; i++) begin
-      man.wdt <= sub.wdt;
+    if (sub.vld & sub.rdy & ~man.rdy) begin
+      // request optional
+      tmp_inc <= sub.inc;
+      tmp_rpt <= sub.rpt;
+      tmp_lck <= sub.lck;
+      // request
+      tmp_wen <= sub.wen;
+      tmp_siz <= sub.siz;
+      tmp_ben <= sub.ben;
+      tmp_adr <= sub.adr;
+      for (int unsigned i=0; i<sub.BEW; i+=sub.SLW*GRN) begin
+        // data granularity
+        if (sub.wen & sub.ben[i]) begin
+          man.wdt[i+:sub.SLW*GRN] <= sub.wdt[i+:sub.SLW*GRN];
+        end
+      end
     end
   end
 
   // handshake
-  assign sub.rdy = man.rdy;
+  assign man.vld = sub.rdy ? sub.vld : 1'b1   ;
+  // request optional
+  assign man.inc = sub.rdy ? sub.inc : tmp_inc;
+  assign man.rpt = sub.rdy ? sub.rpt : tmp_rpt;
+  assign man.lck = sub.rdy ? sub.lck : tmp_lck;
+  // request
+  assign man.wen = sub.rdy ? sub.wen : tmp_wen;
+  assign man.siz = sub.rdy ? sub.siz : tmp_siz;
+  assign man.ben = sub.rdy ? sub.ben : tmp_ben;
+  assign man.adr = sub.rdy ? sub.adr : tmp_adr;
+  assign man.wdt = sub.rdy ? sub.wdt : tmp_wdt;
+
+  // response
+  assign sub.rdt = man.rdt;
+  assign sub.err = man.err;
+
+  // handshake
+  always_ff @(posedge sub.clk, posedge sub.rst)
+  if (sub.rst) begin
+    sub.rdy <= 1'b1;
+  end else begin
+    if (sub.rdy)  sub.rdy <= ~(sub.vld & ~man.rdy);
+    else          sub.rdy <=              man.rdy ;
+  end
 
 endmodule: tcb_lib_register_backpressure
