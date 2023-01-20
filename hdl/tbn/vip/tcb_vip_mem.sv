@@ -105,7 +105,10 @@ module tcb_vip_mem
     logic [tcb[i].BEW-1:0][tcb[i].SLW-1:0] tmp_wdt;
     logic [tcb[i].BEW-1:0][tcb[i].SLW-1:0] tmp_rdt [0:tcb[i].DLY];
 
+    // as a memory model, there is no immediate need for backpressure, this feature might be added in the future
     assign tcb[i].rdy = 1'b1;
+
+    // as a memory model, there is no immediate need for error responses, this feature might be added in the future
     assign tcb[i].err = 1'b0;
 
     // map write data to a packed array
@@ -123,31 +126,36 @@ module tcb_vip_mem
 
     // initialize read data array
     initial begin
-      tmp_rdt <= '{default: 'x};
+      tmp_rdt = '{default: 'x};
     end
 
-    // combinational read
-    // TODO: think about the correct assignment operator, read data is supposed to be held till the next transfer
+    // combinational read data
     always @(*)
     if (tcb[i].trn) begin
       if (~tcb[i].wen) begin
         for (int unsigned b=0; b<tcb[i].BEW; b++) begin
-          tmp_rdt[0][(b+int'(tcb[i].adr))%tcb[i].BEW] <= tcb[i].ben[b] ? mem[(b+int'(tcb[i].adr))%SZ] : 'x;
+          tmp_rdt[0][(b+int'(tcb[i].adr))%tcb[i].BEW] = tcb[i].ben[b] ? mem[(b+int'(tcb[i].adr))%SZ] : 'x;
         end
+      end else begin
+        tmp_rdt[0] = 'x;
       end
+    end else begin
+      tmp_rdt[0] = 'x;
     end
 
-    // read data pipeline
+    // read data delay pipeline
     for (genvar d=1; d<=tcb[i].DLY; d++) begin
       always @(posedge tcb[i].clk)
       begin
         for (int unsigned b=0; b<tcb[i].BEW; b++) begin
-          if (tcb[i].rbe[d-1][b])  tmp_rdt[d][b] <= tmp_rdt[d-1][b];
+          if (tcb[i].rbe[d-1][b]) begin
+            tmp_rdt[d][b] <= tmp_rdt[d-1][b];
+          end
         end
       end
     end
 
-    // map read data from a packed array
+    // map read data from an unpacked array
     assign tcb[i].rdt = tmp_rdt[tcb[i].DLY];
 
   end: port
