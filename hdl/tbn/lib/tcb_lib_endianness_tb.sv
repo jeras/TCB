@@ -20,8 +20,8 @@ module tcb_lib_endianness_tb
   import tcb_vip_pkg::*;
 #(
   // TCB widths
-  int unsigned ABW = 64,       // address bus width
-  int unsigned DBW = 64,       // data    bus width
+  int unsigned ABW = 32,       // address bus width
+  int unsigned DBW = 32,       // data    bus width
   int unsigned SLW =       8,  // selection   width
   int unsigned BEW = DBW/SLW,  // byte enable width
   // response delay
@@ -59,18 +59,9 @@ module tcb_lib_endianness_tb
     repeat (2) @(posedge clk);
     rst = 1'b0;
     repeat (1) @(posedge clk);
-    #1;
-    fork
-      begin: req
-        man.write(64'h0123456789ABCDEF, 8'b11111111, 64'h0123456789ABCDEF, err);
-        man.read (64'hFEDCBA9876543210, 8'b11111111, rdt                 , err);
-      end: req
-      begin: rsp
-        sub.rsp(64'hXXXXXXXXXXXXXXXX, 1'b0);
-        sub.rsp(64'hFEDCBA9876543210, 1'b0);
-      end: rsp
-    join
-    repeat (8) @(posedge clk);
+    man.write(32'h00000010, 64'h01234567, err);
+    man.read (32'h00000010, rdt         , err);
+    repeat (4) @(posedge clk);
     $finish();
   end
 
@@ -84,11 +75,11 @@ module tcb_lib_endianness_tb
   tcb_vip_dev #("SUB") sub     (.tcb (tcb_sub));  // subordinate
 
 ////////////////////////////////////////////////////////////////////////////////
-// DUT instances
+// DUT instance
 ////////////////////////////////////////////////////////////////////////////////
 
   // RTL passthrough
-  tcb_lib_reg dut (
+  tcb_lib_endianness dut (
     .sub  (tcb_man),
     .man  (tcb_sub)
   );

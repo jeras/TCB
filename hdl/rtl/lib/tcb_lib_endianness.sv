@@ -50,9 +50,9 @@ module tcb_lib_endianness #(
   always_comb
   unique case (sub.siz)
     'd0    : mal = 1'b0;
-    'd1    : mal = |tcb.adr[0:0];
-    'd2    : mal = |tcb.adr[1:0];
-    'd3    : mal = |tcb.adr[2:0];
+    'd1    : mal = |sub.adr[0:0];
+    'd2    : mal = |sub.adr[1:0];
+    'd3    : mal = |sub.adr[2:0];
     default: mal = 1'bx;
   endcase
 
@@ -75,7 +75,7 @@ module tcb_lib_endianness #(
   for (genvar i=0; i<man.BEW; i++) begin
   
     // select signal
-    assign mux_wdt = ~man.adr[$clog2(sub.BEW)-1:0];
+    assign mux_wdt[i] = ~man.adr[$clog2(sub.BEW)-1:0];
 
     // byte enable
     assign man.ben[i] = '1;
@@ -108,7 +108,7 @@ module tcb_lib_endianness #(
   for (genvar i=0; i<man.BEW; i++) begin
   
     // select signal
-    assign mux_rdt = ~man.adr[$clog2(sub.BEW)-1:0];
+    assign mux_rdt[i] = ~man.adr[$clog2(sub.BEW)-1:0];
 
     // multiplexer
     assign sub_rdt[i] = man_rdt[mux_rdt[i]];
