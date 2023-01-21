@@ -76,7 +76,7 @@ Implmentation:
 
 ### [OpenPOWER](https://openpowerfoundation.org/)
 
-Specification:
+Specification (section *1.10.1 Storage Operands*):
 - [Power ISA version 3.1b](https://openpowerfoundation.org/specifications/isa/)
 
 Implementation:

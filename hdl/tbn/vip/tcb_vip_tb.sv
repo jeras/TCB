@@ -60,10 +60,10 @@ module tcb_vip_tb
 
     int unsigned tst_num = $size(lst_wen) * $size(lst_idl) * $size(lst_bpr);
 
-    tcb_s::transaction_t tst_ref [] = new[tst_num];
-    tcb_s::transaction_t tst_man [];
-    tcb_s::transaction_t tst_mon [];
-    tcb_s::transaction_t tst_sub [];
+    tcb_s::transactions_t tst_ref = new[tst_num];
+    tcb_s::transactions_t tst_man;
+    tcb_s::transactions_t tst_mon;
+    tcb_s::transactions_t tst_sub;
 
     // prepare transactions
     int unsigned i;
@@ -71,16 +71,23 @@ module tcb_vip_tb
       foreach (lst_idl[idx_idl]) begin
         foreach (lst_bpr[idx_bpr]) begin
           tst_ref[i] = '{
-            inc: 1'b0,
-            rpt: 1'b0,
-            lck: 1'b0,
-            wen: lst_wen[idx_wen],
-            adr: 'h00,
-            siz: $clog2(BEW),
-            ben: '1,
-            wdt: tcb_s::data_test_f((SLW/2)'(2*i+0)),
-            rdt: tcb_s::data_test_f((SLW/2)'(2*i+1)),
-            err: 1'b0,
+            req: '{
+              // request optional
+              inc: 1'b0,
+              rpt: 1'b0,
+              lck: 1'b0,
+              // request
+              wen: lst_wen[idx_wen],
+              adr: 'h00,
+              siz: $clog2(BEW),
+              ben: '1,
+              wdt: tcb_s::data_test_f((SLW/2)'(2*i+0))
+            },
+            rsp: '{
+              // response
+              rdt: tcb_s::data_test_f((SLW/2)'(2*i+1)),
+              err: 1'b0
+            },
             idl: lst_idl[idx_idl],
             bpr: lst_bpr[idx_bpr]
           };

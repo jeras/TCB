@@ -78,14 +78,14 @@ module tcb_vip_dev
     // hanshake
     tcb.vld = 1'b1;
     // request optional
-    tcb.inc = seq.inc;
-    tcb.rpt = seq.rpt;
-    tcb.lck = seq.lck;
+    tcb.inc = seq.req.inc;
+    tcb.rpt = seq.req.rpt;
+    tcb.lck = seq.req.lck;
     // request
-    tcb.wen = seq.wen;
-    tcb.adr = seq.adr;
-    tcb.ben = seq.ben;
-    tcb.wdt = seq.wdt;
+    tcb.wen = seq.req.wen;
+    tcb.adr = seq.req.adr;
+    tcb.ben = seq.req.ben;
+    tcb.wdt = seq.req.wdt;
     // backpressure
     seq.bpr = 0;
     do begin
@@ -116,8 +116,8 @@ module tcb_vip_dev
       @(posedge tcb.clk);
     end while (~tcb.rsp[tcb.DLY]);
     // response
-    seq.rdt = tcb.rdt;
-    seq.err = tcb.err;
+    seq.rsp.rdt = tcb.rdt;
+    seq.rsp.err = tcb.err;
   endtask: rsp_lsn
 
   // request listener
@@ -152,15 +152,15 @@ module tcb_vip_dev
       end while (~tcb.trn);
     end
     // request optional
-    seq.inc = tcb.inc;
-    seq.rpt = tcb.rpt;
-    seq.lck = tcb.lck;
+    seq.req.inc = tcb.inc;
+    seq.req.rpt = tcb.rpt;
+    seq.req.lck = tcb.lck;
     // request
-    seq.wen = tcb.wen;
-    seq.adr = tcb.adr;
-    seq.siz = tcb.siz;
-    seq.ben = tcb.ben;
-    seq.wdt = tcb.wdt;
+    seq.req.wen = tcb.wen;
+    seq.req.adr = tcb.adr;
+    seq.req.siz = tcb.siz;
+    seq.req.ben = tcb.ben;
+    seq.req.wdt = tcb.wdt;
   endtask: req_lsn
 
   // response driver
@@ -168,8 +168,8 @@ module tcb_vip_dev
     inout  tcb_s::transaction_t seq
   );
     // response
-    tmp_rdt = seq.rdt;
-    tmp_err = seq.err;
+    tmp_rdt = seq.rsp.rdt;
+    tmp_err = seq.rsp.err;
     // wait for response
     do begin
       @(posedge tcb.clk);
@@ -190,7 +190,7 @@ module tcb_vip_dev
 
   // request/response
   task automatic sequencer (
-    inout  tcb_s::transaction_t transactions []
+    inout  tcb_s::transactions_t transactions
   );
     fork
       begin: fork_req
@@ -230,7 +230,7 @@ module tcb_vip_dev
     output logic               err
   );
     int unsigned num;
-    tcb_s::transaction_t transactions [];
+    tcb_s::transactions_t transactions;
     // TODO: check if missalligned access is supported
     //if (tcb.MIS)
 
@@ -242,15 +242,15 @@ module tcb_vip_dev
         transactions = '{default: tcb_s::TRANSACTION_INIT};
         for (int unsigned i=0; i<num; i++) begin
           // request optional
-          transactions[i].inc = 1'b0;
-          transactions[i].rpt = 1'b0;
-          transactions[i].lck = (i == num) ? 1'b0 : 1'b1;
+          transactions[i].req.inc = 1'b0;
+          transactions[i].req.rpt = 1'b0;
+          transactions[i].req.lck = (i == num) ? 1'b0 : 1'b1;
           // request
-          transactions[i].wen = wen;
-          transactions[i].adr = adr + i * tcb.BEW;
+          transactions[i].req.wen = wen;
+          transactions[i].req.adr = adr + i * tcb.BEW;
           for (int unsigned b=0; b<tcb.BEW; b++) begin
-            transactions[i].ben[b] = 1'b1;
-            transactions[i].wdt[b] = dat[b + i * tcb.BEW];
+            transactions[i].req.ben[b] = 1'b1;
+            transactions[i].req.wdt[b] = dat[b + i * tcb.BEW];
           end
           // timing idle (no backpressure)
           transactions[i].idl = 0;
@@ -263,8 +263,8 @@ module tcb_vip_dev
     err = 1'b0;
     for (int unsigned i=0; i<num; i++) begin
       for (int unsigned b=0; b<tcb.BEW; b++) begin
-        dat[b + i * tcb.BEW] = transactions[i].rdt[b];
-        err                 |= transactions[i].err;
+        dat[b + i * tcb.BEW] = transactions[i].rsp.rdt[b];
+        err                 |= transactions[i].rsp.err;
       end
     end
   endtask: access

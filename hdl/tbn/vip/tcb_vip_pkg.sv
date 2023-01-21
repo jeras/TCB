@@ -52,7 +52,7 @@ package tcb_vip_pkg;
 ////////////////////////////////////////////////////////////////////////////////
 
     /* verilator lint_off UNPACKED */
-    // TCB transaction structure
+    // TCB request structure
     typedef struct {
       // request optional
       logic                    inc;  // incremented address
@@ -64,12 +64,27 @@ package tcb_vip_pkg;
       logic          [SZW-1:0] siz;  // logarithmic size
       logic [BEW-1:0]          ben;  // byte enable
       logic [BEW-1:0][SLW-1:0] wdt;  // write data
+    } request_t;
+    /* verilator lint_on UNPACKED */
+
+    /* verilator lint_off UNPACKED */
+    // TCB response structure
+    typedef struct {
       // response
       logic [BEW-1:0][SLW-1:0] rdt;  // read data
       logic                    err;  // error
+    } response_t;
+    /* verilator lint_on UNPACKED */
+
+    /* verilator lint_off UNPACKED */
+    // TCB transaction structure
+    typedef struct {
+      // request/response
+      request_t    req;  // request
+      response_t   rsp;  // response
       // timing idle/backpressure
-      int unsigned             idl;  // idle
-      int unsigned             bpr;  // backpressure
+      int unsigned idl;  // idle
+      int unsigned bpr;  // backpressure
     } transaction_t;
     /* verilator lint_on UNPACKED */
 
@@ -77,19 +92,23 @@ package tcb_vip_pkg;
 
     // constants
     static const transaction_t TRANSACTION_INIT = '{
-      // request optional
-      inc: 1'b0,
-      rpt: 1'b0,
-      lck: 1'b0,
-      // request
-      wen: 'x,
-      adr: 'x,
-      siz: 'x,
-      ben: 'x,
-      wdt: 'x,
-      // response
-      rdt: 'x,
-      err: 'x,
+      req: '{
+        // request optional
+        inc: 1'b0,
+        rpt: 1'b0,
+        lck: 1'b0,
+        // request
+        wen: 'x,
+        adr: 'x,
+        siz: 'x,
+        ben: 'x,
+        wdt: 'x
+      },
+      rsp: '{
+        // response
+        rdt: 'x,
+        err: 'x
+      },
       // timing idle/backpressure
       idl: 0,
       bpr: 0
