@@ -1,3 +1,8 @@
+WARNING: this project is in an ALPHA stage, not advertized yet.
+It might already be worth looking at,
+but the progress status statements are not reliable,
+and the API-s are not stable yet.
+
 # TCB
 
 Tightly Coupled Bus [documentation](doc/TCB.md).
