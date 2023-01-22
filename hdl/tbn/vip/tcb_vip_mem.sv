@@ -17,6 +17,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 module tcb_vip_mem
+  import tcb_pkg::*;
   import tcb_vip_pkg::*;
 #(
   int unsigned SZ = 2**8,

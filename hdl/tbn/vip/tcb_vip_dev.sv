@@ -17,6 +17,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 module tcb_vip_dev
+  import tcb_pkg::*;
   import tcb_vip_pkg::*;
 #(
   string MODE = "MON"  // supported modes are MAN/MON/SUB/MEM
@@ -227,7 +228,9 @@ module tcb_vip_dev
     input  logic [tcb.ABW-1:0] adr,
     ref    logic [tcb.SLW-1:0] dat [],
     // response
-    output logic               err
+    output logic               err,
+    // mode
+    input  tcb_mode_t          mode = '{device: TCB_MEMORY, endian: TCB_LITTLE, order: TCB_ASCENDING}
   );
     int unsigned num;
     tcb_s::transactions_t transactions;

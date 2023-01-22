@@ -16,7 +16,9 @@
 // limitations under the License.
 ////////////////////////////////////////////////////////////////////////////////
 
-module tcb_lib_endianness #(
+module tcb_lib_endianness
+import tcb_pkg::*;
+#(
 )(
   tcb_if.sub sub,  // TCB subordinate port (manager     device connects here)
   tcb_if.man man,  // TCB manager     port (subordinate device connects here)
