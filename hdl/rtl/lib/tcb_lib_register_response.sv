@@ -29,7 +29,7 @@ module tcb_lib_register_response #(
 
 `ifdef ALTERA_RESERVED_QIS
 `else
-  // camparing subordinate and manager interface parameters
+  // comparing subordinate and manager interface parameters
   generate
     // bus widths
     if (sub.ABW != man.ABW)  $error("ERROR: %m parameter (sub.ABW = %d) != (man.ABW = %d)", sub.ABW, man.ABW);

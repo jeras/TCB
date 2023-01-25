@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// TCB (Tightly Coupled Bus) VIP (Verifivation IP) PacKaGe
+// TCB (Tightly Coupled Bus) VIP (Verification IP) PacKaGe
 ////////////////////////////////////////////////////////////////////////////////
 // Copyright 2022 Iztok Jeras
 //
@@ -144,7 +144,7 @@ package tcb_vip_pkg;
         ref    logic [tcb.SLW-1:0] wdt [SIZ]
       );
         transaction_t transactions [];
-        // address offset from native bus allignment
+        // address offset from native bus alignment
         int unsigned off = adr % BEW;
         // number of transactions
         if (SIZ < BEW) begin

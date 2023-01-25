@@ -23,7 +23,7 @@ import tcb_pkg::*;
   tcb_if.sub sub,  // TCB subordinate port (manager     device connects here)
   tcb_if.man man,  // TCB manager     port (subordinate device connects here)
   // outputs
-  output logic mal   // missalligned access
+  output logic mal   // misaligned access
 );
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -32,7 +32,7 @@ import tcb_pkg::*;
 
 `ifdef ALTERA_RESERVED_QIS
 `else
-  // camparing subordinate and manager interface parameters
+  // comparing subordinate and manager interface parameters
   generate
     // bus widths
     if (sub.ABW != man.ABW)  $error("ERROR: %m parameter (sub.ABW = %d) != (man.ABW = %d)", sub.ABW, man.ABW);
