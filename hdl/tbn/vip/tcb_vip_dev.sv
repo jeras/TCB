@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// TCB (Tightly Coupled Bus) VIP (Verifivation IP) device
+// TCB (Tightly Coupled Bus) VIP (Verification IP) device
 ////////////////////////////////////////////////////////////////////////////////
 // Copyright 2022 Iztok Jeras
 //
@@ -56,11 +56,6 @@ module tcb_vip_dev
       // initialize to idle state
       initial  tcb.rdy = 1'b0;
     end
-    // memory
-    "MEM": begin
-      // trivial always ready
-      assign  tcb.rdy = 1'b1;
-    end
   endcase
   endgenerate
 
@@ -76,7 +71,7 @@ module tcb_vip_dev
     repeat (seq.idl) @(posedge tcb.clk);
     // drive transfer
     #1;
-    // hanshake
+    // handshake
     tcb.vld = 1'b1;
     // request optional
     tcb.inc = seq.req.inc;
@@ -127,7 +122,7 @@ module tcb_vip_dev
   );
     #1;
     tcb.rdy = 1'b0;
-    // TODO: mesure idle time
+    // TODO: measure idle time
     seq.idl = 0;
     // request
     if (seq.bpr == 0) begin
@@ -219,10 +214,10 @@ module tcb_vip_dev
 // BFM (Bus Functional Model) blocking API (emulates a RISC-V manager)
 ////////////////////////////////////////////////////////////////////////////////
 
-  // read/write access of any size
-  task automatic access (
+  // manager read/write access of power of 2 size
+  task automatic access_man (
     // data size
-    input  int unsigned        siz,
+    input  int unsigned        siz,  // size in bytes
     // request
     input  logic               wen,
     input  logic [tcb.ABW-1:0] adr,
@@ -230,47 +225,82 @@ module tcb_vip_dev
     // response
     output logic               err,
     // mode
-    input  tcb_mode_t          mode = '{device: TCB_MEMORY, endian: TCB_LITTLE, order: TCB_ASCENDING}
+    input  tcb_endian_t        endian = TCB_LITTLE
   );
-    int unsigned num;
+    // temporary variables
+    int unsigned byt;  // byte index
+    int unsigned off;  // address offset
+    // the requested access is organized into transactions
     tcb_s::transactions_t transactions;
-    // TODO: check if missalligned access is supported
-    //if (tcb.MIS)
-
-        // number of transactions
-        num = (siz / tcb.BEW);
-        transactions = new[num];
-//        $display("Transaction start.");
-        // mapping
-        transactions = '{default: tcb_s::TRANSACTION_INIT};
-        for (int unsigned i=0; i<num; i++) begin
-          // request optional
-          transactions[i].req.inc = 1'b0;
-          transactions[i].req.rpt = 1'b0;
-          transactions[i].req.lck = (i == num) ? 1'b0 : 1'b1;
-          // request
-          transactions[i].req.wen = wen;
-          transactions[i].req.adr = adr + i * tcb.BEW;
-          for (int unsigned b=0; b<tcb.BEW; b++) begin
-            transactions[i].req.ben[b] = 1'b1;
-            transactions[i].req.wdt[b] = dat[b + i * tcb.BEW];
-          end
-          // timing idle (no backpressure)
-          transactions[i].idl = 0;
-        end
-      //end
-    //endcase
+    // number of transactions
+    transactions = new[siz / tcb.BEW]('{default: tcb_s::TRANSACTION_INIT});
+    // check if the transfer meets size requirements
+    if (siz != 2**$clog2(siz)) begin
+      $error("ERROR: Transaction size is not power of 2.");
+    end
+    // check if the transfer meets alignment requirements
+    if ((tcb.LGN == TCB_ALIGNED) && (adr % siz != 0)) begin
+      $error("ERROR: Transaction address is not aligned to transaction size.");
+    end
+    for (int unsigned i=0; i<siz; i++) begin
+      // address offset
+      off = i % tcb.BEW;
+      // request optional
+      transactions[off].req.inc = 1'b0;
+      transactions[off].req.rpt = 1'b0;
+      transactions[off].req.lck = (i == siz-1) ? 1'b0 : 1'b1;
+      // request
+      transactions[off].req.wen = wen;
+      transactions[off].req.adr = adr;
+      // mode processor/memory
+      if (tcb.MOD == TCB_PROCESSOR) begin
+        // all data bytes are LSB aligned
+        byt = i;
+      end else if (tcb.MOD == TCB_MEMORY) begin
+        // all data bytes are LSB aligned
+        byt = (i + adr) % tcb.BEW;
+      end
+      // order descending/ascending
+      if (tcb.ORD == TCB_ASCENDING) begin
+        byt = tcb.BEW - 1 - byt;
+      end
+      // request
+      transactions[off].req.ben[byt] = 1'b1;
+      // endianness
+      if (endian == TCB_LITTLE) begin
+        transactions[off].req.wdt[byt] = dat[          i];
+      end else begin
+        transactions[off].req.wdt[byt] = dat[siz - 1 - i];
+      end
+    end
     // transaction
     sequencer(transactions);
     // response
     err = 1'b0;
-    for (int unsigned i=0; i<num; i++) begin
-      for (int unsigned b=0; b<tcb.BEW; b++) begin
-        dat[b + i * tcb.BEW] = transactions[i].rsp.rdt[b];
-        err                 |= transactions[i].rsp.err;
+    for (int unsigned i=0; i<siz; i++) begin
+      // address offset
+      off = i % tcb.BEW;
+      // mode processor/memory
+      if (tcb.MOD == TCB_PROCESSOR) begin
+        // all data bytes are LSB aligned
+        byt = i;
+      end else if (tcb.MOD == TCB_MEMORY) begin
+        // all data bytes are LSB aligned
+        byt = (i + adr) % tcb.BEW;
       end
+      // order descending/ascending
+      if (tcb.ORD == TCB_ASCENDING) begin
+        byt = tcb.BEW - 1 - byt;
+      end
+      // endianness
+      if (endian == TCB_LITTLE) begin
+        dat[          i] = transactions[off].rsp.rdt[byt];
+      end else begin
+        dat[siz - 1 - i] = transactions[off].rsp.rdt[byt];
+      end
+      err               |= transactions[off].rsp.err;
     end
-  endtask: access
+  endtask: access_man
 
 ////////////////////////////////////////////////////////////////////////////////
 // native data width read/write (waits for response after each request)
@@ -296,7 +326,7 @@ module tcb_vip_dev
     dat = new[tcb.BEW];
     for (int unsigned i=0; i<tcb.BEW; i++)  dat[i] = wdt[i];
     //          siz,  wen, adr, dat, err
-    access (tcb.BEW, 1'b1, adr, dat, err);
+    access_man (tcb.BEW, 1'b1, adr, dat, err);
   endtask: write
 
   task read (
@@ -309,7 +339,7 @@ module tcb_vip_dev
     logic [tcb.SLW-1:0] dat [];
     dat = new[tcb.BEW];
     //          siz,  wen, adr, dat, err
-    access (tcb.BEW, 1'b0, adr, dat, err);
+    access_man (tcb.BEW, 1'b0, adr, dat, err);
     for (int unsigned i=0; i<tcb.BEW; i++)  rdt[i] = dat[i];
   endtask: read
 
@@ -321,7 +351,7 @@ module tcb_vip_dev
     logic [tcb.SLW-1:0] dat [];
     dat = new[1];
     for (int unsigned i=0; i<1; i++)  dat[i] = wdt[i];
-    access (1, 1'b1, adr, dat, err);
+    access_man (1, 1'b1, adr, dat, err);
   endtask: write8
 
   task read8 (
@@ -331,7 +361,7 @@ module tcb_vip_dev
   );
     logic [tcb.SLW-1:0] dat [];
     dat = new[1];
-    access (1, 1'b0, adr, dat, err);
+    access_man (1, 1'b0, adr, dat, err);
     for (int unsigned i=0; i<1; i++)  rdt[i] = dat[i];
   endtask: read8
 
@@ -343,7 +373,7 @@ module tcb_vip_dev
     logic [tcb.SLW-1:0] dat [];
     dat = new[2];
     for (int unsigned i=0; i<2; i++)  dat[i] = wdt[i];
-    access (2, 1'b1, adr, dat, err);
+    access_man (2, 1'b1, adr, dat, err);
   endtask: write16
 
   task read16 (
@@ -353,7 +383,7 @@ module tcb_vip_dev
   );
     logic [tcb.SLW-1:0] dat [];
     dat = new[2];
-    access (2, 1'b0, adr, dat, err);
+    access_man (2, 1'b0, adr, dat, err);
     for (int unsigned i=0; i<2; i++)  rdt[i] = dat[i];
   endtask: read16
 
@@ -365,7 +395,7 @@ module tcb_vip_dev
     logic [tcb.SLW-1:0] dat [];
     dat = new[4];
     for (int unsigned i=0; i<4; i++)  dat[i] = wdt[i];
-    access (4, 1'b1, adr, dat, err);
+    access_man (4, 1'b1, adr, dat, err);
   endtask: write32
 
   task read32 (
@@ -375,7 +405,7 @@ module tcb_vip_dev
   );
     logic [tcb.SLW-1:0] dat [];
     dat = new[4];
-    access (4, 1'b0, adr, dat, err);
+    access_man (4, 1'b0, adr, dat, err);
     for (int unsigned i=0; i<4; i++)  rdt[i] = dat[i];
   endtask: read32
 
@@ -387,7 +417,7 @@ module tcb_vip_dev
     logic [tcb.SLW-1:0] dat [];
     dat = new[8];
     for (int unsigned i=0; i<8; i++)  dat[i] = wdt[i];
-    access (8, 1'b1, adr, dat, err);
+    access_man (8, 1'b1, adr, dat, err);
   endtask: write64
 
   task read64 (
@@ -397,7 +427,7 @@ module tcb_vip_dev
   );
     logic [tcb.SLW-1:0] dat [];
     dat = new[8];
-    access (8, 1'b0, adr, dat, err);
+    access_man (8, 1'b0, adr, dat, err);
     for (int unsigned i=0; i<8; i++)  rdt[i] = dat[i];
   endtask: read64
 
@@ -409,7 +439,7 @@ module tcb_vip_dev
     logic [tcb.SLW-1:0] dat [];
     dat = new[16];
     for (int unsigned i=0; i<16; i++)  dat[i] = wdt[i];
-    access (16, 1'b1, adr, dat, err);
+    access_man (16, 1'b1, adr, dat, err);
   endtask: write128
 
   task read128 (
@@ -419,7 +449,7 @@ module tcb_vip_dev
   );
     logic [tcb.SLW-1:0] dat [];
     dat = new[16];
-    access (16, 1'b0, adr, dat, err);
+    access_man (16, 1'b0, adr, dat, err);
     for (int unsigned i=0; i<16; i++)  rdt[i] = dat[i];
   endtask: read128
 

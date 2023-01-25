@@ -59,7 +59,7 @@
     <Option Name="IPUserFilesDir" Val="$PIPUSERFILESDIR"/>
     <Option Name="IPStaticSourceDir" Val="$PIPUSERFILESDIR/ipstatic"/>
     <Option Name="EnableBDX" Val="FALSE"/>
-    <Option Name="WTXSimLaunchSim" Val="1041"/>
+    <Option Name="WTXSimLaunchSim" Val="1053"/>
     <Option Name="WTModelSimLaunchSim" Val="0"/>
     <Option Name="WTQuestaLaunchSim" Val="0"/>
     <Option Name="WTIesLaunchSim" Val="0"/>
@@ -300,6 +300,11 @@
           <Attr Name="UsedIn" Val="simulation"/>
         </FileInfo>
       </File>
+      <File Path="$PPRDIR/tcb_lib_endianness_tb_behav.wcfg">
+        <FileInfo>
+          <Attr Name="UsedIn" Val="simulation"/>
+        </FileInfo>
+      </File>
       <Config>
         <Option Name="DesignMode" Val="RTL"/>
         <Option Name="TopModule" Val="tcb_lib_endianness_tb"/>
@@ -320,6 +325,7 @@
         <Option Name="XSimWcfgFile" Val="$PPRDIR/tcb_lib_register_request_tb_behav.wcfg"/>
         <Option Name="XSimWcfgFile" Val="$PPRDIR/tcb_lib_register_response_tb_behav.wcfg"/>
         <Option Name="XSimWcfgFile" Val="$PPRDIR/tcb_lib_register_backpressure_tb_behav.wcfg"/>
+        <Option Name="XSimWcfgFile" Val="$PPRDIR/tcb_lib_endianness_tb_behav.wcfg"/>
       </Config>
     </FileSet>
     <FileSet Name="utils_1" Type="Utils" RelSrcDir="$PSRCDIR/utils_1" RelGenDir="$PGENDIR/utils_1">

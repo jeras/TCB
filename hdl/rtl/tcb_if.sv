@@ -22,23 +22,27 @@
 // - big-endian
 // - little endian
 
-interface tcb_if #(
+interface tcb_if
+  import tcb_pkg::*;
+#(
   // TCB widths
   int unsigned ABW = 32,       // address bus width
   int unsigned DBW = 32,       // data    bus width
   int unsigned SLW =       8,  // selection   width
   int unsigned BEW = DBW/SLW,  // byte enable width
-  int unsigned SZW = $clog2($clog2(BEW)+1),  // logarithmic size width
-  // TCB functionality
+  // TCB parameters
   int unsigned DLY = 1,        // response delay
-  bit          NTV = 1'b0,     // CPU native alignment
-  bit          MIS = 1'b0,     // misaligned access enable
-  bit          END = 1'b0      // endianness (0 - little, 1 - big)
+  // other parameters
+  tcb_mode_t   MOD = TCB_MEMORY,
+  tcb_order_t  ORD = TCB_DESCENDING,
+  tcb_align_t  LGN = TCB_ALIGNED
 )(
   // system signals
   input  logic clk,  // clock
   input  logic rst   // reset
 );
+
+  localparam int unsigned SZW = $clog2($clog2(BEW)+1);  // logarithmic size width
 
 ////////////////////////////////////////////////////////////////////////////////
 // I/O ports

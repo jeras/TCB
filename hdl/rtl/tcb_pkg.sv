@@ -18,6 +18,11 @@
 
 package tcb_pkg;
 
+////////////////////////////////////////////////////////////////////////////////
+// miscellaneous
+////////////////////////////////////////////////////////////////////////////////
+
+  // transaction sizes
   typedef enum {
     TCB_BYTE = 0,  //   8-bit byte
     TCB_HALF = 1,  //  16-bit half-word
@@ -26,28 +31,36 @@ package tcb_pkg;
     TCB_QUAD = 4   // 128-bit quad-word
   } tcb_size_t;
 
+////////////////////////////////////////////////////////////////////////////////
+// mode/alignment/order are compile time parameters
+////////////////////////////////////////////////////////////////////////////////
+
   // byte/half/word/double/quad position inside data bus vector
   typedef enum bit {
-    TCB_PROCESSOR = 1'b0,  // always LSB alligned
+    TCB_PROCESSOR = 1'b0,  // always LSB aligned
     TCB_MEMORY    = 1'b1   // position depends on address
-  } tcb_mode_device_t;
+  } tcb_mode_t;
 
-  // endianness
+  // alignment
   typedef enum bit {
-    TCB_LITTLE = 1'b0,  // little-endian
-    TCB_BIG    = 1'b1   // big-endian
-  } tcb_mode_endianness_t;
+    TCB_UNALIGNED = 1'b0,  // unaligned
+    TCB_ALIGNED   = 1'b1   // aligned
+  } tcb_align_t;
 
   // bit vector order
   typedef enum bit {
     TCB_DESCENDING = 1'b0,  // descending order ([7:0])
     TCB_ASCENDING  = 1'b1   //  ascending order ([0:7])
-  } tcb_mode_order_t;
+  } tcb_order_t;
 
-  typedef struct packed {
-    tcb_mode_device_t     device;  // byte/half/word/double/quad position inside data bus vector
-    tcb_mode_endianness_t endian;  // endianness
-    tcb_mode_order_t      order ;  // bit vector order
-  } tcb_mode_t;
+////////////////////////////////////////////////////////////////////////////////
+// endianness
+////////////////////////////////////////////////////////////////////////////////
+
+  // endianness
+  typedef enum bit {
+    TCB_LITTLE = 1'b0,  // little-endian
+    TCB_BIG    = 1'b1   // big-endian
+  } tcb_endian_t;
 
 endpackage: tcb_pkg
