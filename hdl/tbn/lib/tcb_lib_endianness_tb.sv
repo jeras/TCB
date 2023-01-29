@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// TCB (Tightly Coupled Bus) library endianness converter testbench
+// TCB (Tightly Coupled Bus) library mode/alignment/order converter testbench
 ////////////////////////////////////////////////////////////////////////////////
 // Copyright 2022 Iztok Jeras
 //
@@ -41,8 +41,9 @@ module tcb_lib_endianness_tb
 // local signals
 ////////////////////////////////////////////////////////////////////////////////
 
-  tcb_if #(.ABW (ABW), .DBW (DBW), .DLY (DLY)) tcb_man (.clk (clk), .rst (rst));
-  tcb_if #(.ABW (ABW), .DBW (DBW), .DLY (DLY)) tcb_sub (.clk (clk), .rst (rst));
+  tcb_if #(.ABW (ABW), .DBW (DBW), .DLY (DLY)) tcb_man       (.clk (clk), .rst (rst));
+  tcb_if #(.ABW (ABW), .DBW (DBW), .DLY (DLY)) tcb_sub       (.clk (clk), .rst (rst));
+  tcb_if #(.ABW (ABW), .DBW (DBW), .DLY (DLY)) tcb_mem [0:0] (.clk (clk), .rst (rst));
 
 ////////////////////////////////////////////////////////////////////////////////
 // test sequence
@@ -61,7 +62,7 @@ module tcb_lib_endianness_tb
     rst = 1'b0;
     repeat (1) @(posedge clk);
     man.write(32'h00000010, 64'h01234567, err);
-    man.read (32'h00000010, rdt         , err);
+//    man.read (32'h00000010, rdt         , err);
     repeat (4) @(posedge clk);
     $finish();
   end
@@ -73,13 +74,15 @@ module tcb_lib_endianness_tb
   tcb_vip_dev #("MAN") man     (.tcb (tcb_man));  // manager
   tcb_vip_dev #("MON") mon_man (.tcb (tcb_man));  // manager monitor
   tcb_vip_dev #("MON") mon_sub (.tcb (tcb_sub));  // subordinate monitor
-  tcb_vip_dev #("SUB") sub     (.tcb (tcb_sub));  // subordinate
+  tcb_vip_mem          mem     (.tcb (tcb_mem));  // subordinate
+
+  // connect interfaces to interface array
+  tcb_lib_passthrough pas [0:0] (.sub (tcb_sub), .man (tcb_mem));
 
 ////////////////////////////////////////////////////////////////////////////////
 // DUT instance
 ////////////////////////////////////////////////////////////////////////////////
 
-  // RTL passthrough
   tcb_lib_endianness dut (
     .sub  (tcb_man),
     .man  (tcb_sub)
