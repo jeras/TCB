@@ -50,10 +50,9 @@ package tcb_vip_pkg;
     endfunction: data_test_f;
 
 ////////////////////////////////////////////////////////////////////////////////
-// transacion
+// transfer
 ////////////////////////////////////////////////////////////////////////////////
 
-    /* verilator lint_off UNPACKED */
     // TCB request structure
     typedef struct {
       // request optional
@@ -66,34 +65,29 @@ package tcb_vip_pkg;
       logic          [SZW-1:0] siz;  // logarithmic size
       logic [BEW-1:0]          ben;  // byte enable
       logic [BEW-1:0][SLW-1:0] wdt;  // write data
-    } request_t;
-    /* verilator lint_on UNPACKED */
+    } transfer_request_t;
 
-    /* verilator lint_off UNPACKED */
     // TCB response structure
     typedef struct {
       // response
       logic [BEW-1:0][SLW-1:0] rdt;  // read data
       logic                    err;  // error
-    } response_t;
-    /* verilator lint_on UNPACKED */
+    } transfer_response_t;
 
-    /* verilator lint_off UNPACKED */
-    // TCB transaction structure
+    // TCB transfer structure
     typedef struct {
       // request/response
-      request_t    req;  // request
-      response_t   rsp;  // response
+      transfer_request_t  req;  // request
+      transfer_response_t rsp;  // response
       // timing idle/backpressure
-      int unsigned idl;  // idle
-      int unsigned bpr;  // backpressure
-    } transaction_t;
-    /* verilator lint_on UNPACKED */
+      int unsigned        idl;  // idle
+      int unsigned        bpr;  // backpressure
+    } transfer_t;
 
-    typedef transaction_t transactions_t [];
+    typedef transfer_t transfer_array_t [];
 
     // constants
-    static const transaction_t TRANSACTION_INIT = '{
+    static const transfer_t TRANSFER_INIT = '{
       req: '{
         // request optional
         inc: 1'b0,
@@ -116,97 +110,129 @@ package tcb_vip_pkg;
       bpr: 0
     };
 
-    // transaction equivalence check
-    static function automatic logic transaction_check (
-      // transactions
-      input  transaction_t trn_tst,  // test
-      input  transaction_t trn_ref,  // reference
-      input  transaction_t trn_msk   // mask
+    // transfer equivalence check
+    static function automatic logic transfer_check (
+      // transfer_array
+      input  transfer_t trn_tst,  // test
+      input  transfer_t trn_ref,  // reference
+      input  transfer_t trn_msk   // mask
     );
-//      transaction_check = (trn_tst ==? (trn_ref ~^ trn_msk));
-    endfunction: transaction_check
+//      transfer_check = (trn_tst ==? (trn_ref ~^ trn_msk));
+    endfunction: transfer_check
 
 ////////////////////////////////////////////////////////////////////////////////
-// access
+// transaction
 ////////////////////////////////////////////////////////////////////////////////
+
 /*
-    virtual class access_c #(
+    virtual class transaction_c #(
       // TCB widths
-      int unsigned SIZ = BEW  // access size in bytes
+      int unsigned SIZ = BEW  // transaction size in bytes
     );
 
+      // TCB transaction structure
+      typedef struct {
+        // data size in bytes
+        int unsigned             siz;
+        // request
+        logic                    wen;
+        logic          [ABW-1:0] adr;
+        logic [BEW-1:0][SLW-1:0] dat;
+        // response
+        logic                    err;
+        // mode
+        tcb_endian_t             ndn;
+      } transaction_t;
 
-      // read/write access of any size
-      function automatic transactions_t access_req (
+      // manager read/write transaction of power of 2 size
+      task automatic transaction_man (
+        // data size
+        input  int unsigned        siz,  // size in bytes
         // request
         input  logic               wen,
         input  logic [tcb.ABW-1:0] adr,
-        ref    logic [tcb.SLW-1:0] wdt [SIZ]
+        ref    logic [tcb.SLW-1:0] dat [],
+        // response
+        output logic               err,
+        // mode
+        input  tcb_endian_t        endian = TCB_LITTLE
       );
-        transaction_t transactions [];
-        // address offset from native bus alignment
-        int unsigned off = adr % BEW;
-        // number of transactions
-        if (SIZ < BEW) begin
-          transactions = new[1];
-          transactions = '{default: TRANSACTION_INIT};
+        // temporary variables
+        int unsigned byt;  // byte index
+        int unsigned off;  // address offset
+        // the requested transaction is organized into transfer_array
+        transfer_array_t transfer_array;
+        // number of transfer_array
+        transfer_array = new[siz / tcb.BEW]('{default: TRANSFER_INIT});
+        // check if the transfer meets size requirements
+        if (siz != 2**$clog2(siz)) begin
+          $error("ERROR: Transaction size is not power of 2.");
+        end
+        // check if the transfer meets alignment requirements
+        if ((tcb.LGN == TCB_ALIGNED) && (adr % siz != 0)) begin
+          $error("ERROR: Transaction address is not aligned to transaction size.");
+        end
+        for (int unsigned i=0; i<siz; i++) begin
+          // address offset
+          off = i % tcb.BEW;
           // request optional
-          transactions[0].inc = 1'b0;
-          transactions[0].rpt = 1'b0;
-          transactions[0].lck = 1'b0;
+          transfer_array[off].req.inc = 1'b0;
+          transfer_array[off].req.rpt = 1'b0;
+          transfer_array[off].req.lck = (i == siz-1) ? 1'b0 : 1'b1;
           // request
-          transactions[0].wen = wen;
-          transactions[0].adr = adr;
-          transactions[0].ben = '0;
-          for (int unsigned b=0; b<SIZ; b++) begin
-            transactions[0].ben[(b+off)%BEW] = 1'b1;
-            transactions[0].wdt[(b+off)%BEW] = wdt[b];
+          transfer_array[off].req.wen = wen;
+          transfer_array[off].req.adr = adr;
+          // mode processor/memory
+          if (tcb.MOD == TCB_PROCESSOR) begin
+            // all data bytes are LSB aligned
+            byt = i;
+          end else if (tcb.MOD == TCB_MEMORY) begin
+            // all data bytes are LSB aligned
+            byt = (i + adr) % tcb.BEW;
           end
-          // timing idle (no backpressure)
-          transactions[0].idl = 0;
-        end else begin
-          int unsigned num;
-          num = (SIZ / tcb.BEW);
-          transactions = new[num];
-          transactions = '{default: TRANSACTION_INIT};
-          for (int unsigned i=0; i<num; i++) begin
-            // request optional
-            transactions[i].inc = 1'b0;
-            transactions[i].rpt = 1'b0;
-            transactions[i].lck = (i == num) ? 1'b0 : 1'b1;
-            // request
-            transactions[i].wen = wen;
-            transactions[i].adr = adr + i * tcb.BEW;
-            for (int unsigned b=0; b<tcb.BEW; b++) begin
-              transactions[i].ben[(b+off)%BEW] = 1'b1;
-              transactions[i].wdt[(b+off)%BEW] = wdt[b + i * tcb.BEW];
-            end
-            // timing idle (no backpressure)
-            transactions[i].idl = 0;
+          // order descending/ascending
+          if (tcb.ORD == TCB_ASCENDING) begin
+            byt = tcb.BEW - 1 - byt;
+          end
+          // request
+          transfer_array[off].req.ben[byt] = 1'b1;
+          // endianness
+          if (endian == TCB_LITTLE) begin
+            transfer_array[off].req.wdt[byt] = dat[          i];
+          end else begin
+            transfer_array[off].req.wdt[byt] = dat[siz - 1 - i];
           end
         end
-        return(transactions);
-      endfunction: access_req
+        // transaction
+        sequencer(transfer_array);
+        // response
+        err = 1'b0;
+        for (int unsigned i=0; i<siz; i++) begin
+          // address offset
+          off = i % tcb.BEW;
+          // mode processor/memory
+          if (tcb.MOD == TCB_PROCESSOR) begin
+            // all data bytes are LSB aligned
+            byt = i;
+          end else if (tcb.MOD == TCB_MEMORY) begin
+            // all data bytes are LSB aligned
+            byt = (i + adr) % tcb.BEW;
+          end
+          // order descending/ascending
+          if (tcb.ORD == TCB_ASCENDING) begin
+            byt = tcb.BEW - 1 - byt;
+          end
+          // endianness
+          if (endian == TCB_LITTLE) begin
+            dat[          i] = transfer_array[off].rsp.rdt[byt];
+          end else begin
+            dat[siz - 1 - i] = transfer_array[off].rsp.rdt[byt];
+          end
+          err               |= transfer_array[off].rsp.err;
+        end
+      endtask: transaction_man
 
-//      function automatic transactions_t access_rsp (
-//        // response
-//        ref    logic [tcb.SLW-1:0] wdt [SIZ],
-//        output logic               err
-//      );
-//        // number of transactions
-//        if (SIZ < BEW) begin
-//        end else begin
-//          err = 1'b0;
-//          for (int unsigned i=0; i<num; i++) begin
-//            for (int unsigned b=0; b<tcb.BEW; b++) begin
-//              dat[b + i * tcb.BEW] = transactions[i].rdt[b];
-//              err                 |= transactions[i].err;
-//            end
-//          end
-//        end
-//      endfunction: access_rsp
-
-    endclass: access_c
+    endclass: transaction_c
 */
   endclass: tcb_c
 

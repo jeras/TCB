@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// TCB (Tightly Coupled Bus) library endianness converter
+// TCB (Tightly Coupled Bus) library mode/alignment/order converter
 ////////////////////////////////////////////////////////////////////////////////
 // Copyright 2022 Iztok Jeras
 //
@@ -20,10 +20,12 @@ module tcb_lib_endianness
 import tcb_pkg::*;
 #(
 )(
+  // interfaces
   tcb_if.sub sub,  // TCB subordinate port (manager     device connects here)
   tcb_if.man man,  // TCB manager     port (subordinate device connects here)
-  // outputs
-  output logic mal   // misaligned access
+  // subordinate port control/status
+  input  logic endian,  // 
+  output logic mal      // misaligned access
 );
 
 ////////////////////////////////////////////////////////////////////////////////

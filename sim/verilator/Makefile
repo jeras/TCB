@@ -13,10 +13,13 @@ VERILATOR_COVERAGE?=verilator_coverage
 PATH_HDL=../../hdl
 
 # SystemVerilog interface
+RTL+=${PATH_HDL}/rtl/tcb_pkg.sv
 RTL+=${PATH_HDL}/rtl/tcb_if.sv
 # LIBrary
 RTL+=${PATH_HDL}/rtl/lib/tcb_lib_passthrough.sv
-RTL+=${PATH_HDL}/rtl/lib/tcb_lib_register.sv
+RTL+=${PATH_HDL}/rtl/lib/tcb_lib_register_request.sv
+RTL+=${PATH_HDL}/rtl/lib/tcb_lib_register_response.sv
+RTL+=${PATH_HDL}/rtl/lib/tcb_lib_register_backpressure.sv
 RTL+=${PATH_HDL}/rtl/lib/tcb_lib_arbiter.sv
 RTL+=${PATH_HDL}/rtl/lib/tcb_lib_multiplexer.sv
 RTL+=${PATH_HDL}/rtl/lib/tcb_lib_decoder.sv
@@ -36,7 +39,9 @@ TBN+=${PATH_HDL}/tbn/vip/tcb_vip_dev.sv
 TBN+=${PATH_HDL}/tbn/vip/tcb_vip_tb.sv
 # LIBrary
 TBN+=${PATH_HDL}/tbn/lib/tcb_lib_passthrough_tb.sv
-TBN+=${PATH_HDL}/tbn/lib/tcb_lib_register_tb.sv
+TBN+=${PATH_HDL}/tbn/lib/tcb_lib_register_request_tb.sv
+TBN+=${PATH_HDL}/tbn/lib/tcb_lib_register_response_tb.sv
+TBN+=${PATH_HDL}/tbn/lib/tcb_lib_register_backpressure_tb.sv
 TBN+=${PATH_HDL}/tbn/lib/tcb_lib_multiplexer_tb.sv
 TBN+=${PATH_HDL}/tbn/lib/tcb_lib_demultiplexer_tb.sv
 ## GPIO testbench

@@ -61,10 +61,10 @@ module tcb_vip_tb
 
     int unsigned tst_num = $size(lst_wen) * $size(lst_idl) * $size(lst_bpr);
 
-    tcb_s::transactions_t tst_ref = new[tst_num];
-    tcb_s::transactions_t tst_man;
-    tcb_s::transactions_t tst_mon;
-    tcb_s::transactions_t tst_sub;
+    tcb_s::transfer_array_t tst_ref = new[tst_num];
+    tcb_s::transfer_array_t tst_man;
+    tcb_s::transfer_array_t tst_mon;
+    tcb_s::transfer_array_t tst_sub;
 
     // prepare transactions
     int unsigned i;

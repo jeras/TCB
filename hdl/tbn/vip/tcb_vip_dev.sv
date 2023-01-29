@@ -60,12 +60,12 @@ module tcb_vip_dev
   endgenerate
 
 ////////////////////////////////////////////////////////////////////////////////
-// request/response (enable pipelined transactions with full throughput)
+// request/response (enable pipelined transfers with full throughput)
 ////////////////////////////////////////////////////////////////////////////////
 
   // request driver
   task automatic req_drv (
-    inout  tcb_s::transaction_t seq
+    inout  tcb_s::transfer_t seq
   );
     // request timing
     repeat (seq.idl) @(posedge tcb.clk);
@@ -105,7 +105,7 @@ module tcb_vip_dev
 
   // response listener
   task automatic rsp_lsn (
-    inout  tcb_s::transaction_t seq
+    inout  tcb_s::transfer_t seq
   );
     // wait for response
     do begin
@@ -118,7 +118,7 @@ module tcb_vip_dev
 
   // request listener
   task automatic req_lsn (
-    inout  tcb_s::transaction_t seq
+    inout  tcb_s::transfer_t seq
   );
     #1;
     tcb.rdy = 1'b0;
@@ -161,7 +161,7 @@ module tcb_vip_dev
 
   // response driver
   task automatic rsp_drv (
-    inout  tcb_s::transaction_t seq
+    inout  tcb_s::transfer_t seq
   );
     // response
     tmp_rdt = seq.rsp.rdt;
@@ -186,24 +186,24 @@ module tcb_vip_dev
 
   // request/response
   task automatic sequencer (
-    inout  tcb_s::transactions_t transactions
+    inout  tcb_s::transfer_array_t transfer_array
   );
     fork
       begin: fork_req
-        foreach (transactions[i]) begin
+        foreach (transfer_array[i]) begin
           case (MODE)
-            "MAN": req_drv(transactions[i]);
-            "MON": req_lsn(transactions[i]);
-            "SUB": req_lsn(transactions[i]);
+            "MAN": req_drv(transfer_array[i]);
+            "MON": req_lsn(transfer_array[i]);
+            "SUB": req_lsn(transfer_array[i]);
           endcase 
         end
       end: fork_req
       begin: fork_rsp
-        foreach (transactions[i]) begin
+        foreach (transfer_array[i]) begin
           case (MODE)
-            "MAN": rsp_lsn(transactions[i]);
-            "MON": rsp_lsn(transactions[i]);
-            "SUB": rsp_drv(transactions[i]);
+            "MAN": rsp_lsn(transfer_array[i]);
+            "MON": rsp_lsn(transfer_array[i]);
+            "SUB": rsp_drv(transfer_array[i]);
           endcase 
         end
       end: fork_rsp
@@ -225,15 +225,15 @@ module tcb_vip_dev
     // response
     output logic               err,
     // mode
-    input  tcb_endian_t        endian = TCB_LITTLE
+    input  tcb_endian_t        ndn = TCB_LITTLE
   );
     // temporary variables
     int unsigned byt;  // byte index
     int unsigned off;  // address offset
-    // the requested access is organized into transactions
-    tcb_s::transactions_t transactions;
-    // number of transactions
-    transactions = new[siz / tcb.BEW]('{default: tcb_s::TRANSACTION_INIT});
+    // the requested access is organized into transfers
+    tcb_s::transfer_array_t transfer_array;
+    // number of transfers
+    transfer_array = new[siz / tcb.BEW]('{default: tcb_s::TRANSFER_INIT});
     // check if the transfer meets size requirements
     if (siz != 2**$clog2(siz)) begin
       $error("ERROR: Transaction size is not power of 2.");
@@ -246,12 +246,12 @@ module tcb_vip_dev
       // address offset
       off = i % tcb.BEW;
       // request optional
-      transactions[off].req.inc = 1'b0;
-      transactions[off].req.rpt = 1'b0;
-      transactions[off].req.lck = (i == siz-1) ? 1'b0 : 1'b1;
+      transfer_array[off].req.inc = 1'b0;
+      transfer_array[off].req.rpt = 1'b0;
+      transfer_array[off].req.lck = (i == siz-1) ? 1'b0 : 1'b1;
       // request
-      transactions[off].req.wen = wen;
-      transactions[off].req.adr = adr;
+      transfer_array[off].req.wen = wen;
+      transfer_array[off].req.adr = adr;
       // mode processor/memory
       if (tcb.MOD == TCB_PROCESSOR) begin
         // all data bytes are LSB aligned
@@ -265,16 +265,16 @@ module tcb_vip_dev
         byt = tcb.BEW - 1 - byt;
       end
       // request
-      transactions[off].req.ben[byt] = 1'b1;
+      transfer_array[off].req.ben[byt] = 1'b1;
       // endianness
-      if (endian == TCB_LITTLE) begin
-        transactions[off].req.wdt[byt] = dat[          i];
+      if (ndn == TCB_LITTLE) begin
+        transfer_array[off].req.wdt[byt] = dat[          i];
       end else begin
-        transactions[off].req.wdt[byt] = dat[siz - 1 - i];
+        transfer_array[off].req.wdt[byt] = dat[siz - 1 - i];
       end
     end
     // transaction
-    sequencer(transactions);
+    sequencer(transfer_array);
     // response
     err = 1'b0;
     for (int unsigned i=0; i<siz; i++) begin
@@ -293,12 +293,12 @@ module tcb_vip_dev
         byt = tcb.BEW - 1 - byt;
       end
       // endianness
-      if (endian == TCB_LITTLE) begin
-        dat[          i] = transactions[off].rsp.rdt[byt];
+      if (ndn == TCB_LITTLE) begin
+        dat[          i] = transfer_array[off].rsp.rdt[byt];
       end else begin
-        dat[siz - 1 - i] = transactions[off].rsp.rdt[byt];
+        dat[siz - 1 - i] = transfer_array[off].rsp.rdt[byt];
       end
-      err               |= transactions[off].rsp.err;
+      err               |= transfer_array[off].rsp.err;
     end
   endtask: access_man
 
