@@ -54,6 +54,7 @@ interface tcb_if
   logic           inc;  // incremented address
   logic           rpt;  // repeated address
   logic           lck;  // arbitration lock
+  logic           ndn;  // endianness
   // request
   logic           wen;  // write enable
   logic [ABW-1:0] adr;  // address
@@ -111,6 +112,7 @@ interface tcb_if
     output inc,
     output rpt,
     output lck,
+    output ndn,
     output wen,
     output adr,
     output siz,
@@ -136,6 +138,7 @@ interface tcb_if
     input  inc,
     input  rpt,
     input  lck,
+    input  ndn,
     input  wen,
     input  adr,
     input  siz,
@@ -161,6 +164,7 @@ interface tcb_if
     input  inc,
     input  rpt,
     input  lck,
+    input  ndn,
     input  wen,
     input  adr,
     input  siz,

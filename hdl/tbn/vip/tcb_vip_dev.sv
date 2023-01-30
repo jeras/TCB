@@ -60,11 +60,11 @@ module tcb_vip_dev
   endgenerate
 
 ////////////////////////////////////////////////////////////////////////////////
-// request/response (enable pipelined transfers with full throughput)
+// transfer request/response (enable pipelined transfers with full throughput)
 ////////////////////////////////////////////////////////////////////////////////
 
-  // request driver
-  task automatic req_drv (
+  // transfer request driver
+  task automatic transfer_req_drv (
     inout  tcb_s::transfer_t seq
   );
     // request timing
@@ -101,10 +101,10 @@ module tcb_vip_dev
     tcb.adr = 'x;
     tcb.ben = 'x;
     tcb.wdt = 'x;
-  endtask: req_drv
+  endtask: transfer_req_drv
 
-  // response listener
-  task automatic rsp_lsn (
+  // transfer response listener
+  task automatic transfer_rsp_lsn (
     inout  tcb_s::transfer_t seq
   );
     // wait for response
@@ -114,10 +114,10 @@ module tcb_vip_dev
     // response
     seq.rsp.rdt = tcb.rdt;
     seq.rsp.err = tcb.err;
-  endtask: rsp_lsn
+  endtask: transfer_rsp_lsn
 
-  // request listener
-  task automatic req_lsn (
+  // transfer request listener
+  task automatic transfer_req_lsn (
     inout  tcb_s::transfer_t seq
   );
     #1;
@@ -157,10 +157,10 @@ module tcb_vip_dev
     seq.req.siz = tcb.siz;
     seq.req.ben = tcb.ben;
     seq.req.wdt = tcb.wdt;
-  endtask: req_lsn
+  endtask: transfer_req_lsn
 
-  // response driver
-  task automatic rsp_drv (
+  // transfer response driver
+  task automatic transfer_rsp_drv (
     inout  tcb_s::transfer_t seq
   );
     // response
@@ -170,7 +170,7 @@ module tcb_vip_dev
     do begin
       @(posedge tcb.clk);
     end while (~tcb.rsp[tcb.DLY]);
-  endtask: rsp_drv
+  endtask: transfer_rsp_drv
 
   generate
   if (MODE == "SUB") begin
@@ -185,30 +185,30 @@ module tcb_vip_dev
 ////////////////////////////////////////////////////////////////////////////////
 
   // request/response
-  task automatic sequencer (
+  task automatic transfer_sequencer (
     inout  tcb_s::transfer_array_t transfer_array
   );
     fork
       begin: fork_req
         foreach (transfer_array[i]) begin
           case (MODE)
-            "MAN": req_drv(transfer_array[i]);
-            "MON": req_lsn(transfer_array[i]);
-            "SUB": req_lsn(transfer_array[i]);
+            "MAN": transfer_req_drv(transfer_array[i]);
+            "MON": transfer_req_lsn(transfer_array[i]);
+            "SUB": transfer_req_lsn(transfer_array[i]);
           endcase 
         end
       end: fork_req
       begin: fork_rsp
         foreach (transfer_array[i]) begin
           case (MODE)
-            "MAN": rsp_lsn(transfer_array[i]);
-            "MON": rsp_lsn(transfer_array[i]);
-            "SUB": rsp_drv(transfer_array[i]);
+            "MAN": transfer_rsp_lsn(transfer_array[i]);
+            "MON": transfer_rsp_lsn(transfer_array[i]);
+            "SUB": transfer_rsp_drv(transfer_array[i]);
           endcase 
         end
       end: fork_rsp
     join
-  endtask: sequencer
+  endtask: transfer_sequencer
 
 ////////////////////////////////////////////////////////////////////////////////
 // BFM (Bus Functional Model) blocking API (emulates a RISC-V manager)
@@ -253,7 +253,7 @@ module tcb_vip_dev
       transfer_array[off].req.wen = wen;
       transfer_array[off].req.adr = adr;
       // mode processor/memory
-      if (tcb.MOD == TCB_PROCESSOR) begin
+      if (tcb.MOD == TCB_REFERENCE) begin
         // all data bytes are LSB aligned
         byt = i;
       end else if (tcb.MOD == TCB_MEMORY) begin
@@ -274,14 +274,14 @@ module tcb_vip_dev
       end
     end
     // transaction
-    sequencer(transfer_array);
+    transfer_sequencer(transfer_array);
     // response
     err = 1'b0;
     for (int unsigned i=0; i<siz; i++) begin
       // address offset
       off = i % tcb.BEW;
       // mode processor/memory
-      if (tcb.MOD == TCB_PROCESSOR) begin
+      if (tcb.MOD == TCB_REFERENCE) begin
         // all data bytes are LSB aligned
         byt = i;
       end else if (tcb.MOD == TCB_MEMORY) begin

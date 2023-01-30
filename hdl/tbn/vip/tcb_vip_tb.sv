@@ -105,15 +105,15 @@ module tcb_vip_tb
     fork
       // manager
       begin: fork_man
-        man.sequencer(tst_man);
+        man.transfer_sequencer(tst_man);
       end: fork_man
       // monitor
       begin: fork_mon
-        mon.sequencer(tst_mon);
+        mon.transfer_sequencer(tst_mon);
       end: fork_mon
       // subordinate
       begin: fork_sub
-        sub.sequencer(tst_sub);
+        sub.transfer_sequencer(tst_sub);
       end: fork_sub
     join
 

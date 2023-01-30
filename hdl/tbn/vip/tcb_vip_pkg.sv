@@ -30,8 +30,13 @@ package tcb_vip_pkg;
     int unsigned DBW = 32,       // data    bus width
     int unsigned SLW =       8,  // selection   width
     int unsigned BEW = DBW/SLW,  // byte enable width
-    int unsigned SZW = $clog2($clog2(BEW)+1)  // logarithmic size width
+    // other parameters
+    tcb_mode_t   MOD = TCB_MEMORY,
+    tcb_order_t  ORD = TCB_DESCENDING,
+    tcb_align_t  LGN = TCB_ALIGNED
   );
+
+    localparam int unsigned SZW = $clog2($clog2(BEW)+1);  // logarithmic size width
 
 ////////////////////////////////////////////////////////////////////////////////
 // reference data for tests
@@ -53,7 +58,7 @@ package tcb_vip_pkg;
 // transfer
 ////////////////////////////////////////////////////////////////////////////////
 
-    // TCB request structure
+    // TCB transfer request structure
     typedef struct {
       // request optional
       logic                    inc;  // incremented address
@@ -67,7 +72,7 @@ package tcb_vip_pkg;
       logic [BEW-1:0][SLW-1:0] wdt;  // write data
     } transfer_request_t;
 
-    // TCB response structure
+    // TCB transfer response structure
     typedef struct {
       // response
       logic [BEW-1:0][SLW-1:0] rdt;  // read data
@@ -124,38 +129,38 @@ package tcb_vip_pkg;
 // transaction
 ////////////////////////////////////////////////////////////////////////////////
 
-/*
     virtual class transaction_c #(
       // TCB widths
       int unsigned SIZ = BEW  // transaction size in bytes
     );
 
-      // TCB transaction structure
+      // TCB transaction request structure
       typedef struct {
-        // data size in bytes
-        int unsigned             siz;
         // request
         logic                    wen;
         logic          [ABW-1:0] adr;
-        logic [BEW-1:0][SLW-1:0] dat;
-        // response
-        logic                    err;
-        // mode
+        logic [SIZ-1:0][SLW-1:0] wdt;
+        // endianness
         tcb_endian_t             ndn;
+      } transaction_request_t;
+
+      // TCB transaction response structure
+      typedef struct {
+        // response
+        logic [SIZ-1:0][SLW-1:0] rdt;
+        logic                    err;
+      } transaction_response_t;
+
+      // TCB transaction structure
+      typedef struct {
+        transaction_request_t  req;
+        transaction_response_t rsp;
       } transaction_t;
 
-      // manager read/write transaction of power of 2 size
-      task automatic transaction_man (
-        // data size
-        input  int unsigned        siz,  // size in bytes
-        // request
-        input  logic               wen,
-        input  logic [tcb.ABW-1:0] adr,
-        ref    logic [tcb.SLW-1:0] dat [],
-        // response
-        output logic               err,
-        // mode
-        input  tcb_endian_t        endian = TCB_LITTLE
+      // read/write transaction of power of 2 size
+      function automatic transfer_array_t transaction_request (
+        // TCB transaction structure
+        transaction_request_t transaction
       );
         // temporary variables
         int unsigned byt;  // byte index
@@ -163,77 +168,90 @@ package tcb_vip_pkg;
         // the requested transaction is organized into transfer_array
         transfer_array_t transfer_array;
         // number of transfer_array
-        transfer_array = new[siz / tcb.BEW]('{default: TRANSFER_INIT});
+        transfer_array = new[SIZ / BEW]('{default: TRANSFER_INIT});
         // check if the transfer meets size requirements
-        if (siz != 2**$clog2(siz)) begin
+        if (SIZ != 2**$clog2(SIZ)) begin
           $error("ERROR: Transaction size is not power of 2.");
         end
         // check if the transfer meets alignment requirements
-        if ((tcb.LGN == TCB_ALIGNED) && (adr % siz != 0)) begin
+        if ((LGN == TCB_ALIGNED) && (transaction.adr % SIZ != 0)) begin
           $error("ERROR: Transaction address is not aligned to transaction size.");
         end
-        for (int unsigned i=0; i<siz; i++) begin
+        for (int unsigned i=0; i<SIZ; i++) begin
           // address offset
-          off = i % tcb.BEW;
+          off = i % BEW;
           // request optional
           transfer_array[off].req.inc = 1'b0;
           transfer_array[off].req.rpt = 1'b0;
-          transfer_array[off].req.lck = (i == siz-1) ? 1'b0 : 1'b1;
+          transfer_array[off].req.lck = (i == SIZ-1) ? 1'b0 : 1'b1;
+          transfer_array[off].req.ndn = transaction.ndn;
           // request
-          transfer_array[off].req.wen = wen;
-          transfer_array[off].req.adr = adr;
+          transfer_array[off].req.wen = transaction.wen;
+          transfer_array[off].req.adr = transaction.adr;
           // mode processor/memory
-          if (tcb.MOD == TCB_PROCESSOR) begin
+          if (MOD == TCB_REFERENCE) begin
             // all data bytes are LSB aligned
             byt = i;
-          end else if (tcb.MOD == TCB_MEMORY) begin
+          end else if (MOD == TCB_MEMORY) begin
             // all data bytes are LSB aligned
-            byt = (i + adr) % tcb.BEW;
+            byt = (i + transaction.adr) % BEW;
           end
           // order descending/ascending
-          if (tcb.ORD == TCB_ASCENDING) begin
-            byt = tcb.BEW - 1 - byt;
+          if (ORD == TCB_ASCENDING) begin
+            byt = BEW - 1 - byt;
           end
           // request
           transfer_array[off].req.ben[byt] = 1'b1;
           // endianness
-          if (endian == TCB_LITTLE) begin
-            transfer_array[off].req.wdt[byt] = dat[          i];
+          if (transaction.ndn == TCB_LITTLE) begin
+            transfer_array[off].req.wdt[byt] = transaction.wdt[          i];
           end else begin
-            transfer_array[off].req.wdt[byt] = dat[siz - 1 - i];
+            transfer_array[off].req.wdt[byt] = transaction.wdt[SIZ - 1 - i];
           end
         end
+        return(transfer_array);
+      endfunction: transaction_request
+
+//        sequencer(transfer_array);
+
+      function automatic transaction_response_t transaction_response (
+        transfer_array_t transfer_array
+      );
+        // temporary variables
+        int unsigned byt;  // byte index
+        int unsigned off;  // address offset
         // transaction
-        sequencer(transfer_array);
+        transaction_response_t transaction;
         // response
-        err = 1'b0;
-        for (int unsigned i=0; i<siz; i++) begin
+        transaction.err = 1'b0;
+        for (int unsigned i=0; i<SIZ; i++) begin
           // address offset
-          off = i % tcb.BEW;
+          off = i % BEW;
           // mode processor/memory
-          if (tcb.MOD == TCB_PROCESSOR) begin
+          if (MOD == TCB_REFERENCE) begin
             // all data bytes are LSB aligned
             byt = i;
-          end else if (tcb.MOD == TCB_MEMORY) begin
+          end else if (MOD == TCB_MEMORY) begin
             // all data bytes are LSB aligned
-            byt = (i + adr) % tcb.BEW;
+            byt = (i + transfer_array[off].req.adr) % BEW;
           end
           // order descending/ascending
-          if (tcb.ORD == TCB_ASCENDING) begin
-            byt = tcb.BEW - 1 - byt;
+          if (ORD == TCB_ASCENDING) begin
+            byt = BEW - 1 - byt;
           end
           // endianness
-          if (endian == TCB_LITTLE) begin
-            dat[          i] = transfer_array[off].rsp.rdt[byt];
+          if (transfer_array[off].req.ndn == TCB_LITTLE) begin
+            transaction.dat[          i] = transfer_array[off].rsp.rdt[byt];
           end else begin
-            dat[siz - 1 - i] = transfer_array[off].rsp.rdt[byt];
+            transaction.dat[SIZ - 1 - i] = transfer_array[off].rsp.rdt[byt];
           end
-          err               |= transfer_array[off].rsp.err;
+          transaction.err               |= transfer_array[off].rsp.err;
         end
-      endtask: transaction_man
+        return(transaction);
+      endfunction: transaction_response
 
     endclass: transaction_c
-*/
+
   endclass: tcb_c
 
 ////////////////////////////////////////////////////////////////////////////////

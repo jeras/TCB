@@ -37,7 +37,7 @@ package tcb_pkg;
 
   // byte/half/word/double/quad position inside data bus vector
   typedef enum bit {
-    TCB_PROCESSOR = 1'b0,  // always LSB aligned
+    TCB_REFERENCE = 1'b0,  // always LSB aligned
     TCB_MEMORY    = 1'b1   // position depends on address
   } tcb_mode_t;
 

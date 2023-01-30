@@ -344,23 +344,33 @@ It can also be used for read modify write, and similar operations and for QoS co
 
 ### Endianness and data alignment
 
+| `MOD`       | `ORD`        | `LGN`       | `ndn`   | desctiption |
+|-------------|--------------|-------------|---------|-|
+| `REFERENCE` | `DESCENDING` | both        | ignored | Packing used by CPU registers. |
+| `REFERENCE` | `ASCENDING`  | both        | ignored | Not used. |
+| `MEMORY`    | `DESCENDING` | `UNALIGNED` | both    | RISC-V memory model with misaligned access support. |
+| `MEMORY`    | `DESCENDING` | `ALIGNED`   | both    | RISC-V memory model with only aligned accesses supported. |
+| `MEMORY`    | `ASCENDING`  | `UNALIGNED` | both    | Not used. |
+| `MEMORY`    | `ASCENDING`  | `ALIGNED`   | both    | OpenPOWER storage operands. |
+
 The following table defines when an access is aligned depending on
 data transfer size and byte address LSB bits.
 
-| transfer size | condition             |
-|---------------|-----------------------|
-| byte ( 8-bit) | none                  |
-| half (16-bit) | $clog2(adr[0:0]) == 0 |
-| word (32-bit) | $clog2(adr[1:0]) == 0 |
-| long (64-bit) | $clog2(adr[2:0]) == 0 |
+| transfer size  | condition               |
+|----------------|-------------------------|
+| byte   (8-bit) | none                    |
+| half  (16-bit) | `$clog2(adr[0:0]) == 0` |
+| word  (32-bit) | `$clog2(adr[1:0]) == 0` |
+| dble  (64-bit) | `$clog2(adr[2:0]) == 0` |
+| quad (128-bit) | `$clog2(adr[2:0]) == 0` |
 
 The protocol endianness can be either:
-- endianness agnostic, only supporting alligned transfers,
+- endianness agnostic, only supporting aligned transfers,
 - little endian,
 - big endian,
 - a special case is defined for RISC-V instruction fetch of compressed instructions.
 
-#### Endianness agnostic (alligned)
+#### Endianness agnostic (aligned)
 
 The TCB protocol can be endianness agnostic,
 as long as the address is aligned to the data width.
