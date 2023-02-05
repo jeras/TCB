@@ -103,9 +103,6 @@ import tcb_pkg::*;
   // read data multiplexer select
   logic [$clog2(sub.BEW)-1:0] mux_rdt [man.BEW-1:0];
 
-  // read data packed array from vector
-  assign man.rdt = man_rdt;
-
   // write data bytes
   generate
   for (genvar i=0; i<man.BEW; i++) begin
@@ -120,7 +117,7 @@ import tcb_pkg::*;
   endgenerate
 
   // read data packed array to vector 
-  assign sub_rdt = sub.rdt;
+  assign sub.rdt = sub_rdt;
 
 /*
 // read alignment delayed signals

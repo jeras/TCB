@@ -160,7 +160,7 @@ package tcb_vip_pkg;
       } transaction_t;
 
       // read/write request transaction of power of 2 size
-      function automatic transfer_array_t transaction_request (
+      static function automatic transfer_array_t transaction_request (
         // TCB transaction structure
         transaction_request_t transaction
       );
@@ -217,7 +217,7 @@ package tcb_vip_pkg;
       endfunction: transaction_request
 
       // read/write response transaction of power of 2 size
-      function automatic transaction_response_t transaction_response (
+      static function automatic transaction_response_t transaction_response (
         transfer_array_t transfer_array
       );
 /*

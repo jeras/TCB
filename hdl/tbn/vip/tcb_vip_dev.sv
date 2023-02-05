@@ -352,13 +352,11 @@ module tcb_vip_dev
     $display("transaction.req = %s", $typename(transaction32.req));
     $display("transaction_req = %s", $typename(transaction32_req));
     $display("transaction_req = %p",           transaction32_req );
-//    void'(transaction32_t::transaction_request(transaction32_t::transaction_request_t'{wen: 1'b1, adr: adr, wdt: wdt, ndn: ndn}));
-//    void'(transaction32_t::transaction_request(transaction32_req));
-//    transfer_array = transaction32_t::transaction_request(transaction32.req);
+    transfer_array = transaction32_t::transaction_request(transaction32.req);
     // transaction
     transfer_sequencer(transfer_array);
     // response
-//    transaction32.rsp = transaction32_t::transaction_response(transfer_array);
+    transaction32.rsp = transaction32_t::transaction_response(transfer_array);
     // cleanup
     transfer_array.delete;
     // outputs
