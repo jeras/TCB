@@ -343,20 +343,18 @@ module tcb_vip_dev
     input  tcb_endian_t                     ndn = TCB_LITTLE
   );
     tcb_s::transfer_array_t transfer_array;
-    transaction32_t::transaction_t          transaction32;
-    transaction32_t::transaction_request_t  transaction32_req;
-    transaction32_t::transaction_response_t transaction32_rsp;
+    transaction32_t::transaction_t transaction32;
+    $display("transaction = %s", $typename(transaction32));
     // request
     transaction32.req = '{wen: 1'b1, adr: adr, wdt: wdt, ndn: ndn};
-    transaction32_req = '{wen: 1'b1, adr: adr, wdt: wdt, ndn: ndn};
-    $display("transaction.req = %s", $typename(transaction32.req));
-    $display("transaction_req = %s", $typename(transaction32_req));
-    $display("transaction_req = %p",           transaction32_req );
     transfer_array = transaction32_t::transaction_request(transaction32.req);
     // transaction
+    $display("transfer_array = %p", transfer_array);
     transfer_sequencer(transfer_array);
+    $display("transfer_array = %p", transfer_array);
     // response
     transaction32.rsp = transaction32_t::transaction_response(transfer_array);
+    $display("transaction.rsp = %p", transaction32.rsp);
     // cleanup
     transfer_array.delete;
     // outputs
@@ -372,11 +370,24 @@ module tcb_vip_dev
     // endianness
     input  tcb_endian_t                     ndn = TCB_LITTLE
   );
-    logic [tcb.SLW-1:0] dat [];
-    dat = new[tcb.BEW];
-    //              siz,  wen, adr, dat, err
-    access_man (tcb.BEW, 1'b0, adr, dat, err);
-    for (int unsigned i=0; i<tcb.BEW; i++)  rdt[i] = dat[i];
+    tcb_s::transfer_array_t transfer_array;
+    transaction32_t::transaction_t transaction32;
+    $display("transaction = %s", $typename(transaction32));
+    // request
+    transaction32.req = '{wen: 1'b0, adr: adr, wdt: 'x, ndn: ndn};
+    transfer_array = transaction32_t::transaction_request(transaction32.req);
+    // transaction
+    $display("transfer_array = %p", transfer_array);
+    transfer_sequencer(transfer_array);
+    $display("transfer_array = %p", transfer_array);
+    // response
+    transaction32.rsp = transaction32_t::transaction_response(transfer_array);
+    $display("transaction.rsp = %p", transaction32.rsp);
+    // cleanup
+    transfer_array.delete;
+    // outputs
+    rdt = transaction32.rsp.rdt;
+    err = transaction32.rsp.err;
   endtask: read
 
   task write8 (

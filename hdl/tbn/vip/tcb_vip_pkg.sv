@@ -164,14 +164,13 @@ package tcb_vip_pkg;
         // TCB transaction structure
         transaction_request_t transaction
       );
-/*
         // temporary variables
         int unsigned byt;  // byte index
         int unsigned off;  // address offset
         // the requested transaction is organized into transfer_array
         transfer_array_t transfer_array;
         // number of transfer_array
-//        transfer_array = new[SIZ / BEW]('{default: TRANSFER_INIT});
+        transfer_array = new[SIZ / BEW]('{default: TRANSFER_INIT});
         // check if the transfer meets size requirements
         if (SIZ != 2**$clog2(SIZ)) begin
           $error("ERROR: Transaction size is not power of 2.");
@@ -213,14 +212,12 @@ package tcb_vip_pkg;
           end
         end
         return(transfer_array);
-*/
       endfunction: transaction_request
 
       // read/write response transaction of power of 2 size
       static function automatic transaction_response_t transaction_response (
         transfer_array_t transfer_array
       );
-/*
         // temporary variables
         int unsigned byt;  // byte index
         int unsigned off;  // address offset
@@ -252,7 +249,6 @@ package tcb_vip_pkg;
           transaction.err               |= transfer_array[off].rsp.err;
         end
         return(transaction);
-*/
       endfunction: transaction_response
 
     endclass: transaction_c
