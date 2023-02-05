@@ -24,7 +24,6 @@ import tcb_pkg::*;
   tcb_if.sub sub,  // TCB subordinate port (manager     device connects here)
   tcb_if.man man,  // TCB manager     port (subordinate device connects here)
   // subordinate port control/status
-  input  logic endian,  // 
   output logic mal      // misaligned access
 );
 

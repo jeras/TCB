@@ -55,22 +55,20 @@ module tcb_lib_arbiter #(
 // fixed priority arbiter
 ////////////////////////////////////////////////////////////////////////////////
 
-  // TODO: try to create a function returning an unpacked array
+  typedef logic select_t [PN-1:0];
 
   // priority reorder
-//  function logic reorder [PN-1:0] (
-  function logic [PN-1:0] reorder (
+  function automatic select_t reorder (
     logic                 val [PN-1:0],  // input
     bit unsigned [PL-1:0] ord [PN-1:0]   // order
   );
     for (int unsigned i=0; i<PN; i++) begin
-      assign reorder[i] = val[ord[i]];
+      reorder[i] = val[ord[i]];
     end
   endfunction: reorder
 
   // priority encode
-//  function logic [PL-1:0] encode (logic val [PN-1:0]);
-  function logic [PL-1:0] encode (logic [PN-1:0] val);
+  function automatic logic [PL-1:0] encode (select_t val);
     encode = 'x;  // optimization of undefined encodings
     for (int i=PN; i>=0; i--) begin
       if (val[i])  encode = i[PL-1:0];

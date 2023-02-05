@@ -77,6 +77,7 @@ module tcb_vip_tb
               inc: 1'b0,
               rpt: 1'b0,
               lck: 1'b0,
+              ndn: 1'b0,
               // request
               wen: lst_wen[idx_wen],
               adr: 'h00,

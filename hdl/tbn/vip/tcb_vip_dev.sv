@@ -27,7 +27,16 @@ module tcb_vip_dev
 );
 
   // parameterized class specialization
-  typedef tcb_c #(tcb.ABW, tcb.DBW, tcb.SLW) tcb_s;
+  typedef tcb_c #(
+    // TCB widths
+    .ABW (tcb.ABW),
+    .DBW (tcb.DBW),
+    .SLW (tcb.SLW),
+    // other parameters
+    .MOD (tcb.MOD),
+    .ORD (tcb.ORD),
+    .LGN (tcb.LGN)
+  ) tcb_s;
 
 ////////////////////////////////////////////////////////////////////////////////
 // local signals
@@ -77,6 +86,7 @@ module tcb_vip_dev
     tcb.inc = seq.req.inc;
     tcb.rpt = seq.req.rpt;
     tcb.lck = seq.req.lck;
+    tcb.ndn = seq.req.ndn;
     // request
     tcb.wen = seq.req.wen;
     tcb.adr = seq.req.adr;
@@ -96,6 +106,7 @@ module tcb_vip_dev
     tcb.inc = 'x;
     tcb.rpt = 'x;
     tcb.lck = 'x;
+    tcb.ndn = 'x;
     // request
     tcb.wen = 'x;
     tcb.adr = 'x;
@@ -151,6 +162,7 @@ module tcb_vip_dev
     seq.req.inc = tcb.inc;
     seq.req.rpt = tcb.rpt;
     seq.req.lck = tcb.lck;
+    seq.req.ndn = tcb.ndn;
     // request
     seq.req.wen = tcb.wen;
     seq.req.adr = tcb.adr;
@@ -315,18 +327,42 @@ module tcb_vip_dev
 // read16
 // read8
 
+  typedef tcb_s::transaction_c #(.SIZ ( 1)) transaction8_t;
+  typedef tcb_s::transaction_c #(.SIZ ( 2)) transaction16_t;
+  typedef tcb_s::transaction_c #(.SIZ ( 4)) transaction32_t;
+  typedef tcb_s::transaction_c #(.SIZ ( 8)) transaction64_t;
+  typedef tcb_s::transaction_c #(.SIZ (16)) transaction128_t;
+
   task write (
     // request
     input  logic              [tcb.ABW-1:0] adr,
     input  logic [tcb.BEW-1:0][tcb.SLW-1:0] wdt,
     // response
-    output logic                            err
+    output logic                            err,
+    // endianness
+    input  tcb_endian_t                     ndn = TCB_LITTLE
   );
-    logic [tcb.SLW-1:0] dat [];
-    dat = new[tcb.BEW];
-    for (int unsigned i=0; i<tcb.BEW; i++)  dat[i] = wdt[i];
-    //          siz,  wen, adr, dat, err
-    access_man (tcb.BEW, 1'b1, adr, dat, err);
+    tcb_s::transfer_array_t transfer_array;
+    transaction32_t::transaction_t          transaction32;
+    transaction32_t::transaction_request_t  transaction32_req;
+    transaction32_t::transaction_response_t transaction32_rsp;
+    // request
+    transaction32.req = '{wen: 1'b1, adr: adr, wdt: wdt, ndn: ndn};
+    transaction32_req = '{wen: 1'b1, adr: adr, wdt: wdt, ndn: ndn};
+    $display("transaction.req = %s", $typename(transaction32.req));
+    $display("transaction_req = %s", $typename(transaction32_req));
+    $display("transaction_req = %p",           transaction32_req );
+//    void'(transaction32_t::transaction_request(transaction32_t::transaction_request_t'{wen: 1'b1, adr: adr, wdt: wdt, ndn: ndn}));
+//    void'(transaction32_t::transaction_request(transaction32_req));
+//    transfer_array = transaction32_t::transaction_request(transaction32.req);
+    // transaction
+    transfer_sequencer(transfer_array);
+    // response
+//    transaction32.rsp = transaction32_t::transaction_response(transfer_array);
+    // cleanup
+    transfer_array.delete;
+    // outputs
+    err = transaction32.rsp.err;
   endtask: write
 
   task read (
@@ -334,11 +370,13 @@ module tcb_vip_dev
     input  logic              [tcb.ABW-1:0] adr,
     // response
     output logic [tcb.BEW-1:0][tcb.SLW-1:0] rdt,
-    output logic                            err
+    output logic                            err,
+    // endianness
+    input  tcb_endian_t                     ndn = TCB_LITTLE
   );
     logic [tcb.SLW-1:0] dat [];
     dat = new[tcb.BEW];
-    //          siz,  wen, adr, dat, err
+    //              siz,  wen, adr, dat, err
     access_man (tcb.BEW, 1'b0, adr, dat, err);
     for (int unsigned i=0; i<tcb.BEW; i++)  rdt[i] = dat[i];
   endtask: read

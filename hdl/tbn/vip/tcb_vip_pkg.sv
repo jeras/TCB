@@ -52,7 +52,7 @@ package tcb_vip_pkg;
       for (int unsigned i=0; i<BEW; i++) begin
         data_test_f[i] = {val, i[SLW/2-1:0]};
       end
-    endfunction: data_test_f;
+    endfunction: data_test_f
 
 ////////////////////////////////////////////////////////////////////////////////
 // transfer
@@ -64,6 +64,7 @@ package tcb_vip_pkg;
       logic                    inc;  // incremented address
       logic                    rpt;  // repeated address
       logic                    lck;  // arbitration lock
+      logic                    ndn;  // endianness
       // request
       logic                    wen;  // write enable
       logic          [ABW-1:0] adr;  // address
@@ -98,6 +99,7 @@ package tcb_vip_pkg;
         inc: 1'b0,
         rpt: 1'b0,
         lck: 1'b0,
+        ndn: 1'bx,
         // request
         wen: 'x,
         adr: 'x,
@@ -157,18 +159,19 @@ package tcb_vip_pkg;
         transaction_response_t rsp;
       } transaction_t;
 
-      // read/write transaction of power of 2 size
+      // read/write request transaction of power of 2 size
       function automatic transfer_array_t transaction_request (
         // TCB transaction structure
         transaction_request_t transaction
       );
+/*
         // temporary variables
         int unsigned byt;  // byte index
         int unsigned off;  // address offset
         // the requested transaction is organized into transfer_array
         transfer_array_t transfer_array;
         // number of transfer_array
-        transfer_array = new[SIZ / BEW]('{default: TRANSFER_INIT});
+//        transfer_array = new[SIZ / BEW]('{default: TRANSFER_INIT});
         // check if the transfer meets size requirements
         if (SIZ != 2**$clog2(SIZ)) begin
           $error("ERROR: Transaction size is not power of 2.");
@@ -210,13 +213,14 @@ package tcb_vip_pkg;
           end
         end
         return(transfer_array);
+*/
       endfunction: transaction_request
 
-//        sequencer(transfer_array);
-
+      // read/write response transaction of power of 2 size
       function automatic transaction_response_t transaction_response (
         transfer_array_t transfer_array
       );
+/*
         // temporary variables
         int unsigned byt;  // byte index
         int unsigned off;  // address offset
@@ -241,13 +245,14 @@ package tcb_vip_pkg;
           end
           // endianness
           if (transfer_array[off].req.ndn == TCB_LITTLE) begin
-            transaction.dat[          i] = transfer_array[off].rsp.rdt[byt];
+            transaction.rdt[          i] = transfer_array[off].rsp.rdt[byt];
           end else begin
-            transaction.dat[SIZ - 1 - i] = transfer_array[off].rsp.rdt[byt];
+            transaction.rdt[SIZ - 1 - i] = transfer_array[off].rsp.rdt[byt];
           end
           transaction.err               |= transfer_array[off].rsp.err;
         end
         return(transaction);
+*/
       endfunction: transaction_response
 
     endclass: transaction_c

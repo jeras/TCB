@@ -71,7 +71,7 @@ module tcb_lib_register_backpressure #(
       for (int unsigned i=0; i<sub.BEW; i+=sub.SLW*GRN) begin
         // data granularity
         if (sub.wen & sub.ben[i]) begin
-          man.wdt[i+:sub.SLW*GRN] <= sub.wdt[i+:sub.SLW*GRN];
+          tmp_wdt[i+:sub.SLW*GRN] <= sub.wdt[i+:sub.SLW*GRN];
         end
       end
     end
