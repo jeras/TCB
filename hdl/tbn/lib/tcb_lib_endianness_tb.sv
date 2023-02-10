@@ -62,7 +62,8 @@ module tcb_lib_endianness_tb
     rst = 1'b0;
     repeat (1) @(posedge clk);
     man.write(32'h00000010, 64'h01234567, err);
-//    man.read (32'h00000010, rdt         , err);
+    man.read (32'h00000010, rdt         , err);
+    $display("32'h%08X", rdt);
     repeat (4) @(posedge clk);
     $finish();
   end

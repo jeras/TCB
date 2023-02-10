@@ -49,11 +49,12 @@ module tcb_lib_passthrough (
   assign man.inc = sub.inc;
   assign man.rpt = sub.rpt;
   assign man.lck = sub.lck;
+  assign man.ndn = sub.ndn;
   // request
   assign man.wen = sub.wen;
   assign man.siz = sub.siz;
-  assign man.ben = sub.ben;
   assign man.adr = sub.adr;
+  assign man.ben = sub.ben;
   assign man.wdt = sub.wdt;
   // response
   assign sub.rdt = man.rdt;

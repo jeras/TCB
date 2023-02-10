@@ -90,6 +90,7 @@ module tcb_vip_dev
     // request
     tcb.wen = seq.req.wen;
     tcb.adr = seq.req.adr;
+    tcb.siz = seq.req.siz;
     tcb.ben = seq.req.ben;
     tcb.wdt = seq.req.wdt;
     // backpressure
@@ -110,6 +111,7 @@ module tcb_vip_dev
     // request
     tcb.wen = 'x;
     tcb.adr = 'x;
+    tcb.siz = 'x;
     tcb.ben = 'x;
     tcb.wdt = 'x;
   endtask: transfer_req_drv

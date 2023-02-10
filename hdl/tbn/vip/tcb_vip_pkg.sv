@@ -181,7 +181,7 @@ package tcb_vip_pkg;
         end
         for (int unsigned i=0; i<SIZ; i++) begin
           // address offset
-          off = i % BEW;
+          off = i / BEW;
           // request optional
           transfer_array[off].req.inc = 1'b0;
           transfer_array[off].req.rpt = 1'b0;
@@ -227,7 +227,7 @@ package tcb_vip_pkg;
         transaction.err = 1'b0;
         for (int unsigned i=0; i<SIZ; i++) begin
           // address offset
-          off = i % BEW;
+          off = i / BEW;
           // mode processor/memory
           if (MOD == TCB_REFERENCE) begin
             // all data bytes are LSB aligned
