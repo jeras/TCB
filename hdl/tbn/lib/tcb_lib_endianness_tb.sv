@@ -61,8 +61,8 @@ module tcb_lib_endianness_tb
     repeat (2) @(posedge clk);
     rst = 1'b0;
     repeat (1) @(posedge clk);
-    man.write(32'h00000010, 64'h01234567, err);
-    man.read (32'h00000010, rdt         , err);
+//    man.write(32'h00000010, 64'h01234567, err);
+//    man.read (32'h00000010, rdt         , err);
     $display("32'h%08X", rdt);
     repeat (4) @(posedge clk);
     $finish();
@@ -72,9 +72,9 @@ module tcb_lib_endianness_tb
 // VIP instances
 ////////////////////////////////////////////////////////////////////////////////
 
-  tcb_vip_dev #("MAN") man     (.tcb (tcb_man));  // manager
-  tcb_vip_dev #("MON") mon_man (.tcb (tcb_man));  // manager monitor
-  tcb_vip_dev #("MON") mon_sub (.tcb (tcb_sub));  // subordinate monitor
+//  tcb_vip_dev #("MAN") man     (.tcb (tcb_man));  // manager
+//  tcb_vip_dev #("MON") mon_man (.tcb (tcb_man));  // manager monitor
+//  tcb_vip_dev #("MON") mon_sub (.tcb (tcb_sub));  // subordinate monitor
   tcb_vip_mem          mem     (.tcb (tcb_mem));  // subordinate
 
   // connect interfaces to interface array

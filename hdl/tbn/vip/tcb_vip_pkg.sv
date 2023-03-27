@@ -24,19 +24,51 @@ package tcb_vip_pkg;
 // TCB class
 ////////////////////////////////////////////////////////////////////////////////
 
-  virtual class tcb_c #(
+  class tcb_c #(
     // TCB widths
     int unsigned ABW = 32,       // address bus width
     int unsigned DBW = 32,       // data    bus width
     int unsigned SLW =       8,  // selection   width
     int unsigned BEW = DBW/SLW,  // byte enable width
     // other parameters
-    tcb_mode_t   MOD = TCB_MEMORY,
+    tcb_mode_t   MOD = TCB_REFERENCE,
     tcb_order_t  ORD = TCB_DESCENDING,
     tcb_align_t  LGN = TCB_ALIGNED
   );
 
+////////////////////////////////////////////////////////////////////////////////
+// local parameters
+////////////////////////////////////////////////////////////////////////////////
+
     localparam int unsigned SZW = $clog2($clog2(BEW)+1);  // logarithmic size width
+
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
+    string MODE = "MON";
+    virtual tcb_if tcb;
+
+    //constructor
+    function new(string MODE = "MON", virtual tcb_if tcb);
+      this.MODE = MODE;
+      this.tcb = tcb;
+      // initialization
+      case (MODE)
+        // manager
+        "MAN": begin
+          // initialize to idle state
+          tcb.vld = 1'b0;
+        end
+        // monitor
+        "MON": begin
+        end
+        // subordinate
+        "SUB": begin
+          // initialize to idle state
+          tcb.rdy = 1'b0;
+        end
+      endcase
+    endfunction: new
 
 ////////////////////////////////////////////////////////////////////////////////
 // reference data for tests
@@ -128,9 +160,130 @@ package tcb_vip_pkg;
     endfunction: transfer_check
 
 ////////////////////////////////////////////////////////////////////////////////
+// transfer request/response (enable pipelined transfers with full throughput)
+////////////////////////////////////////////////////////////////////////////////
+
+/*
+  // transfer request driver
+  task automatic transfer_req_drv (
+    inout  transfer_t seq
+  );
+    // request timing
+    repeat (seq.idl) @(posedge tcb.clk);
+    // drive transfer
+    #1;
+    // handshake
+    tcb.vld = 1'b1;
+    // request optional
+    tcb.inc = seq.req.inc;
+    tcb.rpt = seq.req.rpt;
+    tcb.lck = seq.req.lck;
+    tcb.ndn = seq.req.ndn;
+    // request
+    tcb.wen = seq.req.wen;
+    tcb.adr = seq.req.adr;
+    tcb.siz = seq.req.siz;
+    tcb.ben = seq.req.ben;
+    tcb.wdt = seq.req.wdt;
+    // backpressure
+    seq.bpr = 0;
+    do begin
+      @(posedge tcb.clk);
+      if (~tcb.rdy) seq.bpr++;
+    end while (~tcb.trn);
+    // drive idle/undefined
+    #1;
+    // handshake
+    tcb.vld = 1'b0;
+    // request optional
+    tcb.inc = 'x;
+    tcb.rpt = 'x;
+    tcb.lck = 'x;
+    tcb.ndn = 'x;
+    // request
+    tcb.wen = 'x;
+    tcb.adr = 'x;
+    tcb.siz = 'x;
+    tcb.ben = 'x;
+    tcb.wdt = 'x;
+  endtask: transfer_req_drv
+
+  // transfer response listener
+  task automatic transfer_rsp_lsn (
+    inout  transfer_t seq
+  );
+    // wait for response
+    do begin
+      @(posedge tcb.clk);
+    end while (~tcb.rsp[tcb.DLY]);
+    // response
+    seq.rsp.rdt = tcb.rdt;
+    seq.rsp.err = tcb.err;
+  endtask: transfer_rsp_lsn
+
+  // transfer request listener
+  task automatic transfer_req_lsn (
+    inout  transfer_t seq
+  );
+    #1;
+    tcb.rdy = 1'b0;
+    // TODO: measure idle time
+    seq.idl = 0;
+    // request
+    if (seq.bpr == 0) begin
+      // ready
+      tcb.rdy = 1'b1;
+      // wait for transfer
+      do begin
+        @(posedge tcb.clk);
+        seq.idl += tcb.vld ? 0 : 1;
+      end while (~tcb.trn);
+    end else begin
+      // backpressure
+      for (int unsigned i=0; i<seq.bpr; i+=(tcb.vld?1:0)) begin
+        @(posedge tcb.clk);
+        seq.idl += tcb.vld ? 0 : 1;
+      end
+      // ready
+      #1;
+      tcb.rdy = 1'b1;
+      // wait for transfer
+      do begin
+        @(posedge tcb.clk);
+      end while (~tcb.trn);
+    end
+    // request optional
+    seq.req.inc = tcb.inc;
+    seq.req.rpt = tcb.rpt;
+    seq.req.lck = tcb.lck;
+    seq.req.ndn = tcb.ndn;
+    // request
+    seq.req.wen = tcb.wen;
+    seq.req.adr = tcb.adr;
+    seq.req.siz = tcb.siz;
+    seq.req.ben = tcb.ben;
+    seq.req.wdt = tcb.wdt;
+  endtask: transfer_req_lsn
+
+  // transfer response driver
+  task automatic transfer_rsp_drv (
+    inout  transfer_t seq
+  );
+    // response
+    tcb.rdt = seq.rsp.rdt;
+    tcb.err = seq.rsp.err;
+    // wait for response
+    do begin
+      @(posedge tcb.clk);
+    end while (~tcb.rsp[tcb.DLY]);
+  endtask: transfer_rsp_drv
+*/
+
+////////////////////////////////////////////////////////////////////////////////
 // transaction
 ////////////////////////////////////////////////////////////////////////////////
 
+/*
     virtual class transaction_c #(
       // TCB widths
       int unsigned SIZ = BEW  // transaction size in bytes
@@ -252,39 +405,8 @@ package tcb_vip_pkg;
       endfunction: transaction_response
 
     endclass: transaction_c
+*/
 
   endclass: tcb_c
-
-////////////////////////////////////////////////////////////////////////////////
-// packet class
-////////////////////////////////////////////////////////////////////////////////
-
-  virtual class packet_c #(
-    // TCB widths
-    int unsigned SLW = 8,  // selection width (byte size)
-    int unsigned NUM = 4   // number of bytes
-  );
-
-    // type definitions
-    typedef logic [NUM-1:0][SLW-1:0] dat_t          ;  //   packed byte array
-//  typedef logic          [SLW-1:0] pkt_t [NUM-1:0];  // unpacked byte array
-    typedef logic          [SLW-1:0] pkt_t [];         // dynamic  byte array
-
-    // convert dynamic array
-    static function automatic dat_t dat (
-      pkt_t pkt
-    );
-      for (int unsigned i=0; i<1; i++)  dat[i] = pkt[i];
-    endfunction: dat
-
-    // convert dynamic array
-    static function automatic pkt_t pkt (
-      dat_t dat
-    );
-      pkt = new[NUM];
-      for (int unsigned i=0; i<1; i++)  pkt[i] = dat[i];
-    endfunction: pkt
-
-  endclass: packet_c
 
 endpackage: tcb_vip_pkg

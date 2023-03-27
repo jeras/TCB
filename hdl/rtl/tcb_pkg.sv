@@ -47,10 +47,10 @@ package tcb_pkg;
     TCB_ALIGNED   = 1'b1   // aligned
   } tcb_align_t;
 
-  // bit vector order
+  // byte order
   typedef enum bit {
-    TCB_DESCENDING = 1'b0,  // descending order ([7:0])
-    TCB_ASCENDING  = 1'b1   //  ascending order ([0:7])
+    TCB_DESCENDING = 1'b0,  // descending order
+    TCB_ASCENDING  = 1'b1   //  ascending order
   } tcb_order_t;
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -58,7 +58,7 @@ package tcb_pkg;
 ////////////////////////////////////////////////////////////////////////////////
 
   // endianness
-  typedef enum bit {
+  typedef enum logic {
     TCB_LITTLE = 1'b0,  // little-endian
     TCB_BIG    = 1'b1   // big-endian
   } tcb_endian_t;

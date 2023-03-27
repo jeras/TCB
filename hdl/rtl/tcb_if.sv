@@ -33,7 +33,7 @@ interface tcb_if
   // TCB parameters
   int unsigned DLY = 1,        // response delay
   // other parameters
-  tcb_mode_t   MOD = TCB_MEMORY,
+  tcb_mode_t   MOD = TCB_REFERENCE,
   tcb_order_t  ORD = TCB_DESCENDING,
   tcb_align_t  LGN = TCB_ALIGNED
 )(
@@ -42,7 +42,15 @@ interface tcb_if
   input  logic rst   // reset
 );
 
+////////////////////////////////////////////////////////////////////////////////
+// local parameters
+////////////////////////////////////////////////////////////////////////////////
+
+  //
   localparam int unsigned SZW = $clog2($clog2(BEW)+1);  // logarithmic size width
+
+  // address alignment mask
+  localparam logic [ABW-1:0] ADR_LGN_MSK = {(ABW-$clog2(BEW))'('1), ($clog2(BEW))'('0)};
 
 ////////////////////////////////////////////////////////////////////////////////
 // I/O ports
@@ -71,10 +79,15 @@ interface tcb_if
 // internal signals (never outputs on modports)
 ////////////////////////////////////////////////////////////////////////////////
 
+  // handshake related
   logic           trn        ;  // transfer
   logic           idl        ;  // idle
+
+  // response related (delayed from transfer to response)
   logic           rsp [0:DLY];  // response status
-  logic [BEW-1:0] rbe [0:DLY];  // read byte enable
+  logic [ABW-1:0] rad [0:DLY];  // response address
+  logic [SZW-1:0] rsz [0:DLY];  // response logarithmic size
+  logic [BEW-1:0] rbe [0:DLY];  // response byte enable
 
   // transfer (valid and ready at the same time)
   assign trn = vld & rdy;
@@ -85,7 +98,9 @@ interface tcb_if
 
   // response combinational
   assign rsp[0] = trn                  ;  // response valid
-  assign rbe[0] = trn & ~wen ? ben : '0;  // read byte enable
+  assign rad[0] =              adr     ;  // response address
+  assign rsz[0] =              siz     ;  // response logarithmic size
+  assign rbe[0] = trn & ~wen ? ben : '0;  // response byte enable
 
   // response pipeline
   generate
@@ -93,6 +108,8 @@ interface tcb_if
     always @(posedge clk)
     begin
       rsp[d] <= rsp[d-1];
+      rad[d] <= rad[d-1];
+      rsz[d] <= rsz[d-1];
       rbe[d] <= rbe[d-1];
     end
   end: gen_rsp
@@ -125,6 +142,8 @@ interface tcb_if
     input  trn,
     input  idl,
     input  rsp,
+    input  rad,
+    input  rsz,
     input  rbe
   );
 
@@ -151,6 +170,8 @@ interface tcb_if
     input  trn,
     input  idl,
     input  rsp,
+    input  rad,
+    input  rsz,
     input  rbe
   );
 
@@ -177,6 +198,8 @@ interface tcb_if
     input  trn,
     input  idl,
     input  rsp,
+    input  rad,
+    input  rsz,
     input  rbe
   );
 

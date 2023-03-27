@@ -45,19 +45,7 @@ import tcb_pkg::*;
   endgenerate
 `endif
 
-////////////////////////////////////////////////////////////////////////////////
-// misalignment
-////////////////////////////////////////////////////////////////////////////////
-
-  // decodings for read and write access are identical
-  always_comb
-  unique case (sub.siz)
-    'd0    : mal = 1'b0;
-    'd1    : mal = |sub.adr[0:0];
-    'd2    : mal = |sub.adr[1:0];
-    'd3    : mal = |sub.adr[2:0];
-    default: mal = 1'bx;
-  endcase
+// TODO: REFERENCE mode with ASCENDING byte order is not supported
 
 ////////////////////////////////////////////////////////////////////////////////
 // request
@@ -75,63 +63,136 @@ import tcb_pkg::*;
   // request
   assign man.wen = sub.wen;
   assign man.siz = sub.siz;
-  assign man.adr = sub.adr;
 
-  // write data packed arrays
-  logic [sub.BEW-1:0][sub.SLW-1:0] sub_wdt;
-  logic [man.BEW-1:0][man.SLW-1:0] man_wdt;
+////////////////////////////////////////////////////////////////////////////////
+// address alignment
+////////////////////////////////////////////////////////////////////////////////
 
-  // write data multiplexer select
-  logic [$clog2(sub.BEW)-1:0] mux_wdt [man.BEW-1:0];
+  // decodings for read and write access are identical
+  always_comb
+  unique case (sub.siz)
+    'd0    : mal = 1'b0;
+    'd1    : mal = |sub.adr[0:0];
+    'd2    : mal = |sub.adr[1:0];
+    'd3    : mal = |sub.adr[2:0];
+    default: mal = 1'bx;
+  endcase
 
-  // write data packed array from vector
-  assign sub_wdt = sub.wdt;
-
-  // write data bytes
   generate
-  for (genvar i=0; i<man.BEW; i++) begin
+  case (sub.LGN)
+    TCB_UNALIGNED: begin
 
-    // multiplexer select signal
-    assign mux_wdt[i] = (man.adr[$clog2(sub.BEW)-1:0] + i) % sub.BEW;
+      assign man.adr = sub.adr;
 
-    // byte enable
-    assign man.ben[i] = '1;
+    end
+    TCB_ALIGNED  : begin
 
-    // multiplexer
-    assign man_wdt[i] = sub_wdt[mux_wdt[i]];
+      assign man.adr = sub.adr & sub.ADR_LGN_MSK;
 
-  end
+    end
+  endcase
   endgenerate
 
-  // write data packed array to vector
+////////////////////////////////////////////////////////////////////////////////
+// write/read data
+////////////////////////////////////////////////////////////////////////////////
+
+  // write/read data packed arrays
+  logic [sub.BEW-1:0][sub.SLW-1:0] sub_wdt, sub_rdt;
+  logic [man.BEW-1:0][man.SLW-1:0] man_wdt, man_rdt;
+
+  // write data multiplexer select
+  logic [$clog2(sub.BEW)-1:0] sel_wdt [man.BEW-1:0];
+  // read data multiplexer select
+  logic [$clog2(sub.BEW)-1:0] sel_rdt [man.BEW-1:0];
+
+  // write/read data packed array from vector
+  assign sub_wdt = sub.wdt;
+  assign man_rdt = man.rdt;
+
+  generate
+  case (sub.MOD)
+    TCB_REFERENCE: begin
+      case (man.MOD)
+        TCB_REFERENCE: begin
+
+          // REFERENCE -> REFERENCE
+          assign man_wdt = sub_wdt;
+          assign sub_rdt = man_rdt;
+
+        end
+        TCB_MEMORY: begin
+
+          // REFERENCE -> MEMORY
+          for (genvar i=0; i<man.BEW; i++) begin
+            int siz = 2**sub.siz;
+            // multiplexer select signal
+            always_comb
+            case (sub.ndn)
+              // little endian
+              1'b0: begin
+                sel_wdt[i] = (man.adr[$clog2(sub.BEW)-1:0]       + i) % sub.BEW;
+              end
+              1'b1: begin
+                sel_wdt[i] = (man.adr[$clog2(sub.BEW)-1:0] + siz - i) % sub.BEW;
+              end
+            endcase
+            // multiplexer
+            case (man.ORD)
+              TCB_DESCENDING: begin
+                assign man_wdt[i] = sub_wdt[          sel_wdt[i]];
+                assign man.ben[i] = sub.ben[          sel_wdt[i]];
+                assign sub_rdt[i] = man_rdt[          sel_rdt[i]];
+              end
+              TCB_ASCENDING : begin
+                assign man_wdt[i] = sub_wdt[man.BEW-1-sel_wdt[i]];
+                assign man.ben[i] = sub.ben[man.BEW-1-sel_wdt[i]];
+                assign sub_rdt[i] = man_rdt[man.BEW-1-sel_rdt[i]];
+              end
+            endcase
+          end
+
+        end
+      endcase
+    end
+    TCB_MEMORY: begin
+      case (man.MOD)
+        TCB_REFERENCE: begin
+
+          // MEMORY -> REFERENCE
+          // TODO: not a big priority
+
+        end
+        TCB_MEMORY: begin
+
+          // MEMORY -> MEMORY
+          for (genvar i=0; i<man.BEW; i++) begin
+            if (sub.ORD == man.ORD) begin
+              // same byte order
+              assign man_wdt[i] = sub_wdt[          sel_wdt[i]];
+              assign man.ben[i] = sub.ben[                  i ];
+              assign sub_rdt[i] = man_rdt[          sel_rdt[i]];
+            end else begin
+              // reversed byte order
+              assign man_wdt[i] = sub_wdt[man.BEW-1-sel_wdt[i]];
+              assign man.ben[i] = sub.ben[man.BEW-1-        i ];
+              assign sub_rdt[i] = man_rdt[man.BEW-1-sel_rdt[i]];
+            end
+          end
+
+        end
+      endcase
+    end
+  endcase
+  endgenerate
+
+  // write/read data packed array to vector
   assign man.wdt = man_wdt;
+  assign sub.rdt = sub_rdt;
 
 ////////////////////////////////////////////////////////////////////////////////
 // response
 ////////////////////////////////////////////////////////////////////////////////
-
-  // read data packed arrays
-  logic [man.BEW-1:0][man.SLW-1:0] man_rdt;
-  logic [sub.BEW-1:0][sub.SLW-1:0] sub_rdt;
-
-  // read data multiplexer select
-  logic [$clog2(sub.BEW)-1:0] mux_rdt [man.BEW-1:0];
-
-  // write data bytes
-  generate
-  for (genvar i=0; i<man.BEW; i++) begin
-
-    // multiplexer select signal
-    assign mux_rdt[i] = man.adr[$clog2(sub.BEW)-1:0];
-
-    // multiplexer
-    assign sub_rdt[i] = man_rdt[mux_rdt[i]];
-
-  end
-  endgenerate
-
-  // read data packed array to vector
-  assign sub.rdt = sub_rdt;
 
   // error
   assign sub.err = man.err;

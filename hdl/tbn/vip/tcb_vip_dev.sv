@@ -335,6 +335,7 @@ module tcb_vip_dev
   typedef tcb_s::transaction_c #(.SIZ ( 8)) transaction64_t;
   typedef tcb_s::transaction_c #(.SIZ (16)) transaction128_t;
 
+/*
   task write (
     // request
     input  logic              [tcb.ABW-1:0] adr,
@@ -391,6 +392,7 @@ module tcb_vip_dev
     rdt = transaction32.rsp.rdt;
     err = transaction32.rsp.err;
   endtask: read
+*/
 
   task write8 (
     input  logic        [tcb.ABW-1:0] adr,
