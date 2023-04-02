@@ -32,7 +32,7 @@ module tcb_vip_tb
 );
 
   // parameterized class specialization
-  typedef tcb_c #(ABW, DBW, SLW) tcb_s;
+//  typedef tcb_c #(ABW, DBW, SLW) tcb_s;
 
 ////////////////////////////////////////////////////////////////////////////////
 // local signals
@@ -44,7 +44,7 @@ module tcb_vip_tb
 
   // TCB interface
   tcb_if #(.ABW (ABW), .DBW (DBW), .SLW (SLW), .DLY (DLY)) tcb          (.clk (clk), .rst (rst));
-  tcb_if #(.ABW (ABW), .DBW (DBW), .SLW (SLW), .DLY (DLY)) bus [0:PN-1] (.clk (clk), .rst (rst));
+//  tcb_if #(.ABW (ABW), .DBW (DBW), .SLW (SLW), .DLY (DLY)) bus [0:PN-1] (.clk (clk), .rst (rst));
 
   // ERROR counter
   int unsigned error;
@@ -53,6 +53,7 @@ module tcb_vip_tb
 // test non-blocking API
 ////////////////////////////////////////////////////////////////////////////////
 
+/*
   task automatic test_nonblocking;
     // local variables
     bit lst_wen [2] = '{1'b0, 1'b1};
@@ -141,11 +142,11 @@ module tcb_vip_tb
     end
 
   endtask: test_nonblocking
-
+*/
 ////////////////////////////////////////////////////////////////////////////////
 // test blocking API
 ////////////////////////////////////////////////////////////////////////////////
-
+/*
   logic [  8-1:0] dat8;
   logic [ 16-1:0] dat16;
   logic [ 32-1:0] dat32;
@@ -163,7 +164,7 @@ module tcb_vip_tb
     cpu[0].write('h11, 32'h01234567, err);
     cpu[0].read ('h11, dat         , err);
   endtask: test_blocking
-
+*/
 ////////////////////////////////////////////////////////////////////////////////
 // test sequence
 ////////////////////////////////////////////////////////////////////////////////
@@ -172,9 +173,19 @@ module tcb_vip_tb
   initial          clk = 1'b1;
   always #(20ns/2) clk = ~clk;
 
+  // TCB objects (class instances)
+  tcb_c man;  // manager
+//  tcb_s mon;  // monitor
+//  tcb_s sub;  // subordinate
+
   // test sequence
   initial
   begin
+    // creating environment
+    man = new(tcb);  // manager
+//    mon = new(tcb);  // monitor
+//    sub = new(tcb);  // subordinate
+
     // reset sequence
     rst = 1'b1;
     repeat (2) @(posedge clk);
@@ -182,8 +193,10 @@ module tcb_vip_tb
     rst = 1'b0;
     repeat (1) @(posedge clk);
     
+    man.test_vif(2);
+
     // test non_blobking API
-    test_nonblocking;
+//    test_nonblocking;
 //    repeat (2) @(posedge clk);
 //    test_blocking;
 
@@ -196,14 +209,14 @@ module tcb_vip_tb
 ////////////////////////////////////////////////////////////////////////////////
 // VIP instances
 ////////////////////////////////////////////////////////////////////////////////
-
+/*
   tcb_vip_dev #("MAN") man          (.tcb (tcb));  // manager
   tcb_vip_dev #("MON") mon          (.tcb (tcb));  // monitor
   tcb_vip_dev #("SUB") sub          (.tcb (tcb));  // subordinate
 
   tcb_vip_dev #("MAN") cpu [0:PN-1] (.tcb (bus));  // CPU model
   tcb_vip_mem          mem          (.tcb (bus));  // memory
-
+*/
 ////////////////////////////////////////////////////////////////////////////////
 // VCD/FST waveform trace
 ////////////////////////////////////////////////////////////////////////////////

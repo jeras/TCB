@@ -18,58 +18,72 @@
 
 package tcb_vip_pkg;
 
-  import tcb_pkg::*;
+//  import tcb_pkg::*;
 
 ////////////////////////////////////////////////////////////////////////////////
 // TCB class
 ////////////////////////////////////////////////////////////////////////////////
 
-  class tcb_c #(
-    // TCB widths
-    int unsigned ABW = 32,       // address bus width
-    int unsigned DBW = 32,       // data    bus width
-    int unsigned SLW =       8,  // selection   width
-    int unsigned BEW = DBW/SLW,  // byte enable width
-    // other parameters
-    tcb_mode_t   MOD = TCB_REFERENCE,
-    tcb_order_t  ORD = TCB_DESCENDING,
-    tcb_align_t  LGN = TCB_ALIGNED
-  );
+  class tcb_c;
+//   #(
+//    // TCB widths
+//    int unsigned ABW = 32,       // address bus width
+//    int unsigned DBW = 32,       // data    bus width
+//    int unsigned SLW =       8,  // selection   width
+//    int unsigned BEW = DBW/SLW//,  // byte enable width
+//    // other parameters
+//    tcb_mode_t   MOD = TCB_REFERENCE,
+//    tcb_order_t  ORD = TCB_DESCENDING,
+//    tcb_align_t  LGN = TCB_ALIGNED
+//  );
 
 ////////////////////////////////////////////////////////////////////////////////
 // local parameters
 ////////////////////////////////////////////////////////////////////////////////
 
-    localparam int unsigned SZW = $clog2($clog2(BEW)+1);  // logarithmic size width
+//    localparam int unsigned SZW = $clog2($clog2(BEW)+1);  // logarithmic size width
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
-    string MODE = "MON";
-    virtual tcb_if tcb;
+//    string MODE = "MON";
+    virtual tcb_if vif;
 
     //constructor
-    function new(string MODE = "MON", virtual tcb_if tcb);
-      this.MODE = MODE;
-      this.tcb = tcb;
-      // initialization
-      case (MODE)
-        // manager
-        "MAN": begin
-          // initialize to idle state
-          tcb.vld = 1'b0;
-        end
-        // monitor
-        "MON": begin
-        end
-        // subordinate
-        "SUB": begin
-          // initialize to idle state
-          tcb.rdy = 1'b0;
-        end
-      endcase
+    function new(virtual tcb_if vif);
+//      this.MODE = MODE;
+      this.vif = vif;
+//      // initialization
+//      case (MODE)
+//        // manager
+//        "MAN": begin
+//          // initialize to idle state
+//          vif.vld = 1'b0;
+//        end
+//        // monitor
+//        "MON": begin
+//          // no initialization
+//        end
+//        // subordinate
+//        "SUB": begin
+//          // initialize to idle state
+//          vif.rdy = 1'b0;
+//        end
+//      endcase
     endfunction: new
 
+  task automatic test_vif (integer len = 1);
+    for (integer i=0; i<len; i++) begin
+      vif.vld <= 1;
+      #5;
+      //@(posedge vif.clk);
+      vif.vld <= 0;
+      #5;
+      //@(posedge vif.clk);
+    end
+  endtask: test_vif
+
+/*
 ////////////////////////////////////////////////////////////////////////////////
 // reference data for tests
 ////////////////////////////////////////////////////////////////////////////////
@@ -163,7 +177,6 @@ package tcb_vip_pkg;
 // transfer request/response (enable pipelined transfers with full throughput)
 ////////////////////////////////////////////////////////////////////////////////
 
-/*
   // transfer request driver
   task automatic transfer_req_drv (
     inout  transfer_t seq

@@ -23,7 +23,7 @@
 // - little endian
 
 interface tcb_if
-  import tcb_pkg::*;
+//  import tcb_pkg::*;
 #(
   // TCB widths
   int unsigned ABW = 32,       // address bus width
@@ -31,11 +31,11 @@ interface tcb_if
   int unsigned SLW =       8,  // selection   width
   int unsigned BEW = DBW/SLW,  // byte enable width
   // TCB parameters
-  int unsigned DLY = 1,        // response delay
-  // other parameters
-  tcb_mode_t   MOD = TCB_REFERENCE,
-  tcb_order_t  ORD = TCB_DESCENDING,
-  tcb_align_t  LGN = TCB_ALIGNED
+  int unsigned DLY = 1        // response delay
+//  // other parameters
+//  tcb_mode_t   MOD = TCB_REFERENCE,
+//  tcb_order_t  ORD = TCB_DESCENDING,
+//  tcb_align_t  LGN = TCB_ALIGNED
 )(
   // system signals
   input  logic clk,  // clock
@@ -78,7 +78,7 @@ interface tcb_if
 ////////////////////////////////////////////////////////////////////////////////
 // internal signals (never outputs on modports)
 ////////////////////////////////////////////////////////////////////////////////
-
+/*
   // handshake related
   logic           trn        ;  // transfer
   logic           idl        ;  // idle
@@ -202,5 +202,5 @@ interface tcb_if
     input  rsz,
     input  rbe
   );
-
+*/
 endinterface: tcb_if
