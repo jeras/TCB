@@ -38,8 +38,8 @@ What it is not intended for:
 ## Terminology
 
 TCB terminology and syntax is mostly based on:
-- Verilog/SystemVerilog HDL languages,
-- AMBA AXI family of protocols.
+- AMBA AXI family of protocols,
+- Verilog/SystemVerilog HDL languages.
 
 ### Interconnect terms
 
@@ -55,7 +55,7 @@ TCB terminology and syntax is mostly based on:
 |--------------|-------------|
 | clock period | The term _clock period_ is preferred over _clock cycle_ to avoid confusion with _access cycle_ which can be multiple clock periods long. |
 | handshake    | Exchange of `valid` and `ready` signals during between manager and subordinate. |
-| cycle        | Or _access cycle_ is one or more clock periods long exchange between a master and a subordinate governed by a valid/ready handshake, and it ends with a transfer. TODO: clarify if the delayed response is also part of the access cycle. |
+| cycle        | A _request cycle_ is one or more clock periods long exchange between a master and a subordinate governed by a valid/ready handshake, and it ends with a transfer. A _response cycle_ starts `DLY` clock periods after the request cycle and has the same length. |
 | transfer     | Each access cycle ends in a single clock period long transfer when valid and ready handshake signals are both active. |
 | request      | The collective value of signals (address, write enable, byte enable, write data) driven by a manager, while valid is active during an access cycle. And sampled by a subordinate during a transfer. |
 | response     | In the current protocol version, a response is a single clock period delayed by a fixed number of clock periods from each transfer, in it read data and error status are driven by a subordinate and sampled by a manager. Future versions of the protocol might have responses encompassing multiple clock periods. |
@@ -64,10 +64,16 @@ TCB terminology and syntax is mostly based on:
 
 ### Transaction level terms
 
+A transaction is the atomic exchange of a desired data length requiring one or more transfers.
+**TODO: check for a TLM definition.**
+
 | direction | description |
 |-----------|-------------|
 | write     | Used for CPU store operations. |
 | read      | Used for CPU load operations. |
+| atomic    | |
+| burst     | |
+
 
 | size | description |
 |------|-------------|
@@ -109,12 +115,130 @@ Mostly for aesthetic reasons (vertical alignment) all signal names are
 [three-letter abbreviations (TLA)](https://en.wikipedia.org/wiki/Three-letter_acronym).
 
 Suffixes specifying the direction of module ports as input/output (`in`/`out`, `i`/`o`) can be avoided.
-Instead the set of signals can have a prefix or is grouped into a SystemVerilog interface.
-This set name shall use specifiers like manager/subordinate (`man`/`sub`).
+Instead signals can be organized into sets with a prefix or are grouped into a SystemVerilog interface.
+Set names shall use specifiers like manager/subordinate (`man`/`sub`) or request/response (`req`/`rsp`).
 
-## Signals and parameters
+## Protocol base
 
-### Parameters
+The TCB protocol base is comprised of a valid/ready handshake for the request
+and a configurable fixed delay for the response.
+
+### System signals clock and reset
+
+System signals are propagated globally from a system controller
+to managers and subordinates.
+Implementations with separate clock/reset/power domains can have
+multiple independent system signal sets.
+
+| signal | description |
+|--------|-------------|
+| `clk`  | Clock (active on rising edge). |
+| `rst`  | Reset (active high) can be synchronous or asynchronous depending on implementation. |
+
+TODO: define power domain functionality.
+
+### Handshake, request and response sets
+
+The manager initiates a request with the handshake signal `vld` (valid).
+Backpressure from the subordinate is supported by the handshake signal `rdy` (ready).
+
+If no backpressure conditions are possible, the `rdy` signal can be omitted,
+and the manager shall interpret it as always being active (`rdy==1'b1`).
+
+NOTE: The handshake signals intentionally use names from the AMBA AXI family of protocols,
+      since the handshake is governed by compatible (equivalent) rules.
+      Otherwise the TCB protocol bears no relation to AMBA.
+
+Signals going from manager to subordinate are part of the request set,
+signals going in the opposite direction are part of the response set.
+This signal sets are used to provide transaction type details, addressing and data.
+
+| signal | direction      | description |
+|--------|----------------|-------------|
+| `vld`  | `man` -> `sub` | Handshake valid. |
+| `req`  | `man` -> `sub` | Request set. |
+| `rsp`  | `sub` -> `man` | Response set. |
+| `rdy`  | `sub` -> `man` | Handshake ready (can be omitted if there is no backpressure). |
+
+While the handshake defines the request transfer,
+the response is is always provided `DLY` clock cycles after the handshake transfer.
+
+| parameter | type           | description |
+|-----------|----------------|-------------|
+| `DLY`     | `int unsigned` | Response delay. |
+
+### Handshake protocol and signal timing
+
+Handshake signals shall follow the same basic principles as defined for the AMBA AXI family of protocols:
+- `vld` shell be inactive during reset.
+- While valid is not active all other signals shall be ignored (`X` in timing/waveform diagrams).
+- Once the manager asserts `vld`, it must not remove it till the cycle is completed by an active `rdy` signal.
+- The manager must not wait for `rdy` to be asserted before starting a new cycle by asserting `vld`.
+- The subordinate can assert/remove the `rdy` signal without restrictions.
+- There is no inherent timeout mechanism.
+- TODO: clarify `rdy` behavior if part of the system is under reset.
+
+This means once a request cycle is initiated, it must be completed with a transfer.
+Since `rdy` can be asserted during reset (`rdy` can be a constant value),
+`vld` must not be asserted, since this would indicate transfers while in reset state.
+Since the subordinate is allowed to wait for `vld` before asserting `rdy` (no restrictions),
+the manager shall not wait for `rdy` before asserting `vld`,
+since this could result in a lockup or a combinational loop.
+
+There is no integrated timeout abort mechanism,
+although it would be possible to place such functionality
+into a module placed between a manager and a subordinate.
+
+### Reset sequences
+
+#### Reset release and assertion sequence
+
+A global reset can be asserted at any moment,
+as long as it applies to the entire interconnect and all managers/subordinates connected to it.
+
+A correct reset assertion sequence for just part of the system
+separated into multiple clock/reset/power domains
+is explained separately in the reference interconnect library documentation.
+
+The handshake valid `vld` must be inactive during reset.
+After the reset signal `rst` is released there must be
+at least one clock period before `vld` can be asserted.
+The handshake ready signal can be active or inactive during reset,
+but it is not allowed to toggle.
+After the reset signal `rst` is released there must be
+at least one clock period before `rdy` can toggle.
+ 
+This timing is based on the assumption that reset is not used as a normal combinational signal.
+In this case the `vld` signal depends on a register toggling after reset is released,
+and this can only happen with the described timing.
+The same explanation stands for `rdy` if it is not a constant value.
+
+![Write transfer](https://svg.wavedrom.com/github/jeras/TCB/main/doc/tcb_reset.json)
+
+#### Reset sequence length
+
+Ideally all devices would require the reset to be active for only a single clock period.
+Long (multiple clock periods) reset sequences are sometimes required
+so that reset values can propagate through flipflops without reset.
+If a device requires a longer active reset, this must be documented.
+A global reset shall be applied for the longest sequence required by eny devices in the same domain.
+Requiring long active reset sequences just in case should be avoided,
+the exact required reset sequence length shall be derived from the RTL.
+
+#### Sequential logic without reset
+
+It is allowed to use reset capable flipflops only for control signals (handshake signals in TCB),
+while address, data and other signals use flipflops without a reset for example to reduce ASIC area.
+While this approach does not affect functionality,
+it affects reproducibility of power consumption tests.
+It might also have some effect on the viability of side channel attacks.
+
+### Handshake sequences
+
+![Write transfer](https://svg.wavedrom.com/github/jeras/TCB/main/doc/tcb_handshake.json)
+
+
+## Half-duplex
 
 #### Signal width parameters
 
@@ -131,46 +255,19 @@ Since TCB was designed with 32-bit CPU/SoC/peripherals in mind,
 | `SLW=8`       | `int unsigned` | Selection width (in most cases it should be 8, the size of a byte). |
 | `BEW=DBW/SLW` | `int unsigned` | Byte enable width is the number of selection width units fitting into the data width. |
 
-#### Protocol timing parameters
-
-| parameter | type           | description |
-|-----------|----------------|-------------|
-| `DLY`     | `int unsigned` | Response delay. |
-
-### System signals
-
-System signals are propagated globally from a system controller
-to managers and subordinates.
-
-| signal | description |
-|--------|-------------|
-| `clk`  | Clock (active on rising edge). |
-| `rst`  | Reset (active high). |
-
 ### Bus signals
-
-The SRAM signal chip select/enable is replaced with the handshake signal VALID `vld`.
-Backpressure is supported by adding the handshake signal READY `rdy`.
-
-NOTE: The handshake signals intentionally use names from the AMBA AXI family of protocols.
-      Otherwise the TCB protocol bears no relation to AMBA.
-
-Signals going from manager to subordinate are part of the request,
-signals going in the opposite direction are part of the response.
 
 Most signals are designed to directly interface with SRAM (synchronous static RAM) ports:
 - address `adr`,
 - write enable `wen` and byte enable `ben`,
 - write data `wdt` and read data `rdt`.
 The remaining signals were added to support SoC features:
-- handshake signals `vld`/`rdy` are used to implement interconnect arbitration,
 - arbitration lock `lck` is used to prevent interference with atomic accesses,
 - repeat access `rpt` is used to reduce power consumption on repeated read accesses to the same address,
 - error response `err` is used to enable clock/power gating support.
 
 | signal | width | direction      | usage    | description |
 |--------|-------|----------------|----------|-------------|
-| `vld`  | `1`   | `man` -> `sub` | required | Handshake valid. |
 | `rpt`  | `1`   | `man` -> `sub` | optional | Repeat access. |
 | `lck`  | `1`   | `man` -> `sub` | optional | Arbitration lock. |
 | `wen`  | `1`   | `man` -> `sub` | optional | Write enable (can be omitted for read only devices). |
@@ -179,7 +276,6 @@ The remaining signals were added to support SoC features:
 | `wdt`  | `DBW` | `man` -> `sub` | optional | Write data (can be omitted for read only devices). |
 | `rdt`  | `DBW` | `sub` -> `man` | required | Read data. |
 | `err`  | `1`   | `sub` -> `man` | optional | Error response (can be omitted if there are no error conditions). |
-| `rdy`  | `1`   | `sub` -> `man` | optional | Handshake ready (can be omitted if there is no backpressure). |
 
 ROM would be an example of a device with only the required ports.
 If less then the required signals are needed,
@@ -198,7 +294,6 @@ Default output values can always be ignored by a handler, or simply no handler i
 | `ben`  | `BW'b1` | Access with less than the full width shall trigger an error. |
 | `wdt`  | `DW'bx` | Can be ignored, `wen` requires handling. |
 | `err`  |  `1'b0` | Can be ignored, if no error conditions are possible, otherwise requires and external handler (watchdog, ...). |
-| `rdy`  |  `1'b1` | Can be ignored, if no backpressure conditions are possible, otherwise requires and external handler (watchdog, ...). |
 
 Various implementations can add custom (user defined) signals to either the request or response,
 some examples of custom signals would be:
@@ -207,59 +302,6 @@ some examples of custom signals would be:
 - quality of service signals,
 - multiple types of error responses,
 - ...
-
-## Handshake protocol and signal timing
-
-Handshake signals shall follow the basic principles defined for the AMBA AXI family of protocols.
-- While valid is not active all other signals shall be ignored (`X` in timing/waveform diagrams).
-- `vld` must be inactive during reset.
-- Once the manager asserts `vld`, it must not remove it till the cycle is completed by an active `rdy` signal.
-- The manager must not wait for `rdy` to be asserted before starting a new transfer by asserting `vld`.
-- The subordinate can assert/remove the `rdy` signal without restrictions.
-- There is no inherent timeout mechanism.
-- TODO: clarify `rdy` behavior if part of the system is under reset.
-
-This means once an access cycle is initiated, it must be completed with a transfer.
-Since `rdy` can be asserted during reset (`rdy` can be a constant value),
-`vld` must not be asserted, since this would indicate transfers while in reset state.
-Since the subordinate is allowed to wait for `vld` before asserting `rdy` (no restrictions),
-the manager shall not wait for `rdy` before asserting `vld`,
-since this could result in a lockup or a combinational loop.
-
-There is no integrated timeout abort mechanism,
-although it would be possible to place such functionality
-into a module placed between a manager and a subordinate.
-
-### Reset
-
-#### Reset assertion sequence 
-
-A global reset can be asserted at any moment,
-as long as it applies to the entire interconnect and all managers/subordinates connected to it.
-
-A correct reset assertion sequence for just part of the system separated into multiple clock/reset domains
-is explained later in the section about the bus separator module.
-
-#### Reset release sequence
-
-TODO
-
-#### Reset sequence length
-
-Ideally all devices would require the reset to be active for only a single clock period.
-Long (multiple clock periods) reset sequences are sometimes required
-so that reset values can propagate through flipflops without reset.
-If a device requires a longer active reset, this must be documented.
-A global reset shall be applied for the longest sequence required by eny devices in the same domain.
-Requiring long active reset sequences just in case should be avoided,
-the exact required reset sequence length shall be derived from the RTL.
-
-#### Sequential logic without reset
-
-It is allowed to use reset capable flipflops only for control signals (handshake signals in TCB),
-while address, data and other signals use flipflops without a reset for example to reduce ASIC area.
-While this approach does not affect functionality,
-it affects reproducibility of power consumption tests.
 
 ### Access cycles
 
@@ -424,170 +466,6 @@ Two different implementations
 1. Performs 2 accesses and stitches them together, optionally caches one or more unused parts of previous accesses.
 2. Splits the bus into narrower busses, and increments the address.
 
-## Reference implementation
-
-The reference implementation is written in SystemVerilog.
-
-### RTL components
-
-#### Interface
-
-```mermaid
-flowchart LR
-    man -- tcb --> sub
-```
-
-#### Arbiter
-
-```mermaid
-flowchart LR
-    tcb_man0(man) --> tcb_arb_sub0
-    tcb_man1(man) --> tcb_arb_sub1
-    subgraph tcb_arb[arb]
-        tcb_arb_sub0(sub) & tcb_arb_sub1(sub) -.-> tcb_arb_man(man)
-    end
-    tcb_arb_man --> tcb_sub(sub)
-```
-
-#### Decoder
-
-```mermaid
-flowchart LR
-    tcb_man(man) --> tcb_dec_sub
-    subgraph tcb_dec[dec]
-        tcb_dec_sub(sub) -.-> tcb_dec_man0(man) & tcb_dec_man1(man)
-    end
-    tcb_dec_man0 --> tcb_sub0(sub)
-    tcb_dec_man1 --> tcb_sub1(sub)
-```
-
-#### Register
-
-```mermaid
-flowchart LR
-    tcb_man(man) --> tcb_reg_sub
-    subgraph tcb_reg[reg]
-        tcb_reg_sub(sub) -.-> tcb_reg_man(man)
-    end
-    tcb_reg_man --> tcb_sub(sub)
-```
-
-Must be able to enable the clock for each byte separately based on byte enable,
-on both the write and read path.
-
-#### Error
-
-```mermaid
-flowchart LR
-    tcb_man(man) --> tcb_err_sub
-    subgraph tcb_err[err]
-        tcb_err_sub(sub)
-    end
-```
-
-The error subordinate module `tcb_err` is used to close unused leaf interconnect manager ports.
-The most common use case would be to replace a peripheral device disabled with a parameter.
-
-It will provide an error response to any request.
-It does not add backpressure.
-
-#### Passthrough
-
-The passthrough module `tcb_pas` does not provide any synthesizable functionality.
-Its main purpose if to allow the connection of two separate `tcb_if` SystemVerilog interfaces.
-This is usually necessary for connecting SystemVerilog interface arrays for different lengths.
-
-```mermaid
-flowchart LR
-    tcb_man(man) --> tcb_pas_sub
-    subgraph tcb_pas[pas]
-        tcb_pas_sub(sub) -.-> tcb_pas_man(man)
-    end
-    tcb_pas_man --> tcb_sub(sub)
-```
-
-#### Write buffer
-
-TODO: Consider write ordering principles of RISC-V.
-
-```mermaid
-flowchart LR
-    tcb_man(man) --> tcb_wrb_sub
-    subgraph tcb_wrb[wrb]
-        tcb_wrb_sub(sub) -.-> tcb_wrb_man(man)
-    end
-    tcb_wrb_man --> tcb_sub(sub)
-```
-
-#### Data alignment cache
-
-```mermaid
-flowchart LR
-    tcb_man(man) --> tcb_dac_sub
-    subgraph tcb_dac[dac]
-        tcb_dac_sub(sub) -.-> tcb_dac_man(man)
-    end
-    tcb_dac_man --> tcb_sub(sub)
-```
-
-#### Data alignment splitter
-
-
-#### Decoupler
-
-Provides on request decoupling (separation) of
-manager and subordinate sides of a section of the interconnect.
-
-The main purpose is to allow for safe separation of
-clock gating and power gating domains.
-
-If a TCB manager requests a transfer from a decoupled segment of the interconnect,
-The decoupler subordinate port shall return an error response.
-
-#### Read hold
-
-#### Prefetch
-
-### Testbench components
-
-NOTE: The testbench code is in an Alpha state.
-The aim is for a fully UVM compatible implementation.
-The current code just barely covers the documented functionality.
-
-#### Manager
-
-#### Subordinate
-
-## RTL design recommendations
-
-### Parameter validation
-
-### Handling of reset transitions
-
-### Peripherals
-
-The reference TCB implementation is written in SystemVerilog,
-therefore this document discusses Verilog parameters.
-The VHDL equivalent would be generics,
-and other HDL languages also have constructs with equivalent functionality.
-
-| parameter     | type           | default | description |
-|---------------|----------------|---------|-------------|
-| `DLY`         | `int unsigned` | `'d1`   | Read delay. |
-| `CFG_REQ_REG` | `bit`          | `1'b0`  | Configuration: enable REQest REGister. |
-| `CFG_RSP_REG` | `bit`          | `1'b1`  | Configuration: enable ReSPonse REGister. |
-| `CFG_ENR_CFG` | `bit`          | `1'b1`  | Configuration: ENable Read access to ConFiGuration registers. |
-
-If both address and 
-
-The [GPIO controller](GPIO.md) is a good example how this parameters can be used
-to provide the desired area/timing optimizations for a specific design.
-
-In the default configuration read/write data paths behave as follows:
-- In the write path the address is not registered and the decoder delay falls on the request side.
-- In the read path the address is not registered and the decoder delay falls on the request side.
-  Since the read data bus is registered, there is no decoder delay at the response side.
-- Since read access to configuration registers is enabled, it affects the timing on the request side.
 
 
 
