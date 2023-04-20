@@ -3,9 +3,16 @@ It might already be worth looking at,
 but the progress status statements are not reliable,
 and the API-s are not stable yet.
 
+DOC + LIB + VIP + PERI
+
 # TCB
 
-Tightly Coupled Bus [documentation](doc/TCB.md).
+This project provides the following parts:
+- Tightly Coupled Bus [documentation](doc/TCB.md),
+- reference interconnect library,
+- reference verification library (VIP),
+- reference peripherals.
+
 
 The purpose of TCB is to fill a niche for a low complexity system bus
 without unnecessary limitations on throughput.
@@ -19,7 +26,7 @@ without unnecessary limitations on throughput.
 | [`tcb_vip_pkg`](hdl/tbn/vip/tcb_vip_pkg.sv) | done   | Package containing shared code. |
 | [`tcb_vip_dwc`](hdl/tbn/vip/tcb_vip_dev.sv) | done   | Device model for manager/monitor/subordinate model. |
 
-### Interconnect library
+### Reference Interconnect library
 
 | module                                                          | status | description |
 |-----------------------------------------------------------------|--------|-------------|
