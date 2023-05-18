@@ -45,6 +45,10 @@ module tcb_lib_endianness_tb
   tcb_if #(.ABW (ABW), .DBW (DBW), .DLY (DLY)) tcb_sub       (.clk (clk), .rst (rst));
   tcb_if #(.ABW (ABW), .DBW (DBW), .DLY (DLY)) tcb_mem [0:0] (.clk (clk), .rst (rst));
 
+  tcb_vip_pkg::tcb_c #(.ABW (ABW), .DBW (DBW)) obj_man;
+  tcb_vip_pkg::tcb_c #(.ABW (ABW), .DBW (DBW)) obj_sub;
+  tcb_vip_pkg::tcb_c #(.ABW (ABW), .DBW (DBW)) obj_mem;
+
 ////////////////////////////////////////////////////////////////////////////////
 // test sequence
 ////////////////////////////////////////////////////////////////////////////////
@@ -56,13 +60,18 @@ module tcb_lib_endianness_tb
   // test sequence
   initial
   begin
-    // reset sequence
+    // reset
     rst = 1'b1;
+    // connect virtual interfaces
+    obj_man = new("MAN", tcb_man    );
+    obj_sub = new("MON", tcb_sub    );
+    obj_mem = new("MON", tcb_mem [0]);
+    // reset sequence
     repeat (2) @(posedge clk);
     rst = 1'b0;
     repeat (1) @(posedge clk);
-//    man.write(32'h00000010, 64'h01234567, err);
-//    man.read (32'h00000010, rdt         , err);
+    obj_man.write32(32'h00000010, 64'h01234567, err);
+    obj_man.read32 (32'h00000010, rdt         , err);
     $display("32'h%08X", rdt);
     repeat (4) @(posedge clk);
     $finish();

@@ -163,7 +163,6 @@ package tcb_vip_pkg;
 // transfer request/response (enable pipelined transfers with full throughput)
 ////////////////////////////////////////////////////////////////////////////////
 
-/*
   // transfer request driver
   task automatic transfer_req_drv (
     inout  transfer_t seq
@@ -277,13 +276,41 @@ package tcb_vip_pkg;
       @(posedge tcb.clk);
     end while (~tcb.rsp[tcb.DLY]);
   endtask: transfer_rsp_drv
-*/
+
+////////////////////////////////////////////////////////////////////////////////
+// transaction sequence non-blocking API
+////////////////////////////////////////////////////////////////////////////////
+
+  // request/response
+  task automatic transfer_sequencer (
+    inout  transfer_array_t transfer_array
+  );
+    fork
+      begin: fork_req
+        foreach (transfer_array[i]) begin
+          case (MODE)
+            "MAN": transfer_req_drv(transfer_array[i]);
+            "MON": transfer_req_lsn(transfer_array[i]);
+            "SUB": transfer_req_lsn(transfer_array[i]);
+          endcase 
+        end
+      end: fork_req
+      begin: fork_rsp
+        foreach (transfer_array[i]) begin
+          case (MODE)
+            "MAN": transfer_rsp_lsn(transfer_array[i]);
+            "MON": transfer_rsp_lsn(transfer_array[i]);
+            "SUB": transfer_rsp_drv(transfer_array[i]);
+          endcase 
+        end
+      end: fork_rsp
+    join
+  endtask: transfer_sequencer
 
 ////////////////////////////////////////////////////////////////////////////////
 // transaction
 ////////////////////////////////////////////////////////////////////////////////
 
-/*
     virtual class transaction_c #(
       // TCB widths
       int unsigned SIZ = BEW  // transaction size in bytes
@@ -323,7 +350,8 @@ package tcb_vip_pkg;
         // the requested transaction is organized into transfer_array
         transfer_array_t transfer_array;
         // number of transfer_array
-        transfer_array = new[SIZ / BEW]('{default: TRANSFER_INIT});
+        transfer_array = new[SIZ / BEW];
+//        transfer_array = new[SIZ / BEW]('{default: super.TRANSFER_INIT});
         // check if the transfer meets size requirements
         if (SIZ != 2**$clog2(SIZ)) begin
           $error("ERROR: Transaction size is not power of 2.");
@@ -405,7 +433,65 @@ package tcb_vip_pkg;
       endfunction: transaction_response
 
     endclass: transaction_c
-*/
+
+
+
+    task write32 (
+      // request
+      input  logic              [tcb.ABW-1:0] adr,
+      input  logic [tcb.BEW-1:0][tcb.SLW-1:0] wdt,
+      // response
+      output logic                            err,
+      // endianness
+      input  tcb_endian_t                     ndn = TCB_LITTLE
+    );
+      transfer_array_t transfer_array;
+      transaction_c #(4) ::transaction_t transaction;
+      $display("transaction = %s", $typename(transaction));
+      // request
+      transaction.req = '{wen: 1'b1, adr: adr, wdt: wdt, ndn: ndn};
+      transfer_array = transaction_c #(4) ::transaction_request(transaction.req);
+      // transaction
+      $display("transfer_array = %p", transfer_array);
+      transfer_sequencer(transfer_array);
+      $display("transfer_array = %p", transfer_array);
+      // response
+      transaction.rsp = transaction_c #(4) ::transaction_response(transfer_array);
+      $display("transaction.rsp = %p", transaction.rsp);
+      // cleanup
+      transfer_array.delete;
+      // outputs
+      err = transaction.rsp.err;
+    endtask: write32
+
+    task read32 (
+      // request
+      input  logic              [tcb.ABW-1:0] adr,
+      // response
+      output logic [tcb.BEW-1:0][tcb.SLW-1:0] rdt,
+      output logic                            err,
+      // endianness
+      input  tcb_endian_t                     ndn = TCB_LITTLE
+    );
+      transfer_array_t transfer_array;
+      transaction_c #(4) ::transaction_t transaction;
+      $display("transaction = %s", $typename(transaction));
+      // request
+      transaction.req = '{wen: 1'b0, adr: adr, wdt: 'x, ndn: ndn};
+      transfer_array = transaction_c #(4) ::transaction_request(transaction.req);
+      // transaction
+      $display("transfer_array = %p", transfer_array);
+      transfer_sequencer(transfer_array);
+      $display("transfer_array = %p", transfer_array);
+      // response
+      transaction.rsp = transaction_c #(4) ::transaction_response(transfer_array);
+      $display("transaction.rsp = %p", transaction.rsp);
+      // cleanup
+      transfer_array.delete;
+      // outputs
+      rdt = transaction.rsp.rdt;
+      err = transaction.rsp.err;
+    endtask: read32
 
   endclass: tcb_c
 
