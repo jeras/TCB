@@ -103,45 +103,48 @@ module tcb_vip_mem
   for (genvar i=0; i<PN; i++) begin: port
 
     // read/write data packed arrays
-    logic [tcb[i].BEW-1:0][tcb[i].SLW-1:0] tmp_wdt;
-    logic [tcb[i].BEW-1:0][tcb[i].SLW-1:0] tmp_rdt [0:tcb[i].DLY];
+    logic [tcb[i].BEW-1:0][tcb[i].SLW-1:0] tmp_req_wdt;
+    logic [tcb[i].BEW-1:0][tcb[i].SLW-1:0] tmp_rsp_rdt [0:tcb[i].DLY];
 
     // as a memory model, there is no immediate need for backpressure, this feature might be added in the future
     assign tcb[i].rdy = 1'b1;
 
     // as a memory model, there is no immediate need for error responses, this feature might be added in the future
-    assign tcb[i].err = 1'b0;
+    assign tcb[i].rsp.err = 1'b0;
 
     // map write data to a packed array
-    assign tmp_wdt = tcb[i].wdt;
+    assign tmp_req_wdt = tcb[i].req.wdt;
 
     // write access
     always @(posedge tcb[i].clk)
     if (tcb[i].trn) begin
-      if (tcb[i].wen) begin
+      if (tcb[i].req.wen) begin
         for (int unsigned b=0; b<tcb[i].BEW; b++) begin
-          if (tcb[i].ben[b])  mem[(b+int'(tcb[i].adr))%SZ] <= tmp_wdt[(b+int'(tcb[i].adr))%tcb[i].BEW];
+          // byte address
+          int adr = (b+int'(tcb[i].req.adr));
+          $display("DEBUG: write b=%d, adr=%08X=%d, wdt=%02X", b, adr, adr, tmp_req_wdt[adr%tcb[i].BEW]);
+          if (tcb[i].req.ben[b])  mem[adr%SZ] <= tmp_req_wdt[adr%tcb[i].BEW];
         end
       end
     end
 
     // initialize read data array
     initial begin
-      tmp_rdt = '{default: 'x};
+      tmp_rsp_rdt = '{default: 'x};
     end
 
     // combinational read data
     always @(*)
     if (tcb[i].trn) begin
-      if (~tcb[i].wen) begin
+      if (~tcb[i].req.wen) begin
         for (int unsigned b=0; b<tcb[i].BEW; b++) begin
-          tmp_rdt[0][(b+int'(tcb[i].adr))%tcb[i].BEW] = tcb[i].ben[b] ? mem[(b+int'(tcb[i].adr))%SZ] : 'x;
+          tmp_rsp_rdt[0][(b+int'(tcb[i].req.adr))%tcb[i].BEW] = tcb[i].req.ben[b] ? mem[(b+int'(tcb[i].req.adr))%SZ] : 'x;
         end
       end else begin
-        tmp_rdt[0] = 'x;
+        tmp_rsp_rdt[0] = 'x;
       end
     end else begin
-      tmp_rdt[0] = 'x;
+      tmp_rsp_rdt[0] = 'x;
     end
 
     // read data delay pipeline
@@ -149,15 +152,15 @@ module tcb_vip_mem
       always @(posedge tcb[i].clk)
       begin
         for (int unsigned b=0; b<tcb[i].BEW; b++) begin
-          if (tcb[i].rbe[d-1][b]) begin
-            tmp_rdt[d][b] <= tmp_rdt[d-1][b];
+          if (tcb[i].dly[d-1].ben[b]) begin
+            tmp_rsp_rdt[d][b] <= tmp_rsp_rdt[d-1][b];
           end
         end
       end
     end
 
     // map read data from an unpacked array
-    assign tcb[i].rdt = tmp_rdt[tcb[i].DLY];
+    assign tcb[i].rsp.rdt = tmp_rsp_rdt[tcb[i].DLY];
 
   end: port
   endgenerate

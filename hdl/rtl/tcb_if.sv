@@ -57,37 +57,51 @@ interface tcb_if
 ////////////////////////////////////////////////////////////////////////////////
 
   // handshake
-  logic           vld;  // handshake valid
-  // request optional
-  logic           inc;  // incremented address
-  logic           rpt;  // repeated address
-  logic           lck;  // arbitration lock
-  logic           ndn;  // endianness
+  logic           vld;  // valid
+  logic           rdy;  // ready
+
   // request
-  logic           wen;  // write enable
-  logic [ABW-1:0] adr;  // address
-  logic [SZW-1:0] siz;  // logarithmic size
-  logic [BEW-1:0] ben;  // byte enable
-  logic [DBW-1:0] wdt;  // write data
+  typedef struct {
+    // optional
+    logic           inc;  // incremented address
+    logic           rpt;  // repeated address
+    logic           lck;  // arbitration lock
+    logic           ndn;  // endianness
+    // basic
+    logic           wen;  // write enable
+    logic [ABW-1:0] adr;  // address
+    logic [SZW-1:0] siz;  // logarithmic size
+    logic [BEW-1:0] ben;  // byte enable
+    logic [DBW-1:0] wdt;  // write data
+  } tcb_req_t;
+
   // response
-  logic [DBW-1:0] rdt;  // read data
-  logic           err;  // error response
-  // handshake
-  logic           rdy;  // handshake ready
+  typedef struct {
+    logic [DBW-1:0] rdt;  // read data
+    logic           err;  // error response
+  } tcb_rsp_t;
+
+  // request/response
+  tcb_req_t req;
+  tcb_rsp_t rsp;
 
 ////////////////////////////////////////////////////////////////////////////////
-// internal signals (never outputs on modports)
+// local signals (never outputs on modports)
 ////////////////////////////////////////////////////////////////////////////////
 
   // handshake related
   logic           trn        ;  // transfer
   logic           idl        ;  // idle
 
-  // response related (delayed from transfer to response)
-  logic           rsp [0:DLY];  // response status
-  logic [ABW-1:0] rad [0:DLY];  // response address
-  logic [SZW-1:0] rsz [0:DLY];  // response logarithmic size
-  logic [BEW-1:0] rbe [0:DLY];  // response byte enable
+  // response related related
+  typedef struct {
+    logic           ena;  // enable
+    logic [ABW-1:0] adr;  // address
+    logic [SZW-1:0] siz;  // logarithmic size
+    logic [BEW-1:0] ben;  // byte enable
+  } tcb_dly_t;
+
+  tcb_dly_t dly [0:DLY];
 
   // transfer (valid and ready at the same time)
   assign trn = vld & rdy;
@@ -97,22 +111,17 @@ interface tcb_if
   assign idl = ~vld | trn;
 
   // response combinational
-  assign rsp[0] = trn                  ;  // response valid
-  assign rad[0] =              adr     ;  // response address
-  assign rsz[0] =              siz     ;  // response logarithmic size
-  assign rbe[0] = trn & ~wen ? ben : '0;  // response byte enable
+  assign dly[0].ena = trn                          ;  // response valid
+  assign dly[0].adr =                  req.adr     ;  // response address
+  assign dly[0].siz =                  req.siz     ;  // response logarithmic size
+  assign dly[0].ben = trn & ~req.wen ? req.ben : '0;  // response byte enable
 
   // response pipeline
   generate
-  for (genvar d=1; d<=DLY; d++) begin: gen_rsp
+  if (DLY > 0) begin: gen_dly
     always @(posedge clk)
-    begin
-      rsp[d] <= rsp[d-1];
-      rad[d] <= rad[d-1];
-      rsz[d] <= rsz[d-1];
-      rbe[d] <= rbe[d-1];
-    end
-  end: gen_rsp
+    dly[1:DLY] <= dly[0:DLY-1];
+  end: gen_dly
   endgenerate
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -124,27 +133,16 @@ interface tcb_if
     // system signals
     input  clk,
     input  rst,
-    // system bus
+    // handshake
     output vld,
-    output inc,
-    output rpt,
-    output lck,
-    output ndn,
-    output wen,
-    output adr,
-    output siz,
-    output ben,
-    output wdt,
-    input  rdt,
-    input  err,
     input  rdy,
+    // request/response
+    output req,
+    input  rsp,
     // local signals
     input  trn,
     input  idl,
-    input  rsp,
-    input  rad,
-    input  rsz,
-    input  rbe
+    input  dly
   );
 
   // monitor
@@ -152,27 +150,16 @@ interface tcb_if
     // system signals
     input  clk,
     input  rst,
-    // system bus
+    // handshake
     input  vld,
-    input  inc,
-    input  rpt,
-    input  lck,
-    input  ndn,
-    input  wen,
-    input  adr,
-    input  siz,
-    input  ben,
-    input  wdt,
-    input  rdt,
-    input  err,
     input  rdy,
+    // request/response
+    input  req,
+    input  rsp,
     // local signals
     input  trn,
     input  idl,
-    input  rsp,
-    input  rad,
-    input  rsz,
-    input  rbe
+    input  dly
   );
 
   // subordinate
@@ -180,27 +167,16 @@ interface tcb_if
     // system signals
     input  clk,
     input  rst,
-    // system bus
+    // handshake
     input  vld,
-    input  inc,
-    input  rpt,
-    input  lck,
-    input  ndn,
-    input  wen,
-    input  adr,
-    input  siz,
-    input  ben,
-    input  wdt,
-    output rdt,
-    output err,
     output rdy,
+    // request/response
+    input  req,
+    output rsp,
     // local signals
     input  trn,
     input  idl,
-    input  rsp,
-    input  rad,
-    input  rsz,
-    input  rbe
+    input  dly
   );
 
 endinterface: tcb_if

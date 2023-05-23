@@ -45,21 +45,10 @@ module tcb_lib_passthrough (
 
   // handshake
   assign man.vld = sub.vld;
-  // request optional
-  assign man.inc = sub.inc;
-  assign man.rpt = sub.rpt;
-  assign man.lck = sub.lck;
-  assign man.ndn = sub.ndn;
-  // request
-  assign man.wen = sub.wen;
-  assign man.siz = sub.siz;
-  assign man.adr = sub.adr;
-  assign man.ben = sub.ben;
-  assign man.wdt = sub.wdt;
-  // response
-  assign sub.rdt = man.rdt;
-  assign sub.err = man.err;
-  // handshake
   assign sub.rdy = man.rdy;
+
+  // request response
+  assign man.req = sub.req;
+  assign sub.rsp = man.rsp;
 
 endmodule: tcb_lib_passthrough

@@ -174,16 +174,16 @@ package tcb_vip_pkg;
     // handshake
     tcb.vld = 1'b1;
     // request optional
-    tcb.inc = seq.req.inc;
-    tcb.rpt = seq.req.rpt;
-    tcb.lck = seq.req.lck;
-    tcb.ndn = seq.req.ndn;
+    tcb.req.inc = seq.req.inc;
+    tcb.req.rpt = seq.req.rpt;
+    tcb.req.lck = seq.req.lck;
+    tcb.req.ndn = seq.req.ndn;
     // request
-    tcb.wen = seq.req.wen;
-    tcb.adr = seq.req.adr;
-    tcb.siz = seq.req.siz;
-    tcb.ben = seq.req.ben;
-    tcb.wdt = seq.req.wdt;
+    tcb.req.wen = seq.req.wen;
+    tcb.req.adr = seq.req.adr;
+    tcb.req.siz = seq.req.siz;
+    tcb.req.ben = seq.req.ben;
+    tcb.req.wdt = seq.req.wdt;
     // backpressure
     seq.bpr = 0;
     do begin
@@ -195,16 +195,16 @@ package tcb_vip_pkg;
     // handshake
     tcb.vld = 1'b0;
     // request optional
-    tcb.inc = 'x;
-    tcb.rpt = 'x;
-    tcb.lck = 'x;
-    tcb.ndn = 'x;
+    tcb.req.inc = 'x;
+    tcb.req.rpt = 'x;
+    tcb.req.lck = 'x;
+    tcb.req.ndn = 'x;
     // request
-    tcb.wen = 'x;
-    tcb.adr = 'x;
-    tcb.siz = 'x;
-    tcb.ben = 'x;
-    tcb.wdt = 'x;
+    tcb.req.wen = 'x;
+    tcb.req.adr = 'x;
+    tcb.req.siz = 'x;
+    tcb.req.ben = 'x;
+    tcb.req.wdt = 'x;
   endtask: transfer_req_drv
 
   // transfer response listener
@@ -214,10 +214,10 @@ package tcb_vip_pkg;
     // wait for response
     do begin
       @(posedge tcb.clk);
-    end while (~tcb.rsp[tcb.DLY]);
+    end while (~tcb.dly[tcb.DLY].ena);
     // response
-    seq.rsp.rdt = tcb.rdt;
-    seq.rsp.err = tcb.err;
+    seq.rsp.rdt = tcb.rsp.rdt;
+    seq.rsp.err = tcb.rsp.err;
   endtask: transfer_rsp_lsn
 
   // transfer request listener
@@ -252,16 +252,16 @@ package tcb_vip_pkg;
       end while (~tcb.trn);
     end
     // request optional
-    seq.req.inc = tcb.inc;
-    seq.req.rpt = tcb.rpt;
-    seq.req.lck = tcb.lck;
-    seq.req.ndn = tcb.ndn;
+    seq.req.inc = tcb.req.inc;
+    seq.req.rpt = tcb.req.rpt;
+    seq.req.lck = tcb.req.lck;
+    seq.req.ndn = tcb.req.ndn;
     // request
-    seq.req.wen = tcb.wen;
-    seq.req.adr = tcb.adr;
-    seq.req.siz = tcb.siz;
-    seq.req.ben = tcb.ben;
-    seq.req.wdt = tcb.wdt;
+    seq.req.wen = tcb.req.wen;
+    seq.req.adr = tcb.req.adr;
+    seq.req.siz = tcb.req.siz;
+    seq.req.ben = tcb.req.ben;
+    seq.req.wdt = tcb.req.wdt;
   endtask: transfer_req_lsn
 
   // transfer response driver
@@ -269,12 +269,12 @@ package tcb_vip_pkg;
     inout  transfer_t seq
   );
     // response
-    tcb.rdt = seq.rsp.rdt;
-    tcb.err = seq.rsp.err;
+    tcb.rsp.rdt = seq.rsp.rdt;
+    tcb.rsp.err = seq.rsp.err;
     // wait for response
     do begin
       @(posedge tcb.clk);
-    end while (~tcb.rsp[tcb.DLY]);
+    end while (~tcb.dly[tcb.DLY].ena);
   endtask: transfer_rsp_drv
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -374,6 +374,7 @@ package tcb_vip_pkg;
           transfer_array[i].req.wen = transaction.wen;
           transfer_array[i].req.adr = transaction.adr;
           transfer_array[i].req.ben = '0;
+          transfer_array[i].req.siz = '0;
         end
         // data signals
         for (int unsigned i=0; i<SIZ; i++) begin

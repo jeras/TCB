@@ -55,14 +55,14 @@ import tcb_pkg::*;
   assign man.vld = sub.vld;
 
   // request optional
-  assign man.inc = sub.inc;
-  assign man.rpt = sub.rpt;
-  assign man.lck = sub.lck;
-  assign man.ndn = sub.ndn;
+  assign man.req.inc = sub.req.inc;
+  assign man.req.rpt = sub.req.rpt;
+  assign man.req.lck = sub.req.lck;
+  assign man.req.ndn = sub.req.ndn;
 
   // request
-  assign man.wen = sub.wen;
-  assign man.siz = sub.siz;
+  assign man.req.wen = sub.req.wen;
+  assign man.req.siz = sub.req.siz;
 
 ////////////////////////////////////////////////////////////////////////////////
 // address alignment
@@ -70,11 +70,11 @@ import tcb_pkg::*;
 
   // decodings for read and write access are identical
   always_comb
-  unique case (sub.siz)
+  unique case (sub.req.siz)
     'd0    : mal = 1'b0;
-    'd1    : mal = |sub.adr[0:0];
-    'd2    : mal = |sub.adr[1:0];
-    'd3    : mal = |sub.adr[2:0];
+    'd1    : mal = |sub.req.adr[0:0];
+    'd2    : mal = |sub.req.adr[1:0];
+    'd3    : mal = |sub.req.adr[2:0];
     default: mal = 1'bx;
   endcase
 
@@ -82,12 +82,12 @@ import tcb_pkg::*;
   case (sub.LGN)
     TCB_UNALIGNED: begin
 
-      assign man.adr = sub.adr;
+      assign man.req.adr = sub.req.adr;
 
     end
     TCB_ALIGNED  : begin
 
-      assign man.adr = sub.adr & sub.ADR_LGN_MSK;
+      assign man.req.adr = sub.req.adr & sub.ADR_LGN_MSK;
 
     end
   endcase
@@ -98,17 +98,17 @@ import tcb_pkg::*;
 ////////////////////////////////////////////////////////////////////////////////
 
   // write/read data packed arrays
-  logic [sub.BEW-1:0][sub.SLW-1:0] sub_wdt, sub_rdt;
-  logic [man.BEW-1:0][man.SLW-1:0] man_wdt, man_rdt;
+  logic [sub.BEW-1:0][sub.SLW-1:0] sub_req_wdt, sub_rsp_rdt;
+  logic [man.BEW-1:0][man.SLW-1:0] man_req_wdt, man_rsp_rdt;
 
   // write data multiplexer select
-  logic [$clog2(sub.BEW)-1:0] sel_wdt [man.BEW-1:0];
+  logic [$clog2(sub.BEW)-1:0] sel_req_wdt [man.BEW-1:0];
   // read data multiplexer select
-  logic [$clog2(sub.BEW)-1:0] sel_rdt [man.BEW-1:0];
+  logic [$clog2(sub.BEW)-1:0] sel_rsp_rdt [man.BEW-1:0];
 
   // write/read data packed array from vector
-  assign sub_wdt = sub.wdt;
-  assign man_rdt = man.rdt;
+  assign sub_req_wdt = sub.req.wdt;
+  assign man_rsp_rdt = man.rsp.rdt;
 
   generate
   case (sub.MOD)
@@ -117,37 +117,37 @@ import tcb_pkg::*;
         TCB_REFERENCE: begin
 
           // REFERENCE -> REFERENCE
-          assign man_wdt = sub_wdt;
-          assign sub_rdt = man_rdt;
+          assign man_req_wdt = sub_req_wdt;
+          assign sub_rsp_rdt = man_rsp_rdt;
 
         end
         TCB_MEMORY: begin
 
           // REFERENCE -> MEMORY
           for (genvar i=0; i<man.BEW; i++) begin
-            int siz = 2**sub.siz;
+            int siz = 2**sub.req.siz;
             // multiplexer select signal
             always_comb
             case (sub.ndn)
               // little endian
               1'b0: begin
-                sel_wdt[i] = (man.adr[$clog2(sub.BEW)-1:0]       + i) % sub.BEW;
+                sel_req_wdt[i] = (man.req.adr[$clog2(sub.BEW)-1:0]       + i) % sub.BEW;
               end
               1'b1: begin
-                sel_wdt[i] = (man.adr[$clog2(sub.BEW)-1:0] + siz - i) % sub.BEW;
+                sel_req_wdt[i] = (man.req.adr[$clog2(sub.BEW)-1:0] + siz - i) % sub.BEW;
               end
             endcase
             // multiplexer
             case (man.ORD)
               TCB_DESCENDING: begin
-                assign man_wdt[i] = sub_wdt[          sel_wdt[i]];
-                assign man.ben[i] = sub.ben[          sel_wdt[i]];
-                assign sub_rdt[i] = man_rdt[          sel_rdt[i]];
+                assign man_req_wdt[i] = sub_req_wdt[          sel_req_wdt[i]];
+                assign man.req.ben[i] = sub.req.ben[          sel_req_wdt[i]];
+                assign sub_rsp_rdt[i] = man_rsp_rdt[          sel_rsp_rdt[i]];
               end
               TCB_ASCENDING : begin
-                assign man_wdt[i] = sub_wdt[man.BEW-1-sel_wdt[i]];
-                assign man.ben[i] = sub.ben[man.BEW-1-sel_wdt[i]];
-                assign sub_rdt[i] = man_rdt[man.BEW-1-sel_rdt[i]];
+                assign man_req_wdt[i] = sub_req_wdt[man.BEW-1-sel_req_wdt[i]];
+                assign man.req.ben[i] = sub.req.ben[man.BEW-1-sel_req_wdt[i]];
+                assign sub_rsp_rdt[i] = man_rsp_rdt[man.BEW-1-sel_rsp_rdt[i]];
               end
             endcase
           end
@@ -169,14 +169,14 @@ import tcb_pkg::*;
           for (genvar i=0; i<man.BEW; i++) begin
             if (sub.ORD == man.ORD) begin
               // same byte order
-              assign man_wdt[i] = sub_wdt[          sel_wdt[i]];
-              assign man.ben[i] = sub.ben[                  i ];
-              assign sub_rdt[i] = man_rdt[          sel_rdt[i]];
+              assign man_req_wdt[i] = sub_req_wdt[          sel_req_wdt[i]];
+              assign man.req.ben[i] = sub.req.ben[                  i ];
+              assign sub_rsp_rdt[i] = man_rsp_rdt[          sel_rsp_rdt[i]];
             end else begin
               // reversed byte order
-              assign man_wdt[i] = sub_wdt[man.BEW-1-sel_wdt[i]];
-              assign man.ben[i] = sub.ben[man.BEW-1-        i ];
-              assign sub_rdt[i] = man_rdt[man.BEW-1-sel_rdt[i]];
+              assign man_req_wdt[i] = sub_req_wdt[man.BEW-1-sel_req_wdt[i]];
+              assign man.req.ben[i] = sub.req.ben[man.BEW-1-        i ];
+              assign sub_rsp_rdt[i] = man_rsp_rdt[man.BEW-1-sel_rsp_rdt[i]];
             end
           end
 
@@ -187,15 +187,15 @@ import tcb_pkg::*;
   endgenerate
 
   // write/read data packed array to vector
-  assign man.wdt = man_wdt;
-  assign sub.rdt = sub_rdt;
+  assign man.req.wdt = man_req_wdt;
+  assign sub.rsp.rdt = sub_rsp_rdt;
 
 ////////////////////////////////////////////////////////////////////////////////
 // response
 ////////////////////////////////////////////////////////////////////////////////
 
   // error
-  assign sub.err = man.err;
+  assign sub.rsp.err = man.rsp.err;
 
   // handshake
   assign sub.rdy = man.rdy;
