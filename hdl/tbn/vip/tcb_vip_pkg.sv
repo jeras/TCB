@@ -24,7 +24,7 @@ package tcb_vip_pkg;
 // TCB class
 ////////////////////////////////////////////////////////////////////////////////
 
-  class tcb_c #(
+  class tcb_transfer_c #(
     // TCB widths
     int unsigned ABW = 32,       // address bus width
     int unsigned DBW = 32,       // data    bus width
@@ -308,10 +308,10 @@ package tcb_vip_pkg;
   endtask: transfer_sequencer
 
 ////////////////////////////////////////////////////////////////////////////////
-// transaction
+// transaction class
 ////////////////////////////////////////////////////////////////////////////////
 
-    virtual class transaction_c #(
+    virtual class tcb_transaction_c #(
       // TCB widths
       int unsigned SIZ = BEW  // transaction size in bytes
     );
@@ -348,10 +348,13 @@ package tcb_vip_pkg;
         int unsigned byt;  // byte index
         int unsigned off;  // address offset
         // the requested transaction is organized into transfer_array
+        int unsigned len;
         transfer_array_t transfer_array;
         // number of transfer_array
-        transfer_array = new[SIZ / BEW];
-//        transfer_array = new[SIZ / BEW]('{default: super.TRANSFER_INIT});
+        len = SIZ / BEW + (SIZ % BEW ? 1 : 0);
+        $display ("DEBUG: SIZ = %d, BEW = %d, len = %d", SIZ, BEW, len);
+        transfer_array = new[len];
+//        transfer_array = new[len]('{default: super.TRANSFER_INIT});
         // check if the transfer meets size requirements
         if (SIZ != 2**$clog2(SIZ)) begin
           $error("ERROR: Transaction size is not power of 2.");
@@ -360,17 +363,22 @@ package tcb_vip_pkg;
         if ((LGN == TCB_ALIGNED) && (transaction.adr % SIZ != 0)) begin
           $error("ERROR: Transaction address is not aligned to transaction size.");
         end
+        // control and address signals
+        for (int unsigned i=0; i<len; i++) begin
+          // request optional
+          transfer_array[i].req.inc = 1'b0;
+          transfer_array[i].req.rpt = 1'b0;
+          transfer_array[i].req.lck = (i == len-1) ? 1'b0 : 1'b1;
+          transfer_array[i].req.ndn = transaction.ndn;
+          // request
+          transfer_array[i].req.wen = transaction.wen;
+          transfer_array[i].req.adr = transaction.adr;
+          transfer_array[i].req.ben = '0;
+        end
+        // data signals
         for (int unsigned i=0; i<SIZ; i++) begin
           // address offset
           off = i / BEW;
-          // request optional
-          transfer_array[off].req.inc = 1'b0;
-          transfer_array[off].req.rpt = 1'b0;
-          transfer_array[off].req.lck = (i == SIZ-1) ? 1'b0 : 1'b1;
-          transfer_array[off].req.ndn = transaction.ndn;
-          // request
-          transfer_array[off].req.wen = transaction.wen;
-          transfer_array[off].req.adr = transaction.adr;
           // mode processor/memory
           if (MOD == TCB_REFERENCE) begin
             // all data bytes are LSB aligned
@@ -403,9 +411,9 @@ package tcb_vip_pkg;
         int unsigned byt;  // byte index
         int unsigned off;  // address offset
         // transaction
+        int unsigned len;
         transaction_response_t transaction;
-        // response
-        transaction.err = 1'b0;
+        // data signals
         for (int unsigned i=0; i<SIZ; i++) begin
           // address offset
           off = i / BEW;
@@ -432,67 +440,194 @@ package tcb_vip_pkg;
         return(transaction);
       endfunction: transaction_response
 
-    endclass: transaction_c
+    endclass: tcb_transaction_c
 
+////////////////////////////////////////////////////////////////////////////////
+// transaction
+////////////////////////////////////////////////////////////////////////////////
 
-
-    task write32 (
+    task automatic transaction8 (
       // request
+      input  logic                            wen,
       input  logic              [tcb.ABW-1:0] adr,
-      input  logic [tcb.BEW-1:0][tcb.SLW-1:0] wdt,
+      input  logic       [1-1:0][tcb.SLW-1:0] wdt,
       // response
+      output logic       [1-1:0][tcb.SLW-1:0] rdt,
       output logic                            err,
       // endianness
       input  tcb_endian_t                     ndn = TCB_LITTLE
     );
       transfer_array_t transfer_array;
-      transaction_c #(4) ::transaction_t transaction;
-      $display("transaction = %s", $typename(transaction));
+      typedef tcb_transaction_c #(1) tcb_transaction_p;
+      tcb_transaction_p::transaction_t transaction;
       // request
-      transaction.req = '{wen: 1'b1, adr: adr, wdt: wdt, ndn: ndn};
-      transfer_array = transaction_c #(4) ::transaction_request(transaction.req);
+      transaction.req = '{wen: wen, adr: adr, wdt: wdt, ndn: ndn};
+      transfer_array = tcb_transaction_p::transaction_request(transaction.req);
       // transaction
-      $display("transfer_array = %p", transfer_array);
       transfer_sequencer(transfer_array);
-      $display("transfer_array = %p", transfer_array);
       // response
-      transaction.rsp = transaction_c #(4) ::transaction_response(transfer_array);
-      $display("transaction.rsp = %p", transaction.rsp);
-      // cleanup
-      transfer_array.delete;
-      // outputs
-      err = transaction.rsp.err;
-    endtask: write32
-
-    task read32 (
-      // request
-      input  logic              [tcb.ABW-1:0] adr,
-      // response
-      output logic [tcb.BEW-1:0][tcb.SLW-1:0] rdt,
-      output logic                            err,
-      // endianness
-      input  tcb_endian_t                     ndn = TCB_LITTLE
-    );
-      transfer_array_t transfer_array;
-      transaction_c #(4) ::transaction_t transaction;
-      $display("transaction = %s", $typename(transaction));
-      // request
-      transaction.req = '{wen: 1'b0, adr: adr, wdt: 'x, ndn: ndn};
-      transfer_array = transaction_c #(4) ::transaction_request(transaction.req);
-      // transaction
-      $display("transfer_array = %p", transfer_array);
-      transfer_sequencer(transfer_array);
-      $display("transfer_array = %p", transfer_array);
-      // response
-      transaction.rsp = transaction_c #(4) ::transaction_response(transfer_array);
-      $display("transaction.rsp = %p", transaction.rsp);
+      transaction.rsp = tcb_transaction_p::transaction_response(transfer_array);
       // cleanup
       transfer_array.delete;
       // outputs
       rdt = transaction.rsp.rdt;
       err = transaction.rsp.err;
-    endtask: read32
+    endtask: transaction8
 
-  endclass: tcb_c
+    task automatic transaction16 (
+      // request
+      input  logic                            wen,
+      input  logic              [tcb.ABW-1:0] adr,
+      input  logic       [2-1:0][tcb.SLW-1:0] wdt,
+      // response
+      output logic       [2-1:0][tcb.SLW-1:0] rdt,
+      output logic                            err,
+      // endianness
+      input  tcb_endian_t                     ndn = TCB_LITTLE
+    );
+      transfer_array_t transfer_array;
+      typedef tcb_transaction_c #(2) tcb_transaction_p;
+      tcb_transaction_p::transaction_t transaction;
+      // request
+      transaction.req = '{wen: wen, adr: adr, wdt: wdt, ndn: ndn};
+      transfer_array = tcb_transaction_p::transaction_request(transaction.req);
+      // transaction
+      transfer_sequencer(transfer_array);
+      // response
+      transaction.rsp = tcb_transaction_p::transaction_response(transfer_array);
+      // cleanup
+      transfer_array.delete;
+      // outputs
+      rdt = transaction.rsp.rdt;
+      err = transaction.rsp.err;
+    endtask: transaction16
+
+    task automatic transaction32 (
+      // request
+      input  logic                            wen,
+      input  logic              [tcb.ABW-1:0] adr,
+      input  logic       [4-1:0][tcb.SLW-1:0] wdt,
+      // response
+      output logic       [4-1:0][tcb.SLW-1:0] rdt,
+      output logic                            err,
+      // endianness
+      input  tcb_endian_t                     ndn = TCB_LITTLE
+    );
+      transfer_array_t transfer_array;
+      typedef tcb_transaction_c #(4) tcb_transaction_p;
+      tcb_transaction_p::transaction_t transaction;
+      // request
+      transaction.req = '{wen: wen, adr: adr, wdt: wdt, ndn: ndn};
+      transfer_array = tcb_transaction_p::transaction_request(transaction.req);
+      // transaction
+      transfer_sequencer(transfer_array);
+      // response
+      transaction.rsp = tcb_transaction_p::transaction_response(transfer_array);
+      // cleanup
+      transfer_array.delete;
+      // outputs
+      rdt = transaction.rsp.rdt;
+      err = transaction.rsp.err;
+    endtask: transaction32
+
+    task write8 (
+      input  logic         [tcb.ABW-1:0] adr,
+      input  logic  [1-1:0][tcb.SLW-1:0] wdt,
+      output logic                       err
+    );
+      logic [1-1:0][tcb.SLW-1:0] rdt;
+      transaction8(1'b1, adr, wdt, rdt, err);
+    endtask: write8
+
+    task read8 (
+      input  logic         [tcb.ABW-1:0] adr,
+      output logic  [1-1:0][tcb.SLW-1:0] rdt,
+      output logic                       err
+    );
+      logic [1-1:0][tcb.SLW-1:0] wdt = 'x;
+      transaction8(1'b0, adr, wdt, rdt, err);
+    endtask: read8
+
+    task write16 (
+      input  logic         [tcb.ABW-1:0] adr,
+      input  logic  [2-1:0][tcb.SLW-1:0] wdt,
+      output logic                       err
+    );
+      logic [2-1:0][tcb.SLW-1:0] rdt;
+      transaction16(1'b1, adr, wdt, rdt, err);
+    endtask: write16
+
+    task read16 (
+      input  logic         [tcb.ABW-1:0] adr,
+      output logic  [2-1:0][tcb.SLW-1:0] rdt,
+      output logic                       err
+    );
+      logic [4-1:0][tcb.SLW-1:0] wdt = 'x;
+      transaction16(1'b0, adr, wdt, rdt, err);
+    endtask: read16
+
+    task write32 (
+      input  logic         [tcb.ABW-1:0] adr,
+      input  logic  [4-1:0][tcb.SLW-1:0] wdt,
+      output logic                       err
+    );
+      logic [4-1:0][tcb.SLW-1:0] rdt;
+      transaction32(1'b1, adr, wdt, rdt, err);
+    endtask: write32
+
+    task read32 (
+      input  logic         [tcb.ABW-1:0] adr,
+      output logic  [4-1:0][tcb.SLW-1:0] rdt,
+      output logic                       err
+    );
+      logic [4-1:0][tcb.SLW-1:0] wdt = 'x;
+      transaction32(1'b0, adr, wdt, rdt, err);
+    endtask: read32
+/*
+    task write64 (
+      input  logic         [tcb.ABW-1:0] adr,
+      input  logic  [8-1:0][tcb.SLW-1:0] wdt,
+      output logic                       err
+    );
+      logic [tcb.SLW-1:0] dat [];
+      dat = new[8];
+      for (int unsigned i=0; i<8; i++)  dat[i] = wdt[i];
+      access_man (8, 1'b1, adr, dat, err);
+    endtask: write64
+
+    task read64 (
+      input  logic         [tcb.ABW-1:0] adr,
+      output logic  [8-1:0][tcb.SLW-1:0] rdt,
+      output logic                       err
+    );
+      logic [tcb.SLW-1:0] dat [];
+      dat = new[8];
+      access_man (8, 1'b0, adr, dat, err);
+      for (int unsigned i=0; i<8; i++)  rdt[i] = dat[i];
+    endtask: read64
+
+    task write128 (
+      input  logic         [tcb.ABW-1:0] adr,
+      input  logic [16-1:0][tcb.SLW-1:0] wdt,
+      output logic                       err
+    );
+      logic [tcb.SLW-1:0] dat [];
+      dat = new[16];
+      for (int unsigned i=0; i<16; i++)  dat[i] = wdt[i];
+      access_man (16, 1'b1, adr, dat, err);
+    endtask: write128
+
+    task read128 (
+      input  logic         [tcb.ABW-1:0] adr,
+      output logic [16-1:0][tcb.SLW-1:0] rdt,
+      output logic                       err
+    );
+      logic [tcb.SLW-1:0] dat [];
+      dat = new[16];
+      access_man (16, 1'b0, adr, dat, err);
+      for (int unsigned i=0; i<16; i++)  rdt[i] = dat[i];
+    endtask: read128
+*/
+  endclass: tcb_transfer_c
 
 endpackage: tcb_vip_pkg

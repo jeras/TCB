@@ -32,7 +32,7 @@ module tcb_vip_tb
 );
 
   // parameterized class specialization
-  typedef tcb_c #(ABW, DBW, SLW) tcb_s;
+  typedef tcb_transfer_c #(ABW, DBW, SLW) tcb_s;
 
 ////////////////////////////////////////////////////////////////////////////////
 // local signals

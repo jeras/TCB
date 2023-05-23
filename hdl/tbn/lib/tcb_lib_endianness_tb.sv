@@ -45,9 +45,9 @@ module tcb_lib_endianness_tb
   tcb_if #(.ABW (ABW), .DBW (DBW), .DLY (DLY)) tcb_sub       (.clk (clk), .rst (rst));
   tcb_if #(.ABW (ABW), .DBW (DBW), .DLY (DLY)) tcb_mem [0:0] (.clk (clk), .rst (rst));
 
-  tcb_vip_pkg::tcb_c #(.ABW (ABW), .DBW (DBW)) obj_man;
-  tcb_vip_pkg::tcb_c #(.ABW (ABW), .DBW (DBW)) obj_sub;
-  tcb_vip_pkg::tcb_c #(.ABW (ABW), .DBW (DBW)) obj_mem;
+  tcb_vip_pkg::tcb_transfer_c #(.ABW (ABW), .DBW (DBW)) obj_man;
+  tcb_vip_pkg::tcb_transfer_c #(.ABW (ABW), .DBW (DBW)) obj_sub;
+  tcb_vip_pkg::tcb_transfer_c #(.ABW (ABW), .DBW (DBW)) obj_mem;
 
 ////////////////////////////////////////////////////////////////////////////////
 // test sequence
@@ -70,8 +70,23 @@ module tcb_lib_endianness_tb
     repeat (2) @(posedge clk);
     rst = 1'b0;
     repeat (1) @(posedge clk);
-    obj_man.write32(32'h00000010, 64'h01234567, err);
-    obj_man.read32 (32'h00000010, rdt         , err);
+    // write sequence
+    obj_man.write8 (32'h00000010,        8'h10, err);
+    obj_man.write8 (32'h00000011,      8'h32  , err);
+    obj_man.write8 (32'h00000012,    8'h54    , err);
+    obj_man.write8 (32'h00000013,  8'h76      , err);
+    obj_man.write16(32'h00000020,     16'h3210, err);
+    obj_man.write16(32'h00000022, 16'h7654    , err);
+    obj_man.write32(32'h00000030, 32'h76543210, err);
+    // read sequence
+    obj_man.read8  (32'h00000010, rdt         , err);
+    obj_man.read8  (32'h00000011, rdt         , err);
+    obj_man.read8  (32'h00000012, rdt         , err);
+    obj_man.read8  (32'h00000013, rdt         , err);
+    obj_man.read16 (32'h00000020, rdt         , err);
+    obj_man.read16 (32'h00000022, rdt         , err);
+    obj_man.read32 (32'h00000030, rdt         , err);
+    // read sequence
     $display("32'h%08X", rdt);
     repeat (4) @(posedge clk);
     $finish();

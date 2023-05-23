@@ -28,7 +28,7 @@ module tcb_vip_mem
 );
 
   // parameterized class specialization
-  typedef tcb_c #(tcb[0].ABW, tcb[0].DBW, tcb[0].SLW) tcb_s;
+  typedef tcb_transfer_c #(tcb[0].ABW, tcb[0].DBW, tcb[0].SLW) tcb_s;
 
 ////////////////////////////////////////////////////////////////////////////////
 // local signals

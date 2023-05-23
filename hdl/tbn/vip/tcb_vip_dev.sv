@@ -27,7 +27,7 @@ module tcb_vip_dev
 );
 
   // parameterized class specialization
-  typedef tcb_c #(
+  typedef tcb_transfer_c #(
     // TCB widths
     .ABW (tcb.ABW),
     .DBW (tcb.DBW),
@@ -243,115 +243,5 @@ module tcb_vip_dev
   typedef tcb_s::transaction_c #(.SIZ ( 8)) transaction64_t;
   typedef tcb_s::transaction_c #(.SIZ (16)) transaction128_t;
 
-
-  task write8 (
-    input  logic        [tcb.ABW-1:0] adr,
-    input  logic [1-1:0][tcb.SLW-1:0] wdt,
-    output logic                      err
-  );
-    logic [tcb.SLW-1:0] dat [];
-    dat = new[1];
-    for (int unsigned i=0; i<1; i++)  dat[i] = wdt[i];
-    access_man (1, 1'b1, adr, dat, err);
-  endtask: write8
-
-  task read8 (
-    input  logic        [tcb.ABW-1:0] adr,
-    output logic [1-1:0][tcb.SLW-1:0] rdt,
-    output logic                      err
-  );
-    logic [tcb.SLW-1:0] dat [];
-    dat = new[1];
-    access_man (1, 1'b0, adr, dat, err);
-    for (int unsigned i=0; i<1; i++)  rdt[i] = dat[i];
-  endtask: read8
-
-  task write16 (
-    input  logic        [tcb.ABW-1:0] adr,
-    input  logic [2-1:0][tcb.SLW-1:0] wdt,
-    output logic                      err
-  );
-    logic [tcb.SLW-1:0] dat [];
-    dat = new[2];
-    for (int unsigned i=0; i<2; i++)  dat[i] = wdt[i];
-    access_man (2, 1'b1, adr, dat, err);
-  endtask: write16
-
-  task read16 (
-    input  logic        [tcb.ABW-1:0] adr,
-    output logic [2-1:0][tcb.SLW-1:0] rdt,
-    output logic                      err
-  );
-    logic [tcb.SLW-1:0] dat [];
-    dat = new[2];
-    access_man (2, 1'b0, adr, dat, err);
-    for (int unsigned i=0; i<2; i++)  rdt[i] = dat[i];
-  endtask: read16
-
-  task write32 (
-    input  logic        [tcb.ABW-1:0] adr,
-    input  logic [4-1:0][tcb.SLW-1:0] wdt,
-    output logic                      err
-  );
-    logic [tcb.SLW-1:0] dat [];
-    dat = new[4];
-    for (int unsigned i=0; i<4; i++)  dat[i] = wdt[i];
-    access_man (4, 1'b1, adr, dat, err);
-  endtask: write32
-
-  task read32 (
-    input  logic        [tcb.ABW-1:0] adr,
-    output logic [4-1:0][tcb.SLW-1:0] rdt,
-    output logic                      err
-  );
-    logic [tcb.SLW-1:0] dat [];
-    dat = new[4];
-    access_man (4, 1'b0, adr, dat, err);
-    for (int unsigned i=0; i<4; i++)  rdt[i] = dat[i];
-  endtask: read32
-
-  task write64 (
-    input  logic        [tcb.ABW-1:0] adr,
-    input  logic [8-1:0][tcb.SLW-1:0] wdt,
-    output logic                      err
-  );
-    logic [tcb.SLW-1:0] dat [];
-    dat = new[8];
-    for (int unsigned i=0; i<8; i++)  dat[i] = wdt[i];
-    access_man (8, 1'b1, adr, dat, err);
-  endtask: write64
-
-  task read64 (
-    input  logic        [tcb.ABW-1:0] adr,
-    output logic [8-1:0][tcb.SLW-1:0] rdt,
-    output logic                      err
-  );
-    logic [tcb.SLW-1:0] dat [];
-    dat = new[8];
-    access_man (8, 1'b0, adr, dat, err);
-    for (int unsigned i=0; i<8; i++)  rdt[i] = dat[i];
-  endtask: read64
-
-  task write128 (
-    input  logic         [tcb.ABW-1:0] adr,
-    input  logic [16-1:0][tcb.SLW-1:0] wdt,
-    output logic                       err
-  );
-    logic [tcb.SLW-1:0] dat [];
-    dat = new[16];
-    for (int unsigned i=0; i<16; i++)  dat[i] = wdt[i];
-    access_man (16, 1'b1, adr, dat, err);
-  endtask: write128
-
-  task read128 (
-    input  logic         [tcb.ABW-1:0] adr,
-    output logic [16-1:0][tcb.SLW-1:0] rdt,
-    output logic                       err
-  );
-    logic [tcb.SLW-1:0] dat [];
-    dat = new[16];
-    access_man (16, 1'b0, adr, dat, err);
-    for (int unsigned i=0; i<16; i++)  rdt[i] = dat[i];
-  endtask: read128
 
 endmodule: tcb_vip_dev
