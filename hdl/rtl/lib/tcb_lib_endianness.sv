@@ -117,6 +117,7 @@ import tcb_pkg::*;
         TCB_REFERENCE: begin
 
           // REFERENCE -> REFERENCE
+          assign man.req.ben = sub.req.ben;
           assign man_req_wdt = sub_req_wdt;
           assign sub_rsp_rdt = man_rsp_rdt;
 
@@ -140,13 +141,13 @@ import tcb_pkg::*;
             // multiplexer
             case (man.ORD)
               TCB_DESCENDING: begin
-                assign man_req_wdt[i] = sub_req_wdt[          sel_req_wdt[i]];
                 assign man.req.ben[i] = sub.req.ben[          sel_req_wdt[i]];
+                assign man_req_wdt[i] = sub_req_wdt[          sel_req_wdt[i]];
                 assign sub_rsp_rdt[i] = man_rsp_rdt[          sel_rsp_rdt[i]];
               end
               TCB_ASCENDING : begin
-                assign man_req_wdt[i] = sub_req_wdt[man.BEW-1-sel_req_wdt[i]];
                 assign man.req.ben[i] = sub.req.ben[man.BEW-1-sel_req_wdt[i]];
+                assign man_req_wdt[i] = sub_req_wdt[man.BEW-1-sel_req_wdt[i]];
                 assign sub_rsp_rdt[i] = man_rsp_rdt[man.BEW-1-sel_rsp_rdt[i]];
               end
             endcase
@@ -170,12 +171,12 @@ import tcb_pkg::*;
             if (sub.ORD == man.ORD) begin
               // same byte order
               assign man_req_wdt[i] = sub_req_wdt[          sel_req_wdt[i]];
-              assign man.req.ben[i] = sub.req.ben[                  i ];
+              assign man.req.ben[i] = sub.req.ben[                      i ];
               assign sub_rsp_rdt[i] = man_rsp_rdt[          sel_rsp_rdt[i]];
             end else begin
               // reversed byte order
               assign man_req_wdt[i] = sub_req_wdt[man.BEW-1-sel_req_wdt[i]];
-              assign man.req.ben[i] = sub.req.ben[man.BEW-1-        i ];
+              assign man.req.ben[i] = sub.req.ben[man.BEW-1-            i ];
               assign sub_rsp_rdt[i] = man_rsp_rdt[man.BEW-1-sel_rsp_rdt[i]];
             end
           end
