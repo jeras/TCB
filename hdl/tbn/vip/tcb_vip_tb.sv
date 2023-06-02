@@ -21,18 +21,13 @@ module tcb_vip_tb
   import tcb_vip_pkg::*;
 #(
   // TCB widths
-  int unsigned ABW = 32,       // address bus width
-  int unsigned DBW = 32,       // data    bus width
-  int unsigned SLW =       8,  // selection   width
-  int unsigned BEW = DBW/SLW,  // byte enable width
+  tcb_par_phy_t PHY = '{ABW: 32, DBW: 32, SLW: 8},
+  //tcb_par_log_t LOG = '{},
   // response delay
   int unsigned DLY = 0,
   // memory port number
   int unsigned PN = 1
 );
-
-  // parameterized class specialization
-  typedef tcb_transfer_c #(ABW, DBW, SLW) tcb_s;
 
 ////////////////////////////////////////////////////////////////////////////////
 // local signals
@@ -43,11 +38,14 @@ module tcb_vip_tb
   logic rst;  // reset
 
   // TCB interface
-  tcb_if #(.ABW (ABW), .DBW (DBW), .SLW (SLW), .DLY (DLY)) tcb          (.clk (clk), .rst (rst));
-  tcb_if #(.ABW (ABW), .DBW (DBW), .SLW (SLW), .DLY (DLY)) bus [0:PN-1] (.clk (clk), .rst (rst));
+  tcb_if #(.PHY (PHY), .DLY (DLY)) tcb          (.clk (clk), .rst (rst));
+  tcb_if #(.PHY (PHY), .DLY (DLY)) bus [0:PN-1] (.clk (clk), .rst (rst));
 
   // ERROR counter
   int unsigned error;
+
+  // parameterized class specialization
+  typedef tcb_transfer_c #(PHY) tcb_s;
 
 ////////////////////////////////////////////////////////////////////////////////
 // test non-blocking API
@@ -81,13 +79,13 @@ module tcb_vip_tb
               // request
               wen: lst_wen[idx_wen],
               adr: 'h00,
-              siz: $clog2(BEW),
+              siz: $clog2(tcb.PHY_BEW),
               ben: '1,
-              wdt: tcb_s::data_test_f((SLW/2)'(2*i+0))
+              wdt: tcb_s::data_test_f((tcb.PHY.SLW/2)'(2*i+0))
             },
             rsp: '{
               // response
-              rdt: tcb_s::data_test_f((SLW/2)'(2*i+1)),
+              rdt: tcb_s::data_test_f((tcb.PHY.SLW/2)'(2*i+1)),
               err: 1'b0
             },
             idl: lst_idl[idx_idl],
@@ -152,8 +150,8 @@ module tcb_vip_tb
   logic [ 64-1:0] dat64;
   logic [128-1:0] dat128;
 
-  logic [DBW-1:0] dat;
-  logic           err;
+  logic [tcb.PHY_DBW-1:0] dat;
+  logic                   err;
 
   task automatic test_blocking;
     //            adr,          dat, err

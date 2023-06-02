@@ -28,7 +28,7 @@ module tcb_vip_mem
 );
 
   // parameterized class specialization
-  typedef tcb_transfer_c #(tcb[0].ABW, tcb[0].DBW, tcb[0].SLW) tcb_s;
+  typedef tcb_transfer_c #(tcb[0].PHY) tcb_s;
 
 ////////////////////////////////////////////////////////////////////////////////
 // local signals
@@ -103,8 +103,8 @@ module tcb_vip_mem
   for (genvar i=0; i<PN; i++) begin: port
 
     // read/write data packed arrays
-    logic [tcb[i].BEW-1:0][tcb[i].SLW-1:0] tmp_req_wdt;
-    logic [tcb[i].BEW-1:0][tcb[i].SLW-1:0] tmp_rsp_rdt [0:tcb[i].DLY];
+    logic [tcb[i].PHY_BEW-1:0][tcb[i].PHY.SLW-1:0] tmp_req_wdt;
+    logic [tcb[i].PHY_BEW-1:0][tcb[i].PHY.SLW-1:0] tmp_rsp_rdt [0:tcb[i].DLY];
 
     // as a memory model, there is no immediate need for backpressure, this feature might be added in the future
     assign tcb[i].rdy = 1'b1;
@@ -119,11 +119,11 @@ module tcb_vip_mem
     always @(posedge tcb[i].clk)
     if (tcb[i].trn) begin
       if (tcb[i].req.wen) begin
-        for (int unsigned b=0; b<tcb[i].BEW; b++) begin
+        for (int unsigned b=0; b<tcb[i].PHY_BEW; b++) begin
           // byte address
-          int adr = (b+int'(tcb[i].req.adr));
-          $display("DEBUG: write b=%d, adr=%08X=%d, wdt=%02X", b, adr, adr, tmp_req_wdt[adr%tcb[i].BEW]);
-          if (tcb[i].req.ben[b])  mem[adr%SZ] <= tmp_req_wdt[adr%tcb[i].BEW];
+          automatic int adr = (b+int'(tcb[i].req.adr));
+          $display("DEBUG: write b=%d, adr=%08X=%d, wdt=%02X", b, adr, adr, tmp_req_wdt[adr%tcb[i].PHY_BEW]);
+          if (tcb[i].req.ben[b])  mem[adr%SZ] <= tmp_req_wdt[adr%tcb[i].PHY_BEW];
         end
       end
     end
@@ -137,8 +137,8 @@ module tcb_vip_mem
     always @(*)
     if (tcb[i].trn) begin
       if (~tcb[i].req.wen) begin
-        for (int unsigned b=0; b<tcb[i].BEW; b++) begin
-          tmp_rsp_rdt[0][(b+int'(tcb[i].req.adr))%tcb[i].BEW] = tcb[i].req.ben[b] ? mem[(b+int'(tcb[i].req.adr))%SZ] : 'x;
+        for (int unsigned b=0; b<tcb[i].PHY_BEW; b++) begin
+          tmp_rsp_rdt[0][(b+int'(tcb[i].req.adr))%tcb[i].PHY_BEW] = tcb[i].req.ben[b] ? mem[(b+int'(tcb[i].req.adr))%SZ] : 'x;
         end
       end else begin
         tmp_rsp_rdt[0] = 'x;
@@ -151,7 +151,7 @@ module tcb_vip_mem
     for (genvar d=1; d<=tcb[i].DLY; d++) begin
       always @(posedge tcb[i].clk)
       begin
-        for (int unsigned b=0; b<tcb[i].BEW; b++) begin
+        for (int unsigned b=0; b<tcb[i].PHY_BEW; b++) begin
           if (tcb[i].dly[d-1].ben[b]) begin
             tmp_rsp_rdt[d][b] <= tmp_rsp_rdt[d-1][b];
           end

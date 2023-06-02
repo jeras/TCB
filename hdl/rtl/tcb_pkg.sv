@@ -39,19 +39,25 @@ package tcb_pkg;
   typedef enum bit {
     TCB_REFERENCE = 1'b0,  // always LSB aligned
     TCB_MEMORY    = 1'b1   // position depends on address
-  } tcb_mode_t;
+  } tcb_par_mode_t;
+
+  // transfer size encoding
+  typedef enum bit {
+    TCB_LOGARITHMIC = 1'b0,  // logarithmic (2^n)
+    TCB_LINEAR      = 1'b1   // linear (n)
+  } tcb_par_size_t;
 
   // alignment
   typedef enum bit {
     TCB_UNALIGNED = 1'b0,  // unaligned
     TCB_ALIGNED   = 1'b1   // aligned
-  } tcb_align_t;
+  } tcb_par_align_t;
 
   // byte order
   typedef enum bit {
     TCB_DESCENDING = 1'b0,  // descending order
     TCB_ASCENDING  = 1'b1   //  ascending order
-  } tcb_order_t;
+  } tcb_par_order_t;
 
 ////////////////////////////////////////////////////////////////////////////////
 // endianness
@@ -61,6 +67,28 @@ package tcb_pkg;
   typedef enum logic {
     TCB_LITTLE = 1'b0,  // little-endian
     TCB_BIG    = 1'b1   // big-endian
-  } tcb_endian_t;
+  } tcb_cfg_endian_t;
+
+////////////////////////////////////////////////////////////////////////////////
+// parameters
+////////////////////////////////////////////////////////////////////////////////
+
+  // physical bus dimensions
+  typedef struct {
+    int unsigned ABW;  // address bus width
+    int unsigned DBW;  // data    bus width
+    int unsigned SLW;  // selection   width
+  } tcb_par_phy_t;
+
+  // logical protocol options
+  typedef struct {
+    // TCB parameters
+    int unsigned DLY;        // response delay
+    // other parameters
+    tcb_par_mode_t  PAR_MOD;
+    tcb_par_size_t  PAR_SIZ;
+    tcb_par_order_t PAR_ORD;
+    tcb_par_align_t PAR_LGN;
+  } tcb_par_log_t;
 
 endpackage: tcb_pkg

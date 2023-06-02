@@ -21,33 +21,31 @@ module tcb_lib_endianness_tb
   import tcb_vip_pkg::*;
 #(
   // TCB widths
-  int unsigned ABW = 32,       // address bus width
-  int unsigned DBW = 32,       // data    bus width
-  int unsigned SLW =       8,  // selection   width
-  int unsigned BEW = DBW/SLW,  // byte enable width
+  tcb_par_phy_t PHY = '{ABW: 32, DBW: 32, SLW: 8},
+  //tcb_par_log_t LOG = '{},
   // response delay
   int unsigned DLY = 1
 );
+
+////////////////////////////////////////////////////////////////////////////////
+// local signals
+////////////////////////////////////////////////////////////////////////////////
 
   // system signals
   logic clk;  // clock
   logic rst;  // reset
 
   // response
-  logic [DBW-1:0] rdt;  // read data
-  logic           err;  // error response
+  logic [PHY.DBW-1:0] rdt;  // read data
+  logic               err;  // error response
 
-////////////////////////////////////////////////////////////////////////////////
-// local signals
-////////////////////////////////////////////////////////////////////////////////
+  tcb_if #(.PHY (PHY), .DLY (DLY)) tcb_man       (.clk (clk), .rst (rst));
+  tcb_if #(.PHY (PHY), .DLY (DLY)) tcb_sub       (.clk (clk), .rst (rst));
+  tcb_if #(.PHY (PHY), .DLY (DLY)) tcb_mem [0:0] (.clk (clk), .rst (rst));
 
-  tcb_if #(.ABW (ABW), .DBW (DBW), .DLY (DLY)) tcb_man       (.clk (clk), .rst (rst));
-  tcb_if #(.ABW (ABW), .DBW (DBW), .DLY (DLY)) tcb_sub       (.clk (clk), .rst (rst));
-  tcb_if #(.ABW (ABW), .DBW (DBW), .DLY (DLY)) tcb_mem [0:0] (.clk (clk), .rst (rst));
-
-  tcb_vip_pkg::tcb_transfer_c #(.ABW (ABW), .DBW (DBW)) obj_man;
-  tcb_vip_pkg::tcb_transfer_c #(.ABW (ABW), .DBW (DBW)) obj_sub;
-  tcb_vip_pkg::tcb_transfer_c #(.ABW (ABW), .DBW (DBW)) obj_mem;
+  tcb_vip_pkg::tcb_transfer_c #(.PHY (PHY)) obj_man;
+  tcb_vip_pkg::tcb_transfer_c #(.PHY (PHY)) obj_sub;
+  tcb_vip_pkg::tcb_transfer_c #(.PHY (PHY)) obj_mem;
 
 ////////////////////////////////////////////////////////////////////////////////
 // test sequence
@@ -96,10 +94,7 @@ module tcb_lib_endianness_tb
 // VIP instances
 ////////////////////////////////////////////////////////////////////////////////
 
-//  tcb_vip_dev #("MAN") man     (.tcb (tcb_man));  // manager
-//  tcb_vip_dev #("MON") mon_man (.tcb (tcb_man));  // manager monitor
-//  tcb_vip_dev #("MON") mon_sub (.tcb (tcb_sub));  // subordinate monitor
-  tcb_vip_mem          mem     (.tcb (tcb_mem));  // subordinate
+  tcb_vip_mem         mem       (.tcb (tcb_mem));  // subordinate
 
   // connect interfaces to interface array
   tcb_lib_passthrough pas [0:0] (.sub (tcb_sub), .man (tcb_mem));

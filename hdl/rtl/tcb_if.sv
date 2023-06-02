@@ -16,26 +16,18 @@
 // limitations under the License.
 ////////////////////////////////////////////////////////////////////////////////
 
-// MODES:
-// - processor
-// - agnostic
-// - big-endian
-// - little endian
-
 interface tcb_if
   import tcb_pkg::*;
 #(
   // TCB widths
-  int unsigned ABW = 32,       // address bus width
-  int unsigned DBW = 32,       // data    bus width
-  int unsigned SLW =       8,  // selection   width
-  int unsigned BEW = DBW/SLW,  // byte enable width
+  tcb_par_phy_t   PHY = '{ABW: 32, DBW: 32, SLW: 8},
   // TCB parameters
-  int unsigned DLY = 1,        // response delay
+  int unsigned    DLY = 1,        // response delay
   // other parameters
-  tcb_mode_t   MOD = TCB_REFERENCE,
-  tcb_order_t  ORD = TCB_DESCENDING,
-  tcb_align_t  LGN = TCB_ALIGNED
+  tcb_par_mode_t  PAR_MOD = TCB_REFERENCE,
+  tcb_par_size_t  PAR_SIZ = TCB_LOGARITHMIC,
+  tcb_par_order_t PAR_ORD = TCB_DESCENDING,
+  tcb_par_align_t PAR_LGN = TCB_ALIGNED
 )(
   // system signals
   input  logic clk,  // clock
@@ -46,39 +38,45 @@ interface tcb_if
 // local parameters
 ////////////////////////////////////////////////////////////////////////////////
 
-  //
-  localparam int unsigned SZW = $clog2($clog2(BEW)+1);  // logarithmic size width
+  // byte enable width
+  localparam int unsigned PHY_BEW = PHY.DBW / PHY.SLW;
+
+  // transfer size width calculation
+  localparam int unsigned PHY_SZW_LIN = $clog2(       PHY_BEW   );  // linear
+  localparam int unsigned PHY_SZW_LOG = $clog2($clog2(PHY_BEW)+1);  // logarithmic (default)
+  // transfer size width selection
+  localparam int unsigned PHY_SZW = (PAR_SIZ == TCB_LINEAR) ? PHY_SZW_LIN : PHY_SZW_LOG;
 
   // address alignment mask
-  localparam logic [ABW-1:0] ADR_LGN_MSK = {(ABW-$clog2(BEW))'('1), ($clog2(BEW))'('0)};
+  localparam logic [PHY.ABW-1:0] ADR_LGN_MSK = {(PHY.ABW-$clog2(PHY_BEW))'('1), ($clog2(PHY_BEW))'('0)};
 
 ////////////////////////////////////////////////////////////////////////////////
 // I/O ports
 ////////////////////////////////////////////////////////////////////////////////
 
   // handshake
-  logic           vld;  // valid
-  logic           rdy;  // ready
+  logic vld;  // valid
+  logic rdy;  // ready
 
   // request
   typedef struct {
     // optional
-    logic           inc;  // incremented address
-    logic           rpt;  // repeated address
-    logic           lck;  // arbitration lock
-    logic           ndn;  // endianness
+    logic               inc;  // incremented address
+    logic               rpt;  // repeated address
+    logic               lck;  // arbitration lock
+    logic               ndn;  // endianness
     // basic
-    logic           wen;  // write enable
-    logic [ABW-1:0] adr;  // address
-    logic [SZW-1:0] siz;  // logarithmic size
-    logic [BEW-1:0] ben;  // byte enable
-    logic [DBW-1:0] wdt;  // write data
+    logic               wen;  // write enable
+    logic [PHY.ABW-1:0] adr;  // address
+    logic [PHY_SZW-1:0] siz;  // transfer size
+    logic [PHY_BEW-1:0] ben;  // byte enable
+    logic [PHY.DBW-1:0] wdt;  // write data
   } tcb_req_t;
 
   // response
   typedef struct {
-    logic [DBW-1:0] rdt;  // read data
-    logic           err;  // error response
+    logic [PHY.DBW-1:0] rdt;  // read data
+    logic               err;  // error response
   } tcb_rsp_t;
 
   // request/response
@@ -86,35 +84,54 @@ interface tcb_if
   tcb_rsp_t rsp;
 
 ////////////////////////////////////////////////////////////////////////////////
-// local signals (never outputs on modports)
+// transaction handshake logic
 ////////////////////////////////////////////////////////////////////////////////
 
-  // handshake related
-  logic           trn        ;  // transfer
-  logic           idl        ;  // idle
-
-  // response related related
-  typedef struct {
-    logic           ena;  // enable
-    logic [ABW-1:0] adr;  // address
-    logic [SZW-1:0] siz;  // logarithmic size
-    logic [BEW-1:0] ben;  // byte enable
-  } tcb_dly_t;
-
-  tcb_dly_t dly [0:DLY];
+  // handshake
+  logic trn;  // transfer
+  logic idl;  // idle
 
   // transfer (valid and ready at the same time)
   assign trn = vld & rdy;
 
   // TODO: improve description
-  // idle (either not valid or currently ending a cycle with a transfer)
+  // idle (either not valid or ending the current cycle with a transfer)
   assign idl = ~vld | trn;
 
-  // response combinational
+////////////////////////////////////////////////////////////////////////////////
+// response logic (never outputs on modports)
+////////////////////////////////////////////////////////////////////////////////
+
+  // response pipeline stage
+  typedef struct {
+    logic               ena;  // enable
+    logic [PHY.ABW-1:0] adr;  // address
+    logic [PHY_SZW-1:0] siz;  // transfer size
+    logic [PHY_BEW-1:0] ben;  // byte enable
+  } tcb_dly_t;
+
+  // response pipeline
+  tcb_dly_t dly [0:DLY];
+
+  logic [PHY_BEW-1:0] req_ben;  // byte enable
+
+  generate
+  if (PAR_MOD == TCB_REFERENCE) begin
+    case (PAR_SIZ)
+      TCB_LOGARITHMIC:  assign req_ben = (2**    req.siz )-1;
+      TCB_LINEAR     :  assign req_ben = (2**(2**req.siz))-1;
+    endcase
+  end else begin
+    assign req_ben = req.ben;
+  end
+  endgenerate
+
+
+  // response pipeline combinational input
   assign dly[0].ena = trn                          ;  // response valid
   assign dly[0].adr =                  req.adr     ;  // response address
   assign dly[0].siz =                  req.siz     ;  // response logarithmic size
-  assign dly[0].ben = trn & ~req.wen ? req.ben : '0;  // response byte enable
+  assign dly[0].ben = trn & ~req.wen ? req_ben : '0;  // response byte enable
 
   // response pipeline
   generate
