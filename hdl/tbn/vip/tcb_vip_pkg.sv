@@ -379,7 +379,10 @@ package tcb_vip_pkg;
           transfer_array[i].req.wen = transaction.wen;
           transfer_array[i].req.adr = transaction.adr;
           transfer_array[i].req.ben = '0;
-          transfer_array[i].req.siz = '0;
+          transfer_array[i].req.siz = (PAR_SIZ == TCB_LINEAR) ? PHY_BEW : $clog2(PHY_BEW);
+        end
+        if (SIZ <= PHY_BEW) begin
+          transfer_array[0].req.siz = (PAR_SIZ == TCB_LINEAR) ?     SIZ : $clog2(    SIZ);
         end
         // data signals
         for (int unsigned i=0; i<SIZ; i++) begin

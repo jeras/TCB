@@ -102,6 +102,8 @@ module tcb_vip_mem
   generate
   for (genvar i=0; i<PN; i++) begin: port
 
+    int unsigned tmp_req_siz;
+
     // read/write data packed arrays
     logic [tcb[i].PHY_BEW-1:0][tcb[i].PHY.SLW-1:0] tmp_req_wdt;
     logic [tcb[i].PHY_BEW-1:0][tcb[i].PHY.SLW-1:0] tmp_rsp_rdt [0:tcb[i].DLY];
@@ -115,15 +117,31 @@ module tcb_vip_mem
     // map write data to a packed array
     assign tmp_req_wdt = tcb[i].req.wdt;
 
+    assign tmp_req_siz = (tcb[i].PAR_SIZ == TCB_LINEAR) ? tcb[i].req.siz : 2**tcb[i].req.siz;
+
     // write access
     always @(posedge tcb[i].clk)
     if (tcb[i].trn) begin
       if (tcb[i].req.wen) begin
-        for (int unsigned b=0; b<tcb[i].PHY_BEW; b++) begin
-          // byte address
-          automatic int adr = (b+int'(tcb[i].req.adr));
-          $display("DEBUG: write b=%d, adr=%08X=%d, wdt=%02X", b, adr, adr, tmp_req_wdt[adr%tcb[i].PHY_BEW]);
-          if (tcb[i].req.ben[b])  mem[adr%SZ] <= tmp_req_wdt[adr%tcb[i].PHY_BEW];
+        // temporary variables
+        automatic int unsigned               adr;
+        automatic logic [tcb[i].PHY.SLW-1:0] dat;
+        if (tcb[i].PAR_MOD == TCB_REFERENCE) begin
+          $display("DEBUG: tcb[%d]: write adr=%08X=%d, tmp_req_siz=%d, wdt=%08X", i, tcb[i].req.adr, tcb[i].req.adr, tmp_req_siz, tmp_req_wdt);
+          for (int unsigned b=0; b<tmp_req_siz; b++) begin
+            // byte address
+            adr = b + int'(tcb[i].req.adr);
+            dat = tmp_req_wdt[b];
+            mem[adr%SZ] <= dat;
+          end
+        end else begin
+          $display("DEBUG: tcb[%d]: write adr=%08X=%d, ben=%04b, wdt=%08X", i, tcb[i].req.adr, tcb[i].req.adr, tcb[i].req.ben, tmp_req_wdt);
+          for (int unsigned b=0; b<tcb[i].PHY_BEW; b++) begin
+            // byte address
+            adr = b + int'(tcb[i].req.adr);
+            dat = tmp_req_wdt[adr%tcb[i].PHY_BEW];
+            if (tcb[i].req.ben[b])  mem[adr%SZ] <= dat;
+          end
         end
       end
     end
@@ -137,8 +155,19 @@ module tcb_vip_mem
     always @(*)
     if (tcb[i].trn) begin
       if (~tcb[i].req.wen) begin
-        for (int unsigned b=0; b<tcb[i].PHY_BEW; b++) begin
-          tmp_rsp_rdt[0][(b+int'(tcb[i].req.adr))%tcb[i].PHY_BEW] = tcb[i].req.ben[b] ? mem[(b+int'(tcb[i].req.adr))%SZ] : 'x;
+        // temporary variables
+        automatic int unsigned adr;
+        if (tcb[i].PAR_MOD == TCB_REFERENCE) begin
+          tmp_rsp_rdt = '{default: 'x};
+          for (int unsigned b=0; b<tmp_req_siz; b++) begin
+            adr = b + int'(tcb[i].req.adr);
+            tmp_rsp_rdt[0][b] = mem[adr%SZ];
+          end
+        end else begin
+          for (int unsigned b=0; b<tcb[i].PHY_BEW; b++) begin
+            adr = b + int'(tcb[i].req.adr);
+            tmp_rsp_rdt[0][adr%tcb[i].PHY_BEW] = tcb[i].req.ben[b] ? mem[adr%SZ] : 'x;
+          end
         end
       end else begin
         tmp_rsp_rdt[0] = 'x;

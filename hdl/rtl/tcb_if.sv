@@ -117,10 +117,12 @@ interface tcb_if
 
   generate
   if (PAR_MOD == TCB_REFERENCE) begin
-    case (PAR_SIZ)
-      TCB_LOGARITHMIC:  assign req_ben = (2**    req.siz )-1;
-      TCB_LINEAR     :  assign req_ben = (2**(2**req.siz))-1;
-    endcase
+    for (genvar b=0; b<PHY_BEW; b++) begin
+      case (PAR_SIZ)
+        TCB_LOGARITHMIC:  assign req_ben[b] = b < (2**    req.siz );
+        TCB_LINEAR     :  assign req_ben[b] = b < (2**(2**req.siz));
+      endcase
+    end
   end else begin
     assign req_ben = req.ben;
   end

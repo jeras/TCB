@@ -59,7 +59,6 @@ import tcb_pkg::*;
 
   // request
   assign man.req.wen = sub.req.wen;
-  assign man.req.siz = sub.req.siz;
 
 ////////////////////////////////////////////////////////////////////////////////
 // address alignment
@@ -74,21 +73,6 @@ import tcb_pkg::*;
     'd3    : mal = |sub.req.adr[2:0];
     default: mal = 1'bx;
   endcase
-
-  generate
-  case (sub.PAR_LGN)
-    TCB_UNALIGNED: begin
-
-      assign man.req.adr = sub.req.adr;
-
-    end
-    TCB_ALIGNED  : begin
-
-      assign man.req.adr = sub.req.adr & sub.ADR_LGN_MSK;
-
-    end
-  endcase
-  endgenerate
 
 ////////////////////////////////////////////////////////////////////////////////
 // write/read data
@@ -114,7 +98,9 @@ import tcb_pkg::*;
         TCB_REFERENCE: begin
 
           // REFERENCE -> REFERENCE
-          assign man.req.ben = sub.req.ben;
+          assign man.req.adr = sub.req.adr;
+          assign man.req.siz = sub.req.siz;
+        //assign man.req.ben = sub.req.ben;
           assign man_req_wdt = sub_req_wdt;
           assign sub_rsp_rdt = man_rsp_rdt;
 
@@ -122,6 +108,14 @@ import tcb_pkg::*;
         TCB_MEMORY: begin
 
           // REFERENCE -> MEMORY
+          case (sub.PAR_LGN)
+            TCB_UNALIGNED: begin
+              assign man.req.adr = sub.req.adr;
+            end
+            TCB_ALIGNED  : begin
+              assign man.req.adr = sub.req.adr & sub.ADR_LGN_MSK;
+            end
+          endcase
           for (genvar i=0; i<man.PHY_BEW; i++) begin
             int siz = 2**sub.req.siz;
             // multiplexer select signal
@@ -164,6 +158,14 @@ import tcb_pkg::*;
         TCB_MEMORY: begin
 
           // MEMORY -> MEMORY
+          case (sub.PAR_LGN)
+            TCB_UNALIGNED: begin
+              assign man.req.adr = sub.req.adr;
+            end
+            TCB_ALIGNED  : begin
+              assign man.req.adr = sub.req.adr & sub.ADR_LGN_MSK;
+            end
+          endcase
           for (genvar i=0; i<man.PHY_BEW; i++) begin
             if (sub.PAR_ORD == man.ORD) begin
               // same byte order
