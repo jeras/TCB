@@ -613,6 +613,21 @@ package tcb_vip_pkg;
       transaction8(1'b0, adr, wdt, rdt, err);
     endtask: read8
 
+    task check8 (
+      input  logic         [tcb.PHY.ABW-1:0] adr,
+      inout  logic  [1-1:0][tcb.PHY.SLW-1:0] dat,
+      inout  logic                           sts
+    );
+      logic [1-1:0][tcb.PHY.SLW-1:0] wdt = 'x;
+      logic [1-1:0][tcb.PHY.SLW-1:0] rdt;
+      logic                          err;
+      transaction8(1'b0, adr, wdt, rdt, err);
+      if (rdt != dat) $display("ERROR: %m: read data mismatch.");
+      if (err != sts) $display("ERROR: %m: response error mismatch.");
+      dat = rdt;
+      sts = err;
+    endtask: check8
+
     task write16 (
       input  logic         [tcb.PHY.ABW-1:0] adr,
       input  logic  [2-1:0][tcb.PHY.SLW-1:0] wdt,
@@ -630,6 +645,21 @@ package tcb_vip_pkg;
       logic [4-1:0][tcb.PHY.SLW-1:0] wdt = 'x;
       transaction16(1'b0, adr, wdt, rdt, err);
     endtask: read16
+
+    task check16 (
+      input  logic         [tcb.PHY.ABW-1:0] adr,
+      inout  logic  [2-1:0][tcb.PHY.SLW-1:0] dat,
+      inout  logic                           sts
+    );
+      logic [2-1:0][tcb.PHY.SLW-1:0] wdt = 'x;
+      logic [2-1:0][tcb.PHY.SLW-1:0] rdt;
+      logic                          err;
+      transaction16(1'b0, adr, wdt, rdt, err);
+      if (rdt != dat) $display("ERROR: %m: read data mismatch.");
+      if (err != sts) $display("ERROR: %m: response error mismatch.");
+      dat = rdt;
+      sts = err;
+    endtask: check16
 
     task write32 (
       input  logic         [tcb.PHY.ABW-1:0] adr,
@@ -649,6 +679,21 @@ package tcb_vip_pkg;
       transaction32(1'b0, adr, wdt, rdt, err);
     endtask: read32
 
+    task check32 (
+      input  logic         [tcb.PHY.ABW-1:0] adr,
+      inout  logic  [4-1:0][tcb.PHY.SLW-1:0] dat,
+      inout  logic                           sts
+    );
+      logic [4-1:0][tcb.PHY.SLW-1:0] wdt = 'x;
+      logic [4-1:0][tcb.PHY.SLW-1:0] rdt;
+      logic                          err;
+      transaction32(1'b0, adr, wdt, rdt, err);
+      if (rdt != dat) $display("ERROR: %m: read data mismatch.");
+      if (err != sts) $display("ERROR: %m: response error mismatch.");
+      dat = rdt;
+      sts = err;
+    endtask: check32
+
     task write64 (
       input  logic         [tcb.PHY.ABW-1:0] adr,
       input  logic  [8-1:0][tcb.PHY.SLW-1:0] wdt,
@@ -667,6 +712,21 @@ package tcb_vip_pkg;
       transaction64(1'b0, adr, wdt, rdt, err);
     endtask: read64
 
+    task check64 (
+      input  logic         [tcb.PHY.ABW-1:0] adr,
+      inout  logic  [8-1:0][tcb.PHY.SLW-1:0] dat,
+      inout  logic                           sts
+    );
+      logic [8-1:0][tcb.PHY.SLW-1:0] wdt = 'x;
+      logic [8-1:0][tcb.PHY.SLW-1:0] rdt;
+      logic                          err;
+      transaction64(1'b0, adr, wdt, rdt, err);
+      if (rdt != dat) $display("ERROR: %m: read data mismatch.");
+      if (err != sts) $display("ERROR: %m: response error mismatch.");
+      dat = rdt;
+      sts = err;
+    endtask: check64
+
     task write128 (
       input  logic         [tcb.PHY.ABW-1:0] adr,
       input  logic [16-1:0][tcb.PHY.SLW-1:0] wdt,
@@ -684,6 +744,21 @@ package tcb_vip_pkg;
       logic [16-1:0][tcb.PHY.SLW-1:0] wdt = 'x;
       transaction128(1'b0, adr, wdt, rdt, err);
     endtask: read128
+
+    task check128 (
+      input  logic         [tcb.PHY.ABW-1:0] adr,
+      inout  logic [16-1:0][tcb.PHY.SLW-1:0] dat,
+      inout  logic                           sts
+    );
+      logic [16-1:0][tcb.PHY.SLW-1:0] wdt = 'x;
+      logic [16-1:0][tcb.PHY.SLW-1:0] rdt;
+      logic                           err;
+      transaction128(1'b0, adr, wdt, rdt, err);
+      if (rdt != dat) $display("ERROR: %m: read data mismatch.");
+      if (err != sts) $display("ERROR: %m: response error mismatch.");
+      dat = rdt;
+      sts = err;
+    endtask: check128
 
   endclass: tcb_transfer_c
 

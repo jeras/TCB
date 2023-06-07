@@ -35,10 +35,6 @@ module tcb_lib_endianness_tb
   logic clk;  // clock
   logic rst;  // reset
 
-  // response
-  logic [PHY.DBW-1:0] rdt;  // read data
-  logic               err;  // error response
-
   tcb_if #(.PHY (PHY), .DLY (DLY)) tcb_man       (.clk (clk), .rst (rst));
   tcb_if #(.PHY (PHY), .DLY (DLY)) tcb_sub       (.clk (clk), .rst (rst));
   tcb_if #(.PHY (PHY), .DLY (DLY)) tcb_mem [0:0] (.clk (clk), .rst (rst));
@@ -46,6 +42,18 @@ module tcb_lib_endianness_tb
   tcb_vip_pkg::tcb_transfer_c #(.PHY (PHY)) obj_man;
   tcb_vip_pkg::tcb_transfer_c #(.PHY (PHY)) obj_sub;
   tcb_vip_pkg::tcb_transfer_c #(.PHY (PHY)) obj_mem;
+
+////////////////////////////////////////////////////////////////////////////////
+// data checking function
+////////////////////////////////////////////////////////////////////////////////
+
+  // response
+  logic [PHY.DBW-1:0] rdt;  // read data
+  logic               err;  // error response
+
+  logic [ 8-1:0] rdt8 ;  //  8-bit read data
+  logic [16-1:0] rdt16;  // 16-bit read data
+  logic [32-1:0] rdt32;  // 32-bit read data
 
 ////////////////////////////////////////////////////////////////////////////////
 // test sequence
@@ -77,13 +85,23 @@ module tcb_lib_endianness_tb
     obj_man.write16(32'h00000022, 16'h7654    , err);
     obj_man.write32(32'h00000030, 32'h76543210, err);
     // read sequence
-    obj_man.read8  (32'h00000010, rdt         , err);
-    obj_man.read8  (32'h00000011, rdt         , err);
-    obj_man.read8  (32'h00000012, rdt         , err);
-    obj_man.read8  (32'h00000013, rdt         , err);
-    obj_man.read16 (32'h00000020, rdt         , err);
-    obj_man.read16 (32'h00000022, rdt         , err);
-    obj_man.read32 (32'h00000030, rdt         , err);
+    obj_man.read8  (32'h00000010, rdt8        , err);  
+    obj_man.read8  (32'h00000011, rdt8        , err);
+    obj_man.read8  (32'h00000012, rdt8        , err);
+    obj_man.read8  (32'h00000013, rdt8        , err);
+    obj_man.read16 (32'h00000020, rdt16       , err);
+    obj_man.read16 (32'h00000022, rdt16       , err);
+    obj_man.read32 (32'h00000030, rdt32       , err);
+    // read sequence
+    obj_man.check8 (32'h00000010,        8'h10, 1'b0);
+    obj_man.check8 (32'h00000011,      8'h32  , 1'b0);
+    obj_man.check8 (32'h00000012,    8'h54    , 1'b0);
+    obj_man.check8 (32'h00000013,  8'h76      , 1'b0);
+    obj_man.check32(32'h00000010, 32'h76543210, 1'b0);
+    obj_man.check16(32'h00000020,     16'h3210, 1'b0);
+    obj_man.check16(32'h00000022, 16'h7654    , 1'b0);
+    obj_man.check32(32'h00000020, 32'h76543210, 1'b0);
+    obj_man.check32(32'h00000030, 32'h76543210, 1'b0);
     // read sequence
     $display("32'h%08X", rdt);
     repeat (4) @(posedge clk);
