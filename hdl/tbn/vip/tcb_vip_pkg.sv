@@ -27,6 +27,8 @@ package tcb_vip_pkg;
   class tcb_transfer_c #(
     // TCB widths
     tcb_par_phy_t   PHY = '{ABW: (32), DBW: (32), SLW: (8)},
+    // TCB parameters
+    int unsigned    DLY = 1,        // response delay
     // other parameters
     tcb_par_mode_t  MOD = TCB_REFERENCE,
     tcb_par_size_t  PAR_SIZ = TCB_LOGARITHMIC,
@@ -38,23 +40,25 @@ package tcb_vip_pkg;
 // local parameters
 ////////////////////////////////////////////////////////////////////////////////
 
-  // byte enable width
-  localparam int unsigned PHY_BEW = PHY.DBW / PHY.SLW;
+    // byte enable width
+    localparam int unsigned PHY_BEW = PHY.DBW / PHY.SLW;
 
-  // transfer size width calculation
-  localparam int unsigned PHY_SZW_LIN = $clog2(       PHY_BEW   );  // linear
-  localparam int unsigned PHY_SZW_LOG = $clog2($clog2(PHY_BEW)+1);  // logarithmic (default)
-  // transfer size width selection
-  localparam int unsigned PHY_SZW = (PAR_SIZ == TCB_LINEAR) ? PHY_SZW_LIN : PHY_SZW_LOG;
+    // transfer size width calculation
+    localparam int unsigned PHY_SZW_LIN = $clog2(       PHY_BEW   );  // linear
+    localparam int unsigned PHY_SZW_LOG = $clog2($clog2(PHY_BEW)+1);  // logarithmic (default)
+    // transfer size width selection
+    localparam int unsigned PHY_SZW = (PAR_SIZ == TCB_LINEAR) ? PHY_SZW_LIN : PHY_SZW_LOG;
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
+
+    typedef virtual tcb_if #(.PHY (PHY), .DLY (DLY)) tcb_vif_t;
 
     string MODE = "MON";
-    virtual tcb_if tcb;
+    tcb_vif_t tcb;
 
     //constructor
-    function new(string MODE = "MON", virtual tcb_if tcb);
+    function new(string MODE = "MON", tcb_vif_t tcb);
       this.MODE = MODE;
       this.tcb = tcb;
       // initialization

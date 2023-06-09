@@ -39,9 +39,9 @@ module tcb_lib_endianness_tb
   tcb_if #(.PHY (PHY), .DLY (DLY)) tcb_sub       (.clk (clk), .rst (rst));
   tcb_if #(.PHY (PHY), .DLY (DLY)) tcb_mem [0:0] (.clk (clk), .rst (rst));
 
-  tcb_vip_pkg::tcb_transfer_c #(.PHY (PHY)) obj_man;
-  tcb_vip_pkg::tcb_transfer_c #(.PHY (PHY)) obj_sub;
-  tcb_vip_pkg::tcb_transfer_c #(.PHY (PHY)) obj_mem;
+  tcb_vip_pkg::tcb_transfer_c #(.PHY (PHY), .DLY (DLY)) obj_man;
+  tcb_vip_pkg::tcb_transfer_c #(.PHY (PHY), .DLY (DLY)) obj_sub;
+  tcb_vip_pkg::tcb_transfer_c #(.PHY (PHY), .DLY (DLY)) obj_mem;
 
 ////////////////////////////////////////////////////////////////////////////////
 // data checking function
