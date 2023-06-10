@@ -115,6 +115,7 @@ interface tcb_if
 
   logic [PHY_BEW-1:0] req_ben;  // byte enable
 
+  // copy or create byte enable from transfer size
   generate
   if (PAR_MOD == TCB_REFERENCE) begin
     for (genvar b=0; b<PHY_BEW; b++) begin
@@ -127,7 +128,6 @@ interface tcb_if
     assign req_ben = req.ben;
   end
   endgenerate
-
 
   // response pipeline combinational input
   assign dly[0].ena = trn                          ;  // response valid

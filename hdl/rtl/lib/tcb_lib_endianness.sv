@@ -17,9 +17,8 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 module tcb_lib_endianness
-import tcb_pkg::*;
-#(
-)(
+  import tcb_pkg::*;
+(
   // interfaces
   tcb_if.sub sub,  // TCB subordinate port (manager     device connects here)
   tcb_if.man man,  // TCB manager     port (subordinate device connects here)
@@ -120,7 +119,7 @@ import tcb_pkg::*;
             int siz = 2**sub.req.siz;
             // multiplexer select signal
             always_comb
-            case (sub.ndn)
+            case (sub.req.ndn)
               // little endian
               1'b0: begin
                 sel_req_wdt[i] = (man.req.adr[$clog2(sub.PHY_BEW)-1:0]       + i) % sub.PHY_BEW;
@@ -132,14 +131,14 @@ import tcb_pkg::*;
             // multiplexer
             case (man.PAR_ORD)
               TCB_DESCENDING: begin
-                assign man.req.ben[i] = sub.req.ben[          sel_req_wdt[i]];
-                assign man_req_wdt[i] = sub_req_wdt[          sel_req_wdt[i]];
-                assign sub_rsp_rdt[i] = man_rsp_rdt[          sel_rsp_rdt[i]];
+                assign man.req.ben[i] = sub.req.ben[              sel_req_wdt[i]];
+                assign man_req_wdt[i] = sub_req_wdt[              sel_req_wdt[i]];
+                assign sub_rsp_rdt[i] = man_rsp_rdt[              sel_rsp_rdt[i]];
               end
               TCB_ASCENDING : begin
-                assign man.req.ben[i] = sub.req.ben[man.BEW-1-sel_req_wdt[i]];
-                assign man_req_wdt[i] = sub_req_wdt[man.BEW-1-sel_req_wdt[i]];
-                assign sub_rsp_rdt[i] = man_rsp_rdt[man.BEW-1-sel_rsp_rdt[i]];
+                assign man.req.ben[i] = sub.req.ben[man.PHY.BEW-1-sel_req_wdt[i]];
+                assign man_req_wdt[i] = sub_req_wdt[man.PHY.BEW-1-sel_req_wdt[i]];
+                assign sub_rsp_rdt[i] = man_rsp_rdt[man.PHY.BEW-1-sel_rsp_rdt[i]];
               end
             endcase
           end
@@ -167,7 +166,7 @@ import tcb_pkg::*;
             end
           endcase
           for (genvar i=0; i<man.PHY_BEW; i++) begin
-            if (sub.PAR_ORD == man.ORD) begin
+            if (sub.PAR_ORD == man.PAR_ORD) begin
               // same byte order
               assign man_req_wdt[i] = sub_req_wdt[              sel_req_wdt[i]];
               assign man.req.ben[i] = sub.req.ben[                          i ];

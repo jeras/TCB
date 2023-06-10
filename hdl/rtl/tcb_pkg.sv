@@ -74,14 +74,15 @@ package tcb_pkg;
 ////////////////////////////////////////////////////////////////////////////////
 
   // physical bus dimensions
-  typedef struct {
+  // TODO: tre structure is packed to workaround Verilator bug
+  typedef struct packed {
     int unsigned ABW;  // address bus width
     int unsigned DBW;  // data    bus width
     int unsigned SLW;  // selection   width
   } tcb_par_phy_t;
 
   // logical protocol options
-  typedef struct {
+  typedef struct packed {
     // TCB parameters
     int unsigned DLY;        // response delay
     // other parameters

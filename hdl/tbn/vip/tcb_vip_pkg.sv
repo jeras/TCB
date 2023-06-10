@@ -52,13 +52,16 @@ package tcb_vip_pkg;
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
-    typedef virtual tcb_if #(.PHY (PHY), .DLY (DLY)) tcb_vif_t;
+//    typedef virtual tcb_if #(.PHY (PHY), .DLY (DLY)) tcb_vif_t;
+//    typedef virtual tcb_if tcb_vif_t;
 
     string MODE = "MON";
-    tcb_vif_t tcb;
+//    tcb_vif_t tcb;
+    virtual tcb_if tcb;
 
     //constructor
-    function new(string MODE = "MON", tcb_vif_t tcb);
+//    function new(string MODE = "MON", tcb_vif_t tcb);
+    function new(string MODE = "MON", virtual tcb_if tcb);
       this.MODE = MODE;
       this.tcb = tcb;
       // initialization
@@ -172,149 +175,149 @@ package tcb_vip_pkg;
 // transfer request/response (enable pipelined transfers with full throughput)
 ////////////////////////////////////////////////////////////////////////////////
 
-  // transfer request driver
-  task automatic transfer_req_drv (
-    inout  transfer_t seq
-  );
-    // request timing
-    repeat (seq.idl) @(posedge tcb.clk);
-    // drive transfer
-    #1;
-    // handshake
-    tcb.vld = 1'b1;
-    // request optional
-    tcb.req.inc = seq.req.inc;
-    tcb.req.rpt = seq.req.rpt;
-    tcb.req.lck = seq.req.lck;
-    tcb.req.ndn = seq.req.ndn;
-    // request
-    tcb.req.wen = seq.req.wen;
-    tcb.req.adr = seq.req.adr;
-    tcb.req.siz = seq.req.siz;
-    tcb.req.ben = seq.req.ben;
-    tcb.req.wdt = seq.req.wdt;
-    // backpressure
-    seq.bpr = 0;
-    do begin
-      @(posedge tcb.clk);
-      if (~tcb.rdy) seq.bpr++;
-    end while (~tcb.trn);
-    // drive idle/undefined
-    #1;
-    // handshake
-    tcb.vld = 1'b0;
-    // request optional
-    tcb.req.inc = 'x;
-    tcb.req.rpt = 'x;
-    tcb.req.lck = 'x;
-    tcb.req.ndn = 'x;
-    // request
-    tcb.req.wen = 'x;
-    tcb.req.adr = 'x;
-    tcb.req.siz = 'x;
-    tcb.req.ben = 'x;
-    tcb.req.wdt = 'x;
-  endtask: transfer_req_drv
-
-  // transfer response listener
-  task automatic transfer_rsp_lsn (
-    inout  transfer_t seq
-  );
-    // wait for response
-    do begin
-      @(posedge tcb.clk);
-    end while (~tcb.dly[tcb.DLY].ena);
-    // response
-    seq.rsp.rdt = tcb.rsp.rdt;
-    seq.rsp.err = tcb.rsp.err;
-  endtask: transfer_rsp_lsn
-
-  // transfer request listener
-  task automatic transfer_req_lsn (
-    inout  transfer_t seq
-  );
-    #1;
-    tcb.rdy = 1'b0;
-    // TODO: measure idle time
-    seq.idl = 0;
-    // request
-    if (seq.bpr == 0) begin
-      // ready
-      tcb.rdy = 1'b1;
-      // wait for transfer
-      do begin
-        @(posedge tcb.clk);
-        seq.idl += tcb.vld ? 0 : 1;
-      end while (~tcb.trn);
-    end else begin
-      // backpressure
-      for (int unsigned i=0; i<seq.bpr; i+=(tcb.vld?1:0)) begin
-        @(posedge tcb.clk);
-        seq.idl += tcb.vld ? 0 : 1;
-      end
-      // ready
+    // transfer request driver
+    task automatic transfer_req_drv (
+      inout  transfer_t seq
+    );
+      // request timing
+      repeat (seq.idl) @(posedge tcb.clk);
+      // drive transfer
       #1;
-      tcb.rdy = 1'b1;
-      // wait for transfer
+      // handshake
+      tcb.vld = 1'b1;
+      // request optional
+      tcb.req.inc = seq.req.inc;
+      tcb.req.rpt = seq.req.rpt;
+      tcb.req.lck = seq.req.lck;
+      tcb.req.ndn = seq.req.ndn;
+      // request
+      tcb.req.wen = seq.req.wen;
+      tcb.req.adr = seq.req.adr;
+      tcb.req.siz = seq.req.siz;
+      tcb.req.ben = seq.req.ben;
+      tcb.req.wdt = seq.req.wdt;
+      // backpressure
+      seq.bpr = 0;
       do begin
         @(posedge tcb.clk);
+        if (~tcb.rdy) seq.bpr++;
       end while (~tcb.trn);
-    end
-    // request optional
-    seq.req.inc = tcb.req.inc;
-    seq.req.rpt = tcb.req.rpt;
-    seq.req.lck = tcb.req.lck;
-    seq.req.ndn = tcb.req.ndn;
-    // request
-    seq.req.wen = tcb.req.wen;
-    seq.req.adr = tcb.req.adr;
-    seq.req.siz = tcb.req.siz;
-    seq.req.ben = tcb.req.ben;
-    seq.req.wdt = tcb.req.wdt;
-  endtask: transfer_req_lsn
+      // drive idle/undefined
+      #1;
+      // handshake
+      tcb.vld = 1'b0;
+      // request optional
+      tcb.req.inc = 'x;
+      tcb.req.rpt = 'x;
+      tcb.req.lck = 'x;
+      tcb.req.ndn = 'x;
+      // request
+      tcb.req.wen = 'x;
+      tcb.req.adr = 'x;
+      tcb.req.siz = 'x;
+      tcb.req.ben = 'x;
+      tcb.req.wdt = 'x;
+    endtask: transfer_req_drv
 
-  // transfer response driver
-  task automatic transfer_rsp_drv (
-    inout  transfer_t seq
-  );
-    // response
-    tcb.rsp.rdt = seq.rsp.rdt;
-    tcb.rsp.err = seq.rsp.err;
-    // wait for response
-    do begin
-      @(posedge tcb.clk);
-    end while (~tcb.dly[tcb.DLY].ena);
-  endtask: transfer_rsp_drv
+    // transfer response listener
+    task automatic transfer_rsp_lsn (
+      inout  transfer_t seq
+    );
+      // wait for response
+      do begin
+        @(posedge tcb.clk);
+      end while (~tcb.dly[tcb.DLY].ena);
+      // response
+      seq.rsp.rdt = tcb.rsp.rdt;
+      seq.rsp.err = tcb.rsp.err;
+    endtask: transfer_rsp_lsn
+
+    // transfer request listener
+    task automatic transfer_req_lsn (
+      inout  transfer_t seq
+    );
+      #1;
+      tcb.rdy = 1'b0;
+      // TODO: measure idle time
+      seq.idl = 0;
+      // request
+      if (seq.bpr == 0) begin
+        // ready
+        tcb.rdy = 1'b1;
+        // wait for transfer
+        do begin
+          @(posedge tcb.clk);
+          seq.idl += tcb.vld ? 0 : 1;
+        end while (~tcb.trn);
+      end else begin
+        // backpressure
+        for (int unsigned i=0; i<seq.bpr; i+=(tcb.vld?1:0)) begin
+          @(posedge tcb.clk);
+          seq.idl += tcb.vld ? 0 : 1;
+        end
+        // ready
+        #1;
+        tcb.rdy = 1'b1;
+        // wait for transfer
+        do begin
+          @(posedge tcb.clk);
+        end while (~tcb.trn);
+      end
+      // request optional
+      seq.req.inc = tcb.req.inc;
+      seq.req.rpt = tcb.req.rpt;
+      seq.req.lck = tcb.req.lck;
+      seq.req.ndn = tcb.req.ndn;
+      // request
+      seq.req.wen = tcb.req.wen;
+      seq.req.adr = tcb.req.adr;
+      seq.req.siz = tcb.req.siz;
+      seq.req.ben = tcb.req.ben;
+      seq.req.wdt = tcb.req.wdt;
+    endtask: transfer_req_lsn
+
+    // transfer response driver
+    task automatic transfer_rsp_drv (
+      inout  transfer_t seq
+    );
+      // response
+      tcb.rsp.rdt = seq.rsp.rdt;
+      tcb.rsp.err = seq.rsp.err;
+      // wait for response
+      do begin
+        @(posedge tcb.clk);
+      end while (~tcb.dly[tcb.DLY].ena);
+    endtask: transfer_rsp_drv
 
 ////////////////////////////////////////////////////////////////////////////////
 // transaction sequence non-blocking API
 ////////////////////////////////////////////////////////////////////////////////
 
-  // request/response
-  task automatic transfer_sequencer (
-    inout  transfer_array_t transfer_array
-  );
-    fork
-      begin: fork_req
-        foreach (transfer_array[i]) begin
-          case (MODE)
-            "MAN": transfer_req_drv(transfer_array[i]);
-            "MON": transfer_req_lsn(transfer_array[i]);
-            "SUB": transfer_req_lsn(transfer_array[i]);
-          endcase 
-        end
-      end: fork_req
-      begin: fork_rsp
-        foreach (transfer_array[i]) begin
-          case (MODE)
-            "MAN": transfer_rsp_lsn(transfer_array[i]);
-            "MON": transfer_rsp_lsn(transfer_array[i]);
-            "SUB": transfer_rsp_drv(transfer_array[i]);
-          endcase 
-        end
-      end: fork_rsp
-    join
-  endtask: transfer_sequencer
+    // request/response
+    task automatic transfer_sequencer (
+      inout  transfer_array_t transfer_array
+    );
+      fork
+        begin: fork_req
+          foreach (transfer_array[i]) begin
+            case (MODE)
+              "MAN": transfer_req_drv(transfer_array[i]);
+              "MON": transfer_req_lsn(transfer_array[i]);
+              "SUB": transfer_req_lsn(transfer_array[i]);
+            endcase
+          end
+        end: fork_req
+        begin: fork_rsp
+          foreach (transfer_array[i]) begin
+            case (MODE)
+              "MAN": transfer_rsp_lsn(transfer_array[i]);
+              "MON": transfer_rsp_lsn(transfer_array[i]);
+              "SUB": transfer_rsp_drv(transfer_array[i]);
+            endcase
+          end
+        end: fork_rsp
+      join
+    endtask: transfer_sequencer
 
 ////////////////////////////////////////////////////////////////////////////////
 // transaction class

@@ -21,7 +21,9 @@ module tcb_lib_endianness_tb
   import tcb_vip_pkg::*;
 #(
   // TCB widths
-  tcb_par_phy_t PHY = '{ABW: 32, DBW: 32, SLW: 8},
+  int unsigned ABW = 32,
+  int unsigned DBW = 32,
+  tcb_par_phy_t PHY = '{ABW: ABW, DBW: DBW, SLW: 8},
   //tcb_par_log_t LOG = '{},
   // response delay
   int unsigned DLY = 1
@@ -85,7 +87,7 @@ module tcb_lib_endianness_tb
     obj_man.write16(32'h00000022, 16'h7654    , err);
     obj_man.write32(32'h00000030, 32'h76543210, err);
     // read sequence
-    obj_man.read8  (32'h00000010, rdt8        , err);  
+    obj_man.read8  (32'h00000010, rdt8        , err);
     obj_man.read8  (32'h00000011, rdt8        , err);
     obj_man.read8  (32'h00000012, rdt8        , err);
     obj_man.read8  (32'h00000013, rdt8        , err);
@@ -123,7 +125,8 @@ module tcb_lib_endianness_tb
 
   tcb_lib_endianness dut (
     .sub  (tcb_man),
-    .man  (tcb_sub)
+    .man  (tcb_sub),
+    .mal  ()
   );
 
 ////////////////////////////////////////////////////////////////////////////////
