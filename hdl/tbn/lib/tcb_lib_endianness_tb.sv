@@ -26,7 +26,7 @@ module tcb_lib_endianness_tb
   tcb_par_phy_t PHY = '{ABW: ABW, DBW: DBW, SLW: 8},
   //tcb_par_log_t LOG = '{},
   // response delay
-  int unsigned DLY = 1
+  int unsigned DLY = 0
 );
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -104,8 +104,7 @@ module tcb_lib_endianness_tb
     obj_man.check16(32'h00000022, 16'h7654    , 1'b0);
     obj_man.check32(32'h00000020, 32'h76543210, 1'b0);
     obj_man.check32(32'h00000030, 32'h76543210, 1'b0);
-    // read sequence
-    $display("32'h%08X", rdt);
+    // end of test
     repeat (4) @(posedge clk);
     $finish();
   end

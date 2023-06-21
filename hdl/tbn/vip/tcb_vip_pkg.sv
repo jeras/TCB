@@ -177,30 +177,32 @@ package tcb_vip_pkg;
 
     // transfer request driver
     task automatic transfer_req_drv (
-      inout  transfer_t seq
+      input  transfer_request_t req,
+      input  int unsigned       idl,
+      output int unsigned       bpr
     );
       // request timing
-      repeat (seq.idl) @(posedge tcb.clk);
+      repeat (idl) @(posedge tcb.clk);
       // drive transfer
       #1;
       // handshake
       tcb.vld = 1'b1;
       // request optional
-      tcb.req.inc = seq.req.inc;
-      tcb.req.rpt = seq.req.rpt;
-      tcb.req.lck = seq.req.lck;
-      tcb.req.ndn = seq.req.ndn;
+      tcb.req.inc = req.inc;
+      tcb.req.rpt = req.rpt;
+      tcb.req.lck = req.lck;
+      tcb.req.ndn = req.ndn;
       // request
-      tcb.req.wen = seq.req.wen;
-      tcb.req.adr = seq.req.adr;
-      tcb.req.siz = seq.req.siz;
-      tcb.req.ben = seq.req.ben;
-      tcb.req.wdt = seq.req.wdt;
+      tcb.req.wen = req.wen;
+      tcb.req.adr = req.adr;
+      tcb.req.siz = req.siz;
+      tcb.req.ben = req.ben;
+      tcb.req.wdt = req.wdt;
       // backpressure
-      seq.bpr = 0;
+      bpr = 0;
       do begin
         @(posedge tcb.clk);
-        if (~tcb.rdy) seq.bpr++;
+        if (~tcb.rdy) bpr++;
       end while (~tcb.trn);
       // drive idle/undefined
       #1;
@@ -221,39 +223,41 @@ package tcb_vip_pkg;
 
     // transfer response listener
     task automatic transfer_rsp_lsn (
-      inout  transfer_t seq
+      output transfer_response_t rsp
     );
       // wait for response
       do begin
         @(posedge tcb.clk);
       end while (~tcb.dly[tcb.DLY].ena);
       // response
-      seq.rsp.rdt = tcb.rsp.rdt;
-      seq.rsp.err = tcb.rsp.err;
+      rsp.rdt = tcb.rsp.rdt;
+      rsp.err = tcb.rsp.err;
     endtask: transfer_rsp_lsn
 
     // transfer request listener
     task automatic transfer_req_lsn (
-      inout  transfer_t seq
+      output transfer_request_t req,
+      output int unsigned       idl,
+      input  int unsigned       bpr
     );
       #1;
       tcb.rdy = 1'b0;
       // TODO: measure idle time
-      seq.idl = 0;
+      idl = 0;
       // request
-      if (seq.bpr == 0) begin
+      if (bpr == 0) begin
         // ready
         tcb.rdy = 1'b1;
         // wait for transfer
         do begin
           @(posedge tcb.clk);
-          seq.idl += tcb.vld ? 0 : 1;
+          idl += tcb.vld ? 0 : 1;
         end while (~tcb.trn);
       end else begin
         // backpressure
-        for (int unsigned i=0; i<seq.bpr; i+=(tcb.vld?1:0)) begin
+        for (int unsigned i=0; i<bpr; i+=(tcb.vld?1:0)) begin
           @(posedge tcb.clk);
-          seq.idl += tcb.vld ? 0 : 1;
+          idl += tcb.vld ? 0 : 1;
         end
         // ready
         #1;
@@ -264,25 +268,25 @@ package tcb_vip_pkg;
         end while (~tcb.trn);
       end
       // request optional
-      seq.req.inc = tcb.req.inc;
-      seq.req.rpt = tcb.req.rpt;
-      seq.req.lck = tcb.req.lck;
-      seq.req.ndn = tcb.req.ndn;
+      req.inc = tcb.req.inc;
+      req.rpt = tcb.req.rpt;
+      req.lck = tcb.req.lck;
+      req.ndn = tcb.req.ndn;
       // request
-      seq.req.wen = tcb.req.wen;
-      seq.req.adr = tcb.req.adr;
-      seq.req.siz = tcb.req.siz;
-      seq.req.ben = tcb.req.ben;
-      seq.req.wdt = tcb.req.wdt;
+      req.wen = tcb.req.wen;
+      req.adr = tcb.req.adr;
+      req.siz = tcb.req.siz;
+      req.ben = tcb.req.ben;
+      req.wdt = tcb.req.wdt;
     endtask: transfer_req_lsn
 
     // transfer response driver
     task automatic transfer_rsp_drv (
-      inout  transfer_t seq
+      input  transfer_response_t rsp
     );
       // response
-      tcb.rsp.rdt = seq.rsp.rdt;
-      tcb.rsp.err = seq.rsp.err;
+      tcb.rsp.rdt = rsp.rdt;
+      tcb.rsp.err = rsp.err;
       // wait for response
       do begin
         @(posedge tcb.clk);
@@ -293,6 +297,8 @@ package tcb_vip_pkg;
 // transaction sequence non-blocking API
 ////////////////////////////////////////////////////////////////////////////////
 
+    // BUG: at DLY=0, there is a race condition between
+
     // request/response
     task automatic transfer_sequencer (
       inout  transfer_array_t transfer_array
@@ -301,18 +307,18 @@ package tcb_vip_pkg;
         begin: fork_req
           foreach (transfer_array[i]) begin
             case (MODE)
-              "MAN": transfer_req_drv(transfer_array[i]);
-              "MON": transfer_req_lsn(transfer_array[i]);
-              "SUB": transfer_req_lsn(transfer_array[i]);
+              "MAN": transfer_req_drv(transfer_array[i].req, transfer_array[i].idl, transfer_array[i].bpr);
+              "MON": transfer_req_lsn(transfer_array[i].req, transfer_array[i].idl, transfer_array[i].bpr);
+              "SUB": transfer_req_lsn(transfer_array[i].req, transfer_array[i].idl, transfer_array[i].bpr);
             endcase
           end
         end: fork_req
         begin: fork_rsp
           foreach (transfer_array[i]) begin
             case (MODE)
-              "MAN": transfer_rsp_lsn(transfer_array[i]);
-              "MON": transfer_rsp_lsn(transfer_array[i]);
-              "SUB": transfer_rsp_drv(transfer_array[i]);
+              "MAN": transfer_rsp_lsn(transfer_array[i].rsp);
+              "MON": transfer_rsp_lsn(transfer_array[i].rsp);
+              "SUB": transfer_rsp_drv(transfer_array[i].rsp);
             endcase
           end
         end: fork_rsp
@@ -354,7 +360,7 @@ package tcb_vip_pkg;
       // read/write request transaction of power of 2 size
       static function automatic transfer_array_t transaction_request (
         // TCB transaction structure
-        transaction_request_t transaction
+        transaction_request_t transaction_req
       );
         // temporary variables
         int unsigned byt;  // byte index
@@ -364,7 +370,6 @@ package tcb_vip_pkg;
         transfer_array_t transfer_array;
         // number of transfer_array
         len = SIZ / PHY_BEW + (SIZ % PHY_BEW ? 1 : 0);
-        $display ("DEBUG: SIZ = %d, PHY_BEW = %d, len = %d", SIZ, PHY_BEW, len);
         transfer_array = new[len];
 //        transfer_array = new[len]('{default: super.TRANSFER_INIT});
         // check if the transfer meets size requirements
@@ -372,7 +377,7 @@ package tcb_vip_pkg;
           $error("ERROR: Transaction size is not power of 2.");
         end
         // check if the transfer meets alignment requirements
-        if ((LGN == TCB_ALIGNED) && (transaction.adr % SIZ != 0)) begin
+        if ((LGN == TCB_ALIGNED) && (transaction_req.adr % SIZ != 0)) begin
           $error("ERROR: Transaction address is not aligned to transaction size.");
         end
         // control and address signals
@@ -381,10 +386,10 @@ package tcb_vip_pkg;
           transfer_array[i].req.inc = 1'b0;
           transfer_array[i].req.rpt = 1'b0;
           transfer_array[i].req.lck = (i == len-1) ? 1'b0 : 1'b1;
-          transfer_array[i].req.ndn = transaction.ndn;
+          transfer_array[i].req.ndn = transaction_req.ndn;
           // request
-          transfer_array[i].req.wen = transaction.wen;
-          transfer_array[i].req.adr = transaction.adr;
+          transfer_array[i].req.wen = transaction_req.wen;
+          transfer_array[i].req.adr = transaction_req.adr;
           transfer_array[i].req.ben = '0;
           transfer_array[i].req.siz = (PAR_SIZ == TCB_LINEAR) ? PHY_BEW : $clog2(PHY_BEW);
         end
@@ -401,7 +406,7 @@ package tcb_vip_pkg;
             byt = i;
           end else if (MOD == TCB_MEMORY) begin
             // all data bytes are LSB aligned
-            byt = (i + transaction.adr) % PHY_BEW;
+            byt = (i + transaction_req.adr) % PHY_BEW;
           end
           // order descending/ascending
           if (ORD == TCB_ASCENDING) begin
@@ -410,10 +415,10 @@ package tcb_vip_pkg;
           // request
           transfer_array[off].req.ben[byt] = 1'b1;
           // endianness
-          if (transaction.ndn == TCB_LITTLE) begin
-            transfer_array[off].req.wdt[byt] = transaction.wdt[          i];
+          if (transaction_req.ndn == TCB_LITTLE) begin
+            transfer_array[off].req.wdt[byt] = transaction_req.wdt[          i];
           end else begin
-            transfer_array[off].req.wdt[byt] = transaction.wdt[SIZ - 1 - i];
+            transfer_array[off].req.wdt[byt] = transaction_req.wdt[SIZ - 1 - i];
           end
         end
         return(transfer_array);
@@ -426,9 +431,9 @@ package tcb_vip_pkg;
         // temporary variables
         int unsigned byt;  // byte index
         int unsigned off;  // address offset
-        // transaction
+        // transaction response
         int unsigned len;
-        transaction_response_t transaction;
+        transaction_response_t transaction_rsp = '{rdt: 'x, err: 1'b0};
         // data signals
         for (int unsigned i=0; i<SIZ; i++) begin
           // address offset
@@ -447,13 +452,13 @@ package tcb_vip_pkg;
           end
           // endianness
           if (transfer_array[off].req.ndn == TCB_LITTLE) begin
-            transaction.rdt[          i] = transfer_array[off].rsp.rdt[byt];
+            transaction_rsp.rdt[          i] = transfer_array[off].rsp.rdt[byt];
           end else begin
-            transaction.rdt[SIZ - 1 - i] = transfer_array[off].rsp.rdt[byt];
+            transaction_rsp.rdt[SIZ - 1 - i] = transfer_array[off].rsp.rdt[byt];
           end
-          transaction.err               |= transfer_array[off].rsp.err;
+          transaction_rsp.err               |= transfer_array[off].rsp.err;
         end
-        return(transaction);
+        return(transaction_rsp);
       endfunction: transaction_response
 
     endclass: tcb_transaction_c
@@ -629,8 +634,8 @@ package tcb_vip_pkg;
       logic [1-1:0][tcb.PHY.SLW-1:0] rdt;
       logic                          err;
       transaction8(1'b0, adr, wdt, rdt, err);
-      if (rdt != dat) $display("ERROR: %m: read data mismatch.");
-      if (err != sts) $display("ERROR: %m: response error mismatch.");
+      if (rdt !== dat) $display("ERROR: %m: (rdt=8'h%2X) !== (dat=8'h%2X) mismatch.", rdt, dat);
+      if (err !== sts) $display("ERROR: %m: (err=1'b%1b) !== (sts=1'b%1b) mismatch.", err, sts);
       dat = rdt;
       sts = err;
     endtask: check8
@@ -662,8 +667,8 @@ package tcb_vip_pkg;
       logic [2-1:0][tcb.PHY.SLW-1:0] rdt;
       logic                          err;
       transaction16(1'b0, adr, wdt, rdt, err);
-      if (rdt != dat) $display("ERROR: %m: read data mismatch.");
-      if (err != sts) $display("ERROR: %m: response error mismatch.");
+      if (rdt !== dat) $display("ERROR: %m: (rdt=16'h%4X) !== (dat=16'h%4X) mismatch.", rdt, dat);
+      if (err !== sts) $display("ERROR: %m: (err= 1'b%1b) !== (sts= 1'b%1b) mismatch.", err, sts);
       dat = rdt;
       sts = err;
     endtask: check16
@@ -695,8 +700,8 @@ package tcb_vip_pkg;
       logic [4-1:0][tcb.PHY.SLW-1:0] rdt;
       logic                          err;
       transaction32(1'b0, adr, wdt, rdt, err);
-      if (rdt != dat) $display("ERROR: %m: read data mismatch.");
-      if (err != sts) $display("ERROR: %m: response error mismatch.");
+      if (rdt !== dat) $display("ERROR: %m: (rdt=32'h%8X) !== (dat=32'h%8X) mismatch.", rdt, dat);
+      if (err !== sts) $display("ERROR: %m: (err= 1'b%1b) !== (sts= 1'b%1b) mismatch.", err, sts);
       dat = rdt;
       sts = err;
     endtask: check32
@@ -728,8 +733,8 @@ package tcb_vip_pkg;
       logic [8-1:0][tcb.PHY.SLW-1:0] rdt;
       logic                          err;
       transaction64(1'b0, adr, wdt, rdt, err);
-      if (rdt != dat) $display("ERROR: %m: read data mismatch.");
-      if (err != sts) $display("ERROR: %m: response error mismatch.");
+      if (rdt !== dat) $display("ERROR: %m: (rdt=64'h%16X) !== (dat=64'h%16X) mismatch.", rdt, dat);
+      if (err !== sts) $display("ERROR: %m: (err= 1'b%01b) !== (sts= 1'b%01b) mismatch.", err, sts);
       dat = rdt;
       sts = err;
     endtask: check64
@@ -761,8 +766,8 @@ package tcb_vip_pkg;
       logic [16-1:0][tcb.PHY.SLW-1:0] rdt;
       logic                           err;
       transaction128(1'b0, adr, wdt, rdt, err);
-      if (rdt != dat) $display("ERROR: %m: read data mismatch.");
-      if (err != sts) $display("ERROR: %m: response error mismatch.");
+      if (rdt !== dat) $display("ERROR: %m: (rdt=128'h%32X) !== (dat=128'h%32X) mismatch.", rdt, dat);
+      if (err !== sts) $display("ERROR: %m: (err=  1'b%01b) !== (sts=  1'b%01b) mismatch.", err, sts);
       dat = rdt;
       sts = err;
     endtask: check128

@@ -22,7 +22,7 @@ interface tcb_if
   // TCB widths
   tcb_par_phy_t   PHY = '{ABW: 32, DBW: 32, SLW: 8},
   // TCB parameters
-  int unsigned    DLY = 1,        // response delay
+  int unsigned    DLY = 0,        // response delay
   // other parameters
   tcb_par_mode_t  PAR_MOD = TCB_REFERENCE,
   tcb_par_size_t  PAR_SIZ = TCB_LOGARITHMIC,
