@@ -19,15 +19,9 @@
 interface tcb_if
   import tcb_pkg::*;
 #(
-  // TCB widths
-  tcb_par_phy_t   PHY = '{ABW: 32, DBW: 32, SLW: 8},
-  // TCB parameters
-  int unsigned    DLY = 0,        // response delay
-  // other parameters
-  tcb_par_mode_t  PAR_MOD = TCB_REFERENCE,
-  tcb_par_size_t  PAR_SIZ = TCB_LOGARITHMIC,
-  tcb_par_order_t PAR_ORD = TCB_DESCENDING,
-  tcb_par_align_t PAR_LGN = TCB_ALIGNED
+  tcb_par_phy_t  PHY = TCB_PAR_PHY_DEF,
+  type tcb_req_cmd_t = tcb_req_cmd_def_t,
+  type tcb_rsp_sts_t = tcb_req_cmd_def_t
 )(
   // system signals
   input  logic clk,  // clock
@@ -45,7 +39,7 @@ interface tcb_if
   localparam int unsigned PHY_SZW_LIN = $clog2(       PHY_BEW   );  // linear
   localparam int unsigned PHY_SZW_LOG = $clog2($clog2(PHY_BEW)+1);  // logarithmic (default)
   // transfer size width selection
-  localparam int unsigned PHY_SZW = (PAR_SIZ == TCB_LINEAR) ? PHY_SZW_LIN : PHY_SZW_LOG;
+  localparam int unsigned PHY_SZW = (PHY.SIZ == TCB_LINEAR) ? PHY_SZW_LIN : PHY_SZW_LOG;
 
   // address alignment mask
   localparam logic [PHY.ABW-1:0] ADR_LGN_MSK = {(PHY.ABW-$clog2(PHY_BEW))'('1), ($clog2(PHY_BEW))'('0)};
@@ -60,13 +54,9 @@ interface tcb_if
 
   // request
   typedef struct {
-    // optional
-    logic               inc;  // incremented address
-    logic               rpt;  // repeated address
-    logic               lck;  // arbitration lock
-    logic               ndn;  // endianness
-    // basic
+    tcb_req_cmd_t       cmd;  // command (optional)
     logic               wen;  // write enable
+    logic               ndn;  // endianness
     logic [PHY.ABW-1:0] adr;  // address
     logic [PHY_SZW-1:0] siz;  // transfer size
     logic [PHY_BEW-1:0] ben;  // byte enable
@@ -76,7 +66,7 @@ interface tcb_if
   // response
   typedef struct {
     logic [PHY.DBW-1:0] rdt;  // read data
-    logic               err;  // error response
+    tcb_rsp_sts_t       sts;  // status (optional)
   } tcb_rsp_t;
 
   // request/response
@@ -111,15 +101,15 @@ interface tcb_if
   } tcb_dly_t;
 
   // response pipeline
-  tcb_dly_t dly [0:DLY];
+  tcb_dly_t dly [0:PHY.DLY];
 
   logic [PHY_BEW-1:0] req_ben;  // byte enable
 
   // copy or create byte enable from transfer size
   generate
-  if (PAR_MOD == TCB_REFERENCE) begin
+  if (PHY.MOD == TCB_REFERENCE) begin
     for (genvar b=0; b<PHY_BEW; b++) begin
-      case (PAR_SIZ)
+      case (PHY.SIZ)
         TCB_LOGARITHMIC:  assign req_ben[b] = b < (2**    req.siz );
         TCB_LINEAR     :  assign req_ben[b] = b < (2**(2**req.siz));
       endcase
@@ -137,9 +127,9 @@ interface tcb_if
 
   // response pipeline
   generate
-  if (DLY > 0) begin: gen_dly
+  if (PHY.DLY > 0) begin: gen_dly
     always @(posedge clk)
-    dly[1:DLY] <= dly[0:DLY-1];
+    dly[1:PHY.DLY] <= dly[0:PHY.DLY-1];
   end: gen_dly
   endgenerate
 

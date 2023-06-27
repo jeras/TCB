@@ -25,15 +25,9 @@ package tcb_vip_pkg;
 ////////////////////////////////////////////////////////////////////////////////
 
   class tcb_transfer_c #(
-    // TCB widths
-    tcb_par_phy_t   PHY = '{ABW: (32), DBW: (32), SLW: (8)},
-    // TCB parameters
-    int unsigned    DLY = 1,        // response delay
-    // other parameters
-    tcb_par_mode_t  MOD = TCB_REFERENCE,
-    tcb_par_size_t  PAR_SIZ = TCB_LOGARITHMIC,
-    tcb_par_order_t ORD = TCB_DESCENDING,
-    tcb_par_align_t LGN = TCB_ALIGNED
+    tcb_par_phy_t  PHY = TCB_PAR_PHY_DEF,
+    type tcb_req_cmd_t = tcb_req_cmd_def_t,
+    type tcb_rsp_sts_t = tcb_req_cmd_def_t
   );
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -47,21 +41,23 @@ package tcb_vip_pkg;
     localparam int unsigned PHY_SZW_LIN = $clog2(       PHY_BEW   );  // linear
     localparam int unsigned PHY_SZW_LOG = $clog2($clog2(PHY_BEW)+1);  // logarithmic (default)
     // transfer size width selection
-    localparam int unsigned PHY_SZW = (PAR_SIZ == TCB_LINEAR) ? PHY_SZW_LIN : PHY_SZW_LOG;
+    localparam int unsigned PHY_SZW = (PHY.SIZ == TCB_LINEAR) ? PHY_SZW_LIN : PHY_SZW_LOG;
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
-//    typedef virtual tcb_if #(.PHY (PHY), .DLY (DLY)) tcb_vif_t;
-//    typedef virtual tcb_if tcb_vif_t;
+//    typedef virtual tcb_if #(
+//      .PHY           (PHY),
+//      .tcb_req_cmd_t (tcb_req_cmd_t),
+//      .tcb_rsp_sts_t (tcb_rsp_sts_t)
+//    ) tcb_vif_t;
+    typedef virtual tcb_if tcb_vif_t;
 
     string MODE = "MON";
-//    tcb_vif_t tcb;
-    virtual tcb_if tcb;
+    tcb_vif_t tcb;
 
     //constructor
-//    function new(string MODE = "MON", tcb_vif_t tcb);
-    function new(string MODE = "MON", virtual tcb_if tcb);
+    function new(string MODE = "MON", tcb_vif_t tcb);
       this.MODE = MODE;
       this.tcb = tcb;
       // initialization
@@ -104,13 +100,9 @@ package tcb_vip_pkg;
 
     // TCB transfer request structure
     typedef struct {
-      // request optional
-      logic                            inc;  // incremented address
-      logic                            rpt;  // repeated address
-      logic                            lck;  // arbitration lock
-      logic                            ndn;  // endianness
-      // request
+      tcb_req_cmd_t                    cmd;  // command (optional)
       logic                            wen;  // write enable
+      logic                            ndn;  // endianness
       logic              [PHY.ABW-1:0] adr;  // address
       logic              [PHY_SZW-1:0] siz;  // logarithmic size
       logic [PHY_BEW-1:0]              ben;  // byte enable
@@ -119,9 +111,8 @@ package tcb_vip_pkg;
 
     // TCB transfer response structure
     typedef struct {
-      // response
       logic [PHY_BEW-1:0][PHY.SLW-1:0] rdt;  // read data
-      logic                            err;  // error
+      tcb_rsp_sts_t                    sts;  // status (optional)
     } transfer_response_t;
 
     // TCB transfer structure
@@ -138,23 +129,20 @@ package tcb_vip_pkg;
 
     // constants
     static const transfer_t TRANSFER_INIT = '{
+      // request
       req: '{
-        // request optional
-        inc: 1'b0,
-        rpt: 1'b0,
-        lck: 1'b0,
+        cmd: 'x,
+        wen: 1'bx,
         ndn: 1'bx,
-        // request
-        wen: 'x,
         adr: 'x,
         siz: 'x,
         ben: 'x,
         wdt: 'x
       },
+      // response
       rsp: '{
-        // response
         rdt: 'x,
-        err: 'x
+        sts: 'x
       },
       // timing idle/backpressure
       idl: 0,
@@ -187,13 +175,10 @@ package tcb_vip_pkg;
       #1;
       // handshake
       tcb.vld = 1'b1;
-      // request optional
-      tcb.req.inc = req.inc;
-      tcb.req.rpt = req.rpt;
-      tcb.req.lck = req.lck;
-      tcb.req.ndn = req.ndn;
       // request
+      tcb.req.cmd = req.cmd;
       tcb.req.wen = req.wen;
+      tcb.req.ndn = req.ndn;
       tcb.req.adr = req.adr;
       tcb.req.siz = req.siz;
       tcb.req.ben = req.ben;
@@ -208,13 +193,10 @@ package tcb_vip_pkg;
       #1;
       // handshake
       tcb.vld = 1'b0;
-      // request optional
-      tcb.req.inc = 'x;
-      tcb.req.rpt = 'x;
-      tcb.req.lck = 'x;
-      tcb.req.ndn = 'x;
       // request
+      tcb.req.cmd = 'x;
       tcb.req.wen = 'x;
+      tcb.req.ndn = 'x;
       tcb.req.adr = 'x;
       tcb.req.siz = 'x;
       tcb.req.ben = 'x;
@@ -228,10 +210,10 @@ package tcb_vip_pkg;
       // wait for response
       do begin
         @(posedge tcb.clk);
-      end while (~tcb.dly[tcb.DLY].ena);
+      end while (~tcb.dly[tcb.PHY.DLY].ena);
       // response
       rsp.rdt = tcb.rsp.rdt;
-      rsp.err = tcb.rsp.err;
+      rsp.sts = tcb.rsp.sts;
     endtask: transfer_rsp_lsn
 
     // transfer request listener
@@ -267,13 +249,9 @@ package tcb_vip_pkg;
           @(posedge tcb.clk);
         end while (~tcb.trn);
       end
-      // request optional
-      req.inc = tcb.req.inc;
-      req.rpt = tcb.req.rpt;
-      req.lck = tcb.req.lck;
-      req.ndn = tcb.req.ndn;
-      // request
+      req.cmd = tcb.req.cmd;
       req.wen = tcb.req.wen;
+      req.ndn = tcb.req.ndn;
       req.adr = tcb.req.adr;
       req.siz = tcb.req.siz;
       req.ben = tcb.req.ben;
@@ -286,11 +264,11 @@ package tcb_vip_pkg;
     );
       // response
       tcb.rsp.rdt = rsp.rdt;
-      tcb.rsp.err = rsp.err;
+      tcb.rsp.sts = rsp.sts;
       // wait for response
       do begin
         @(posedge tcb.clk);
-      end while (~tcb.dly[tcb.DLY].ena);
+      end while (~tcb.dly[tcb.PHY.DLY].ena);
     endtask: transfer_rsp_drv
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -348,7 +326,7 @@ package tcb_vip_pkg;
       typedef struct {
         // response
         logic [SIZ-1:0][PHY.SLW-1:0] rdt;
-        logic                        err;
+        logic                        sts;
       } transaction_response_t;
 
       // TCB transaction structure
@@ -377,39 +355,36 @@ package tcb_vip_pkg;
           $error("ERROR: Transaction size is not power of 2.");
         end
         // check if the transfer meets alignment requirements
-        if ((LGN == TCB_ALIGNED) && (transaction_req.adr % SIZ != 0)) begin
+        if ((PHY.LGN == TCB_ALIGNED) && (transaction_req.adr % SIZ != 0)) begin
           $error("ERROR: Transaction address is not aligned to transaction size.");
         end
         // control and address signals
         for (int unsigned i=0; i<len; i++) begin
           // request optional
-          transfer_array[i].req.inc = 1'b0;
-          transfer_array[i].req.rpt = 1'b0;
-          transfer_array[i].req.lck = (i == len-1) ? 1'b0 : 1'b1;
-          transfer_array[i].req.ndn = transaction_req.ndn;
-          // request
+          transfer_array[i].req.cmd = '{lck: (i == len-1) ? 1'b0 : 1'b1, default: '0};
           transfer_array[i].req.wen = transaction_req.wen;
+          transfer_array[i].req.ndn = transaction_req.ndn;
           transfer_array[i].req.adr = transaction_req.adr;
           transfer_array[i].req.ben = '0;
-          transfer_array[i].req.siz = (PAR_SIZ == TCB_LINEAR) ? PHY_BEW : $clog2(PHY_BEW);
+          transfer_array[i].req.siz = (PHY.SIZ == TCB_LINEAR) ? PHY_BEW : $clog2(PHY_BEW);
         end
         if (SIZ <= PHY_BEW) begin
-          transfer_array[0].req.siz = (PAR_SIZ == TCB_LINEAR) ?     SIZ : $clog2(    SIZ);
+          transfer_array[0].req.siz = (PHY.SIZ == TCB_LINEAR) ?     SIZ : $clog2(    SIZ);
         end
         // data signals
         for (int unsigned i=0; i<SIZ; i++) begin
           // address offset
           off = i / PHY_BEW;
           // mode processor/memory
-          if (MOD == TCB_REFERENCE) begin
+          if (PHY.MOD == TCB_REFERENCE) begin
             // all data bytes are LSB aligned
             byt = i;
-          end else if (MOD == TCB_MEMORY) begin
+          end else if (PHY.MOD == TCB_MEMORY) begin
             // all data bytes are LSB aligned
             byt = (i + transaction_req.adr) % PHY_BEW;
           end
           // order descending/ascending
-          if (ORD == TCB_ASCENDING) begin
+          if (PHY.ORD == TCB_ASCENDING) begin
             byt = PHY_BEW - 1 - byt;
           end
           // request
@@ -433,21 +408,21 @@ package tcb_vip_pkg;
         int unsigned off;  // address offset
         // transaction response
         int unsigned len;
-        transaction_response_t transaction_rsp = '{rdt: 'x, err: 1'b0};
+        transaction_response_t transaction_rsp = '{rdt: 'x, sts: '0};
         // data signals
         for (int unsigned i=0; i<SIZ; i++) begin
           // address offset
           off = i / PHY_BEW;
           // mode processor/memory
-          if (MOD == TCB_REFERENCE) begin
+          if (PHY.MOD == TCB_REFERENCE) begin
             // all data bytes are LSB aligned
             byt = i;
-          end else if (MOD == TCB_MEMORY) begin
+          end else if (PHY.MOD == TCB_MEMORY) begin
             // all data bytes are LSB aligned
             byt = (i + transfer_array[off].req.adr) % PHY_BEW;
           end
           // order descending/ascending
-          if (ORD == TCB_ASCENDING) begin
+          if (PHY.ORD == TCB_ASCENDING) begin
             byt = PHY_BEW - 1 - byt;
           end
           // endianness
@@ -456,7 +431,7 @@ package tcb_vip_pkg;
           end else begin
             transaction_rsp.rdt[SIZ - 1 - i] = transfer_array[off].rsp.rdt[byt];
           end
-          transaction_rsp.err               |= transfer_array[off].rsp.err;
+          transaction_rsp.sts               |= transfer_array[off].rsp.sts;
         end
         return(transaction_rsp);
       endfunction: transaction_response
@@ -469,14 +444,14 @@ package tcb_vip_pkg;
 
     task automatic transaction8 (
       // request
-      input  logic                                wen,
-      input  logic              [tcb.PHY.ABW-1:0] adr,
-      input  logic       [1-1:0][tcb.PHY.SLW-1:0] wdt,
+      input  logic                            wen,
+      input  logic              [PHY.ABW-1:0] adr,
+      input  logic       [1-1:0][PHY.SLW-1:0] wdt,
       // response
-      output logic       [1-1:0][tcb.PHY.SLW-1:0] rdt,
-      output logic                                err,
+      output logic       [1-1:0][PHY.SLW-1:0] rdt,
+      output tcb_rsp_sts_t                    sts,
       // endianness
-      input  tcb_cfg_endian_t                     ndn = TCB_LITTLE
+      input  tcb_cfg_endian_t                 ndn = TCB_LITTLE
     );
       transfer_array_t transfer_array;
       typedef tcb_transaction_c #(1) tcb_transaction_p;
@@ -492,19 +467,19 @@ package tcb_vip_pkg;
       transfer_array.delete;
       // outputs
       rdt = transaction.rsp.rdt;
-      err = transaction.rsp.err;
+      sts = transaction.rsp.sts;
     endtask: transaction8
 
     task automatic transaction16 (
       // request
-      input  logic                                wen,
-      input  logic              [tcb.PHY.ABW-1:0] adr,
-      input  logic       [2-1:0][tcb.PHY.SLW-1:0] wdt,
+      input  logic                            wen,
+      input  logic              [PHY.ABW-1:0] adr,
+      input  logic       [2-1:0][PHY.SLW-1:0] wdt,
       // response
-      output logic       [2-1:0][tcb.PHY.SLW-1:0] rdt,
-      output logic                                err,
+      output logic       [2-1:0][PHY.SLW-1:0] rdt,
+      output tcb_rsp_sts_t                    sts,
       // endianness
-      input  tcb_cfg_endian_t                     ndn = TCB_LITTLE
+      input  tcb_cfg_endian_t                 ndn = TCB_LITTLE
     );
       transfer_array_t transfer_array;
       typedef tcb_transaction_c #(2) tcb_transaction_p;
@@ -520,19 +495,19 @@ package tcb_vip_pkg;
       transfer_array.delete;
       // outputs
       rdt = transaction.rsp.rdt;
-      err = transaction.rsp.err;
+      sts = transaction.rsp.sts;
     endtask: transaction16
 
     task automatic transaction32 (
       // request
-      input  logic                                wen,
-      input  logic              [tcb.PHY.ABW-1:0] adr,
-      input  logic       [4-1:0][tcb.PHY.SLW-1:0] wdt,
+      input  logic                            wen,
+      input  logic              [PHY.ABW-1:0] adr,
+      input  logic       [4-1:0][PHY.SLW-1:0] wdt,
       // response
-      output logic       [4-1:0][tcb.PHY.SLW-1:0] rdt,
-      output logic                                err,
+      output logic       [4-1:0][PHY.SLW-1:0] rdt,
+      output tcb_rsp_sts_t                    sts,
       // endianness
-      input  tcb_cfg_endian_t                     ndn = TCB_LITTLE
+      input  tcb_cfg_endian_t                 ndn = TCB_LITTLE
     );
       transfer_array_t transfer_array;
       typedef tcb_transaction_c #(4) tcb_transaction_p;
@@ -548,19 +523,19 @@ package tcb_vip_pkg;
       transfer_array.delete;
       // outputs
       rdt = transaction.rsp.rdt;
-      err = transaction.rsp.err;
+      sts = transaction.rsp.sts;
     endtask: transaction32
 
     task automatic transaction64 (
       // request
-      input  logic                                wen,
-      input  logic              [tcb.PHY.ABW-1:0] adr,
-      input  logic       [8-1:0][tcb.PHY.SLW-1:0] wdt,
+      input  logic                            wen,
+      input  logic              [PHY.ABW-1:0] adr,
+      input  logic       [8-1:0][PHY.SLW-1:0] wdt,
       // response
-      output logic       [8-1:0][tcb.PHY.SLW-1:0] rdt,
-      output logic                                err,
+      output logic       [8-1:0][PHY.SLW-1:0] rdt,
+      output tcb_rsp_sts_t                    sts,
       // endianness
-      input  tcb_cfg_endian_t                     ndn = TCB_LITTLE
+      input  tcb_cfg_endian_t                 ndn = TCB_LITTLE
     );
       transfer_array_t transfer_array;
       typedef tcb_transaction_c #(8) tcb_transaction_p;
@@ -576,19 +551,19 @@ package tcb_vip_pkg;
       transfer_array.delete;
       // outputs
       rdt = transaction.rsp.rdt;
-      err = transaction.rsp.err;
+      sts = transaction.rsp.sts;
     endtask: transaction64
 
     task automatic transaction128 (
       // request
-      input  logic                                wen,
-      input  logic              [tcb.PHY.ABW-1:0] adr,
-      input  logic      [16-1:0][tcb.PHY.SLW-1:0] wdt,
+      input  logic                            wen,
+      input  logic              [PHY.ABW-1:0] adr,
+      input  logic      [16-1:0][PHY.SLW-1:0] wdt,
       // response
-      output logic      [16-1:0][tcb.PHY.SLW-1:0] rdt,
-      output logic                                err,
+      output logic      [16-1:0][PHY.SLW-1:0] rdt,
+      output tcb_rsp_sts_t                    sts,
       // endianness
-      input  tcb_cfg_endian_t                     ndn = TCB_LITTLE
+      input  tcb_cfg_endian_t                 ndn = TCB_LITTLE
     );
       transfer_array_t transfer_array;
       typedef tcb_transaction_c #(16) tcb_transaction_p;
@@ -604,172 +579,172 @@ package tcb_vip_pkg;
       transfer_array.delete;
       // outputs
       rdt = transaction.rsp.rdt;
-      err = transaction.rsp.err;
+      sts = transaction.rsp.sts;
     endtask: transaction128
 
     task write8 (
-      input  logic         [tcb.PHY.ABW-1:0] adr,
-      input  logic  [1-1:0][tcb.PHY.SLW-1:0] wdt,
-      output logic                           err
+      input  logic         [PHY.ABW-1:0] adr,
+      input  logic  [1-1:0][PHY.SLW-1:0] wdt,
+      output logic                       sts
     );
-      logic [1-1:0][tcb.PHY.SLW-1:0] rdt;
-      transaction8(1'b1, adr, wdt, rdt, err);
+      logic [1-1:0][PHY.SLW-1:0] rdt;
+      transaction8(1'b1, adr, wdt, rdt, sts);
     endtask: write8
 
     task read8 (
-      input  logic         [tcb.PHY.ABW-1:0] adr,
-      output logic  [1-1:0][tcb.PHY.SLW-1:0] rdt,
-      output logic                           err
+      input  logic         [PHY.ABW-1:0] adr,
+      output logic  [1-1:0][PHY.SLW-1:0] rdt,
+      output logic                       sts
     );
-      logic [1-1:0][tcb.PHY.SLW-1:0] wdt = 'x;
-      transaction8(1'b0, adr, wdt, rdt, err);
+      logic [1-1:0][PHY.SLW-1:0] wdt = 'x;
+      transaction8(1'b0, adr, wdt, rdt, sts);
     endtask: read8
 
     task check8 (
-      input  logic         [tcb.PHY.ABW-1:0] adr,
-      inout  logic  [1-1:0][tcb.PHY.SLW-1:0] dat,
-      inout  logic                           sts
+      input  logic         [PHY.ABW-1:0] adr,
+      inout  logic  [1-1:0][PHY.SLW-1:0] dat,
+      inout  logic                       sts
     );
-      logic [1-1:0][tcb.PHY.SLW-1:0] wdt = 'x;
-      logic [1-1:0][tcb.PHY.SLW-1:0] rdt;
-      logic                          err;
-      transaction8(1'b0, adr, wdt, rdt, err);
+      logic [1-1:0][PHY.SLW-1:0] wdt = 'x;
+      logic [1-1:0][PHY.SLW-1:0] rdt;
+      logic                      tmp;
+      transaction8(1'b0, adr, wdt, rdt, tmp);
       if (rdt !== dat) $display("ERROR: %m: (rdt=8'h%2X) !== (dat=8'h%2X) mismatch.", rdt, dat);
-      if (err !== sts) $display("ERROR: %m: (err=1'b%1b) !== (sts=1'b%1b) mismatch.", err, sts);
+      if (tmp !== sts) $display("ERROR: %m: (sts=1'b%1b) !== (sts=1'b%1b) mismatch.", tmp, sts);
       dat = rdt;
-      sts = err;
+      sts = tmp;
     endtask: check8
 
     task write16 (
-      input  logic         [tcb.PHY.ABW-1:0] adr,
-      input  logic  [2-1:0][tcb.PHY.SLW-1:0] wdt,
-      output logic                           err
+      input  logic         [PHY.ABW-1:0] adr,
+      input  logic  [2-1:0][PHY.SLW-1:0] wdt,
+      output logic                       sts
     );
-      logic [2-1:0][tcb.PHY.SLW-1:0] rdt;
-      transaction16(1'b1, adr, wdt, rdt, err);
+      logic [2-1:0][PHY.SLW-1:0] rdt;
+      transaction16(1'b1, adr, wdt, rdt, sts);
     endtask: write16
 
     task read16 (
-      input  logic         [tcb.PHY.ABW-1:0] adr,
-      output logic  [2-1:0][tcb.PHY.SLW-1:0] rdt,
-      output logic                           err
+      input  logic         [PHY.ABW-1:0] adr,
+      output logic  [2-1:0][PHY.SLW-1:0] rdt,
+      output logic                       sts
     );
-      logic [4-1:0][tcb.PHY.SLW-1:0] wdt = 'x;
-      transaction16(1'b0, adr, wdt, rdt, err);
+      logic [4-1:0][PHY.SLW-1:0] wdt = 'x;
+      transaction16(1'b0, adr, wdt, rdt, sts);
     endtask: read16
 
     task check16 (
-      input  logic         [tcb.PHY.ABW-1:0] adr,
-      inout  logic  [2-1:0][tcb.PHY.SLW-1:0] dat,
-      inout  logic                           sts
+      input  logic         [PHY.ABW-1:0] adr,
+      inout  logic  [2-1:0][PHY.SLW-1:0] dat,
+      inout  logic                       sts
     );
-      logic [2-1:0][tcb.PHY.SLW-1:0] wdt = 'x;
-      logic [2-1:0][tcb.PHY.SLW-1:0] rdt;
-      logic                          err;
-      transaction16(1'b0, adr, wdt, rdt, err);
+      logic [2-1:0][PHY.SLW-1:0] wdt = 'x;
+      logic [2-1:0][PHY.SLW-1:0] rdt;
+      logic                      tmp;
+      transaction16(1'b0, adr, wdt, rdt, tmp);
       if (rdt !== dat) $display("ERROR: %m: (rdt=16'h%4X) !== (dat=16'h%4X) mismatch.", rdt, dat);
-      if (err !== sts) $display("ERROR: %m: (err= 1'b%1b) !== (sts= 1'b%1b) mismatch.", err, sts);
+      if (tmp !== sts) $display("ERROR: %m: (sts= 1'b%1b) !== (sts= 1'b%1b) mismatch.", tmp, sts);
       dat = rdt;
-      sts = err;
+      sts = tmp;
     endtask: check16
 
     task write32 (
-      input  logic         [tcb.PHY.ABW-1:0] adr,
-      input  logic  [4-1:0][tcb.PHY.SLW-1:0] wdt,
-      output logic                           err
+      input  logic         [PHY.ABW-1:0] adr,
+      input  logic  [4-1:0][PHY.SLW-1:0] wdt,
+      output logic                       sts
     );
-      logic [4-1:0][tcb.PHY.SLW-1:0] rdt;
-      transaction32(1'b1, adr, wdt, rdt, err);
+      logic [4-1:0][PHY.SLW-1:0] rdt;
+      transaction32(1'b1, adr, wdt, rdt, sts);
     endtask: write32
 
     task read32 (
-      input  logic         [tcb.PHY.ABW-1:0] adr,
-      output logic  [4-1:0][tcb.PHY.SLW-1:0] rdt,
-      output logic                           err
+      input  logic         [PHY.ABW-1:0] adr,
+      output logic  [4-1:0][PHY.SLW-1:0] rdt,
+      output logic                       sts
     );
-      logic [4-1:0][tcb.PHY.SLW-1:0] wdt = 'x;
-      transaction32(1'b0, adr, wdt, rdt, err);
+      logic [4-1:0][PHY.SLW-1:0] wdt = 'x;
+      transaction32(1'b0, adr, wdt, rdt, sts);
     endtask: read32
 
     task check32 (
-      input  logic         [tcb.PHY.ABW-1:0] adr,
-      inout  logic  [4-1:0][tcb.PHY.SLW-1:0] dat,
-      inout  logic                           sts
+      input  logic         [PHY.ABW-1:0] adr,
+      inout  logic  [4-1:0][PHY.SLW-1:0] dat,
+      inout  logic                       sts
     );
-      logic [4-1:0][tcb.PHY.SLW-1:0] wdt = 'x;
-      logic [4-1:0][tcb.PHY.SLW-1:0] rdt;
-      logic                          err;
-      transaction32(1'b0, adr, wdt, rdt, err);
+      logic [4-1:0][PHY.SLW-1:0] wdt = 'x;
+      logic [4-1:0][PHY.SLW-1:0] rdt;
+      logic                      tmp;
+      transaction32(1'b0, adr, wdt, rdt, tmp);
       if (rdt !== dat) $display("ERROR: %m: (rdt=32'h%8X) !== (dat=32'h%8X) mismatch.", rdt, dat);
-      if (err !== sts) $display("ERROR: %m: (err= 1'b%1b) !== (sts= 1'b%1b) mismatch.", err, sts);
+      if (tmp !== sts) $display("ERROR: %m: (sts= 1'b%1b) !== (sts= 1'b%1b) mismatch.", tmp, sts);
       dat = rdt;
-      sts = err;
+      sts = tmp;
     endtask: check32
 
     task write64 (
-      input  logic         [tcb.PHY.ABW-1:0] adr,
-      input  logic  [8-1:0][tcb.PHY.SLW-1:0] wdt,
-      output logic                           err
+      input  logic         [PHY.ABW-1:0] adr,
+      input  logic  [8-1:0][PHY.SLW-1:0] wdt,
+      output logic                       sts
     );
-      logic [8-1:0][tcb.PHY.SLW-1:0] rdt;
-      transaction64(1'b1, adr, wdt, rdt, err);
+      logic [8-1:0][PHY.SLW-1:0] rdt;
+      transaction64(1'b1, adr, wdt, rdt, sts);
     endtask: write64
 
     task read64 (
-      input  logic         [tcb.PHY.ABW-1:0] adr,
-      output logic  [8-1:0][tcb.PHY.SLW-1:0] rdt,
-      output logic                           err
+      input  logic         [PHY.ABW-1:0] adr,
+      output logic  [8-1:0][PHY.SLW-1:0] rdt,
+      output logic                       sts
     );
-      logic [8-1:0][tcb.PHY.SLW-1:0] wdt = 'x;
-      transaction64(1'b0, adr, wdt, rdt, err);
+      logic [8-1:0][PHY.SLW-1:0] wdt = 'x;
+      transaction64(1'b0, adr, wdt, rdt, sts);
     endtask: read64
 
     task check64 (
-      input  logic         [tcb.PHY.ABW-1:0] adr,
-      inout  logic  [8-1:0][tcb.PHY.SLW-1:0] dat,
-      inout  logic                           sts
+      input  logic         [PHY.ABW-1:0] adr,
+      inout  logic  [8-1:0][PHY.SLW-1:0] dat,
+      inout  logic                       sts
     );
-      logic [8-1:0][tcb.PHY.SLW-1:0] wdt = 'x;
-      logic [8-1:0][tcb.PHY.SLW-1:0] rdt;
-      logic                          err;
-      transaction64(1'b0, adr, wdt, rdt, err);
+      logic [8-1:0][PHY.SLW-1:0] wdt = 'x;
+      logic [8-1:0][PHY.SLW-1:0] rdt;
+      logic                      tmp;
+      transaction64(1'b0, adr, wdt, rdt, tmp);
       if (rdt !== dat) $display("ERROR: %m: (rdt=64'h%16X) !== (dat=64'h%16X) mismatch.", rdt, dat);
-      if (err !== sts) $display("ERROR: %m: (err= 1'b%01b) !== (sts= 1'b%01b) mismatch.", err, sts);
+      if (tmp !== sts) $display("ERROR: %m: (sts= 1'b%01b) !== (sts= 1'b%01b) mismatch.", tmp, sts);
       dat = rdt;
-      sts = err;
+      sts = tmp;
     endtask: check64
 
     task write128 (
-      input  logic         [tcb.PHY.ABW-1:0] adr,
-      input  logic [16-1:0][tcb.PHY.SLW-1:0] wdt,
-      output logic                           err
+      input  logic         [PHY.ABW-1:0] adr,
+      input  logic [16-1:0][PHY.SLW-1:0] wdt,
+      output logic                       sts
     );
-      logic [16-1:0][tcb.PHY.SLW-1:0] rdt;
-      transaction128(1'b1, adr, wdt, rdt, err);
+      logic [16-1:0][PHY.SLW-1:0] rdt;
+      transaction128(1'b1, adr, wdt, rdt, sts);
     endtask: write128
 
     task read128 (
-      input  logic         [tcb.PHY.ABW-1:0] adr,
-      output logic [16-1:0][tcb.PHY.SLW-1:0] rdt,
-      output logic                           err
+      input  logic         [PHY.ABW-1:0] adr,
+      output logic [16-1:0][PHY.SLW-1:0] rdt,
+      output logic                       sts
     );
-      logic [16-1:0][tcb.PHY.SLW-1:0] wdt = 'x;
-      transaction128(1'b0, adr, wdt, rdt, err);
+      logic [16-1:0][PHY.SLW-1:0] wdt = 'x;
+      transaction128(1'b0, adr, wdt, rdt, sts);
     endtask: read128
 
     task check128 (
-      input  logic         [tcb.PHY.ABW-1:0] adr,
-      inout  logic [16-1:0][tcb.PHY.SLW-1:0] dat,
-      inout  logic                           sts
+      input  logic         [PHY.ABW-1:0] adr,
+      inout  logic [16-1:0][PHY.SLW-1:0] dat,
+      inout  logic                       sts
     );
-      logic [16-1:0][tcb.PHY.SLW-1:0] wdt = 'x;
-      logic [16-1:0][tcb.PHY.SLW-1:0] rdt;
-      logic                           err;
-      transaction128(1'b0, adr, wdt, rdt, err);
+      logic [16-1:0][PHY.SLW-1:0] wdt = 'x;
+      logic [16-1:0][PHY.SLW-1:0] rdt;
+      logic                       tmp;
+      transaction128(1'b0, adr, wdt, rdt, tmp);
       if (rdt !== dat) $display("ERROR: %m: (rdt=128'h%32X) !== (dat=128'h%32X) mismatch.", rdt, dat);
-      if (err !== sts) $display("ERROR: %m: (err=  1'b%01b) !== (sts=  1'b%01b) mismatch.", err, sts);
+      if (tmp !== sts) $display("ERROR: %m: (sts=  1'b%01b) !== (sts=  1'b%01b) mismatch.", tmp, sts);
       dat = rdt;
-      sts = err;
+      sts = tmp;
     endtask: check128
 
   endclass: tcb_transfer_c

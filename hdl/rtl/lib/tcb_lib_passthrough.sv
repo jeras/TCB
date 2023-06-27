@@ -29,10 +29,7 @@ module tcb_lib_passthrough (
 `else
   // camparing subordinate and manager interface parameters
   generate
-    // bus widths
     if (sub.PHY != man.PHY)  $error("ERROR: %m parameter (sub.PHY = %p) != (man.PHY = %p)", sub.PHY, man.PHY);
-    // response delay
-    if (sub.DLY != man.DLY)  $error("ERROR: %m parameter (sub.DLY = %d) != (man.DLY = %d)", sub.DLY, man.DLY);
   endgenerate
 `endif
 

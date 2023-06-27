@@ -23,11 +23,27 @@ module tcb_lib_endianness_tb
   // TCB widths
   int unsigned ABW = 32,
   int unsigned DBW = 32,
-  tcb_par_phy_t PHY = '{ABW: ABW, DBW: DBW, SLW: 8},
-  //tcb_par_log_t LOG = '{},
   // response delay
-  int unsigned DLY = 0
+  int unsigned DLY = 1
 );
+
+  // physical interface parameter
+  localparam tcb_par_phy_t PHY1 = '{
+    // signal bus widths
+    SLW: TCB_PAR_PHY_DEF.SLW,
+    ABW: ABW,
+    DBW: DBW,
+    // TCB parameters
+    DLY: DLY,
+    // mode/alignment/order parameters
+    MOD: TCB_PAR_PHY_DEF.MOD,
+    SIZ: TCB_PAR_PHY_DEF.SIZ,
+    ORD: TCB_PAR_PHY_DEF.ORD,
+    LGN: TCB_PAR_PHY_DEF.LGN
+  };
+
+  localparam tcb_par_phy_t PHY = TCB_PAR_PHY_DEF;
+
 
 ////////////////////////////////////////////////////////////////////////////////
 // local signals
@@ -37,13 +53,22 @@ module tcb_lib_endianness_tb
   logic clk;  // clock
   logic rst;  // reset
 
-  tcb_if #(.PHY (PHY), .DLY (DLY)) tcb_man       (.clk (clk), .rst (rst));
-  tcb_if #(.PHY (PHY), .DLY (DLY)) tcb_sub       (.clk (clk), .rst (rst));
-  tcb_if #(.PHY (PHY), .DLY (DLY)) tcb_mem [0:0] (.clk (clk), .rst (rst));
+//  // interfaces
+//  tcb_if #(.PHY (PHY)) tcb_man       (.clk (clk), .rst (rst));
+//  tcb_if #(.PHY (PHY)) tcb_sub       (.clk (clk), .rst (rst));
+//  tcb_if #(.PHY (PHY)) tcb_mem [0:0] (.clk (clk), .rst (rst));
 
-  tcb_vip_pkg::tcb_transfer_c #(.PHY (PHY), .DLY (DLY)) obj_man;
-  tcb_vip_pkg::tcb_transfer_c #(.PHY (PHY), .DLY (DLY)) obj_sub;
-  tcb_vip_pkg::tcb_transfer_c #(.PHY (PHY), .DLY (DLY)) obj_mem;
+  // interfaces
+  tcb_if tcb_man       (.clk (clk), .rst (rst));
+  tcb_if tcb_sub       (.clk (clk), .rst (rst));
+  tcb_if tcb_mem [0:0] (.clk (clk), .rst (rst));
+
+  // objects
+  tcb_vip_pkg::tcb_transfer_c #(.PHY (PHY)) obj_man;
+  tcb_vip_pkg::tcb_transfer_c #(.PHY (PHY)) obj_sub;
+  tcb_vip_pkg::tcb_transfer_c #(.PHY (PHY)) obj_mem;
+
+
 
 ////////////////////////////////////////////////////////////////////////////////
 // data checking function

@@ -34,10 +34,7 @@ module tcb_lib_endianness
 `else
   // comparing subordinate and manager interface parameters
   generate
-    // bus widths
     if (sub.PHY != man.PHY)  $error("ERROR: %m parameter (sub.PHY = %p) != (man.PHY = %p)", sub.PHY, man.PHY);
-    // response delay
-    if (sub.DLY != man.DLY)  $error("ERROR: %m parameter (sub.DLY = %d) != (man.DLY = %d)", sub.DLY, man.DLY);
   endgenerate
 `endif
 
@@ -50,14 +47,10 @@ module tcb_lib_endianness
   // handshake
   assign man.vld = sub.vld;
 
-  // request optional
-  assign man.req.inc = sub.req.inc;
-  assign man.req.rpt = sub.req.rpt;
-  assign man.req.lck = sub.req.lck;
-  assign man.req.ndn = sub.req.ndn;
-
   // request
+  assign man.req.cmd = sub.req.cmd;
   assign man.req.wen = sub.req.wen;
+  assign man.req.ndn = sub.req.ndn;
 
 ////////////////////////////////////////////////////////////////////////////////
 // address alignment
@@ -91,9 +84,9 @@ module tcb_lib_endianness
   assign man_rsp_rdt = man.rsp.rdt;
 
   generate
-  case (sub.PAR_MOD)
+  case (sub.PHY.MOD)
     TCB_REFERENCE: begin
-      case (man.PAR_MOD)
+      case (man.PHY.MOD)
         TCB_REFERENCE: begin
 
           // REFERENCE -> REFERENCE
@@ -107,7 +100,7 @@ module tcb_lib_endianness
         TCB_MEMORY: begin
 
           // REFERENCE -> MEMORY
-          case (sub.PAR_LGN)
+          case (sub.PHY.LGN)
             TCB_UNALIGNED: begin
               assign man.req.adr = sub.req.adr;
             end
@@ -129,7 +122,7 @@ module tcb_lib_endianness
               end
             endcase
             // multiplexer
-            case (man.PAR_ORD)
+            case (man.PHY.ORD)
               TCB_DESCENDING: begin
                 assign man.req.ben[i] = sub.req.ben[              sel_req_wdt[i]];
                 assign man_req_wdt[i] = sub_req_wdt[              sel_req_wdt[i]];
@@ -147,7 +140,7 @@ module tcb_lib_endianness
       endcase
     end
     TCB_MEMORY: begin
-      case (man.PAR_MOD)
+      case (man.PHY.MOD)
         TCB_REFERENCE: begin
 
           // MEMORY -> REFERENCE
@@ -157,7 +150,7 @@ module tcb_lib_endianness
         TCB_MEMORY: begin
 
           // MEMORY -> MEMORY
-          case (sub.PAR_LGN)
+          case (sub.PHY.LGN)
             TCB_UNALIGNED: begin
               assign man.req.adr = sub.req.adr;
             end
@@ -166,7 +159,7 @@ module tcb_lib_endianness
             end
           endcase
           for (genvar i=0; i<man.PHY_BEW; i++) begin
-            if (sub.PAR_ORD == man.PAR_ORD) begin
+            if (sub.PHY.ORD == man.PHY.ORD) begin
               // same byte order
               assign man_req_wdt[i] = sub_req_wdt[              sel_req_wdt[i]];
               assign man.req.ben[i] = sub.req.ben[                          i ];
@@ -194,7 +187,7 @@ module tcb_lib_endianness
 ////////////////////////////////////////////////////////////////////////////////
 
   // error
-  assign sub.rsp.err = man.rsp.err;
+  assign sub.rsp.sts = man.rsp.sts;
 
   // handshake
   assign sub.rdy = man.rdy;

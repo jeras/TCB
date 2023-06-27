@@ -106,18 +106,19 @@ module tcb_vip_mem
 
     // read/write data packed arrays
     logic [tcb[i].PHY_BEW-1:0][tcb[i].PHY.SLW-1:0] tmp_req_wdt;
-    logic [tcb[i].PHY_BEW-1:0][tcb[i].PHY.SLW-1:0] tmp_rsp_rdt [0:tcb[i].DLY];
+    logic [tcb[i].PHY_BEW-1:0][tcb[i].PHY.SLW-1:0] tmp_rsp_rdt [0:tcb[i].PHY.DLY];
 
     // as a memory model, there is no immediate need for backpressure, this feature might be added in the future
     assign tcb[i].rdy = 1'b1;
 
     // as a memory model, there is no immediate need for error responses, this feature might be added in the future
-    assign tcb[i].rsp.err = 1'b0;
+    // TODO
+    assign tcb[i].rsp.sts = 1'b0; // '{err: 1'b0, default: '0};
 
     // map write data to a packed array
     assign tmp_req_wdt = tcb[i].req.wdt;
 
-    assign tmp_req_siz = (tcb[i].PAR_SIZ == TCB_LINEAR) ? tcb[i].req.siz : 2**tcb[i].req.siz;
+    assign tmp_req_siz = (tcb[i].PHY.SIZ == TCB_LINEAR) ? tcb[i].req.siz : 2**tcb[i].req.siz;
 
     // write access
     always @(posedge tcb[i].clk)
@@ -126,7 +127,7 @@ module tcb_vip_mem
         // temporary variables
         automatic int unsigned               adr;
         automatic logic [tcb[i].PHY.SLW-1:0] dat;
-        if (tcb[i].PAR_MOD == TCB_REFERENCE) begin
+        if (tcb[i].PHY.MOD == TCB_REFERENCE) begin
           $display("DEBUG: tcb[%d]: write adr=%08X=%d, tmp_req_siz=%d, wdt=%08X", i, tcb[i].req.adr, tcb[i].req.adr, tmp_req_siz, tmp_req_wdt);
           for (int unsigned b=0; b<tmp_req_siz; b++) begin
             // byte address
@@ -157,7 +158,7 @@ module tcb_vip_mem
       if (~tcb[i].req.wen) begin
         // temporary variables
         automatic int unsigned adr;
-        if (tcb[i].PAR_MOD == TCB_REFERENCE) begin
+        if (tcb[i].PHY.MOD == TCB_REFERENCE) begin
           tmp_rsp_rdt = '{default: 'x};
           for (int unsigned b=0; b<tmp_req_siz; b++) begin
             adr = b + int'(tcb[i].req.adr);
@@ -177,7 +178,7 @@ module tcb_vip_mem
     end
 
     // read data delay pipeline
-    for (genvar d=1; d<=tcb[i].DLY; d++) begin
+    for (genvar d=1; d<=tcb[i].PHY.DLY; d++) begin
       always @(posedge tcb[i].clk)
       begin
         for (int unsigned b=0; b<tcb[i].PHY_BEW; b++) begin
@@ -189,7 +190,7 @@ module tcb_vip_mem
     end
 
     // map read data from an unpacked array
-    assign tcb[i].rsp.rdt = tmp_rsp_rdt[tcb[i].DLY];
+    assign tcb[i].rsp.rdt = tmp_rsp_rdt[tcb[i].PHY.DLY];
 
   end: port
   endgenerate

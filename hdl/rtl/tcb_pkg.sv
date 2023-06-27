@@ -70,26 +70,54 @@ package tcb_pkg;
   } tcb_cfg_endian_t;
 
 ////////////////////////////////////////////////////////////////////////////////
-// parameters
+// parameter structure
 ////////////////////////////////////////////////////////////////////////////////
 
-  // physical bus dimensions
+  // physical interface parameter structure
   // TODO: tre structure is packed to workaround Verilator bug
   typedef struct packed {
-    int unsigned ABW;  // address bus width
-    int unsigned DBW;  // data    bus width
-    int unsigned SLW;  // selection   width
+    // signal bus widths
+    int unsigned    SLW;  // selection   width (byte width is 8 by default)
+    int unsigned    ABW;  // address bus width
+    int unsigned    DBW;  // data    bus width
+    // TCB parameters
+    int unsigned    DLY;  // response delay
+    // mode/alignment/order parameters
+    tcb_par_mode_t  MOD;  // byte/half/word/double/quad position inside data bus vector
+    tcb_par_size_t  SIZ;  // transfer size encoding
+    tcb_par_align_t LGN;  // alignment
+    tcb_par_order_t ORD;  // byte order
   } tcb_par_phy_t;
 
-  // logical protocol options
-  typedef struct packed {
+  // physical interface parameter default
+  localparam tcb_par_phy_t TCB_PAR_PHY_DEF = '{
+    // signal bus widths
+    SLW: 8,
+    ABW: 32,
+    DBW: 32,
     // TCB parameters
-    int unsigned DLY;        // response delay
-    // other parameters
-    tcb_par_mode_t  PAR_MOD;
-    tcb_par_size_t  PAR_SIZ;
-    tcb_par_order_t PAR_ORD;
-    tcb_par_align_t PAR_LGN;
-  } tcb_par_log_t;
+    DLY: 1,
+    // mode/alignment/order parameters
+    MOD: TCB_REFERENCE,
+    SIZ: TCB_LOGARITHMIC,
+    LGN: TCB_ALIGNED,
+    ORD: TCB_DESCENDING
+  };
+
+////////////////////////////////////////////////////////////////////////////////
+// default structures containing optional signals
+////////////////////////////////////////////////////////////////////////////////
+
+  // command
+  typedef struct packed {
+    logic inc;  // incremented address
+    logic rpt;  // repeated address
+    logic lck;  // arbitration lock
+  } tcb_req_cmd_def_t;
+
+  // status
+  typedef struct packed {
+    logic err;  // error response
+  } tcb_rsp_sts_def_t;
 
 endpackage: tcb_pkg
