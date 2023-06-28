@@ -68,7 +68,7 @@ module tcb_vip_tb
   // parameterized class specialization
   typedef tcb_transfer_c #(.PHY (PHY)) tcb_s;
 
-  // objects
+  // TCB class objects
   tcb_s obj_man;
   tcb_s obj_mon;
   tcb_s obj_sub;
@@ -129,6 +129,7 @@ module tcb_vip_tb
     tst_sub = new[tst_ref.size()](tst_ref);
 
     // drive transactions
+    $display("INFO: non blocking API test begin.");
     fork
       // manager
       begin: fork_man
@@ -143,6 +144,7 @@ module tcb_vip_tb
         obj_sub.transfer_sequencer(tst_sub);
       end: fork_sub
     join
+    $display("INFO: non blocking API test end.");
 
     // check transactions
     for (int unsigned i=0; i<tst_num; i++) begin
@@ -183,12 +185,14 @@ module tcb_vip_tb
   logic [128-1:0] dat128;  // 128-bit read data
 
   task automatic test_blocking;
+    $display("INFO: blocking API test begin.");
     //                adr,          dat, sts
     obj_mem[0].write32('h00, 32'h01234567, sts);
     obj_mem[0].read32 ('h00, rdt32       , sts);
     //                adr,          dat, sts
     obj_mem[0].write32('h11, 32'h01234567, sts);
     obj_mem[0].read32 ('h11, rdt32       , sts);
+    $display("INFO: blocking API test begin.");
   endtask: test_blocking
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -199,6 +203,14 @@ module tcb_vip_tb
   initial          clk = 1'b1;
   always #(20ns/2) clk = ~clk;
 
+  generate
+  for (genvar i=0; i<PN; i++) begin
+    initial begin
+      obj_mem[i] = new("MAN", tcb_mem[i]);
+    end
+  end
+  endgenerate
+
   // test sequence
   initial
   begin
@@ -206,21 +218,19 @@ module tcb_vip_tb
     obj_man = new("MAN", tcb);
     obj_mon = new("MON", tcb);
     obj_sub = new("SUB", tcb);
-    for (int unsigned i=0; i<PN; i++) begin
-      obj_mem[i] = new("MAN", tcb_mem);
-    end
     // reset sequence
     rst = 1'b1;
     repeat (2) @(posedge clk);
     rst = 1'b0;
     repeat (1) @(posedge clk);
     
-    // test non_blobking API
+    // test non blobking API
     test_nonblocking;
-//    repeat (2) @(posedge clk);
-//    test_blocking;
-
     repeat (2) @(posedge clk);
+    // test blobking API
+    test_blocking;
+    repeat (2) @(posedge clk);
+
     if (error>0)  $display("FAILURE: there were %d errors.", error);
     else          $display("SUCCESS.");
     $finish();
