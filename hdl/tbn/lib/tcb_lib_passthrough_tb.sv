@@ -67,7 +67,7 @@ module tcb_lib_passthrough_tb
   // parameterized class specialization
   typedef tcb_transfer_c #(.PHY (PHY)) tcb_s;
 
-  // objects
+  // TCB class objects
   tcb_s obj_man;
   tcb_s obj_sub;
 

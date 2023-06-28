@@ -69,7 +69,7 @@ module tcb_lib_endianness_tb
   // parameterized class specialization
   typedef tcb_transfer_c #(.PHY (PHY)) tcb_s;
 
-  // objects
+  // TCB class objects
   tcb_s obj_man;
   tcb_s obj_sub;
   tcb_s obj_mem;
@@ -102,9 +102,9 @@ module tcb_lib_endianness_tb
     obj_sub = new("MON", tcb_sub    );
     obj_mem = new("MON", tcb_mem [0]);
     // reset sequence
-    rst = 1'b1;
+    rst <= 1'b1;
     repeat (2) @(posedge clk);
-    rst = 1'b0;
+    rst <= 1'b0;
     repeat (1) @(posedge clk);
     // write sequence
     obj_man.write8 (32'h00000010,        8'h10, sts);

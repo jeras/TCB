@@ -17,15 +17,40 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 module tcb_uart_tb
+  import tcb_pkg::*;
   import tcb_vip_pkg::*;
 #(
   // TCB widths
-  int unsigned ABW = 32,     // address bus width
-  int unsigned DBW = 32,     // data    bus width
-  int unsigned BEW = DBW/8,  // byte enable width
-  // response delay
-  int unsigned DLY = 1
+  int unsigned ABW = 32,
+  int unsigned DBW = 32
 );
+
+  // TODO: parameter propagation through virtual interfaces in classes
+  // is not working well thus this workaround
+
+  // physical interface parameter
+  localparam tcb_par_phy_t PHY1 = '{
+    // signal bus widths
+    SLW: TCB_PAR_PHY_DEF.SLW,
+    ABW: ABW,
+    DBW: DBW,
+    // TCB parameters
+    DLY: 0,
+    // mode/alignment/order parameters
+    MOD: TCB_PAR_PHY_DEF.MOD,
+    SIZ: TCB_PAR_PHY_DEF.SIZ,
+    ORD: TCB_PAR_PHY_DEF.ORD,
+    LGN: TCB_PAR_PHY_DEF.LGN
+  };
+
+  localparam tcb_par_phy_t PHY = TCB_PAR_PHY_DEF;
+
+  // GPIO width
+  localparam int unsigned GW = 32;
+
+////////////////////////////////////////////////////////////////////////////////
+// local signals
+////////////////////////////////////////////////////////////////////////////////
 
   // UART data width
   localparam int unsigned UDW = 8;
@@ -44,13 +69,31 @@ module tcb_uart_tb
   // system signals
   logic clk;  // clock
   logic rst;  // reset
-
+/*
   // TCB interface
-  tcb_if #(.ABW (ABW), .DBW (DBW)) tcb (.clk (clk), .rst (rst));
+  tcb_if #(.PHY (PHY)) tcb (.clk (clk), .rst (rst));
+*/
+  // TODO: the above code should be used instead
+  // TCB interfaces
+  tcb_if tcb_man (.clk (clk), .rst (rst));
 
-  // TCB response check values
-  logic [DBW-1:0] rdt;
-  logic           err;
+  // parameterized class specialization
+  typedef tcb_transfer_c #(.PHY (PHY)) tcb_s;
+
+  // TCB class objects
+  tcb_s obj_man;
+
+////////////////////////////////////////////////////////////////////////////////
+// data checking
+////////////////////////////////////////////////////////////////////////////////
+
+  // response
+  logic [PHY.DBW-1:0] rdt;  // read data
+  tcb_rsp_sts_def_t   sts;  // status response
+
+  logic [ 8-1:0] rdt8 ;  //  8-bit read data
+  logic [16-1:0] rdt16;  // 16-bit read data
+  logic [32-1:0] rdt32;  // 32-bit read data
 
   // UART signals
   logic uart_rxd;  // receive
@@ -71,19 +114,21 @@ module tcb_uart_tb
   // test sequence
   initial
   begin
+    // connect virtual interfaces
+    obj_man = new("MAN", tcb_man);
     // reset sequence
     rst <= 1'b1;
-    repeat (4) @(posedge clk);
+    repeat (2) @(posedge clk);
     rst <= 1'b0;
     repeat (1) @(posedge clk);
     // write configuration
-    man.write('h08, 4'b1111, 32'(TX_BDR-1), err);  // TX baudrate
-    man.write('h28, 4'b1111, 32'(RX_BDR-1), err);  // RX baudrate
-    man.write('h2C, 4'b1111, 32'(RX_SMP-1), err);  // RX sample
-    man.write('h30, 4'b1111, 32'(TX_LEN-1), err);  // RX IRQ level
+    obj_man.write32('h08, 32'(TX_BDR-1), sts);  // TX baudrate
+    obj_man.write32('h28, 32'(RX_BDR-1), sts);  // RX baudrate
+    obj_man.write32('h2C, 32'(RX_SMP-1), sts);  // RX sample
+    obj_man.write32('h30, 32'(TX_LEN-1), sts);  // RX IRQ level
     // write TX data
     for (int unsigned i=0; i<TX_LEN; i++) begin
-      man.write('h00, 4'b1111, 32'(TX_STR[i]), err);
+      obj_man.write32('h00, 32'(TX_STR[i]), sts);
     end
     // wait for RX IRQ
     do begin
@@ -91,7 +136,7 @@ module tcb_uart_tb
     end while (!irq_rx);
     // read RX data
     for (int unsigned i=0; i<TX_LEN; i++) begin
-      man.read('h20, 4'b1111, rdt, err);
+      obj_man.read32('h20, rdt, sts);
       rx_str[i] = rdt[UDW-1:0];
     end
     if (string'(rx_str) != TX_STR)  $display("ERROR: RX '%s' differs from TX '%s'", rx_str, TX_STR);
@@ -111,14 +156,11 @@ module tcb_uart_tb
 // VIP instances
 ////////////////////////////////////////////////////////////////////////////////
 
-  // manager
-  tcb_vip_dev #("MAN") man (.tcb (tcb));
-
 ////////////////////////////////////////////////////////////////////////////////
-// DUT instances
+// DUT instance
 ////////////////////////////////////////////////////////////////////////////////
 
-  // TCB UART DUT
+  // TCB UART
   tcb_uart #(
     .DW      (UDW)
   ) uart (
@@ -126,7 +168,7 @@ module tcb_uart_tb
     .uart_txd (uart_txd),
     .uart_rxd (uart_rxd),
     // system tcb interface
-    .tcb      (tcb),
+    .tcb      (tcb_man),
     // interrupts
     .irq_tx   (irq_tx),
     .irq_rx   (irq_rx)

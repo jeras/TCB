@@ -17,29 +17,69 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 module tcb_gpio_tb
+  import tcb_pkg::*;
   import tcb_vip_pkg::*;
 #(
   // TCB widths
-  int unsigned ABW = 32,     // address bus width
-  int unsigned DBW = 32,     // data    bus width
-  int unsigned BEW = DBW/8,  // byte enable width
-  // response delay
-  int unsigned DLY = 1
+  int unsigned ABW = 32,
+  int unsigned DBW = 32
 );
+
+  // TODO: parameter propagation through virtual interfaces in classes
+  // is not working well thus this workaround
+
+  // physical interface parameter
+  localparam tcb_par_phy_t PHY1 = '{
+    // signal bus widths
+    SLW: TCB_PAR_PHY_DEF.SLW,
+    ABW: ABW,
+    DBW: DBW,
+    // TCB parameters
+    DLY: 0,
+    // mode/alignment/order parameters
+    MOD: TCB_PAR_PHY_DEF.MOD,
+    SIZ: TCB_PAR_PHY_DEF.SIZ,
+    ORD: TCB_PAR_PHY_DEF.ORD,
+    LGN: TCB_PAR_PHY_DEF.LGN
+  };
+
+  localparam tcb_par_phy_t PHY = TCB_PAR_PHY_DEF;
 
   // GPIO width
   localparam int unsigned GW = 32;
 
+////////////////////////////////////////////////////////////////////////////////
+// local signals
+////////////////////////////////////////////////////////////////////////////////
+
   // system signals
   logic clk;  // clock
   logic rst;  // reset
-
+/*
   // TCB interface
-  tcb_if #(.ABW (ABW), .DBW (DBW), .DLY (DLY)) tcb (.clk (clk), .rst (rst));
+  tcb_if #(.PHY (PHY)) tcb (.clk (clk), .rst (rst));
+*/
+  // TODO: the above code should be used instead
+  // TCB interfaces
+  tcb_if tcb_man (.clk (clk), .rst (rst));
 
-  // TCB response check values
-  logic [DBW-1:0] rdt;
-  logic           err;
+  // parameterized class specialization
+  typedef tcb_transfer_c #(.PHY (PHY)) tcb_s;
+
+  // TCB class objects
+  tcb_s obj_man;
+
+////////////////////////////////////////////////////////////////////////////////
+// data checking
+////////////////////////////////////////////////////////////////////////////////
+
+  // response
+  logic [PHY.DBW-1:0] rdt;  // read data
+  tcb_rsp_sts_def_t   sts;  // status response
+
+  logic [ 8-1:0] rdt8 ;  //  8-bit read data
+  logic [16-1:0] rdt16;  // 16-bit read data
+  logic [32-1:0] rdt32;  // 32-bit read data
 
   // GPIO signals
   logic [GW-1:0] gpio_o;
@@ -57,6 +97,8 @@ module tcb_gpio_tb
   // test sequence
   initial
   begin
+    // connect virtual interfaces
+    obj_man = new("MAN", tcb_man);
     // reset sequence
     rst <= 1'b1;
     repeat (2) @(posedge clk);
@@ -64,21 +106,21 @@ module tcb_gpio_tb
     repeat (1) @(posedge clk);
 
     // configure outputs
-    man.write('h00, 4'b1111, 32'h01234567, err);  // write output register
-    man.write('h04, 4'b1111, 32'h76543210, err);  // write enable register
+    obj_man.write32('h00, 32'h01234567, sts);  // write output register
+    obj_man.write32('h04, 32'h76543210, sts);  // write enable register
 
     // read GPIO input status
-    man.read('h08, 4'b1111, rdt, err);  // read input register
+    obj_man.read32('h08, rdt32, sts);  // read input register
     if (GW'(rdt) != GW'('hxxxxxxxx))  $display("ERROR: readout error rdt=%8h, ref=%8h", rdt, GW'('hxxxxxxxx));
 
     gpio_i <= GW'('h89abcdef);
     repeat (2) @(posedge clk);
-    man.read('h08, 4'b1111, rdt, err);  // read input register
+    obj_man.read32('h08, rdt32, sts);  // read input register
     if (GW'(rdt) != GW'('h89abcdef))  $display("ERROR: readout error rdt=%8h, ref=%8h", rdt, GW'('h89abcdef));
 
     gpio_i <= GW'('hfedcba98);
     repeat (2) @(posedge clk);
-    man.read('h08, 4'b1111, rdt, err);  // read input register
+    obj_man.read32('h08, rdt32, sts);  // read input register
     if (GW'(rdt) != GW'('hfedcba98))  $display("ERROR: readout error rdt=%8h, ref=%8h", rdt, GW'('hfedcba98));
 
     repeat (2) @(posedge clk);
@@ -89,13 +131,11 @@ module tcb_gpio_tb
 // VIP instances
 ////////////////////////////////////////////////////////////////////////////////
 
-  // manager
-  tcb_vip_dev #("MAN") man (.tcb (tcb));
-
 ////////////////////////////////////////////////////////////////////////////////
-// DUT instances
+// DUT instance
 ////////////////////////////////////////////////////////////////////////////////
 
+  // TCB GPIO
   tcb_gpio #(
     .GW      (GW),
     // implementation details
@@ -109,7 +149,7 @@ module tcb_gpio_tb
     .gpio_e (gpio_e),
     .gpio_i (gpio_i),
     // TCB interface
-    .tcb    (tcb)
+    .tcb    (tcb_man)
   );
 
 ////////////////////////////////////////////////////////////////////////////////

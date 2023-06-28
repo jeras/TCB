@@ -42,13 +42,11 @@ module tcb_gpio #(
 // parameter validation
 ////////////////////////////////////////////////////////////////////////////////
 
-  localparam int unsigned DLY = 1;
-
 `ifdef ALTERA_RESERVED_QIS
 `else
 generate
-  if (DLY != tcb.DLY)  $error("ERROR: %m parameter DLY validation failed");
-  if (GW   > tcb.DBW)  $error("ERROR: %m parameter GW exceeds the data bus width");
+  if (tcb.PHY.DLY != 1)  $error("ERROR: %m parameter DLY validation failed");
+  if (tcb.PHY.DBW < GW)  $error("ERROR: %m parameter GW exceeds the data bus width");
 endgenerate
 `endif
 
@@ -121,40 +119,17 @@ end: gen_rsp_min
 // normal implementation
 else begin: gen_rsp_nrm
 
-`ifdef ALTERA_RESERVED_QIS
-  logic [$bits(tcb.rdt)-1:0] tcb_rdt;
-`else
-  logic [tcb.DBW-1:0] tcb_rdt;
-`endif
-
   // GPIO output/enable registers and GPIO input are decoded
   always_comb
-  case (tcb.adr[4-1:0])
-    4'h0:    tcb_rdt = gpio_o;
-    4'h4:    tcb_rdt = gpio_e;
-    4'h8:    tcb_rdt = gpio_r;
-    default: tcb_rdt = 'x;
+  case (tcb.req.adr[4-1:0])
+    4'h0:    tcb.rsp.rdt = gpio_o;
+    4'h4:    tcb.rsp.rdt = gpio_e;
+    4'h8:    tcb.rsp.rdt = gpio_r;
+    default: tcb.rsp.rdt = 'x;
   endcase
 
-  // read data response is registered
-  if (CFG_RSP_REG) begin: gen_rsp_reg
-
-    always_ff @(posedge tcb.clk, posedge tcb.rst)
-    if (tcb.rst) begin
-      tcb.rdt <= '0;
-    end else if (tcb.trn ) begin
-      if (~tcb.wen) begin
-        tcb.rdt <= tcb_rdt;
-      end
-    end
-
-  end: gen_rsp_reg
-  // read data response is combinational
-  else begin: gen_rsp_cmb
-    
-    assign tcb.rdt = tcb_rdt;
-
-  end: gen_rsp_cmb
+  // read data response
+  assign tcb.rsp.rdt = tcb.rsp.rdt;
 
 end: gen_rsp_nrm
 endgenerate
@@ -165,11 +140,11 @@ endgenerate
     gpio_o <= '0;
     gpio_e <= '0;
   end else if (tcb.trn) begin
-    if (tcb.wen) begin
+    if (tcb.req.wen) begin
       // write access
-      case (tcb.adr[4-1:0])
-        4'h0:    gpio_o <= tcb.wdt[GW-1:0];
-        4'h4:    gpio_e <= tcb.wdt[GW-1:0];
+      case (tcb.req.adr[4-1:0])
+        4'h0:    gpio_o <= tcb.req.wdt[GW-1:0];
+        4'h4:    gpio_e <= tcb.req.wdt[GW-1:0];
         default: ;  // do nothing
       endcase
     end
@@ -179,6 +154,6 @@ endgenerate
   assign tcb.rdy = 1'b1;
 
   // there are no error cases
-  assign tcb.err = 1'b0;
+  assign tcb.rsp.sts = '0;
 
 endmodule: tcb_gpio

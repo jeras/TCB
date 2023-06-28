@@ -46,6 +46,14 @@ module tcb_uart #(
   output logic irq_rx     // RX FIFO load is above limit
 );
 
+////////////////////////////////////////////////////////////////////////////////
+// parameter validation
+////////////////////////////////////////////////////////////////////////////////
+
+////////////////////////////////////////////////////////////////////////////////
+// local signals
+////////////////////////////////////////////////////////////////////////////////
+
   // TX/RX baudrate signals
   logic [RW-1:0] tx_cfg_bdr, rx_cfg_bdr;  //  baudrate time
   logic [RW-1:0]             rx_cfg_smp;  //  sample time
@@ -68,55 +76,30 @@ module tcb_uart #(
 // TCB access
 ////////////////////////////////////////////////////////////////////////////////
 
-`ifdef ALTERA_RESERVED_QIS
-  logic [$bits(tcb.rdt)-1:0] bus_rdt;
-`else
-  logic [tcb.DBW-1:0] bus_rdt;
-`endif
-
   // read configuration/status and RX data
   always_comb
-  case (tcb.adr[6-1:0])
+  case (tcb.req.adr[6-1:0])
     // TX channel
-    6'h00:   bus_rdt =                 'x                  ;  // TX data
-    6'h04:   bus_rdt =                      32'(tx_sts_cnt);  // TX FIFO load
-    6'h08:   bus_rdt = (CFG_RSP_MIN) ? 'x : 32'(tx_cfg_bdr);  // TX baudrate
-    6'h0C:   bus_rdt =                 'x                  ;  // TX reserved
-    6'h10:   bus_rdt = (CFG_RSP_MIN) ? 'x : 32'(tx_cfg_irq);  // TX interrupt trigger level
+    6'h00:   tcb.rsp.rdt =                 'x                  ;  // TX data
+    6'h04:   tcb.rsp.rdt =                      32'(tx_sts_cnt);  // TX FIFO load
+    6'h08:   tcb.rsp.rdt = (CFG_RSP_MIN) ? 'x : 32'(tx_cfg_bdr);  // TX baudrate
+    6'h0C:   tcb.rsp.rdt =                 'x                  ;  // TX reserved
+    6'h10:   tcb.rsp.rdt = (CFG_RSP_MIN) ? 'x : 32'(tx_cfg_irq);  // TX interrupt trigger level
     // RX channel
-    6'h20:   bus_rdt =                      32'(rx_bus_dat);  // RX data
-    6'h24:   bus_rdt =                      32'(rx_sts_cnt);  // RX FIFO load
-    6'h28:   bus_rdt = (CFG_RSP_MIN) ? 'x : 32'(rx_cfg_bdr);  // RX baudrate
-    6'h2C:   bus_rdt = (CFG_RSP_MIN) ? 'x : 32'(rx_cfg_smp);  // RX sample phase
-    6'h30:   bus_rdt = (CFG_RSP_MIN) ? 'x : 32'(rx_cfg_irq);  // RX interrupt trigger level
+    6'h20:   tcb.rsp.rdt =                      32'(rx_bus_dat);  // RX data
+    6'h24:   tcb.rsp.rdt =                      32'(rx_sts_cnt);  // RX FIFO load
+    6'h28:   tcb.rsp.rdt = (CFG_RSP_MIN) ? 'x : 32'(rx_cfg_bdr);  // RX baudrate
+    6'h2C:   tcb.rsp.rdt = (CFG_RSP_MIN) ? 'x : 32'(rx_cfg_smp);  // RX sample phase
+    6'h30:   tcb.rsp.rdt = (CFG_RSP_MIN) ? 'x : 32'(rx_cfg_irq);  // RX interrupt trigger level
     // default
-    default: bus_rdt =                 'x                  ;
+    default: tcb.rsp.rdt =                 'x                  ;
   endcase
 
   // RX FIFO read ready
-  assign rx_bus_rdy = tcb.trn & ~tcb.wen & (tcb.adr[6-1:0] == 6'h20);
+  assign rx_bus_rdy = tcb.trn & ~tcb.req.wen & (tcb.req.adr[6-1:0] == 6'h20);
 
-  generate
-  // read data response is registered
-  if (CFG_RSP_REG) begin: gen_rsp_reg
-
-    always_ff @(posedge tcb.clk, posedge tcb.rst)
-    if (tcb.rst) begin
-      tcb.rdt <= '0;
-    end else if (tcb.trn) begin
-      if (~tcb.wen) begin
-        tcb.rdt <= bus_rdt;
-      end
-    end
-
-  end: gen_rsp_reg
-  // read data response is combinational
-  else begin: gen_rsp_cmb
-
-    assign tcb.rdt = bus_rdt;
-
-  end: gen_rsp_cmb
-  endgenerate
+  // read data response
+  assign tcb.rsp.rdt = tcb.rsp.rdt;
 
   // write configuration and TX data
   always_ff @(posedge tcb.clk, posedge tcb.rst)
@@ -129,21 +112,21 @@ module tcb_uart #(
     rx_cfg_smp <= CFG_RX_SMP_RST;
     rx_cfg_irq <= CFG_RX_IRQ_RST;
   end else if (tcb.trn) begin
-    if (tcb.wen) begin
+    if (tcb.req.wen) begin
       // write access
-      case (tcb.adr[6-1:0])
+      case (tcb.req.adr[6-1:0])
         // TX channel
-        6'h00:    /* write data goes directly into the TX FIFO */ ;  // TX data
-        6'h04:                                                    ;  // TX FIFO load
-        6'h08:   if (CFG_TX_BDR_WEN) tx_cfg_bdr <= tcb.wdt[RW-1:0];  // TX baudrate
-        6'h0C:                                                    ;  // TX reserved
-        6'h10:   if (CFG_TX_IRQ_WEN) tx_cfg_irq <= tcb.wdt[CW-1:0];  // TX interrupt trigger level
+        6'h00:    /* write data goes directly into the TX FIFO */     ;  // TX data
+        6'h04:                                                        ;  // TX FIFO load
+        6'h08:   if (CFG_TX_BDR_WEN) tx_cfg_bdr <= tcb.req.wdt[RW-1:0];  // TX baudrate
+        6'h0C:                                                        ;  // TX reserved
+        6'h10:   if (CFG_TX_IRQ_WEN) tx_cfg_irq <= tcb.req.wdt[CW-1:0];  // TX interrupt trigger level
         // RX channel
-        6'h20:                                                    ;  // RX data
-        6'h24:                                                    ;  // RX FIFO load
-        6'h28:   if (CFG_RX_BDR_WEN) rx_cfg_bdr <= tcb.wdt[RW-1:0];  // RX baudrate
-        6'h2C:   if (CFG_RX_SMP_WEN) rx_cfg_smp <= tcb.wdt[RW-1:0];  // RX sample phase
-        6'h30:   if (CFG_RX_IRQ_WEN) rx_cfg_irq <= tcb.wdt[CW-1:0];  // RX interrupt trigger level
+        6'h20:                                                        ;  // RX data
+        6'h24:                                                        ;  // RX FIFO load
+        6'h28:   if (CFG_RX_BDR_WEN) rx_cfg_bdr <= tcb.req.wdt[RW-1:0];  // RX baudrate
+        6'h2C:   if (CFG_RX_SMP_WEN) rx_cfg_smp <= tcb.req.wdt[RW-1:0];  // RX sample phase
+        6'h30:   if (CFG_RX_IRQ_WEN) rx_cfg_irq <= tcb.req.wdt[CW-1:0];  // RX interrupt trigger level
         // default
         default: ;  // do nothing
       endcase
@@ -154,14 +137,14 @@ module tcb_uart #(
   assign tcb.rdy = 1'b1;
 
   // there are no error cases
-  assign tcb.err = 1'b0;
+  assign tcb.rsp.sts = '0;
 
 ////////////////////////////////////////////////////////////////////////////////
 // TX channel
 ////////////////////////////////////////////////////////////////////////////////
 
-  assign tx_bus_vld = tcb.trn & tcb.wen & (tcb.adr[6-1:0] == 6'h00);
-  assign tx_bus_dat = tcb.wdt[DW-1:0];
+  assign tx_bus_vld = tcb.trn & tcb.req.wen & (tcb.req.adr[6-1:0] == 6'h00);
+  assign tx_bus_dat = tcb.req.wdt[DW-1:0];
 
   // FIFO
   tcb_uart_fifo #(
