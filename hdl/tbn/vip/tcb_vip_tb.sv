@@ -21,13 +21,33 @@ module tcb_vip_tb
   import tcb_vip_pkg::*;
 #(
   // TCB widths
-  tcb_par_phy_t PHY = '{ABW: 32, DBW: 32, SLW: 8},
-  //tcb_par_log_t LOG = '{},
+  int unsigned ABW = 32,
+  int unsigned DBW = 32,
   // response delay
   int unsigned DLY = 0,
   // memory port number
   int unsigned PN = 1
 );
+
+  // TODO: parameter propagation through virtual interfaces in classes
+  // is not working well thus this workaround
+
+  // physical interface parameter
+  localparam tcb_par_phy_t PHY1 = '{
+    // signal bus widths
+    SLW: TCB_PAR_PHY_DEF.SLW,
+    ABW: ABW,
+    DBW: DBW,
+    // TCB parameters
+    DLY: DLY,
+    // mode/alignment/order parameters
+    MOD: TCB_PAR_PHY_DEF.MOD,
+    SIZ: TCB_PAR_PHY_DEF.SIZ,
+    ORD: TCB_PAR_PHY_DEF.ORD,
+    LGN: TCB_PAR_PHY_DEF.LGN
+  };
+
+  localparam tcb_par_phy_t PHY = TCB_PAR_PHY_DEF;
 
 ////////////////////////////////////////////////////////////////////////////////
 // local signals
@@ -36,20 +56,30 @@ module tcb_vip_tb
   // system signals
   logic clk;  // clock
   logic rst;  // reset
-
-  // TCB interface
-  tcb_if #(.PHY (PHY), .DLY (DLY)) tcb          (.clk (clk), .rst (rst));
-  tcb_if #(.PHY (PHY), .DLY (DLY)) bus [0:PN-1] (.clk (clk), .rst (rst));
-
-  // ERROR counter
-  int unsigned error;
+/*
+  // TCB interfaces
+  tcb_if #(.PHY (PHY)) tcb              (.clk (clk), .rst (rst));
+  tcb_if #(.PHY (PHY)) tcb_mem [0:PN-1] (.clk (clk), .rst (rst));
+*/
+  // TCB interfaces
+  tcb_if tcb              (.clk (clk), .rst (rst));
+  tcb_if tcb_mem [0:PN-1] (.clk (clk), .rst (rst));
 
   // parameterized class specialization
-  typedef tcb_transfer_c #(PHY) tcb_s;
+  typedef tcb_transfer_c #(.PHY (PHY)) tcb_s;
+
+  // objects
+  tcb_s obj_man;
+  tcb_s obj_mon;
+  tcb_s obj_sub;
+  tcb_s obj_mem [0:PN-1];
 
 ////////////////////////////////////////////////////////////////////////////////
 // test non-blocking API
 ////////////////////////////////////////////////////////////////////////////////
+
+  // ERROR counter
+  int unsigned error;
 
   task automatic test_nonblocking;
     // local variables
@@ -70,24 +100,22 @@ module tcb_vip_tb
       foreach (lst_idl[idx_idl]) begin
         foreach (lst_bpr[idx_bpr]) begin
           tst_ref[i] = '{
+            // request
             req: '{
-              // request optional
-              inc: 1'b0,
-              rpt: 1'b0,
-              lck: 1'b0,
-              ndn: 1'b0,
-              // request
+              cmd: '0,
               wen: lst_wen[idx_wen],
+              ndn: 1'b0,
               adr: 'h00,
               siz: $clog2(tcb.PHY_BEW),
               ben: '1,
               wdt: tcb_s::data_test_f((tcb.PHY.SLW/2)'(2*i+0))
             },
+            // response
             rsp: '{
-              // response
               rdt: tcb_s::data_test_f((tcb.PHY.SLW/2)'(2*i+1)),
-              err: 1'b0
+              sts: '0
             },
+            // timing
             idl: lst_idl[idx_idl],
             bpr: lst_bpr[idx_bpr]
           };
@@ -104,15 +132,15 @@ module tcb_vip_tb
     fork
       // manager
       begin: fork_man
-        man.transfer_sequencer(tst_man);
+        obj_man.transfer_sequencer(tst_man);
       end: fork_man
       // monitor
       begin: fork_mon
-        mon.transfer_sequencer(tst_mon);
+        obj_mon.transfer_sequencer(tst_mon);
       end: fork_mon
       // subordinate
       begin: fork_sub
-        sub.transfer_sequencer(tst_sub);
+        obj_sub.transfer_sequencer(tst_sub);
       end: fork_sub
     join
 
@@ -144,22 +172,23 @@ module tcb_vip_tb
 // test blocking API
 ////////////////////////////////////////////////////////////////////////////////
 
-  logic [  8-1:0] dat8;
-  logic [ 16-1:0] dat16;
-  logic [ 32-1:0] dat32;
-  logic [ 64-1:0] dat64;
-  logic [128-1:0] dat128;
+  // response
+  logic [PHY.DBW-1:0] rdt;  // read data
+  tcb_rsp_sts_def_t   sts;  // status response
 
-  logic [tcb.PHY_DBW-1:0] dat;
-  logic                   err;
+  logic [  8-1:0] rdt8  ;  //   8-bit read data
+  logic [ 16-1:0] rdt16 ;  //  16-bit read data
+  logic [ 32-1:0] rdt32 ;  //  32-bit read data
+  logic [ 64-1:0] dat64 ;  //  64-bit read data
+  logic [128-1:0] dat128;  // 128-bit read data
 
   task automatic test_blocking;
-    //            adr,          dat, err
-    cpu[0].write('h00, 32'h01234567, err);
-    cpu[0].read ('h00, dat         , err);
-    
-    cpu[0].write('h11, 32'h01234567, err);
-    cpu[0].read ('h11, dat         , err);
+    //                adr,          dat, sts
+    obj_mem[0].write32('h00, 32'h01234567, sts);
+    obj_mem[0].read32 ('h00, rdt32       , sts);
+    //                adr,          dat, sts
+    obj_mem[0].write32('h11, 32'h01234567, sts);
+    obj_mem[0].read32 ('h11, rdt32       , sts);
   endtask: test_blocking
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -173,10 +202,16 @@ module tcb_vip_tb
   // test sequence
   initial
   begin
+    // connect virtual interfaces
+    obj_man = new("MAN", tcb);
+    obj_mon = new("MON", tcb);
+    obj_sub = new("SUB", tcb);
+    for (int unsigned i=0; i<PN; i++) begin
+      obj_mem[i] = new("MAN", tcb_mem);
+    end
     // reset sequence
     rst = 1'b1;
     repeat (2) @(posedge clk);
-    #1;
     rst = 1'b0;
     repeat (1) @(posedge clk);
     
@@ -195,12 +230,12 @@ module tcb_vip_tb
 // VIP instances
 ////////////////////////////////////////////////////////////////////////////////
 
-  tcb_vip_dev #("MAN") man          (.tcb (tcb));  // manager
-  tcb_vip_dev #("MON") mon          (.tcb (tcb));  // monitor
-  tcb_vip_dev #("SUB") sub          (.tcb (tcb));  // subordinate
+  // memory model subordinate
+  tcb_vip_mem         mem       (.tcb (tcb_mem));
 
-  tcb_vip_dev #("MAN") cpu [0:PN-1] (.tcb (bus));  // CPU model
-  tcb_vip_mem          mem          (.tcb (bus));  // memory
+////////////////////////////////////////////////////////////////////////////////
+// DUT instance
+////////////////////////////////////////////////////////////////////////////////
 
 ////////////////////////////////////////////////////////////////////////////////
 // VCD/FST waveform trace

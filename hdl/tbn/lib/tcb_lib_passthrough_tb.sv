@@ -17,31 +17,71 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 module tcb_lib_passthrough_tb
+  import tcb_pkg::*;
   import tcb_vip_pkg::*;
 #(
   // TCB widths
-  int unsigned ABW = 64,       // address bus width
-  int unsigned DBW = 64,       // data    bus width
-  int unsigned SLW =       8,  // selection   width
-  int unsigned BEW = DBW/SLW,  // byte enable width
+  int unsigned ABW = 32,
+  int unsigned DBW = 32,
   // response delay
   int unsigned DLY = 1
 );
 
-  // system signals
-  logic clk;  // clock
-  logic rst;  // reset
+  // TODO: parameter propagation through virtual interfaces in classes
+  // is not working well thus this workaround
 
-  // response
-  logic [DBW-1:0] rdt;  // read data
-  logic           err;  // error response
+  // physical interface parameter
+  localparam tcb_par_phy_t PHY1 = '{
+    // signal bus widths
+    SLW: TCB_PAR_PHY_DEF.SLW,
+    ABW: ABW,
+    DBW: DBW,
+    // TCB parameters
+    DLY: DLY,
+    // mode/alignment/order parameters
+    MOD: TCB_PAR_PHY_DEF.MOD,
+    SIZ: TCB_PAR_PHY_DEF.SIZ,
+    ORD: TCB_PAR_PHY_DEF.ORD,
+    LGN: TCB_PAR_PHY_DEF.LGN
+  };
+
+  localparam tcb_par_phy_t PHY = TCB_PAR_PHY_DEF;
 
 ////////////////////////////////////////////////////////////////////////////////
 // local signals
 ////////////////////////////////////////////////////////////////////////////////
 
-  tcb_if #(.ABW (ABW), .DBW (DBW), .DLY (DLY)) tcb_man (.clk (clk), .rst (rst));
-  tcb_if #(.ABW (ABW), .DBW (DBW), .DLY (DLY)) tcb_sub (.clk (clk), .rst (rst));
+  // system signals
+  logic clk;  // clock
+  logic rst;  // reset
+/*
+  // TCB interfaces
+  tcb_if #(.PHY (PHY)) tcb_man (.clk (clk), .rst (rst));
+  tcb_if #(.PHY (PHY)) tcb_sub (.clk (clk), .rst (rst));
+*/
+  // TODO: the above code should be used instead
+  // TCB interfaces
+  tcb_if tcb_man (.clk (clk), .rst (rst));
+  tcb_if tcb_sub (.clk (clk), .rst (rst));
+
+  // parameterized class specialization
+  typedef tcb_transfer_c #(.PHY (PHY)) tcb_s;
+
+  // objects
+  tcb_s obj_man;
+  tcb_s obj_sub;
+
+////////////////////////////////////////////////////////////////////////////////
+// data checking
+////////////////////////////////////////////////////////////////////////////////
+
+  // response
+  logic [PHY.DBW-1:0] rdt;  // read data
+  tcb_rsp_sts_def_t   sts;  // status response
+
+  logic [ 8-1:0] rdt8 ;  //  8-bit read data
+  logic [16-1:0] rdt16;  // 16-bit read data
+  logic [32-1:0] rdt32;  // 32-bit read data
 
 ////////////////////////////////////////////////////////////////////////////////
 // test sequence
@@ -54,20 +94,22 @@ module tcb_lib_passthrough_tb
   // test sequence
   initial
   begin
+    // connect virtual interfaces
+    obj_man = new("MAN", tcb_man);
+    obj_sub = new("SUB", tcb_sub);
     // reset sequence
     rst = 1'b1;
     repeat (2) @(posedge clk);
     rst = 1'b0;
     repeat (1) @(posedge clk);
-    #1;
     fork
       begin: req
-        man.write(64'h0123456789ABCDEF, 8'b11111111, 64'h0123456789ABCDEF, err);
-        man.read (64'hFEDCBA9876543210, 8'b11111111, rdt                 , err);
+        obj_man.write32(32'h01234567, 32'h76543210, sts);
+        obj_man.read32 (32'h89ABCDEF, rdt32       , sts);
       end: req
       begin: rsp
-        sub.rsp(64'hXXXXXXXXXXXXXXXX, 1'b0);
-        sub.rsp(64'hFEDCBA9876543210, 1'b0);
+//        obj_sub.rsp(32'hXXXXXXXX, '0);
+//        obj_sub.rsp(32'hFEDCBA98, '0);
       end: rsp
     join
     repeat (8) @(posedge clk);
@@ -78,16 +120,10 @@ module tcb_lib_passthrough_tb
 // VIP instances
 ////////////////////////////////////////////////////////////////////////////////
 
-  tcb_vip_dev #("MAN") man     (.tcb (tcb_man));  // manager
-  tcb_vip_dev #("MON") mon_man (.tcb (tcb_man));  // manager monitor
-  tcb_vip_dev #("MON") mon_sub (.tcb (tcb_sub));  // subordinate monitor
-  tcb_vip_dev #("SUB") sub     (.tcb (tcb_sub));  // subordinate
-
 ////////////////////////////////////////////////////////////////////////////////
-// DUT instances
+// DUT instance
 ////////////////////////////////////////////////////////////////////////////////
 
-  // RTL passthrough
   tcb_lib_passthrough dut (
     .sub  (tcb_man),
     .man  (tcb_sub)

@@ -27,6 +27,9 @@ module tcb_lib_endianness_tb
   int unsigned DLY = 1
 );
 
+  // TODO: parameter propagation through virtual interfaces in classes
+  // is not working well thus this workaround
+
   // physical interface parameter
   localparam tcb_par_phy_t PHY1 = '{
     // signal bus widths
@@ -44,7 +47,6 @@ module tcb_lib_endianness_tb
 
   localparam tcb_par_phy_t PHY = TCB_PAR_PHY_DEF;
 
-
 ////////////////////////////////////////////////////////////////////////////////
 // local signals
 ////////////////////////////////////////////////////////////////////////////////
@@ -52,31 +54,33 @@ module tcb_lib_endianness_tb
   // system signals
   logic clk;  // clock
   logic rst;  // reset
-
-//  // interfaces
-//  tcb_if #(.PHY (PHY)) tcb_man       (.clk (clk), .rst (rst));
-//  tcb_if #(.PHY (PHY)) tcb_sub       (.clk (clk), .rst (rst));
-//  tcb_if #(.PHY (PHY)) tcb_mem [0:0] (.clk (clk), .rst (rst));
-
-  // interfaces
+/*
+  // TCB interfaces
+  tcb_if #(.PHY (PHY)) tcb_man       (.clk (clk), .rst (rst));
+  tcb_if #(.PHY (PHY)) tcb_sub       (.clk (clk), .rst (rst));
+  tcb_if #(.PHY (PHY)) tcb_mem [0:0] (.clk (clk), .rst (rst));
+*/
+  // TODO: the above code should be used instead
+  // TCB interfaces
   tcb_if tcb_man       (.clk (clk), .rst (rst));
   tcb_if tcb_sub       (.clk (clk), .rst (rst));
   tcb_if tcb_mem [0:0] (.clk (clk), .rst (rst));
 
+  // parameterized class specialization
+  typedef tcb_transfer_c #(.PHY (PHY)) tcb_s;
+
   // objects
-  tcb_vip_pkg::tcb_transfer_c #(.PHY (PHY)) obj_man;
-  tcb_vip_pkg::tcb_transfer_c #(.PHY (PHY)) obj_sub;
-  tcb_vip_pkg::tcb_transfer_c #(.PHY (PHY)) obj_mem;
-
-
+  tcb_s obj_man;
+  tcb_s obj_sub;
+  tcb_s obj_mem;
 
 ////////////////////////////////////////////////////////////////////////////////
-// data checking function
+// data checking
 ////////////////////////////////////////////////////////////////////////////////
 
   // response
   logic [PHY.DBW-1:0] rdt;  // read data
-  logic               err;  // error response
+  tcb_rsp_sts_def_t   sts;  // status response
 
   logic [ 8-1:0] rdt8 ;  //  8-bit read data
   logic [16-1:0] rdt16;  // 16-bit read data
@@ -93,32 +97,31 @@ module tcb_lib_endianness_tb
   // test sequence
   initial
   begin
-    // reset
-    rst = 1'b1;
     // connect virtual interfaces
     obj_man = new("MAN", tcb_man    );
     obj_sub = new("MON", tcb_sub    );
     obj_mem = new("MON", tcb_mem [0]);
     // reset sequence
+    rst = 1'b1;
     repeat (2) @(posedge clk);
     rst = 1'b0;
     repeat (1) @(posedge clk);
     // write sequence
-    obj_man.write8 (32'h00000010,        8'h10, err);
-    obj_man.write8 (32'h00000011,      8'h32  , err);
-    obj_man.write8 (32'h00000012,    8'h54    , err);
-    obj_man.write8 (32'h00000013,  8'h76      , err);
-    obj_man.write16(32'h00000020,     16'h3210, err);
-    obj_man.write16(32'h00000022, 16'h7654    , err);
-    obj_man.write32(32'h00000030, 32'h76543210, err);
+    obj_man.write8 (32'h00000010,        8'h10, sts);
+    obj_man.write8 (32'h00000011,      8'h32  , sts);
+    obj_man.write8 (32'h00000012,    8'h54    , sts);
+    obj_man.write8 (32'h00000013,  8'h76      , sts);
+    obj_man.write16(32'h00000020,     16'h3210, sts);
+    obj_man.write16(32'h00000022, 16'h7654    , sts);
+    obj_man.write32(32'h00000030, 32'h76543210, sts);
     // read sequence
-    obj_man.read8  (32'h00000010, rdt8        , err);
-    obj_man.read8  (32'h00000011, rdt8        , err);
-    obj_man.read8  (32'h00000012, rdt8        , err);
-    obj_man.read8  (32'h00000013, rdt8        , err);
-    obj_man.read16 (32'h00000020, rdt16       , err);
-    obj_man.read16 (32'h00000022, rdt16       , err);
-    obj_man.read32 (32'h00000030, rdt32       , err);
+    obj_man.read8  (32'h00000010, rdt8        , sts);
+    obj_man.read8  (32'h00000011, rdt8        , sts);
+    obj_man.read8  (32'h00000012, rdt8        , sts);
+    obj_man.read8  (32'h00000013, rdt8        , sts);
+    obj_man.read16 (32'h00000020, rdt16       , sts);
+    obj_man.read16 (32'h00000022, rdt16       , sts);
+    obj_man.read32 (32'h00000030, rdt32       , sts);
     // read sequence
     obj_man.check8 (32'h00000010,        8'h10, 1'b0);
     obj_man.check8 (32'h00000011,      8'h32  , 1'b0);
@@ -138,7 +141,8 @@ module tcb_lib_endianness_tb
 // VIP instances
 ////////////////////////////////////////////////////////////////////////////////
 
-  tcb_vip_mem         mem       (.tcb (tcb_mem));  // subordinate
+  // memory model subordinate
+  tcb_vip_mem         mem       (.tcb (tcb_mem));
 
   // connect interfaces to interface array
   tcb_lib_passthrough pas [0:0] (.sub (tcb_sub), .man (tcb_mem));
