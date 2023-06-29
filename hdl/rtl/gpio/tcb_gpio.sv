@@ -45,7 +45,7 @@ module tcb_gpio #(
 `ifdef ALTERA_RESERVED_QIS
 `else
 generate
-  if (tcb.PHY.DLY != 1)  $error("ERROR: %m parameter DLY validation failed");
+  if (tcb.PHY.DLY != 0)  $error("ERROR: %m parameter DLY validation failed");
   if (tcb.PHY.DBW < GW)  $error("ERROR: %m parameter GW exceeds the data bus width");
 endgenerate
 `endif

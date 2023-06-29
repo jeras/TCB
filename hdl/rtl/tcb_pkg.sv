@@ -96,7 +96,7 @@ package tcb_pkg;
     ABW: 32,
     DBW: 32,
     // TCB parameters
-    DLY: 1,
+    DLY: 0,
     // mode/alignment/order parameters
     MOD: TCB_REFERENCE,
     SIZ: TCB_LOGARITHMIC,

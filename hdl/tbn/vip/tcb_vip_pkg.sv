@@ -602,8 +602,8 @@ package tcb_vip_pkg;
 
     task check8 (
       input  logic         [PHY.ABW-1:0] adr,
-      inout  logic  [1-1:0][PHY.SLW-1:0] dat,
-      inout  logic                       sts
+      input  logic  [1-1:0][PHY.SLW-1:0] dat,
+      input  logic                       sts
     );
       logic [1-1:0][PHY.SLW-1:0] wdt = 'x;
       logic [1-1:0][PHY.SLW-1:0] rdt;
@@ -611,8 +611,6 @@ package tcb_vip_pkg;
       transaction8(1'b0, adr, wdt, rdt, tmp);
       if (rdt !== dat) $display("ERROR: %m: (rdt=8'h%2X) !== (dat=8'h%2X) mismatch.", rdt, dat);
       if (tmp !== sts) $display("ERROR: %m: (sts=1'b%1b) !== (sts=1'b%1b) mismatch.", tmp, sts);
-      dat = rdt;
-      sts = tmp;
     endtask: check8
 
     task write16 (
@@ -635,8 +633,8 @@ package tcb_vip_pkg;
 
     task check16 (
       input  logic         [PHY.ABW-1:0] adr,
-      inout  logic  [2-1:0][PHY.SLW-1:0] dat,
-      inout  logic                       sts
+      input  logic  [2-1:0][PHY.SLW-1:0] dat,
+      input  logic                       sts
     );
       logic [2-1:0][PHY.SLW-1:0] wdt = 'x;
       logic [2-1:0][PHY.SLW-1:0] rdt;
@@ -644,8 +642,6 @@ package tcb_vip_pkg;
       transaction16(1'b0, adr, wdt, rdt, tmp);
       if (rdt !== dat) $display("ERROR: %m: (rdt=16'h%4X) !== (dat=16'h%4X) mismatch.", rdt, dat);
       if (tmp !== sts) $display("ERROR: %m: (sts= 1'b%1b) !== (sts= 1'b%1b) mismatch.", tmp, sts);
-      dat = rdt;
-      sts = tmp;
     endtask: check16
 
     task write32 (
@@ -668,8 +664,8 @@ package tcb_vip_pkg;
 
     task check32 (
       input  logic         [PHY.ABW-1:0] adr,
-      inout  logic  [4-1:0][PHY.SLW-1:0] dat,
-      inout  logic                       sts
+      input  logic  [4-1:0][PHY.SLW-1:0] dat,
+      input  logic                       sts
     );
       logic [4-1:0][PHY.SLW-1:0] wdt = 'x;
       logic [4-1:0][PHY.SLW-1:0] rdt;
@@ -677,8 +673,6 @@ package tcb_vip_pkg;
       transaction32(1'b0, adr, wdt, rdt, tmp);
       if (rdt !== dat) $display("ERROR: %m: (rdt=32'h%8X) !== (dat=32'h%8X) mismatch.", rdt, dat);
       if (tmp !== sts) $display("ERROR: %m: (sts= 1'b%1b) !== (sts= 1'b%1b) mismatch.", tmp, sts);
-      dat = rdt;
-      sts = tmp;
     endtask: check32
 
     task write64 (
@@ -701,8 +695,8 @@ package tcb_vip_pkg;
 
     task check64 (
       input  logic         [PHY.ABW-1:0] adr,
-      inout  logic  [8-1:0][PHY.SLW-1:0] dat,
-      inout  logic                       sts
+      input  logic  [8-1:0][PHY.SLW-1:0] dat,
+      input  logic                       sts
     );
       logic [8-1:0][PHY.SLW-1:0] wdt = 'x;
       logic [8-1:0][PHY.SLW-1:0] rdt;
@@ -710,8 +704,6 @@ package tcb_vip_pkg;
       transaction64(1'b0, adr, wdt, rdt, tmp);
       if (rdt !== dat) $display("ERROR: %m: (rdt=64'h%16X) !== (dat=64'h%16X) mismatch.", rdt, dat);
       if (tmp !== sts) $display("ERROR: %m: (sts= 1'b%01b) !== (sts= 1'b%01b) mismatch.", tmp, sts);
-      dat = rdt;
-      sts = tmp;
     endtask: check64
 
     task write128 (
@@ -734,8 +726,8 @@ package tcb_vip_pkg;
 
     task check128 (
       input  logic         [PHY.ABW-1:0] adr,
-      inout  logic [16-1:0][PHY.SLW-1:0] dat,
-      inout  logic                       sts
+      input  logic [16-1:0][PHY.SLW-1:0] dat,
+      input  logic                       sts
     );
       logic [16-1:0][PHY.SLW-1:0] wdt = 'x;
       logic [16-1:0][PHY.SLW-1:0] rdt;
@@ -743,8 +735,6 @@ package tcb_vip_pkg;
       transaction128(1'b0, adr, wdt, rdt, tmp);
       if (rdt !== dat) $display("ERROR: %m: (rdt=128'h%32X) !== (dat=128'h%32X) mismatch.", rdt, dat);
       if (tmp !== sts) $display("ERROR: %m: (sts=  1'b%01b) !== (sts=  1'b%01b) mismatch.", tmp, sts);
-      dat = rdt;
-      sts = tmp;
     endtask: check128
 
   endclass: tcb_transfer_c

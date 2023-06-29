@@ -74,12 +74,13 @@ module tcb_vip_tb
   tcb_s obj_sub;
   tcb_s obj_mem [0:PN-1];
 
+  // testbench status signals
+  string       testname;  // test name
+  int unsigned errorcnt;  // ERROR counter
+
 ////////////////////////////////////////////////////////////////////////////////
 // test non-blocking API
 ////////////////////////////////////////////////////////////////////////////////
-
-  // ERROR counter
-  int unsigned error;
 
   task automatic test_nonblocking;
     // local variables
@@ -150,19 +151,19 @@ module tcb_vip_tb
     for (int unsigned i=0; i<tst_num; i++) begin
       // manager
       if (tst_man[i] != tst_ref[i]) begin
-        error++;
+        errorcnt++;
         $display("i=%d, REF: %p", i, tst_ref[i]);
         $display("i=%d, MAN: %p", i, tst_man[i]);
       end
       // monitor
       if (tst_mon[i] != tst_ref[i]) begin
-        error++;
+        errorcnt++;
         $display("i=%d, REF: %p", i, tst_ref[i]);
         $display("i=%d, MON: %p", i, tst_mon[i]);
       end
       // subordinate
       if (tst_sub[i] != tst_ref[i]) begin
-        error++;
+        errorcnt++;
         $display("i=%d, REF: %p", i, tst_ref[i]);
         $display("i=%d, SUB: %p", i, tst_sub[i]);
       end
@@ -225,13 +226,15 @@ module tcb_vip_tb
     repeat (1) @(posedge clk);
     
     // test non blobking API
+    testname = "nonblocking";
     test_nonblocking;
     repeat (2) @(posedge clk);
     // test blobking API
+    testname = "blocking";
     test_blocking;
     repeat (2) @(posedge clk);
 
-    if (error>0)  $display("FAILURE: there were %d errors.", error);
+    if (errorcnt>0)  $display("FAILURE: there were %d errorcnts.", errorcnt);
     else          $display("SUCCESS.");
     $finish();
   end

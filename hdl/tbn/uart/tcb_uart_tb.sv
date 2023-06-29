@@ -26,7 +26,7 @@ module tcb_uart_tb
 );
 
   // TODO: parameter propagation through virtual interfaces in classes
-  // is not working well thus this workaround
+  // is not working well in Vivado 2023.1 thus this workaround
 
   // physical interface parameter
   localparam tcb_par_phy_t PHY1 = '{
@@ -114,6 +114,8 @@ module tcb_uart_tb
   // test sequence
   initial
   begin
+    // time dispaly formatting
+    $timeformat(-9, 3, "ns", 12);
     // connect virtual interfaces
     obj_man = new("MAN", tcb_man);
     // reset sequence
@@ -121,34 +123,66 @@ module tcb_uart_tb
     repeat (2) @(posedge clk);
     rst <= 1'b0;
     repeat (1) @(posedge clk);
+
     // write configuration
+    $display("(%t) INFO: writing configuration begin.", $time);
     obj_man.write32('h08, 32'(TX_BDR-1), sts);  // TX baudrate
     obj_man.write32('h28, 32'(RX_BDR-1), sts);  // RX baudrate
     obj_man.write32('h2C, 32'(RX_SMP-1), sts);  // RX sample
     obj_man.write32('h30, 32'(TX_LEN-1), sts);  // RX IRQ level
+    $display("(%t) INFO: writing configuration end.", $time);
+    repeat (1) @(posedge clk);
+
+    // read/check configuration
+    $display("(%t) INFO: reading/checking configuration begin.", $time);
+    obj_man.check32('h08, 32'(TX_BDR-1), '0);  // TX baudrate
+    obj_man.check32('h28, 32'(RX_BDR-1), '0);  // RX baudrate
+    obj_man.check32('h2C, 32'(RX_SMP-1), '0);  // RX sample
+    obj_man.check32('h30, 32'(TX_LEN-1), '0);  // RX IRQ level
+    $display("(%t) INFO: reading/checking configuration end.", $time);
+    repeat (1) @(posedge clk);
+
     // write TX data
+    $display("(%t) INFO: writing TX data begin.", $time);
     for (int unsigned i=0; i<TX_LEN; i++) begin
       obj_man.write32('h00, 32'(TX_STR[i]), sts);
     end
+    $display("(%t) INFO: writing TX data end.", $time);
+
     // wait for RX IRQ
+    $display("(%t) INFO: writing RX IRQ begin.", $time);
     do begin
       @(posedge clk);
     end while (!irq_rx);
+    $display("(%t) INFO: writing RX IRQ end.", $time);
+
     // read RX data
+    $display("(%t) INFO: reading RX data begin.", $time);
     for (int unsigned i=0; i<TX_LEN; i++) begin
       obj_man.read32('h20, rdt, sts);
       rx_str[i] = rdt[UDW-1:0];
     end
-    if (string'(rx_str) != TX_STR)  $display("ERROR: RX '%s' differs from TX '%s'", rx_str, TX_STR);
+    $display("(%t) INFO: reading RX data end.", $time);
+
+    // checking if TX and RX data arrays are the same
+    if (string'(rx_str) != TX_STR) begin
+      $display("ERROR: RX '%s' differs from TX '%s'", rx_str, TX_STR);
+      $display("FAILURE");
+    end else begin
+      $display("SUCCESS");
+    end
+
     // end simulation
-    repeat (4) @(posedge clk);
+    repeat (2) @(posedge clk);
     $finish();
   end
 
-  // timeout
+  // timeout (in case RX IRQ is not triggered)
   initial
   begin
     repeat (TX_LEN*10*TX_BDR + 100) @(posedge clk);
+    $display("ERROR: RX IRQ not triggered.");
+    $display("FAILURE");
     $finish();
   end
 
@@ -162,7 +196,7 @@ module tcb_uart_tb
 
   // TCB UART
   tcb_uart #(
-    .DW      (UDW)
+    .DW       (UDW)
   ) uart (
     // UART signals
     .uart_txd (uart_txd),

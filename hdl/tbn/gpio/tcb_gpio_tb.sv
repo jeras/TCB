@@ -26,7 +26,7 @@ module tcb_gpio_tb
 );
 
   // TODO: parameter propagation through virtual interfaces in classes
-  // is not working well thus this workaround
+  // is not working well in Vivado 2023.1 thus this workaround
 
   // physical interface parameter
   localparam tcb_par_phy_t PHY1 = '{
@@ -97,6 +97,8 @@ module tcb_gpio_tb
   // test sequence
   initial
   begin
+    // time dispaly formatting
+    $timeformat(-9, 3, "ns", 12);
     // connect virtual interfaces
     obj_man = new("MAN", tcb_man);
     // reset sequence
@@ -105,24 +107,36 @@ module tcb_gpio_tb
     rst <= 1'b0;
     repeat (1) @(posedge clk);
 
-    // configure outputs
+    // write configuration (output and enable registers)
+    $display("(%t) INFO: writing configuration begin.", $time);
     obj_man.write32('h00, 32'h01234567, sts);  // write output register
     obj_man.write32('h04, 32'h76543210, sts);  // write enable register
+    $display("(%t) INFO: writing configuration end.", $time);
+    repeat (1) @(posedge clk);
 
-    // read GPIO input status
-    obj_man.read32('h08, rdt32, sts);  // read input register
-    if (GW'(rdt) != GW'('hxxxxxxxx))  $display("ERROR: readout error rdt=%8h, ref=%8h", rdt, GW'('hxxxxxxxx));
+    // check configuration (output and enable registers)
+    $display("(%t) INFO: reading/checking configuration begin.", $time);
+    obj_man.check32('h00, 32'h01234567, sts);  // write output register
+    obj_man.check32('h04, 32'h76543210, sts);  // write enable register
+    $display("(%t) INFO: reading/checking configuration end.", $time);
+    repeat (1) @(posedge clk);
+
+    // read/check GPIO input status
+    $display("(%t) INFO: reading/checking input begin.", $time);
+    obj_man.check32('h08, 32'hxxxxxxxx, '0);  // read input register
 
     gpio_i <= GW'('h89abcdef);
     repeat (2) @(posedge clk);
-    obj_man.read32('h08, rdt32, sts);  // read input register
-    if (GW'(rdt) != GW'('h89abcdef))  $display("ERROR: readout error rdt=%8h, ref=%8h", rdt, GW'('h89abcdef));
+    obj_man.check32('h08, 32'h89abcdef, '0);  // read input register
 
     gpio_i <= GW'('hfedcba98);
     repeat (2) @(posedge clk);
-    obj_man.read32('h08, rdt32, sts);  // read input register
-    if (GW'(rdt) != GW'('hfedcba98))  $display("ERROR: readout error rdt=%8h, ref=%8h", rdt, GW'('hfedcba98));
+    obj_man.check32('h08, 32'hfedcba98, '0);  // read input register
+    $display("(%t) INFO: reading/checking input end.", $time);
 
+    // TODO: add automatic testbench status report (SUCCESS/FAILURE)
+
+    // end simulation
     repeat (2) @(posedge clk);
     $finish();
   end
