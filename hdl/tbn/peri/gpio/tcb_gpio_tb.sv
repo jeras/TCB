@@ -57,11 +57,15 @@ module tcb_gpio_tb
   logic rst;  // reset
 /*
   // TCB interface
-  tcb_if #(.PHY (PHY)) tcb (.clk (clk), .rst (rst));
+  tcb_if #(.PHY (PHY)) tcb_man     (.clk (clk), .rst (rst));
+  tcb_if #(.PHY (PHY)) tcb_man_wrc (.clk (clk), .rst (rst));
+  tcb_if #(.PHY (PHY)) tcb_man_rdc (.clk (clk), .rst (rst));
 */
   // TODO: the above code should be used instead
   // TCB interfaces
-  tcb_if tcb_man (.clk (clk), .rst (rst));
+  tcb_if tcb_man     (.clk (clk), .rst (rst));
+  tcb_if tcb_man_wrc (.clk (clk), .rst (rst));
+  tcb_if tcb_man_rdc (.clk (clk), .rst (rst));
 
   // parameterized class specialization
   typedef tcb_transfer_c #(.PHY (PHY)) tcb_s;
@@ -149,8 +153,14 @@ module tcb_gpio_tb
 // DUT instance
 ////////////////////////////////////////////////////////////////////////////////
 
+  localparam string IFT = "IRW";
+
+  generate
+  if (IFT == "CRW")
+  begin: crw
+
   // TCB GPIO
-  tcb_gpio #(
+  tcb_crw_gpio #(
     .GW      (GW),
     // implementation details
 //    bit          CFG_MIN = 1'b0,  // minimalistic implementation
@@ -159,12 +169,46 @@ module tcb_gpio_tb
     .CHIP    ("")
   ) gpio (
     // GPIO signals
-    .gpio_o (gpio_o),
-    .gpio_e (gpio_e),
-    .gpio_i (gpio_i),
+    .gpio_o  (gpio_o),
+    .gpio_e  (gpio_e),
+    .gpio_i  (gpio_i),
     // TCB interface
-    .tcb    (tcb_man)
+    .tcb     (tcb_man)
   );
+
+  end: crw
+  else if (IFT == "IRW")
+  begin: irw
+
+  // TCB independent channel splitter
+  tcb_lib_crw2irw crw2irw (
+    // CRW subordinate port
+    .tcb_crw_sub (tcb_man),
+    // IRW manager ports
+    .tcb_rdc_man (tcb_man_rdc),
+    .tcb_wrc_man (tcb_man_wrc)
+  );
+
+  // TCB GPIO
+  tcb_irw_gpio #(
+    .GW      (GW),
+    // implementation details
+//    bit          CFG_MIN = 1'b0,  // minimalistic implementation
+    .CFG_CDC (2),
+    // implementation device (ASIC/FPGA vendor/device)
+    .CHIP    ("")
+  ) gpio (
+    // GPIO signals
+    .gpio_o  (gpio_o),
+    .gpio_e  (gpio_e),
+    .gpio_i  (gpio_i),
+    // TCB IRW interface
+    .tcb_wrc (tcb_man_wrc),
+    .tcb_rdc (tcb_man_rdc)
+  );
+
+  end: irw
+  endgenerate
 
 ////////////////////////////////////////////////////////////////////////////////
 // VCD/FST waveform trace

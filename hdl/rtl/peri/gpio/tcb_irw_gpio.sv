@@ -1,11 +1,11 @@
 ////////////////////////////////////////////////////////////////////////////////
-// TCB interface GPIO controller
+// TCB interface (independent RW channels): GPIO controller
 //
 // NOTE: In case this module is connected to asynchronous signals,
 //       the input signals `gpio_i` require a CDC synchronizer.
 //       By default a 2 FF synchronizer is implemented by the CFG_CDC parameter.
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright 2022 Iztok Jeras
+// Copyright 2023 Iztok Jeras
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -20,7 +20,7 @@
 // limitations under the License.
 ////////////////////////////////////////////////////////////////////////////////
 
-module tcb_gpio #(
+module tcb_irw_gpio #(
   // GPIO parameters
   int unsigned GW = 32,   // GPIO width
   int unsigned CFG_CDC = 2,     // implement clock domain crossing stages (0 - bypass)
@@ -35,7 +35,8 @@ module tcb_gpio #(
   output logic [GW-1:0] gpio_e,
   input  logic [GW-1:0] gpio_i,
   // TCB interface
-  tcb_if.sub tcb
+  tcb_if.sub tcb_rdc,
+  tcb_if.sub tcb_wrc
 );
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -45,8 +46,11 @@ module tcb_gpio #(
 `ifdef ALTERA_RESERVED_QIS
 `else
 generate
-  if (tcb.PHY.DLY != 0)  $error("ERROR: %m parameter DLY validation failed");
-  if (tcb.PHY.DBW < GW)  $error("ERROR: %m parameter GW exceeds the data bus width");
+  if (tcb_wrc.PHY.DLY !=  0)  $error("ERROR: %m parameter DLY validation failed");
+  if (tcb_rdc.PHY.DLY !=  0)  $error("ERROR: %m parameter DLY validation failed");
+  if (tcb_wrc.PHY.DBW != 32)  $error("ERROR: %m parameter DBW validation failed");
+  if (tcb_rdc.PHY.DBW != 32)  $error("ERROR: %m parameter DBW validation failed");
+  if (             GW >  32)  $error("ERROR: %m parameter GW exceeds the data bus width");
 endgenerate
 `endif
 
@@ -72,9 +76,9 @@ if (CFG_CDC > 0) begin: gen_cdc
      .SRC_INPUT_REG  (0),        // DECIMAL; 0=do not register input, 1=register input
      .WIDTH          (GW)        // DECIMAL; range: 1-1024
     ) gpio_cdc (
-     .src_clk  (tcb.clk),
+     .src_clk  (tcb_rdc.clk),
      .src_in   (gpio_i),
-     .dest_clk (tcb.clk),
+     .dest_clk (tcb_rdc.clk),
      .dest_out (gpio_r)
     );
 
@@ -85,8 +89,8 @@ if (CFG_CDC > 0) begin: gen_cdc
     logic [CFG_CDC-2:0][GW-1:0] gpio_t;
 
     // asynchronous input synchronization
-    always_ff @(posedge tcb.clk, posedge tcb.rst)
-    if (tcb.rst) begin
+    always_ff @(posedge tcb_rdc.clk, posedge tcb_rdc.rst)
+    if (tcb_rdc.rst) begin
       {gpio_r, gpio_t} <= '0;
     end else begin
       {gpio_r, gpio_t} <= {gpio_t, gpio_i};
@@ -104,7 +108,7 @@ end: gen_nocdc
 endgenerate
 
 ////////////////////////////////////////////////////////////////////////////////
-// TCB access
+// TCB read access
 ////////////////////////////////////////////////////////////////////////////////
 
 // read access
@@ -113,7 +117,7 @@ generate
 if (CFG_RSP_MIN) begin: gen_rsp_min
 
   // only the GPIO input can be read
-  assign tcb.rdt = gpio_r;
+  assign tcb_rdc.rdt = gpio_r;
 
 end: gen_rsp_min
 // normal implementation
@@ -121,39 +125,45 @@ else begin: gen_rsp_nrm
 
   // GPIO output/enable registers and GPIO input are decoded
   always_comb
-  case (tcb.req.adr[4-1:0])
-    4'h0:    tcb.rsp.rdt = gpio_o;
-    4'h4:    tcb.rsp.rdt = gpio_e;
-    4'h8:    tcb.rsp.rdt = gpio_r;
-    default: tcb.rsp.rdt = 'x;
+  case (tcb_rdc.req.adr[4-1:0])
+    4'h0:    tcb_rdc.rsp.rdt = gpio_o;
+    4'h4:    tcb_rdc.rsp.rdt = gpio_e;
+    4'h8:    tcb_rdc.rsp.rdt = gpio_r;
+    default: tcb_rdc.rsp.rdt = 'x;
   endcase
-
-  // read data response
-  assign tcb.rsp.rdt = tcb.rsp.rdt;
 
 end: gen_rsp_nrm
 endgenerate
 
+  // controller response is immediate
+  assign tcb_rdc.rdy = 1'b1;
+
+  // there are no error cases
+  assign tcb_rdc.rsp.sts = '0;
+
+////////////////////////////////////////////////////////////////////////////////
+// TCB write access
+////////////////////////////////////////////////////////////////////////////////
+
   // write output and output enable
-  always_ff @(posedge tcb.clk, posedge tcb.rst)
-  if (tcb.rst) begin
+  always_ff @(posedge tcb_wrc.clk, posedge tcb_wrc.rst)
+  if (tcb_wrc.rst) begin
     gpio_o <= '0;
     gpio_e <= '0;
-  end else if (tcb.trn) begin
-    if (tcb.req.wen) begin
-      // write access
-      case (tcb.req.adr[4-1:0])
-        4'h0:    gpio_o <= tcb.req.wdt[GW-1:0];
-        4'h4:    gpio_e <= tcb.req.wdt[GW-1:0];
-        default: ;  // do nothing
-      endcase
-    end
+  end else if (tcb_wrc.trn) begin
+    // write access (write enable is not checked)
+    case (tcb_wrc.req.adr[4-1:0])
+      4'h0:    gpio_o <= tcb_wrc.req.wdt[GW-1:0];
+      4'h4:    gpio_e <= tcb_wrc.req.wdt[GW-1:0];
+      default: ;  // do nothing
+    endcase
   end
 
   // controller response is immediate
-  assign tcb.rdy = 1'b1;
+  assign tcb_wrc.rdy = 1'b1;
 
   // there are no error cases
-  assign tcb.rsp.sts = '0;
+  assign tcb_wrc.rsp.sts = '0;
 
-endmodule: tcb_gpio
+endmodule: tcb_irw_gpio
+

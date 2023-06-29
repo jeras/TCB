@@ -95,6 +95,7 @@ interface tcb_if
   // response pipeline stage
   typedef struct {
     logic               ena;  // enable
+    logic               ren;  // read enable
     logic [PHY.ABW-1:0] adr;  // address
     logic [PHY_SZW-1:0] siz;  // transfer size
     logic [PHY_BEW-1:0] ben;  // byte enable
@@ -121,11 +122,13 @@ interface tcb_if
 
   // response pipeline combinational input
   assign dly[0].ena = trn                          ;  // response valid
+  assign dly[0].ren =       ~req.wen               ;  // response read enable
   assign dly[0].adr =                  req.adr     ;  // response address
   assign dly[0].siz =                  req.siz     ;  // response logarithmic size
   assign dly[0].ben = trn & ~req.wen ? req_ben : '0;  // response byte enable
 
   // response pipeline
+  // TODO: avoid toggling if there is not transfer
   generate
   if (PHY.DLY > 0) begin: gen_dly
     always @(posedge clk)
