@@ -34,7 +34,7 @@ module tcb_irw_gpio #(
   output logic [GW-1:0] gpio_o,
   output logic [GW-1:0] gpio_e,
   input  logic [GW-1:0] gpio_i,
-  // TCB interface
+  // TCB IRW interface
   tcb_if.sub tcb_rdc,
   tcb_if.sub tcb_wrc
 );

@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// TCB interface UART controller
+// TCB interface (common RW channel): UART controller
 ////////////////////////////////////////////////////////////////////////////////
 // Copyright 2022 Iztok Jeras
 //
@@ -80,7 +80,7 @@ endgenerate
   logic          tx_str_rdy, rx_str_rdy;  // ready
 
 ////////////////////////////////////////////////////////////////////////////////
-// TCB access
+// TCB read access
 ////////////////////////////////////////////////////////////////////////////////
 
   // read configuration/status and RX data
@@ -107,6 +107,10 @@ endgenerate
 
   // read data response
   assign tcb.rsp.rdt = tcb.rsp.rdt;
+
+////////////////////////////////////////////////////////////////////////////////
+// TCB write access
+////////////////////////////////////////////////////////////////////////////////
 
   // write configuration and TX data
   always_ff @(posedge tcb.clk, posedge tcb.rst)
@@ -140,6 +144,10 @@ endgenerate
     end
   end
 
+  // TX FIFO write valid
+  assign tx_bus_vld = tcb.trn & tcb.req.wen & (tcb.req.adr[6-1:0] == 6'h00);
+  assign tx_bus_dat = tcb.req.wdt[DW-1:0];
+
   // controller response is immediate
   assign tcb.rdy = 1'b1;
 
@@ -149,9 +157,6 @@ endgenerate
 ////////////////////////////////////////////////////////////////////////////////
 // TX channel
 ////////////////////////////////////////////////////////////////////////////////
-
-  assign tx_bus_vld = tcb.trn & tcb.req.wen & (tcb.req.adr[6-1:0] == 6'h00);
-  assign tx_bus_dat = tcb.req.wdt[DW-1:0];
 
   // FIFO
   tcb_uart_fifo #(
@@ -244,3 +249,4 @@ endgenerate
   assign irq_rx = (rx_sts_cnt > rx_cfg_irq);
 
 endmodule: tcb_crw_uart
+

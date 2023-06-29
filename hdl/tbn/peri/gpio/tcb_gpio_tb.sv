@@ -22,7 +22,9 @@ module tcb_gpio_tb
 #(
   // TCB widths
   int unsigned ABW = 32,
-  int unsigned DBW = 32
+  int unsigned DBW = 32,
+  // RW channels
+  string IFT = "IRW"
 );
 
   // TODO: parameter propagation through virtual interfaces in classes
@@ -152,8 +154,6 @@ module tcb_gpio_tb
 ////////////////////////////////////////////////////////////////////////////////
 // DUT instance
 ////////////////////////////////////////////////////////////////////////////////
-
-  localparam string IFT = "IRW";
 
   generate
   if (IFT == "CRW")

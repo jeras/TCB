@@ -22,7 +22,9 @@ module tcb_uart_tb
 #(
   // TCB widths
   int unsigned ABW = 32,
-  int unsigned DBW = 32
+  int unsigned DBW = 32,
+  // RW channels
+  string IFT = "CRW"
 );
 
   // TODO: parameter propagation through virtual interfaces in classes
@@ -71,11 +73,15 @@ module tcb_uart_tb
   logic rst;  // reset
 /*
   // TCB interface
-  tcb_if #(.PHY (PHY)) tcb (.clk (clk), .rst (rst));
+  tcb_if #(.PHY (PHY)) tcb_man     (.clk (clk), .rst (rst));
+  tcb_if #(.PHY (PHY)) tcb_man_wrc (.clk (clk), .rst (rst));
+  tcb_if #(.PHY (PHY)) tcb_man_rdc (.clk (clk), .rst (rst));
 */
   // TODO: the above code should be used instead
   // TCB interfaces
-  tcb_if tcb_man (.clk (clk), .rst (rst));
+  tcb_if tcb_man     (.clk (clk), .rst (rst));
+  tcb_if tcb_man_wrc (.clk (clk), .rst (rst));
+  tcb_if tcb_man_rdc (.clk (clk), .rst (rst));
 
   // parameterized class specialization
   typedef tcb_transfer_c #(.PHY (PHY)) tcb_s;
@@ -194,19 +200,54 @@ module tcb_uart_tb
 // DUT instance
 ////////////////////////////////////////////////////////////////////////////////
 
+  generate
+  if (IFT == "CRW")
+  begin: crw
+
   // TCB UART
-  tcb_uart #(
+  tcb_crw_uart #(
     .DW       (UDW)
   ) uart (
     // UART signals
     .uart_txd (uart_txd),
     .uart_rxd (uart_rxd),
-    // system tcb interface
+    // TCB interface
     .tcb      (tcb_man),
     // interrupts
     .irq_tx   (irq_tx),
     .irq_rx   (irq_rx)
   );
+
+  end: crw
+  else if (IFT == "IRW")
+  begin: irw
+
+  // TCB independent channel splitter
+  tcb_lib_crw2irw crw2irw (
+    // CRW subordinate port
+    .tcb_crw_sub (tcb_man),
+    // IRW manager ports
+    .tcb_rdc_man (tcb_man_rdc),
+    .tcb_wrc_man (tcb_man_wrc)
+  );
+
+  // TCB UART
+  tcb_irw_uart #(
+    .DW       (UDW)
+  ) uart (
+    // UART signals
+    .uart_txd (uart_txd),
+    .uart_rxd (uart_rxd),
+    // TCB IRW interface
+    .tcb_wrc  (tcb_man_wrc),
+    .tcb_rdc  (tcb_man_rdc),
+    // interrupts
+    .irq_tx   (irq_tx),
+    .irq_rx   (irq_rx)
+  );
+
+  end: irw
+  endgenerate
 
   // UART loopback
   assign uart_rxd = uart_txd;
