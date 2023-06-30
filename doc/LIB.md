@@ -1,6 +1,13 @@
-## Reference implementation
+## Reference implementation library
 
-The reference implementation is written in SystemVerilog.
+The reference implementation library is written in SystemVerilog
+and extensively uses the following SystemVerilog specific features:
+- `param`eterized `interface`s with `modport`s, also containing RTL,
+- `packed`/unpacked `struc`tures/arrays for signals and parameters,
+- `casez` in address decoders
+- do-not-care symbol `?` in literals incluing parameters for address masks,
+- `module`s using `param`eters from `interface`s connected to them,
+- `always_ff`/`always_comb` to distinguish between sequential and combinational RTL,
 
 ### RTL components
 

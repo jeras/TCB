@@ -7,6 +7,8 @@ Tightly Coupled Bus is a simple general purpose system bus based on FPGA/ASIC SR
 The idea and name comes from tightly coupled memories,
 which require a simple interface to avoid complexity impact on timing and area,
 and at the same time the full memory interface throughput must be achievable.
+
+This are few alternative naming for tightly coupled memories:
 - Tightly Coupled Memory (TCM) used by [ARM](https://www.kernel.org/doc/Documentation/arm/tcm.txt),
   [Codasip](https://codasip.com/), and [Syntacore](https://syntacore.com/),
 - Tightly Integrated Memory (TIM) used by [SiFive](https://www.sifive.com/),
@@ -24,22 +26,26 @@ The TCB protocol is designed to fulfill the shared needs of simple CPU/SoC desig
 - SoC peripheral interface.
 
 The design is based on the following principles:
-- Intended for closely coupled memories and caches, and therefore based on synchronous/static memory (SRAM) interfaces.
+- Intended for closely coupled memories and caches,
+  and therefore based on synchronous/static memory (SRAM) interfaces.
 - Support pipelining for both writes and reads to minimize stalling overhead.
   Meaning the handshake is done during the arbitration phase (explained later).
 - Handshake based on the AMBA AXI family of protocols (VALID/READY).
 - Low power consumption should be considered by reducing signal toggling and other means.
+- Choice of common (half-duplex) or independent (full-duplex) read/write channels,
+  allowing additional trade-off between throughput and complexity.
 
 What it is not intended for:
-- It is not optimized for clock domain crossing (CDC), which has a large delay between the start of a request and the response, and the delay has some unpredictability.
+- It is not optimized for clock domain crossing (CDC), which has a large delay (latency)
+  between the start of a request and the response, and the delay has some unpredictability.
 - Does not provide out of order access functionality.
-- It is not a good fit for managers with a variable pipeline length (variable expected delay) in the load/store unit.
+- It is not a good fit for managers with a variable pipeline delay in the load/store unit.
 
 ## Terminology
 
 TCB terminology and syntax is mostly based on:
 - AMBA AXI family of protocols,
-- Verilog/SystemVerilog HDL languages.
+- Verilog/SystemVerilog HDL language.
 
 ### Interconnect terms
 
@@ -49,7 +55,7 @@ TCB terminology and syntax is mostly based on:
 | subordinate | `sub` | Subordinates are module receiving requests from a manager and responding to it. This term is equivalent to _slave_. |
 | monitor     | `mon` | Monitors do not drive any protocol signals, they only observe them for error checking, statistics and logging. |
 
-### Protocol timing terms
+### Transfer level terms (protocol timing)
 
 | term         | description |
 |--------------|-------------|
@@ -65,23 +71,29 @@ TCB terminology and syntax is mostly based on:
 ### Transaction level terms
 
 A transaction is the atomic exchange of a desired data length requiring one or more transfers.
+The following words can be used to describe a transaction. 
 **TODO: check for a TLM definition.**
 
-| direction | description |
-|-----------|-------------|
-| write     | Used for CPU store operations. |
-| read      | Used for CPU load operations. |
-| atomic    | |
-| burst     | |
+| descriptor | description |
+|------------|-------------|
+| write      | Used for CPU store operations. |
+| read       | Used for CPU load operations. |
+| aligned    | Address and transaction size or byte enable signals follow CPU ISA alignment rules. |
+| misaligned | A misaligned transaction can be a single misaligned transfer or be split into multiple aligned transfers. |
+| split      | A transaction with a size exceeding the data bus width can be split into multiple transfers. |
+| atomic     | In addition to CPU ISA atomic instructions, atomicity is desired in split transactions. |
+| burst      | Bursts are intended for communication between cache levels and high latency memories. |
 
+While the bus width and transaction sizes are not limited to a finite set,
+the the following transaction sizes also have names.
 
-| size | description |
-|------|-------------|
-| byte |   8-bit wide data. |
-| half |  16-bit wide data. |
-| word |  32-bit wide data. |
-| dble |  64-bit wide data. |
-| long | 128-bit wide data. |
+| size   | description |
+|--------|-------------|
+| byte   |   8-bit wide data. |
+| half   |  16-bit wide data. |
+| word   |  32-bit wide data. |
+| double |  64-bit wide data. |
+| long   | 128-bit wide data. |
 
 ### Peripheral driver terms
 
@@ -104,6 +116,10 @@ _configuration_, _control_ and _status_ registers of a peripheral.
 | acronym | definition |
 |---------|------------|
 | TCB     | Tightly Coupled Bus |
+| CRW     | Common Read/Write channel |
+| IRW     | Independent Read/Write channels |
+| RDC     | ReaD Channel |
+| WRC     | WRite Channel |
 | BFM     | [Bus Functional Model](https://en.wikipedia.org/wiki/Bus_functional_model) |
 | TLM     | [Transaction-level modeling](https://en.wikipedia.org/wiki/Transaction-level_modeling) |
 | LSB     | [Least Significant Bit/Byte](https://en.wikipedia.org/wiki/Bit_numbering) |
@@ -111,7 +127,7 @@ _configuration_, _control_ and _status_ registers of a peripheral.
 
 ## Naming conventions
 
-Mostly for aesthetic reasons (vertical alignment) all signal names are
+Mostly for aesthetic reasons (vertical alignment) all signal and names are
 [three-letter abbreviations (TLA)](https://en.wikipedia.org/wiki/Three-letter_acronym).
 
 Suffixes specifying the direction of module ports as input/output (`in`/`out`, `i`/`o`) can be avoided.
@@ -121,7 +137,7 @@ Set names shall use specifiers like manager/subordinate (`man`/`sub`) or request
 ## Protocol base
 
 The TCB protocol base is comprised of a valid/ready handshake for the request
-and a configurable fixed delay for the response.
+and a parameterized fixed delay (integer number of clock periods) for the response.
 
 ### System signals clock and reset
 
@@ -161,7 +177,7 @@ This signal sets are used to provide transaction type details, addressing and da
 | `rdy`  | `sub` -> `man` | Handshake ready (can be omitted if there is no backpressure). |
 
 While the handshake defines the request transfer,
-the response is is always provided `DLY` clock cycles after the handshake transfer.
+the response is is always provided `DLY` clock periods after the handshake transfer.
 
 | parameter | type           | description |
 |-----------|----------------|-------------|
@@ -188,6 +204,7 @@ since this could result in a lockup or a combinational loop.
 There is no integrated timeout abort mechanism,
 although it would be possible to place such functionality
 into a module placed between a manager and a subordinate.
+The required additional complexity is not discussed in this document.
 
 ### Reset sequences
 
@@ -213,7 +230,7 @@ In this case the `vld` signal depends on a register toggling after reset is rele
 and this can only happen with the described timing.
 The same explanation stands for `rdy` if it is not a constant value.
 
-![Write transfer](https://svg.wavedrom.com/github/jeras/TCB/main/doc/tcb_reset.json)
+![Reset sequence](https://svg.wavedrom.com/github/jeras/TCB/main/doc/tcb_reset.json)
 
 #### Reset sequence length
 
@@ -237,9 +254,6 @@ It might also have some effect on the viability of side channel attacks.
 
 ![Write transfer](https://svg.wavedrom.com/github/jeras/TCB/main/doc/tcb_handshake.json)
 
-
-## Half-duplex
-
 #### Signal width parameters
 
 All TCB interfaces have parameters for defining the address and data signal widths.
@@ -248,12 +262,12 @@ sometimes 12-bits, the size of load/store immediate is relevant.
 Since TCB was designed with 32-bit CPU/SoC/peripherals in mind,
 32-bit is the default data width and 4-bit is the default byte enable width.
 
-| parameter     | type           | description |
-|---------------|----------------|-------------|
-| `ABW`         | `int unsigned` | Address bus width. |
-| `DBW`         | `int unsigned` | Data bus width. |
-| `SLW=8`       | `int unsigned` | Selection width (in most cases it should be 8, the size of a byte). |
-| `BEW=DBW/SLW` | `int unsigned` | Byte enable width is the number of selection width units fitting into the data width. |
+| parameter | default   | type           | description |
+|-----------|-----------|----------------|-------------|
+| `PHY.ABW` | `32`      | `int unsigned` | Address bus width. |
+| `PHY.DBW` | `32`      | `int unsigned` | Data bus width. |
+| `PHY.SLW` | `8`       | `int unsigned` | Selection width (in most cases it should be 8, the size of a byte). |
+| `PHY_BEW` | `DBW/SLW` | `int unsigned` | Byte enable width is the number of selection width units fitting into the data width. |
 
 ### Bus signals
 
