@@ -181,7 +181,7 @@ module tcb_gpio_tb
   begin: irw
 
   // TCB independent channel splitter
-  tcb_lib_crw2irw crw2irw (
+  tcb_lib_common2independant crw2irw (
     // CRW subordinate port
     .tcb_crw_sub (tcb_man),
     // IRW manager ports

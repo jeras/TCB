@@ -16,7 +16,7 @@
 // limitations under the License.
 ////////////////////////////////////////////////////////////////////////////////
 
-module tcb_lib_crw2irw (
+module tcb_lib_common2independent (
   // TCB CRW subordinate port (manager device connects here)
   tcb_if.sub tcb_crw_sub,
   // TCB IRW manager ports (subordinate device connects here)
@@ -57,4 +57,4 @@ module tcb_lib_crw2irw (
   assign tcb_crw_sub.rsp =  tcb_crw_sub.dly[tcb_crw_sub.PHY.DLY].ren ? tcb_rdc_man.rsp
                                                                      : tcb_wrc_man.rsp;
 
-endmodule: tcb_lib_crw2irw
+endmodule: tcb_lib_common2independent

@@ -249,7 +249,7 @@
           <Attr Name="UsedIn" Val="simulation"/>
         </FileInfo>
       </File>
-      <File Path="$PPRDIR/../../hdl/rtl/lib/tcb_lib_crw2irw.sv">
+      <File Path="$PPRDIR/../../hdl/rtl/lib/tcb_lib_common2independant.sv">
         <FileInfo>
           <Attr Name="UsedIn" Val="synthesis"/>
           <Attr Name="UsedIn" Val="implementation"/>
