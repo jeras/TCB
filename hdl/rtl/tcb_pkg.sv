@@ -74,7 +74,7 @@ package tcb_pkg;
 ////////////////////////////////////////////////////////////////////////////////
 
   // physical interface parameter structure
-  // TODO: tre structure is packed to workaround Verilator bug
+  // TODO: the structure is packed to workaround Verilator bug
   typedef struct packed {
     // signal bus widths
     int unsigned    SLW;  // selection   width (byte width is 8 by default)
@@ -103,6 +103,55 @@ package tcb_pkg;
     LGN: TCB_ALIGNED,
     ORD: TCB_DESCENDING
   };
+
+////////////////////////////////////////////////////////////////////////////////
+// parameter structure validation tasks functions
+////////////////////////////////////////////////////////////////////////////////
+
+  function automatic int validation_error (string str);
+    return($error("ERROR: %m: %s", str));
+  endfunction: validation_error
+
+  // check for equivalence
+  function automatic tcb_par_phy_match(
+    tcb_par_phy_t phy_val,
+    tcb_par_phy_t phy_ref   // reference can contain wildcard values
+  );
+    // status structure
+    struct packed {
+      bit SLW;
+      bit ABW;
+      bit DBW;
+      bit DLY;
+      bit MOD;
+      bit SIZ;
+      bit LGN;
+      bit ORD;
+    } status;
+
+    // comparison
+    status.SLW = phy_val.SLW ==? phy_ref.SLW;
+    status.ABW = phy_val.ABW ==? phy_ref.ABW;
+    status.DBW = phy_val.DBW ==? phy_ref.DBW;
+    status.DLY = phy_val.DLY ==? phy_ref.DLY;
+    status.MOD = phy_val.MOD ==? phy_ref.MOD;
+    status.SIZ = phy_val.SIZ ==? phy_ref.SIZ;
+    status.LGN = phy_val.LGN ==? phy_ref.LGN;
+    status.ORD = phy_val.ORD ==? phy_ref.ORD;
+
+    // reporting validation status
+    if (status.SLW)  validation_error("parameter mismatch PHY.SLW=%d != PHY.SLW=%d", phy_val.SLW, phy_ref.SLW);
+    if (status.ABW)  validation_error("parameter mismatch PHY.ABW=%d != PHY.ABW=%d", phy_val.ABW, phy_ref.ABW);
+    if (status.DBW)  validation_error("parameter mismatch PHY.DBW=%d != PHY.DBW=%d", phy_val.DBW, phy_ref.DBW);
+    if (status.DLY)  validation_error("parameter mismatch PHY.DLY=%d != PHY.DLY=%d", phy_val.DLY, phy_ref.DLY);
+    if (status.MOD)  validation_error("parameter mismatch PHY.MOD=%d != PHY.MOD=%d", phy_val.MOD, phy_ref.MOD);
+    if (status.SIZ)  validation_error("parameter mismatch PHY.SIZ=%d != PHY.SIZ=%d", phy_val.SIZ, phy_ref.SIZ);
+    if (status.LGN)  validation_error("parameter mismatch PHY.LGN=%d != PHY.LGN=%d", phy_val.LGN, phy_ref.LGN);
+    if (status.ORD)  validation_error("parameter mismatch PHY.ORD=%d != PHY.ORD=%d", phy_val.ORD, phy_ref.ORD);
+
+    // return simple status
+    return(|status);
+  endfunction: tcb_par_phy_match
 
 ////////////////////////////////////////////////////////////////////////////////
 // default structures containing optional signals

@@ -19,18 +19,33 @@ without unnecessary limitations on throughput.
 
 ## Implementation status
 
-### VIP
+| status | description |
+|--------|-------------|
+| planed | The component should be a part of project, but there is no implementation yet. |
+| VIP    | (Work In Progress) The implementation is partially done, or it might require  
+
+### Common shared code
+
+The interface and package are shared across the RTL and verification code
+for the rest of the code.
+
+| module                          | status | description |
+|---------------------------------|--------|-------------|
+| [`tcb_if` ](hdl/rtl/tcb_if.sv ) | done   | SystemVerilog interface. |
+| [`tcb_pkg`](hdl/rtl/tcb_pkg.sv) | done   | SystemVerilog package. |
+
+### VIP (Verification IP)
 
 | module                                      | status | description |
 |---------------------------------------------|--------|-------------|
-| [`tcb_vip_pkg`](hdl/tbn/vip/tcb_vip_pkg.sv) | done   | Package containing shared code. |
-| [`tcb_vip_dwc`](hdl/tbn/vip/tcb_vip_dev.sv) | done   | Device model for manager/monitor/subordinate model. |
+| [`tcb_vip_pkg`](hdl/tbn/vip/tcb_vip_pkg.sv) | VIP    | Package containing manager/monitor/subordinate code. |
+| [`tcb_vip_mem`](hdl/tbn/vip/tcb_vip_mem.sv) | VIP    | Multi port memory model. |
+| [`tcb_vip_tb` ](hdl/tbn/vip/tcb_vip_tb.sv ) | VIP    | Testbench for core VIP functionality. |
 
-### Reference Interconnect library
+### Reference implementation library
 
 | module                                                          | status | description |
 |-----------------------------------------------------------------|--------|-------------|
-| [`tcb_if`               ](hdl/rtl/tcb_if.sv                   ) | done   | SystemVerilog interface. |
 | [`tcb_lib_passthrough`  ](hdl/rtl/lib/tcb_lib_pasthrough.sv   ) | done   | Trivial passthrough. |
 | [`tcb_lib_register`     ](hdl/rtl/lib/tcb_lib_register.sv     ) | planed | Register for request/response paths. |
 | [`tcb_lib_connector`    ](hdl/rtl/lib/tcb_lib_conector.sv     ) | planed | Interface connector with automatic handling of parameter differences. |
