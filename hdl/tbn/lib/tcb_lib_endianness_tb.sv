@@ -36,13 +36,13 @@ module tcb_lib_endianness_tb
     SLW: TCB_PAR_PHY_DEF.SLW,
     ABW: ABW,
     DBW: DBW,
-    // TCB parameters
+    ALN: $clog2(DBW/TCB_PAR_PHY_DEF.SLW),
+    // protocol
     DLY: DLY,
-    // mode/alignment/order parameters
+    // mode/size/order parameters
     MOD: TCB_PAR_PHY_DEF.MOD,
     SIZ: TCB_PAR_PHY_DEF.SIZ,
-    ORD: TCB_PAR_PHY_DEF.ORD,
-    LGN: TCB_PAR_PHY_DEF.LGN
+    ORD: TCB_PAR_PHY_DEF.ORD
   };
 
   localparam tcb_par_phy_t PHY = TCB_PAR_PHY_DEF;

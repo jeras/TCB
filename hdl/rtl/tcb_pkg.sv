@@ -47,12 +47,6 @@ package tcb_pkg;
     TCB_LINEAR      = 1'b1   // linear (n)
   } tcb_par_size_t;
 
-  // alignment
-  typedef enum bit {
-    TCB_UNALIGNED = 1'b0,  // unaligned
-    TCB_ALIGNED   = 1'b1   // aligned
-  } tcb_par_align_t;
-
   // byte order
   typedef enum bit {
     TCB_DESCENDING = 1'b0,  // descending order
@@ -80,12 +74,12 @@ package tcb_pkg;
     int unsigned    SLW;  // selection   width (byte width is 8 by default)
     int unsigned    ABW;  // address bus width
     int unsigned    DBW;  // data    bus width
-    // TCB parameters
+    int unsigned    ALW;  // alignment width
+    // protocol
     int unsigned    DLY;  // response delay
-    // mode/alignment/order parameters
+    // mode/size/order parameters
     tcb_par_mode_t  MOD;  // byte/half/word/double/quad position inside data bus vector
     tcb_par_size_t  SIZ;  // transfer size encoding
-    tcb_par_align_t LGN;  // alignment
     tcb_par_order_t ORD;  // byte order
   } tcb_par_phy_t;
 
@@ -95,12 +89,12 @@ package tcb_pkg;
     SLW: 8,
     ABW: 32,
     DBW: 32,
-    // TCB parameters
+    ALW: 2,   // $clog2(DBW/SLW)
+    // protocol
     DLY: 0,
-    // mode/alignment/order parameters
+    // mode/size/order parameters
     MOD: TCB_REFERENCE,
     SIZ: TCB_LOGARITHMIC,
-    LGN: TCB_ALIGNED,
     ORD: TCB_DESCENDING
   };
 

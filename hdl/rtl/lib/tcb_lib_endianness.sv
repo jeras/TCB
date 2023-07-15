@@ -100,14 +100,11 @@ module tcb_lib_endianness
         TCB_MEMORY: begin
 
           // REFERENCE -> MEMORY
-          case (sub.PHY.LGN)
-            TCB_UNALIGNED: begin
+          if (sub.PHY.ALW > 0) begin
+              assign man.req.adr = {sub.req.adr[PHY.ALW-1:0], PHY.ALW'('0)};
+          end else begin
               assign man.req.adr = sub.req.adr;
-            end
-            TCB_ALIGNED  : begin
-              assign man.req.adr = sub.req.adr & sub.ADR_LGN_MSK;
-            end
-          endcase
+          end
           for (genvar i=0; i<man.PHY_BEW; i++) begin
             int siz = 2**sub.req.siz;
             // multiplexer select signal
@@ -150,14 +147,11 @@ module tcb_lib_endianness
         TCB_MEMORY: begin
 
           // MEMORY -> MEMORY
-          case (sub.PHY.LGN)
-            TCB_UNALIGNED: begin
+          if (sub.PHY.ALW > 0) begin
+              assign man.req.adr = {sub.req.adr[PHY.ALW-1:0], PHY.ALW'('0)};
+          end else begin
               assign man.req.adr = sub.req.adr;
-            end
-            TCB_ALIGNED  : begin
-              assign man.req.adr = sub.req.adr & sub.ADR_LGN_MSK;
-            end
-          endcase
+          end
           for (genvar i=0; i<man.PHY_BEW; i++) begin
             if (sub.PHY.ORD == man.PHY.ORD) begin
               // same byte order

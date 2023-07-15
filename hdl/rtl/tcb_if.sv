@@ -41,9 +41,6 @@ interface tcb_if
   // transfer size width selection
   localparam int unsigned PHY_SZW = (PHY.SIZ == TCB_LINEAR) ? PHY_SZW_LIN : PHY_SZW_LOG;
 
-  // address alignment mask
-  localparam logic [PHY.ABW-1:0] ADR_LGN_MSK = {(PHY.ABW-$clog2(PHY_BEW))'('1), ($clog2(PHY_BEW))'('0)};
-
 ////////////////////////////////////////////////////////////////////////////////
 // I/O ports
 ////////////////////////////////////////////////////////////////////////////////
