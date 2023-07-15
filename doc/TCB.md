@@ -21,13 +21,15 @@ used by instruction fetch and load/store unit.
 
 The TCB protocol is designed to fulfill the shared needs of simple CPU/SoC designs and can be used for:
 - CPU instruction fetch interface,
-- CPU load/store interface,
+- CPU/DMA load/store interface,
+- simple cache hierarchies,
 - SoC interconnect (crossbar),
 - SoC peripheral interface.
 
 The design is based on the following principles:
 - Intended for closely coupled memories and caches,
   and therefore based on synchronous/static memory (SRAM) interfaces.
+- Minimize latency and maximize throughput.
 - Support pipelining for both writes and reads to minimize stalling overhead.
   Meaning the handshake is done during the arbitration phase (explained later).
 - Handshake based on the AMBA AXI family of protocols (VALID/READY).
@@ -125,7 +127,7 @@ _configuration_, _control_ and _status_ registers of a peripheral.
 | LSB     | [Least Significant Bit/Byte](https://en.wikipedia.org/wiki/Bit_numbering) |
 | MSB     | [Most Significant Bit/Byte](https://en.wikipedia.org/wiki/Bit_numbering) |
 
-## Naming conventions
+### Naming conventions
 
 Mostly for aesthetic reasons (vertical alignment) all signal and names are
 [three-letter abbreviations (TLA)](https://en.wikipedia.org/wiki/Three-letter_acronym).
@@ -134,10 +136,14 @@ Suffixes specifying the direction of module ports as input/output (`in`/`out`, `
 Instead signals can be organized into sets with a prefix or are grouped into a SystemVerilog interface.
 Set names shall use specifiers like manager/subordinate (`man`/`sub`) or request/response (`req`/`rsp`).
 
-## Protocol base
+## Base protocol
 
 The TCB protocol base is comprised of a valid/ready handshake for the request
 and a parameterized fixed delay (integer number of clock periods) for the response.
+Special considerations should be made for signal values during reset
+and reset release and assertion.
+
+![Manager, subordinate and monitor](tcb_manager_subordinate_monitor.svg)
 
 ### System signals clock and reset
 
@@ -153,7 +159,7 @@ multiple independent system signal sets.
 
 TODO: define power domain functionality.
 
-### Handshake, request and response sets
+### Handshake, request and response signal sets
 
 The manager initiates a request with the handshake signal `vld` (valid).
 Backpressure from the subordinate is supported by the handshake signal `rdy` (ready).
@@ -177,13 +183,13 @@ This signal sets are used to provide transaction type details, addressing and da
 | `rdy`  | `sub` -> `man` | Handshake ready (can be omitted if there is no backpressure). |
 
 While the handshake defines the request transfer,
-the response is is always provided `DLY` clock periods after the handshake transfer.
+the response is always provided `DLY` clock periods after the handshake transfer.
 
 | parameter | type           | description |
 |-----------|----------------|-------------|
 | `DLY`     | `int unsigned` | Response delay. |
 
-### Handshake protocol and signal timing
+### Handshake rules
 
 Handshake signals shall follow the same basic principles as defined for the AMBA AXI family of protocols:
 - `vld` shell be inactive during reset.
@@ -192,7 +198,7 @@ Handshake signals shall follow the same basic principles as defined for the AMBA
 - The manager must not wait for `rdy` to be asserted before starting a new cycle by asserting `vld`.
 - The subordinate can assert/remove the `rdy` signal without restrictions.
 - There is no inherent timeout mechanism.
-- TODO: clarify `rdy` behavior if part of the system is under reset.
+- TODO: clarify `rdy` behavior if only part of the system is under reset.
 
 This means once a request cycle is initiated, it must be completed with a transfer.
 Since `rdy` can be asserted during reset (`rdy` can be a constant value),
@@ -206,9 +212,22 @@ although it would be possible to place such functionality
 into a module placed between a manager and a subordinate.
 The required additional complexity is not discussed in this document.
 
-### Reset sequences
+### Transfer and request/response sequence
 
-#### Reset release and assertion sequence
+The manager shall drive a valid _request signal set_ `req` while the `vld` handshake signal is active.
+The subordinate shell sample the _request signal set_ `req` at the rising clock edge while
+both `vld` and `rdy` handshake signals are active indicating a transfer `trn` (local signal).
+
+When the delay parameter is zero (`DLY=0`),
+the subordinate shall provide the response `rsp` combinationally
+in the same clock period as the transfer `trn` is active.
+When the delay parameter is greater then zero (`DLY>0`),
+the subordinate shall provide the response `rsp` sequentially
+in `DLY` clock periods after the transfer `trn` is active.
+
+![Handshake transfer and request/response](https://svg.wavedrom.com/github/jeras/TCB/main/doc/tcb_handshake.json)
+
+### Reset release and assertion sequences
 
 A global reset can be asserted at any moment,
 as long as it applies to the entire interconnect and all managers/subordinates connected to it.
@@ -250,11 +269,14 @@ While this approach does not affect functionality,
 it affects reproducibility of power consumption tests.
 It might also have some effect on the viability of side channel attacks.
 
-### Handshake sequences
+## Memory mapped access protocol
 
-![Write transfer](https://svg.wavedrom.com/github/jeras/TCB/main/doc/tcb_handshake.json)
+For the protocol to support memories and memory mapped peripherals,
+the request and response signal sets must be further defined
+to contain the read/write control signal, the address, byte enable,
+read/write data busses, and various optional extensions.
 
-#### Signal width parameters
+### Signal width parameters
 
 All TCB interfaces have parameters for defining the address and data signal widths.
 There are few restrictions on the address width,
@@ -262,23 +284,36 @@ sometimes 12-bits, the size of load/store immediate is relevant.
 Since TCB was designed with 32-bit CPU/SoC/peripherals in mind,
 32-bit is the default data width and 4-bit is the default byte enable width.
 
-| parameter | default   | type           | description |
-|-----------|-----------|----------------|-------------|
-| `PHY.ABW` | `32`      | `int unsigned` | Address bus width. |
-| `PHY.DBW` | `32`      | `int unsigned` | Data bus width. |
-| `PHY.SLW` | `8`       | `int unsigned` | Selection width (in most cases it should be 8, the size of a byte). |
-| `PHY_BEW` | `DBW/SLW` | `int unsigned` | Byte enable width is the number of selection width units fitting into the data width. |
+| parameter | default      | type           | description |
+|-----------|--------------|----------------|-------------|
+| `PHY.ABW` | `32`         | `int unsigned` | Address bus width. |
+| `PHY.DBW` | `32`         | `int unsigned` | Data bus width. |
+| `PHY.SLW` | `8`          | `int unsigned` | Selection width (in most cases it should be 8, the size of a byte). |
+| `PHY_BEW` | `DBW/SLW`    | `int unsigned` | Byte enable width is the number of selection width units fitting into the data width. |
+| `PHY_ALW` | `clog2(BEW)` | `int unsigned` | Alignment width, number of least significant address bits which are zero. |
 
 ### Bus signals
 
 Most signals are designed to directly interface with SRAM (synchronous static RAM) ports:
 - address `adr`,
 - write enable `wen` and byte enable `ben`,
-- write data `wdt` and read data `rdt`.
+- write data `wdt` and read data `rdt`,
+- data endianness `ndn`.
 The remaining signals were added to support SoC features:
 - arbitration lock `lck` is used to prevent interference with atomic accesses,
 - repeat access `rpt` is used to reduce power consumption on repeated read accesses to the same address,
 - error response `err` is used to enable clock/power gating support.
+
+| signal    | width | description |
+|-----------|-------|-------------|
+| `req.cmd` |       | Request command protocol extensions. |
+| `req.ndn` | `1`   | Read/write data endianness. |
+| `req.wen` | `1`   | Write enable (can be omitted for read only devices). |
+| `req.adr` | `ABW` | Address. |
+| `req.ben` | `BEW` | Byte enable/select (can be omitted if only full width transfers are allowed). |
+| `req.wdt` | `DBW` | Write data (can be omitted for read only devices). |
+| `rsp.rdt` | `DBW` | Read data. |
+| `rsp.sts` |       | Response status protocol extensions. |
 
 | signal | width | direction      | usage    | description |
 |--------|-------|----------------|----------|-------------|
@@ -400,10 +435,10 @@ It can also be used for read modify write, and similar operations and for QoS co
 
 ### Endianness and data alignment
 
-| `MOD`       | `ORD`        | `LGN`       | `ndn`   | desctiption |
+| `MOD`       | `ORD`        | `ALW`       | `ndn`   | desctiption |
 |-------------|--------------|-------------|---------|-|
-| `REFERENCE` | `DESCENDING` | both        | ignored | Packing used by CPU registers. |
-| `REFERENCE` | `ASCENDING`  | both        | ignored | Not used. |
+| `REFERENCE` | `DESCENDING` | any         | ignored | Packing used by CPU registers. |
+| `REFERENCE` | `ASCENDING`  | any         | ignored | Not used. |
 | `MEMORY`    | `DESCENDING` | `UNALIGNED` | both    | RISC-V memory model with misaligned access support. |
 | `MEMORY`    | `DESCENDING` | `ALIGNED`   | both    | RISC-V memory model with only aligned accesses supported. |
 | `MEMORY`    | `ASCENDING`  | `UNALIGNED` | both    | Not used. |
@@ -479,6 +514,14 @@ is shown in the following chapters.
 Two different implementations
 1. Performs 2 accesses and stitches them together, optionally caches one or more unused parts of previous accesses.
 2. Splits the bus into narrower busses, and increments the address.
+
+### Signal timing
+
+While timing is not strictly part of the protocol,
+following recommendations allows for optimizing the compromise
+between high clock speed and low latency.
+
+https://gf180mcu-pdk.readthedocs.io/en/latest/IPs/SRAM/gf180mcu_fd_ip_sram/cells/gf180mcu_fd_ip_sram__sram512x8m8wm1/gf180mcu_fd_ip_sram__sram512x8m8wm1.html
 
 
 
