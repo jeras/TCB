@@ -116,10 +116,10 @@ package tcb_pkg;
       bit SLW;
       bit ABW;
       bit DBW;
+      bit ALW;
       bit DLY;
       bit MOD;
       bit SIZ;
-      bit LGN;
       bit ORD;
     } status;
 
@@ -127,21 +127,21 @@ package tcb_pkg;
     status.SLW = phy_val.SLW ==? phy_ref.SLW;
     status.ABW = phy_val.ABW ==? phy_ref.ABW;
     status.DBW = phy_val.DBW ==? phy_ref.DBW;
+    status.ALW = phy_val.ALW ==? phy_ref.ALW;
     status.DLY = phy_val.DLY ==? phy_ref.DLY;
     status.MOD = phy_val.MOD ==? phy_ref.MOD;
     status.SIZ = phy_val.SIZ ==? phy_ref.SIZ;
-    status.LGN = phy_val.LGN ==? phy_ref.LGN;
     status.ORD = phy_val.ORD ==? phy_ref.ORD;
 
     // reporting validation status
-    if (status.SLW)  validation_error("parameter mismatch PHY.SLW=%d != PHY.SLW=%d", phy_val.SLW, phy_ref.SLW);
-    if (status.ABW)  validation_error("parameter mismatch PHY.ABW=%d != PHY.ABW=%d", phy_val.ABW, phy_ref.ABW);
-    if (status.DBW)  validation_error("parameter mismatch PHY.DBW=%d != PHY.DBW=%d", phy_val.DBW, phy_ref.DBW);
-    if (status.DLY)  validation_error("parameter mismatch PHY.DLY=%d != PHY.DLY=%d", phy_val.DLY, phy_ref.DLY);
-    if (status.MOD)  validation_error("parameter mismatch PHY.MOD=%d != PHY.MOD=%d", phy_val.MOD, phy_ref.MOD);
-    if (status.SIZ)  validation_error("parameter mismatch PHY.SIZ=%d != PHY.SIZ=%d", phy_val.SIZ, phy_ref.SIZ);
-    if (status.LGN)  validation_error("parameter mismatch PHY.LGN=%d != PHY.LGN=%d", phy_val.LGN, phy_ref.LGN);
-    if (status.ORD)  validation_error("parameter mismatch PHY.ORD=%d != PHY.ORD=%d", phy_val.ORD, phy_ref.ORD);
+    if (status.SLW)  validation_error($sformatf("parameter mismatch PHY.SLW=%d != PHY.SLW=%d", phy_val.SLW, phy_ref.SLW));
+    if (status.ABW)  validation_error($sformatf("parameter mismatch PHY.ABW=%d != PHY.ABW=%d", phy_val.ABW, phy_ref.ABW));
+    if (status.DBW)  validation_error($sformatf("parameter mismatch PHY.DBW=%d != PHY.DBW=%d", phy_val.DBW, phy_ref.DBW));
+    if (status.ALW)  validation_error($sformatf("parameter mismatch PHY.ALW=%d != PHY.ALW=%d", phy_val.ALW, phy_ref.ALW));
+    if (status.DLY)  validation_error($sformatf("parameter mismatch PHY.DLY=%d != PHY.DLY=%d", phy_val.DLY, phy_ref.DLY));
+    if (status.MOD)  validation_error($sformatf("parameter mismatch PHY.MOD=%d != PHY.MOD=%d", phy_val.MOD, phy_ref.MOD));
+    if (status.SIZ)  validation_error($sformatf("parameter mismatch PHY.SIZ=%d != PHY.SIZ=%d", phy_val.SIZ, phy_ref.SIZ));
+    if (status.ORD)  validation_error($sformatf("parameter mismatch PHY.ORD=%d != PHY.ORD=%d", phy_val.ORD, phy_ref.ORD));
 
     // return simple status
     return(|status);

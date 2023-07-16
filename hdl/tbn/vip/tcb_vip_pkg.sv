@@ -355,7 +355,7 @@ package tcb_vip_pkg;
           $error("ERROR: Transaction size is not power of 2.");
         end
         // check if the transfer meets alignment requirements
-        if ((PHY.ALW > 0) && (~|transaction_req.adr[PHY.ALW-1:0])) begin
+        if ((PHY.ALW > 0) && (|transaction_req.adr[PHY.ALW-1:0])) begin
           $error("ERROR: Transaction address is not aligned to supported size.");
         end
         // control and address signals

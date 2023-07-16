@@ -36,9 +36,9 @@ module tcb_gpio_tb
     SLW: TCB_PAR_PHY_DEF.SLW,
     ABW: ABW,
     DBW: DBW,
-    ALN: $clog2(DBW/TCB_PAR_PHY_DEF.SLW),
+    ALW: $clog2(DBW/TCB_PAR_PHY_DEF.SLW),
     // protocol
-    DLY: DLY,
+    DLY: 0,
     // mode/size/order parameters
     MOD: TCB_PAR_PHY_DEF.MOD,
     SIZ: TCB_PAR_PHY_DEF.SIZ,
