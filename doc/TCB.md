@@ -498,7 +498,7 @@ It can also be used for read modify write, and similar operations and for QoS co
 
 ### Endianness and data alignment
 
-| `MOD`       | `ORD`        | `ALW`       | `ndn`   | desctiption |
+| `MOD`       | `ORD`        | `ALW`       | `ndn`   | description |
 |-------------|--------------|-------------|---------|-------------|
 | `REFERENCE` | `DESCENDING` | any         | ignored | Packing used by CPU registers. |
 | `REFERENCE` | `ASCENDING`  | any         | ignored | Not used. |
@@ -578,16 +578,39 @@ Two different implementations
 1. Performs 2 accesses and stitches them together, optionally caches one or more unused parts of previous accesses.
 2. Splits the bus into narrower busses, and increments the address.
 
-### Signal timing
+## Signal timing
 
 While timing is not strictly part of the protocol,
-following recommendations allows for optimizing the compromise
+following recommendations across the entire design
+allows for optimizing the compromise
 between high clock speed and low latency.
 
-https://gf180mcu-pdk.readthedocs.io/en/latest/IPs/SRAM/gf180mcu_fd_ip_sram/cells/gf180mcu_fd_ip_sram__sram512x8m8wm1/gf180mcu_fd_ip_sram__sram512x8m8wm1.html
+It is important to note the recommended timing
+is somehow opposite to what is usually recommended for RTL modules.
+The common recommendation is to place registers at
+module (hierarchical boundary) outputs and optionally at module inputs.
+- [Xilinx recomendations](https://docs.xilinx.com/r/en-US/ug1387-acap-hardware-ip-platform-dev-methodology/Register-Data-Paths-at-Logical-Boundaries),
+- TODO: link more.
 
+For TCB it is recommended to
+**place registers on the request signal path and keep the response path combinational**.
 
+The recommendation is intended to match the timing of SRAM memories common in FPGA and ASIC designs.
+SRAM memories usually have registers on all input signals (TCB request),
+giving inputs a low _setup time_.
+The read data output path is a mixed signal (analog+digital) combinational logic
+with a high _clock to output_ delay.
 
+This are a few SRAM examples:
+- Xilinx 7 Series FPGAs [Memory Resources](https://docs.xilinx.com/v/u/en-US/ug473_7Series_Memory_Resources),
+- GlobalFoundries GF180MCU PDK [SRAM macro](https://gf180mcu-pdk.readthedocs.io/en/latest/IPs/SRAM/gf180mcu_fd_ip_sram/cells/gf180mcu_fd_ip_sram__sram512x8m8wm1/gf180mcu_fd_ip_sram__sram512x8m8wm1.html).
+
+As an example when a TCB peripheral is placed in the same address space as a SRAM block.
+Placing a register at the peripheral request inputs matches the low setup time of SRAM.
+On the peripheral response output combinational logic can add as much clock to output delay
+as specified for SRAM, without affecting overall interconnect timing.
+
+![Request/response signal timing](tcb_request_response_timing.svg)
 
 ## Limitations and undefined features
 
