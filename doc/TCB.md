@@ -159,7 +159,7 @@ multiple independent system signal sets.
 
 TODO: define power domain functionality.
 
-### Handshake, request and response signal sets
+### Handshake amd request/response signal sets
 
 The manager initiates a request with the handshake signal `vld` (valid).
 Backpressure from the subordinate is supported by the handshake signal `rdy` (ready).
@@ -171,16 +171,19 @@ NOTE: The handshake signals intentionally use names from the AMBA AXI family of 
       since the handshake is governed by compatible (equivalent) rules.
       Otherwise the TCB protocol bears no relation to AMBA.
 
+| signal | direction      | description |
+|--------|----------------|-------------|
+| `vld`  | `man` -> `sub` | Handshake valid. |
+| `rdy`  | `sub` -> `man` | Handshake ready (can be omitted if there is no backpressure). |
+
 Signals going from manager to subordinate are part of the request set,
 signals going in the opposite direction are part of the response set.
 This signal sets are used to provide transaction type details, addressing and data.
 
 | signal | direction      | description |
 |--------|----------------|-------------|
-| `vld`  | `man` -> `sub` | Handshake valid. |
 | `req`  | `man` -> `sub` | Request set. |
 | `rsp`  | `sub` -> `man` | Response set. |
-| `rdy`  | `sub` -> `man` | Handshake ready (can be omitted if there is no backpressure). |
 
 While the handshake defines the request transfer,
 the response is always provided `DLY` clock periods after the handshake transfer.
@@ -276,73 +279,133 @@ the request and response signal sets must be further defined
 to contain the read/write control signal, the address, byte enable,
 read/write data busses, and various optional extensions.
 
-### Signal width parameters
+### Parameters
 
-All TCB interfaces have parameters for defining the address and data signal widths.
-There are few restrictions on the address width,
-sometimes 12-bits, the size of load/store immediate is relevant.
+All TCB interfaces are parameterized.
+In addition to the base protocol parameter `DLY` there are parameters for:
+- defining the address/data/... signal widths,
+- defining how data bytes are packed into the data bus.
+
+#### Signal width parameters
+
+| parameter | default          | type           | description |
+|-----------|------------------|----------------|-------------|
+| `PHY.SLW` | `8`              | `int unsigned` | Selection width (in most cases it should be 8, the size of a byte). |
+| `PHY.ABW` | `32`             | `int unsigned` | Address bus width. |
+| `PHY.DBW` | `32`             | `int unsigned` | Data bus width. |
+| `PHY.ALW` | `clog2(DBW/SLW)` | `int unsigned` | Alignment width, number of least significant address bits which are zero. |
+| `PHY_BEW` | `DBW/SLW`        | `int unsigned` | Byte enable width is the number of selection width units fitting into the data width. |
+
+The selection width parameter `SLW` defines the number of bits in a byte,
+for all standard use cases this defaults to 8.
+TODO: research use cases where `SLW` is not the default.
+
+There are few restrictions on the address bus width `ABW`.
+Sometimes the size of the RISC-V load/store immediate (12-bit) is relevant.
+Similarly ARM defines a 12-bit memory management page size.
+
 Since TCB was designed with 32-bit CPU/SoC/peripherals in mind,
-32-bit is the default data width and 4-bit is the default byte enable width.
+32-bit is the default data bus width `DBW` and 4-bit is the default byte enable width `BEW`.
+Byte enable width `BEW` is a calculated local parameter,
+it should not passed across module hierarchy.
 
-| parameter | default      | type           | description |
-|-----------|--------------|----------------|-------------|
-| `PHY.ABW` | `32`         | `int unsigned` | Address bus width. |
-| `PHY.DBW` | `32`         | `int unsigned` | Data bus width. |
-| `PHY.SLW` | `8`          | `int unsigned` | Selection width (in most cases it should be 8, the size of a byte). |
-| `PHY_BEW` | `DBW/SLW`    | `int unsigned` | Byte enable width is the number of selection width units fitting into the data width. |
-| `PHY_ALW` | `clog2(BEW)` | `int unsigned` | Alignment width, number of least significant address bits which are zero. |
+Alignment width `ALW` defines what kind of data alignments are supported.
+The values can be between `0` (no alignment requirements)
+and `clog2(BEW)` (full alignment is required).
+Values in between can be used for custom implementations.
 
-### Bus signals
+#### Data packing parameters
+
+Data packing parameters are listed here without details,
+which are provided further in the document.
+
+| parameter | default           | type              | description |
+|-----------|-------------------|-------------------|-------------|
+| `PHY.SIZ` | `TCB_LOGARITHMIC` | `tcb_par_size_t`  | Transfer size encoding, logarithmic or linear. |
+| `PHY.MOD` | `TCB_REFERENCE`   | `tcb_par_mode_t`  | Byte/half/word/double/quad position inside data bus vector. |
+| `PHY.ORD` | `TCB_DESCENDING`  | `tcb_par_order_t` | Byte order, ascending or descending. |
+
+#### Custom extension signal type parameters
+
+Data types for custom extension signals are listed here without details.
+Further in the document there are definitions for some standard configurations.
+
+| parameter       | description |
+|-----------------|-------------|
+| `tcb_req_cmd_t` | Custom request command signal `cmd` type. |
+| `tcb_rsp_sts_t` | Custom response status signal `sts` type. |
+
+### Signals
 
 Most signals are designed to directly interface with SRAM (synchronous static RAM) ports:
 - address `adr`,
 - write enable `wen` and byte enable `ben`,
-- write data `wdt` and read data `rdt`,
-- data endianness `ndn`.
-The remaining signals were added to support SoC features:
-- arbitration lock `lck` is used to prevent interference with atomic accesses,
-- repeat access `rpt` is used to reduce power consumption on repeated read accesses to the same address,
-- error response `err` is used to enable clock/power gating support.
+- write data `wdt` and read data `rdt`.
 
-| signal    | width | description |
-|-----------|-------|-------------|
-| `req.cmd` |       | Request command protocol extensions. |
-| `req.ndn` | `1`   | Read/write data endianness. |
-| `req.wen` | `1`   | Write enable (can be omitted for read only devices). |
-| `req.adr` | `ABW` | Address. |
-| `req.ben` | `BEW` | Byte enable/select (can be omitted if only full width transfers are allowed). |
-| `req.wdt` | `DBW` | Write data (can be omitted for read only devices). |
-| `rsp.rdt` | `DBW` | Read data. |
-| `rsp.sts` |       | Response status protocol extensions. |
+| signal    | width  | description |
+|-----------|--------|-------------|
+| `req.cmd` | custom | Custom request command protocol extensions. |
+| `req.ndn` | `1`    | Read/write data endianness. |
+| `req.wen` | `1`    | Write enable (can be omitted for read only devices). |
+| `req.adr` | `ABW`  | Address. |
+| `req.ben` | `BEW`  | Byte enable/select (can be omitted if only full width transfers are allowed). |
+| `req.wdt` | `DBW`  | Write data (can be omitted for read only devices). |
+| `rsp.rdt` | `DBW`  | Read data. |
+| `rsp.sts` | custom | Custom response status protocol extensions, provides error responses... |
 
-| signal | width | direction      | usage    | description |
-|--------|-------|----------------|----------|-------------|
-| `rpt`  | `1`   | `man` -> `sub` | optional | Repeat access. |
-| `lck`  | `1`   | `man` -> `sub` | optional | Arbitration lock. |
-| `wen`  | `1`   | `man` -> `sub` | optional | Write enable (can be omitted for read only devices). |
-| `adr`  | `ABW` | `man` -> `sub` | required | Address. |
-| `ben`  | `BEW` | `man` -> `sub` | optional | Byte enable/select (can be omitted if only full width transfers are allowed). |
-| `wdt`  | `DBW` | `man` -> `sub` | optional | Write data (can be omitted for read only devices). |
-| `rdt`  | `DBW` | `sub` -> `man` | required | Read data. |
-| `err`  | `1`   | `sub` -> `man` | optional | Error response (can be omitted if there are no error conditions). |
+While data endianness `ndn` is not a SRAM interface signal,
+it is a dynamic property of each data transfer
+and therefore a standard signal and not a parameter.
 
-ROM would be an example of a device with only the required ports.
-If less then the required signals are needed,
-other protocols (AXI-Stream, FIFO, ...) might be more appropriate.
+#### Optional signal subsets and defaults
+
+Custom implementations can use a subset of the full signal list.
+Some rules are provided for handling the missing signals.
+
+ROM would be an example of a device which only requires the read data bus.
+When constructing subsets, please consider other protocols (AXI-Stream, ...) which might be more appropriate.
 
 To connect a managers and a subordinates with a differing set of optional signals,
-an adapter is needed which would provide a default for outputs
-and a handler for inputs, which can either ignore the signal or cause an error condition.
-Default output values can always be ignored by a handler, or simply no handler is needed.
+an adapter is needed which would provide:
+- a default for outputs and
+- a handler for inputs.
+The output default shall be chosen to match the protocol subset.
+(`wen=1'b0` and `wdt=DBW'bx` for ROM).
+The input handler can either ignore the signal or cause an error condition.
+Default output values can always be ignored by an input handler, or simply no handler is needed.
 
-| signal | default | handler |
-|--------|---------|---------|
-| `lck`  |  `1'b0` | If another manager can access the same segment, respond with error, otherwise ignore. |
-| `rpt`  |  `1'b0` | Subordinates can ignore it. |
-| `wen`  |  `1'b0` | Respond with error on write access to subordinate without write support. |
-| `ben`  | `BW'b1` | Access with less than the full width shall trigger an error. |
-| `wdt`  | `DW'bx` | Can be ignored, `wen` requires handling. |
-| `err`  |  `1'b0` | Can be ignored, if no error conditions are possible, otherwise requires and external handler (watchdog, ...). |
+The following table defines some defaults and handlers.
+
+| usecase      | signal    | default  | handler |
+|--------------|-----------|----------|---------|
+| ROM          | `req.wen` |   `1'b0` | Respond with error on write access to subordinate without write support. |
+| ROM          | `req.wdt` | `DBW'bx` | Can be ignored, `wen` requires handling. |
+| peripheral   | `req.ben` | `BEW'b1` | Access with less than the full width shall trigger an error. |
+| interconnect | `rsp.sts` |    `'b0` | Can be ignored, if no error conditions are possible, otherwise requires and external handler (watchdog, ...). |
+
+#### Standard and custom protocol extension signals
+
+| signal        | width | description |
+|---------------|-------|-------------|
+| `req.cmd.lck` | `1`   | Arbitration lock. |
+| `req.cmd.rpt` | `1`   | Repeat access. |
+| `req.cmd.inc` | `1`   | Incrementing address access. |
+
+| signal        | width | usage    | description |
+|---------------|-------|----------|-------------|
+| `rsp.sts.err` | `1`   | optional | Error response (can be omitted if there are no error conditions). |
+
+The remaining signals were added to support SoC features:
+- arbitration lock `lck` is used to implement interference with atomic accesses,
+- repeat access `rpt` is used to reduce power consumption on repeated read accesses to the same address,
+- incrementing address access `inc` is used to tell prefetch mechanisms whether the address is the expected one,
+- error response `err` is used to enable clock/power gating support.
+
+| signal        | default  | handler |
+|---------------|----------|---------|
+| `req.cmd.lck` |   `1'b0` | If another manager can access the same segment, respond with error, otherwise ignore. |
+| `req.cmd.rpt` |   `1'b0` | Subordinates can ignore it. |
+| `req.cmd.inc` |   `1'b0` | Subordinates can ignore it. |
 
 Various implementations can add custom (user defined) signals to either the request or response,
 some examples of custom signals would be:
@@ -436,7 +499,7 @@ It can also be used for read modify write, and similar operations and for QoS co
 ### Endianness and data alignment
 
 | `MOD`       | `ORD`        | `ALW`       | `ndn`   | desctiption |
-|-------------|--------------|-------------|---------|-|
+|-------------|--------------|-------------|---------|-------------|
 | `REFERENCE` | `DESCENDING` | any         | ignored | Packing used by CPU registers. |
 | `REFERENCE` | `ASCENDING`  | any         | ignored | Not used. |
 | `MEMORY`    | `DESCENDING` | `UNALIGNED` | both    | RISC-V memory model with misaligned access support. |
