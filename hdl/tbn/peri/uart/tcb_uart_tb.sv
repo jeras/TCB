@@ -32,16 +32,16 @@ module tcb_uart_tb
 
   // physical interface parameter
   localparam tcb_par_phy_t PHY1 = '{
+    // protocol
+    DLY: 0,
     // signal bus widths
     SLW: TCB_PAR_PHY_DEF.SLW,
     ABW: ABW,
     DBW: DBW,
     ALW: $clog2(DBW/TCB_PAR_PHY_DEF.SLW),
-    // protocol
-    DLY: 0,
-    // mode/size/order parameters
-    MOD: TCB_PAR_PHY_DEF.MOD,
+    // size/mode/order parameters
     SIZ: TCB_PAR_PHY_DEF.SIZ,
+    MOD: TCB_PAR_PHY_DEF.MOD,
     ORD: TCB_PAR_PHY_DEF.ORD
   };
 
