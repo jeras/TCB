@@ -229,14 +229,14 @@ When the delay parameter is greater then zero (`DLY>0`),
 the subordinate shall provide the response `rsp` sequentially
 in `DLY` clock periods after the transfer `trn` is active.
 
-![Handshake transfer and request/response](https://svg.wavedrom.com/github/jeras/TCB/main/doc/tcb_handshake.json)
+![Handshake transfer and request/response](tcb_handshake.svg)
 
 ### Reset release and assertion sequences
 
-A global reset can be asserted at any moment,
+A global system reset `rst` can be asserted at any moment,
 as long as it applies to the entire interconnect and all managers/subordinates connected to it.
 
-A correct reset assertion sequence for just part of the system
+TODO: A correct reset assertion sequence for just part of the system
 separated into multiple clock/reset/power domains
 is explained separately in the reference interconnect library documentation.
 
@@ -253,7 +253,7 @@ In this case the `vld` signal depends on a register toggling after reset is rele
 and this can only happen with the described timing.
 The same explanation stands for `rdy` if it is not a constant value.
 
-![Reset sequence](https://svg.wavedrom.com/github/jeras/TCB/main/doc/tcb_reset.json)
+![Reset sequence](tcb_reset.svg)
 
 #### Reset sequence length
 
@@ -447,7 +447,7 @@ similar to a single direction data stream
 The base protocol does not have a mechanism for confirming
 write transfers reached their destination and were successfully applied.
 
-![Write transfer](https://svg.wavedrom.com/github/jeras/TCB/main/doc/tcb_write.json)
+![Write transfer](tcb_write.svg)
 
 ##### Write data byte enable
 
@@ -465,7 +465,7 @@ Read data is available on `rdt` after a fixed delay of 1 clock cycle from the tr
 TCB specifies the use of byte enable signals `ben` to
 enable or disable read from each byte.
 
-![Read transfer](https://svg.wavedrom.com/github/jeras/TCB/main/doc/tcb_read.json)
+![Read transfer](tcb_read.svg)
 
 ##### Read data byte enable
 
