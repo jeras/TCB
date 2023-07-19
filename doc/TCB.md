@@ -11,6 +11,7 @@ and at the same time the full memory interface throughput must be achievable.
 This are few alternative naming for tightly coupled memories:
 - Tightly Coupled Memory (TCM) used by [ARM](https://www.kernel.org/doc/Documentation/arm/tcm.txt),
   [Codasip](https://codasip.com/), and [Syntacore](https://syntacore.com/),
+- [Closely Coupled Memory (CCM)](https://github.com/chipsalliance/Cores-VeeR-EL2/blob/main/docs/RISC-V_VeeR_EL2_PRM.pdf) used by [CHIPS Alliance](https://www.chipsalliance.org/)
 - Tightly Integrated Memory (TIM) used by [SiFive](https://www.sifive.com/),
 - Local Memory (LM) used by [Andes](http://www.andestech.com/en/risc-v-andes/)
 
