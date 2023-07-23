@@ -318,13 +318,13 @@ Values in between can be used for custom implementations.
 #### Data packing parameters
 
 Data packing parameters are listed here without details,
-which are provided further in the document.
+which are provided further in the [data packing section]() of the document.
 
-| parameter | default           | type              | description |
-|-----------|-------------------|-------------------|-------------|
-| `PHY.SIZ` | `TCB_LOGARITHMIC` | `tcb_par_size_t`  | Transfer size encoding, logarithmic or linear. |
-| `PHY.MOD` | `TCB_REFERENCE`   | `tcb_par_mode_t`  | Byte/half/word/double/quad position inside data bus vector. |
-| `PHY.ORD` | `TCB_DESCENDING`  | `tcb_par_order_t` | Byte order, ascending or descending. |
+| parameter | default           | type (enumeration) | description |
+|-----------|-------------------|--------------------|-------------|
+| `PHY.SIZ` | `TCB_LOGARITHMIC` | `tcb_par_size_t`   | Transfer size encoding, logarithmic or linear. |
+| `PHY.MOD` | `TCB_REFERENCE`   | `tcb_par_mode_t`   | Byte/half/word/double/quad position inside data bus vector. |
+| `PHY.ORD` | `TCB_DESCENDING`  | `tcb_par_order_t`  | Byte order, ascending or descending. |
 
 #### Custom extension signal type parameters
 
@@ -343,6 +343,18 @@ Most signals are designed to directly interface with ASIC/FPGA SRAM memories:
 - write enable `wen` and byte enable `ben`,
 - write data `wdt` and read data `rdt`.
 
+| signal    | width  | description |
+|-----------|--------|-------------|
+| `req.cmd` | custom | Custom request command protocol extensions. |
+| `req.ndn` | `1`    | Read/write data endianness. |
+| `req.wen` | `1`    | Write enable (can be omitted for read only devices). |
+| `req.adr` | `ABW`  | Address. |
+| `req.siz` | `SIZ`* | Transfer size. |
+| `req.ben` | `BEW`  | Byte enable/select. |
+| `req.wdt` | `DBW`  | Write data (can be omitted for read only devices). |
+| `rsp.rdt` | `DBW`  | Read data. |
+| `rsp.sts` | custom | Custom response status protocol extensions. |
+
 Since bi-endianness support is an important part of the TCB protocol,
 the endianness selection signal `ndn` is listed prominently.
 It is a dynamic property of each data transfer
@@ -352,16 +364,11 @@ The custom protocol extension signals, request command `cmd` and response status
 do not directly affect the content of the data transfer.
 They are described in the next section.
 
-| signal    | width  | description |
-|-----------|--------|-------------|
-| `req.cmd` | custom | Custom request command protocol extensions. |
-| `req.ndn` | `1`    | Read/write data endianness. |
-| `req.wen` | `1`    | Write enable (can be omitted for read only devices). |
-| `req.adr` | `ABW`  | Address. |
-| `req.ben` | `BEW`  | Byte enable/select. |
-| `req.wdt` | `DBW`  | Write data (can be omitted for read only devices). |
-| `rsp.rdt` | `DBW`  | Read data. |
-| `rsp.sts` | custom | Custom response status protocol extensions. |
+The transfer size signal `siz` is an alternative signal to byte enable `ben`.
+The choice between the two alternatives is described in the [data packing section]().
+
+(*) How exactly the width of the `siz` signal depends on the `SIZ` parameter
+    is described in the [data packing section]().
 
 #### Custom protocol extension signals
 
@@ -441,7 +448,71 @@ The custom request command also has sensible defaults.
 
 ### Data packing
 
-Endianness and data alignment
+A combination of parameters and runtime signals defines how
+bytes (smallest data units) are organized inside the read/write data bus,
+and across transfers for multi transfer transactions.
+
+#### Parameter details
+
+The parameters were shortly listed in a previous section,
+this section provides details.
+
+| parameter | default           | type (enumeration) | description |
+|-----------|-------------------|--------------------|-------------|
+| `PHY.ALW` | `clog2(DBW/SLW)`  | `int unsigned`     | Alignment width, number of least significant address bits which are zero. |
+| `PHY.SIZ` | `TCB_LOGARITHMIC` | `tcb_par_size_t`   | Transfer size encoding, logarithmic or linear. |
+| `PHY.MOD` | `TCB_REFERENCE`   | `tcb_par_mode_t`   | Byte/half/word/double/quad position inside data bus vector. |
+| `PHY.ORD` | `TCB_DESCENDING`  | `tcb_par_order_t`  | Byte order, ascending or descending. |
+
+##### Transfer size encoding
+
+The `SIZ` parameter encoding defines the following options.
+- `TCB_LOGARITHMIC`,
+- `TCB_LINEAR`.
+The parameter defines the encoding of the transfer size signal `siz`,
+and it defines restrictions on the valid encodings of the byte enable signal `ben`.
+
+The default and backward compatible option is `TCB_LOGARITHMIC`.
+With this option, the transfer size is limited to a power of two of bytes.
+
+The translation between the transfer size signal `siz` and
+the number of bytes being transferred is `number = 2**siz`.
+
+| `siz` | num. | size   | description |
+|-------|------|--------|-------------|
+| `'d0` |    1 | byte   |   8-bit wide data. |
+| `'d1` |    2 | half   |  16-bit wide data. |
+| `'d2` |    4 | word   |  32-bit wide data. |
+| `'d3` |    8 | double |  64-bit wide data. |
+| `'d4` |   16 | long   | 128-bit wide data. |
+
+TODO: this is wrong.
+The width of the transfer size signal `siz` in the logarithmic case is
+`clog2(DBW/SLW) == clog2(BEW)`.
+
+NOTE: The linear option is an experimental proposal and
+is not yet compatible with any other standard or implementation.
+
+A more generic option `TCB_LINEAR` allows for any number of bytes
+up to the data bus width to be transferred.
+In this case the number of transferred bytes is `number = siz+1`.
+
+The width of the transfer size signal `siz` in the linear case is
+`clog2(DBW/SLW) == clog2(BEW)`.
+
+The byte enable signal `ben` is restricted in both the logarithmic and linear cases to
+only number long sequences of adjacent active bits (representing data bytes),
+with all other bits inactive.
+The same restriction for the number applies as for the transfer size signal `siz`.
+
+How active bytes are aligned inside the entire data bus is further defined by
+other parameters `ALW`/`MOD`/`ORD`, the address `adr` and the endianness signal `ndn`.
+
+##### Byte/half/word/double/quad position inside data bus vector
+
+
+
+##### Endianness and data alignment
 
 | `MOD`       | `ORD`        | `ALW`       | `ndn`   | description |
 |-------------|--------------|-------------|---------|-------------|
