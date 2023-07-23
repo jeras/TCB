@@ -338,10 +338,19 @@ Further in the document there are definitions for some standard configurations.
 
 ### Signals
 
-Most signals are designed to directly interface with SRAM (synchronous static RAM) ports:
+Most signals are designed to directly interface with ASIC/FPGA SRAM memories:
 - address `adr`,
 - write enable `wen` and byte enable `ben`,
 - write data `wdt` and read data `rdt`.
+
+Since bi-endianness support is an important part of the TCB protocol,
+the endianness selection signal `ndn` is listed prominently.
+It is a dynamic property of each data transfer
+and therefore a signal and not a parameter.
+
+The custom protocol extension signals, request command `cmd` and response status `sts`,
+do not directly affect the content of the data transfer.
+They are described in the next section.
 
 | signal    | width  | description |
 |-----------|--------|-------------|
@@ -349,14 +358,50 @@ Most signals are designed to directly interface with SRAM (synchronous static RA
 | `req.ndn` | `1`    | Read/write data endianness. |
 | `req.wen` | `1`    | Write enable (can be omitted for read only devices). |
 | `req.adr` | `ABW`  | Address. |
-| `req.ben` | `BEW`  | Byte enable/select (can be omitted if only full width transfers are allowed). |
+| `req.ben` | `BEW`  | Byte enable/select. |
 | `req.wdt` | `DBW`  | Write data (can be omitted for read only devices). |
 | `rsp.rdt` | `DBW`  | Read data. |
-| `rsp.sts` | custom | Custom response status protocol extensions, provides error responses... |
+| `rsp.sts` | custom | Custom response status protocol extensions. |
 
-While data endianness `ndn` is not a SRAM interface signal,
-it is a dynamic property of each data transfer
-and therefore a standard signal and not a parameter.
+#### Custom protocol extension signals
+
+TODO: Custom protocol extension signals are still in the draft stage.
+
+The request command signals `cmd` are used to:
+- extend the protocol into multi transfer transactions and
+- to provide performance (latency, power, ...) optimizations.
+
+| signal        | width | description |
+|---------------|-------|-------------|
+| `req.cmd.lck` | `1`   | Arbitration lock. |
+| `req.cmd.rpt` | `1`   | Repeat address access. |
+| `req.cmd.inc` | `1`   | Incrementing address access. |
+
+The arbitration lock `lck` is used to implement atomic accesses:
+- split transaction misaligned access,
+- transactions larger than data bus/transfer size,
+- uninterruptible burst transactions,
+- ...
+
+The repeat address access `rpt` is used to reduce power consumption on repeated read accesses to the same address.
+The incrementing address access `inc` is used to tell prefetch mechanisms whether the address is the expected one.
+
+The response status error signal `err` is used for handling error conditions:
+- access to inactive subsystem with clock/power gating support,
+- address decoder errors while accessing undefined regions,
+- unsupported transfer size/alignment.
+
+| signal        | width | usage    | description |
+|---------------|-------|----------|-------------|
+| `rsp.sts.err` | `1`   | optional | Error response (can be omitted if there are no error conditions). |
+
+Various implementations can add custom (user defined) signals to either the request or response,
+some examples of custom signals would be:
+- cache related signals,
+- burst support,
+- quality of service signals,
+- multiple types of error responses,
+- ...
 
 #### Optional signal subsets and defaults
 
@@ -364,7 +409,8 @@ Custom implementations can use a subset of the full signal list.
 Some rules are provided for handling the missing signals.
 
 ROM would be an example of a device which only requires the read data bus.
-When constructing subsets, please consider other protocols (AXI-Stream, ...) which might be more appropriate.
+When constructing subsets, please consider other protocols (AXI-Stream, ...)
+which might be more appropriate.
 
 To connect a managers and a subordinates with a differing set of optional signals,
 an adapter is needed which would provide:
@@ -379,28 +425,13 @@ The following table defines some defaults and handlers.
 
 | usecase      | signal    | default  | handler |
 |--------------|-----------|----------|---------|
+| interconnect | `req.cmd` |    `'b0` | Subordinates can ignore it. |
 | ROM          | `req.wen` |   `1'b0` | Respond with error on write access to subordinate without write support. |
 | ROM          | `req.wdt` | `DBW'bx` | Can be ignored, `wen` requires handling. |
 | peripheral   | `req.ben` | `BEW'b1` | Access with less than the full width shall trigger an error. |
 | interconnect | `rsp.sts` |    `'b0` | Can be ignored, if no error conditions are possible, otherwise requires and external handler (watchdog, ...). |
 
-#### Standard and custom protocol extension signals
-
-| signal        | width | description |
-|---------------|-------|-------------|
-| `req.cmd.lck` | `1`   | Arbitration lock. |
-| `req.cmd.rpt` | `1`   | Repeat access. |
-| `req.cmd.inc` | `1`   | Incrementing address access. |
-
-| signal        | width | usage    | description |
-|---------------|-------|----------|-------------|
-| `rsp.sts.err` | `1`   | optional | Error response (can be omitted if there are no error conditions). |
-
-The remaining signals were added to support SoC features:
-- arbitration lock `lck` is used to implement interference with atomic accesses,
-- repeat access `rpt` is used to reduce power consumption on repeated read accesses to the same address,
-- incrementing address access `inc` is used to tell prefetch mechanisms whether the address is the expected one,
-- error response `err` is used to enable clock/power gating support.
+The custom request command also has sensible defaults.
 
 | signal        | default  | handler |
 |---------------|----------|---------|
@@ -408,96 +439,9 @@ The remaining signals were added to support SoC features:
 | `req.cmd.rpt` |   `1'b0` | Subordinates can ignore it. |
 | `req.cmd.inc` |   `1'b0` | Subordinates can ignore it. |
 
-Various implementations can add custom (user defined) signals to either the request or response,
-some examples of custom signals would be:
-- cache related signals,
-- burst support,
-- quality of service signals,
-- multiple types of error responses,
-- ...
+### Data packing
 
-### Access cycles
-
-Read/write transfer cycles are shown with common response delays (parameter `DLY`) of 0, 1 and 2 clock periods.
-- `DLY=0` is the case with a combinational response to a request.
-  This can be used in case multiple simple subordinates are combined into an interconnect segment.
-  Such a segment can then be combined with a TCB register `tcb_reg`
-  to break long timing paths at either the request path, response path or both to improve timing.
-  Such collections can be used to achieve better area timing compromises,
-  compared to using subordinates with integrated registers.
-- `DLY=1` is the most common delay for subordinates with SRAM as an example, this is also the **HDL default**.
-- `DLY=2` is the case where a single subordinate or a segment of the interconnect with `DLY=1`
-  would have an extra register added to the request path (address decoder)
-  or response path (read data multiplexer) to improve timing.
-
-#### Write transfer
-
-A write transfer is performed when both handshake signals `vld` and `rdy` are simultaneously active
-and the write enable signal `wen` is also active.
-
-Only bytes with an active corresponding byte enable bit in `ben` are written.
-The other bytes can be optimized to unchanged value, zeros or just undefined,
-depending what brings the preferred optimization for area timing, power consumption, ...
-The same optimization principle can be applied to all signals when valid is not active.
-
-There are no special pipelining considerations for write transfers,
-all signals shall be propagated through a pipeline,
-similar to a single direction data stream
-
-The base protocol does not have a mechanism for confirming
-write transfers reached their destination and were successfully applied.
-
-![Write transfer](tcb_write.svg)
-
-##### Write data byte enable
-
-#### Read transfer
-
-A read transfer is performed when both handshake signals `vld` and `rdy` are simultaneously active
-and the write enable signal `wen` is not active.
-
-The handshake is done during the arbitration phase, it is primarily
-about whether the address `adr` from the manager can reach the subordinate.
-
-Read data is available on `rdt` after a fixed delay of 1 clock cycle from the transfer.
-
-**NOTE**: in contrast to most interconnect standards,
-TCB specifies the use of byte enable signals `ben` to
-enable or disable read from each byte.
-
-![Read transfer](tcb_read.svg)
-
-##### Read data byte enable
-
-##### Repeat access transfer
-
-TODO: think this through.
-
-The basic idea behind the repeat access transfer
-is to avoid repeated reads from the same SRAM address.
-During a pipeline stall the CPU instruction fetch interface
-must remember the instruction by keeping it in a fetch register.
-A fetch register affects area and timing (admittedly not very much).
-
-The fetch register can be avoided by repeating the instruction read from the SRAM.
-This redundant read can be avoided by taking advantage of SRAM functionality,
-where the last data read remains available on the read data port
-till the next read or a power cycle.
-
-The repeat access signal `rpt` is intended to tell the SRAM
-to not perform another read from the same address.
-The interconnect would propagate the `rpt` as active only in case
-
-#### Arbitration locking mechanism
-
-Arbitration locking is used in the TCB reference implementation library to:
-- Keep atomicity in data bus width conversion from a wider manager to a narrower subordinate.
-  For example an atomic 64-bit read/write access over a 32-bit interconnect.
-- Keep atomicity while converting a misaligned access into multiple aligned accesses.
-
-It can also be used for read modify write, and similar operations and for QoS control.
-
-### Endianness and data alignment
+Endianness and data alignment
 
 | `MOD`       | `ORD`        | `ALW`       | `ndn`   | description |
 |-------------|--------------|-------------|---------|-------------|
@@ -578,6 +522,83 @@ is shown in the following chapters.
 Two different implementations
 1. Performs 2 accesses and stitches them together, optionally caches one or more unused parts of previous accesses.
 2. Splits the bus into narrower busses, and increments the address.
+
+### Access cycles
+
+Read/write transfer cycles are shown with common response delays (parameter `DLY`) of 0, 1 and 2 clock periods.
+- `DLY=0` is the case with a combinational response to a request.
+  This can be used in case multiple simple subordinates are combined into an interconnect segment.
+  Such a segment can then be combined with a TCB register slice `tcb_register_slice`
+  to break long timing paths at either the request path, response path or both to improve timing.
+  Such collections can be used to achieve better area timing compromises,
+  compared to using subordinates with integrated registers.
+- `DLY=1` is the most common delay for subordinates with SRAM as an example, this is also the **HDL default**.
+- `DLY=2` is the case where a single subordinate or a segment of the interconnect with `DLY=1`
+  would have an extra register added to the request path (address decoder)
+  or response path (read data multiplexer) to improve timing.
+
+#### Write transfer
+
+A write transfer is performed when both handshake signals `vld` and `rdy` are simultaneously active
+and the write enable signal `wen` is also active.
+
+Only bytes with an active corresponding byte enable bit in `ben` are written.
+The other bytes can be optimized to unchanged value, zeros or just undefined,
+depending what brings the preferred optimization for area timing, power consumption, ...
+The same optimization principle can be applied to all signals when valid is not active.
+
+There are no special pipelining considerations for write transfers,
+all signals shall be propagated through a pipeline,
+similar to a single direction data stream
+
+The base protocol does not have a mechanism for confirming
+write transfers reached their destination and were successfully applied.
+
+![Write transfer](tcb_write.svg)
+
+#### Read transfer
+
+A read transfer is performed when both handshake signals `vld` and `rdy` are simultaneously active
+and the write enable signal `wen` is not active.
+
+The handshake is done during the arbitration phase, it is primarily
+about whether the address `adr` from the manager can reach the subordinate.
+
+Read data is available on `rdt` after a fixed delay of 1 clock cycle from the transfer.
+
+**NOTE**: in contrast to most interconnect standards,
+TCB specifies the use of byte enable signals `ben` to
+enable or disable read from each byte.
+
+![Read transfer](tcb_read.svg)
+
+##### Repeat access transfer
+
+TODO: think this through.
+
+The basic idea behind the repeat access transfer
+is to avoid repeated reads from the same SRAM address.
+During a pipeline stall the CPU instruction fetch interface
+must remember the instruction by keeping it in a fetch register.
+A fetch register affects area and timing (admittedly not very much).
+
+The fetch register can be avoided by repeating the instruction read from the SRAM.
+This redundant read can be avoided by taking advantage of SRAM functionality,
+where the last data read remains available on the read data port
+till the next read or a power cycle.
+
+The repeat access signal `rpt` is intended to tell the SRAM
+to not perform another read from the same address.
+The interconnect would propagate the `rpt` as active only in case
+
+#### Arbitration locking mechanism
+
+Arbitration locking is used in the TCB reference implementation library to:
+- Keep atomicity in data bus width conversion from a wider manager to a narrower subordinate.
+  For example an atomic 64-bit read/write access over a 32-bit interconnect.
+- Keep atomicity while converting a misaligned access into multiple aligned accesses.
+
+It can also be used for read modify write, and similar operations and for QoS control.
 
 ## Signal timing
 
