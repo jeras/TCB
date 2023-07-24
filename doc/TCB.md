@@ -529,9 +529,27 @@ other parameters `ALW`/`MOD`/`ORD`, the address `adr` and the endianness signal 
 ##### Data position mode
 
 The `MOD` parameter encoding defines the following options.
-- `REFERENCE`,
-- `MEMORY`.
+- `MEMORY`,
+- `REFERENCE`.
 
+The `MEMORY` mode defines the same data packing scheme as memories.
+
+The `REFERENCE` mode is based on how ISAs define the placement of
+byte/half/word/double into its general purpose registers.
+In registers data of any size is always stored aligned to the right.
+The purpose of the reference mode is to create a bus
+for connecting peripherals to a CPU or DMA,
+without the need for byte reordering logic between the two.
+In reference mode data is always aligned to the right,
+regardless of the address, address alignment, endianness, ...
+
+The main purpose of this mode is to connect peripherals to the CPU.
+
+Another use case would be a RISV-V instruction fetch interface with C extension support,
+where the instruction is always aligned the same way, regardless on whether
+the instruction is 32-bit or 16-bit aligned in the memory.
+In this case a multiplexer for aligning the instruction would still be needed,
+but it would be placed in the interconnect instead of the CPU.
 
 ##### Byte order
 
