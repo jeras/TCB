@@ -294,7 +294,6 @@ In addition to the base protocol parameter `DLY` there are parameters for:
 | `PHY.SLW` | `8`              | `int unsigned` | Selection width (in most cases it should be 8, the size of a byte). |
 | `PHY.ABW` | `32`             | `int unsigned` | Address bus width. |
 | `PHY.DBW` | `32`             | `int unsigned` | Data bus width. |
-| `PHY.ALW` | `clog2(DBW/SLW)` | `int unsigned` | Alignment width, number of least significant address bits which are zero. |
 | `PHY_BEW` | `DBW/SLW`        | `int unsigned` | Byte enable width is the number of selection width units fitting into the data width. |
 
 The selection width parameter `SLW` defines the number of bits in a byte,
@@ -310,21 +309,10 @@ Since TCB was designed with 32-bit CPU/SoC/peripherals in mind,
 Byte enable width `BEW` is a calculated local parameter,
 it should not passed across module hierarchy.
 
-Alignment width `ALW` defines what kind of data alignments are supported.
-The values can be between `0` (no alignment requirements)
-and `clog2(BEW)` (full alignment is required).
-Values in between can be used for custom implementations.
-
 #### Data packing parameters
 
-Data packing parameters are listed here without details,
-which are provided further in the [data packing section]() of the document.
-
-| parameter | default           | type (enumeration) | description |
-|-----------|-------------------|--------------------|-------------|
-| `PHY.SIZ` | `TCB_LOGARITHMIC` | `tcb_par_size_t`   | Transfer size encoding, logarithmic or linear. |
-| `PHY.MOD` | `TCB_REFERENCE`   | `tcb_par_mode_t`   | Byte/half/word/double/quad position inside data bus vector. |
-| `PHY.ORD` | `TCB_DESCENDING`  | `tcb_par_order_t`  | Byte order, ascending or descending. |
+Data packing parameters are listed and described
+in the [data packing section]() of the document.
 
 #### Custom extension signal type parameters
 
@@ -452,31 +440,62 @@ A combination of parameters and runtime signals defines how
 bytes (smallest data units) are organized inside the read/write data bus,
 and across transfers for multi transfer transactions.
 
-#### Parameter details
+To a degree data packing rules are a generalization of endianness rules.
 
-The parameters were shortly listed in a previous section,
-this section provides details.
+This section will first document the parameters
+and then provide examples of packing with some parameter configurations.
+
+#### Data packing parameters
+
+The following parameters affect data packing.
 
 | parameter | default           | type (enumeration) | description |
 |-----------|-------------------|--------------------|-------------|
 | `PHY.ALW` | `clog2(DBW/SLW)`  | `int unsigned`     | Alignment width, number of least significant address bits which are zero. |
 | `PHY.SIZ` | `TCB_LOGARITHMIC` | `tcb_par_size_t`   | Transfer size encoding, logarithmic or linear. |
-| `PHY.MOD` | `TCB_REFERENCE`   | `tcb_par_mode_t`   | Byte/half/word/double/quad position inside data bus vector. |
+| `PHY.MOD` | `TCB_REFERENCE`   | `tcb_par_mode_t`   | Data position mode. |
 | `PHY.ORD` | `TCB_DESCENDING`  | `tcb_par_order_t`  | Byte order, ascending or descending. |
+
+Only a subset of 4 configurations from all parameter combinations
+results in practical and useful data packing rule.
+The rest are reserved with no intention to be documented and implemented.
+
+| `MOD`       | `ORD`        | `ALW`        | `ndn`   | description |
+|-------------|--------------|--------------|---------|-------------|
+| `REFERENCE` | `DESCENDING` | any          | ignored | Packing used by CPU registers. |
+| `REFERENCE` | `ASCENDING`  | any          | ignored | Reserved, not used. |
+| `MEMORY`    | `DESCENDING` | 0            | both    | RISC-V memory model with misaligned access support. |
+| `MEMORY`    | `DESCENDING` | `clog2(BEW)` | both    | RISC-V memory model with only aligned accesses supported. |
+| `MEMORY`    | `ASCENDING`  | 0            | both    | Reserved, not used. |
+| `MEMORY`    | `ASCENDING`  | `clog2(BEW)` | both    | OpenPOWER storage operands. |
+
+The reference mode is a new concept added to TCB.
+
+For contemporary useful configurations the RISC-V ISA is used as a reference.
+
+The OpenPOWER specific configuration is included for historic compatibility, and completeness.
+
+##### Alignment width
+
+Alignment width `ALW` defines what kind of data alignments are supported.
+The values can be between `0` (no alignment requirements)
+and `clog2(BEW)` (full alignment is required).
+Only this two values are documented,
+other values in between can be used for custom implementations.
 
 ##### Transfer size encoding
 
 The `SIZ` parameter encoding defines the following options.
-- `TCB_LOGARITHMIC`,
-- `TCB_LINEAR`.
+- `LOGARITHMIC`,
+- `LINEAR`.
 The parameter defines the encoding of the transfer size signal `siz`,
 and it defines restrictions on the valid encodings of the byte enable signal `ben`.
 
-The default and backward compatible option is `TCB_LOGARITHMIC`.
+The default and backward compatible option is `LOGARITHMIC`.
 With this option, the transfer size is limited to a power of two of bytes.
 
 The translation between the transfer size signal `siz` and
-the number of bytes being transferred is `number = 2**siz`.
+the number of bytes being transferred is `num=2**siz`.
 
 | `siz` | num. | size   | description |
 |-------|------|--------|-------------|
@@ -486,19 +505,18 @@ the number of bytes being transferred is `number = 2**siz`.
 | `'d3` |    8 | double |  64-bit wide data. |
 | `'d4` |   16 | long   | 128-bit wide data. |
 
-TODO: this is wrong.
 The width of the transfer size signal `siz` in the logarithmic case is
-`clog2(DBW/SLW) == clog2(BEW)`.
+`clog2(clog2(DBW/SLW))==clog2(clog2(BEW))`.
 
 NOTE: The linear option is an experimental proposal and
 is not yet compatible with any other standard or implementation.
 
-A more generic option `TCB_LINEAR` allows for any number of bytes
+A more generic option `LINEAR` allows for any number of bytes
 up to the data bus width to be transferred.
-In this case the number of transferred bytes is `number = siz+1`.
+In this case the number of transferred bytes is `num=siz+1`.
 
 The width of the transfer size signal `siz` in the linear case is
-`clog2(DBW/SLW) == clog2(BEW)`.
+`clog2(DBW/SLW)==clog2(BEW)`.
 
 The byte enable signal `ben` is restricted in both the logarithmic and linear cases to
 only number long sequences of adjacent active bits (representing data bytes),
@@ -508,20 +526,54 @@ The same restriction for the number applies as for the transfer size signal `siz
 How active bytes are aligned inside the entire data bus is further defined by
 other parameters `ALW`/`MOD`/`ORD`, the address `adr` and the endianness signal `ndn`.
 
-##### Byte/half/word/double/quad position inside data bus vector
+##### Data position mode
+
+The `MOD` parameter encoding defines the following options.
+- `REFERENCE`,
+- `MEMORY`.
 
 
+##### Byte order
+
+The `ORD` parameter encoding defines the following options.
+- `DESCENDING`,
+- `ASCENDING`.
+
+Almost all modern standards and HDL/schematic implementations use the `DESCENDING` order.
+Here indexing starts with 0 on the right side and increments to the left side of the vector.
+When writing bit vectors and equivalent packed byte arrays in SystemVerilog:
+```SystemVerilog
+logic     [31:0] data_bit_vector;
+logic [3:0][7:0] data_byte_array;
+```
+Byte addressing follows the same rules so it increments from the right to the left.
+
+The `ASCENDING` order was prominently used in the OpenPOWER specification
+and its big endian predecessors.
+Here indexing starts with 0 on the left side and increments to the right side of the vector.
+When writing bit vectors and equivalent packed byte arrays in SystemVerilog:
+```SystemVerilog
+logic     [0:31] data_bit_vector;
+logic [0:3][0:7] data_byte_array;
+```
+Byte addressing follows the same rules so it increments from the left to the right.
+
+Due to the current prevalence of descending indexing order and little-endian ISAs,
+it can be difficult and confusing to understand big endian (bi-endian) compatibility.
+A few reasons that aggravate the confusion:
+- while OpenPOWER defines all 64-bit registers with ascending order `[0:63]`,
+  a load/store byte operation would place the byte in the register aligned to the right `[56:63]`,
+- on OpenPOWER the least significant bit of the program counter or address pointer is [63],
+- not all native big-endian ISAs use the ascending order,
+- early bi-endian approaches differ from moderns ones.
+
+Modern OpenPOWER implementations use ascending order in the core to match the specification,
+but use descending order on the system bus, which is usually AMBA AXI based.
+The only practical use case for ascending order would probably be while interfacing with historic hardware.
+
+#### Data packing examples
 
 ##### Endianness and data alignment
-
-| `MOD`       | `ORD`        | `ALW`       | `ndn`   | description |
-|-------------|--------------|-------------|---------|-------------|
-| `REFERENCE` | `DESCENDING` | any         | ignored | Packing used by CPU registers. |
-| `REFERENCE` | `ASCENDING`  | any         | ignored | Not used. |
-| `MEMORY`    | `DESCENDING` | `UNALIGNED` | both    | RISC-V memory model with misaligned access support. |
-| `MEMORY`    | `DESCENDING` | `ALIGNED`   | both    | RISC-V memory model with only aligned accesses supported. |
-| `MEMORY`    | `ASCENDING`  | `UNALIGNED` | both    | Not used. |
-| `MEMORY`    | `ASCENDING`  | `ALIGNED`   | both    | OpenPOWER storage operands. |
 
 The following table defines when an access is aligned depending on
 data transfer size and byte address LSB bits.

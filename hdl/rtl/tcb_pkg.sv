@@ -41,7 +41,7 @@ package tcb_pkg;
     TCB_LINEAR      = 1'b1   // linear (n)
   } tcb_par_size_t;
 
-  // byte/half/word/double/quad position inside data bus vector
+  // data position mode
   typedef enum bit {
     TCB_REFERENCE = 1'b0,  // always LSB aligned
     TCB_MEMORY    = 1'b1   // position depends on address
@@ -79,7 +79,7 @@ package tcb_pkg;
     int unsigned    ALW;  // alignment width
     // data packing parameters
     tcb_par_size_t  SIZ;  // transfer size encoding
-    tcb_par_mode_t  MOD;  // byte/half/word/double/quad position inside data bus vector
+    tcb_par_mode_t  MOD;  // data position mode
     tcb_par_order_t ORD;  // byte order
   } tcb_par_phy_t;
 
