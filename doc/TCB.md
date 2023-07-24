@@ -334,11 +334,11 @@ Most signals are designed to directly interface with ASIC/FPGA SRAM memories:
 | signal    | width  | description |
 |-----------|--------|-------------|
 | `req.cmd` | custom | Custom request command protocol extensions. |
-| `req.ndn` | `1`    | Read/write data endianness. |
+| `req.ndn` | `1`    | Read/write data endianness. Only used in reference mode. |
 | `req.wen` | `1`    | Write enable (can be omitted for read only devices). |
 | `req.adr` | `ABW`  | Address. |
-| `req.siz` | `SIZ`* | Transfer size. |
-| `req.ben` | `BEW`  | Byte enable/select. |
+| `req.siz` | `SIZ`* | Transfer size. Only used in reference mode. |
+| `req.ben` | `BEW`  | Byte enable/select. Only used in memory mode. |
 | `req.wdt` | `DBW`  | Write data (can be omitted for read only devices). |
 | `rsp.rdt` | `DBW`  | Read data. |
 | `rsp.sts` | custom | Custom response status protocol extensions. |
@@ -531,19 +531,27 @@ other parameters `ALW`/`MOD`/`ORD`, the address `adr` and the endianness signal 
 The `MOD` parameter encoding defines the following options.
 - `MEMORY`,
 - `REFERENCE`.
+The name _reference_ is based on the idea,
+that if a monitor was placed on multiple points of a mixed configuration interconnect,
+all data would be translated to a common reference before being compared.
 
 The `MEMORY` mode defines the same data packing scheme as memories.
+
+In memory mode the the byte enable signal `ben`
+provides the information about the transfer size,
+which is the number of active bits in the `ben` vector.
 
 The `REFERENCE` mode is based on how ISAs define the placement of
 byte/half/word/double into its general purpose registers.
 In registers data of any size is always stored aligned to the right.
-The purpose of the reference mode is to create a bus
-for connecting peripherals to a CPU or DMA,
-without the need for byte reordering logic between the two.
 In reference mode data is always aligned to the right,
 regardless of the address, address alignment, endianness, ...
 
-The main purpose of this mode is to connect peripherals to the CPU.
+In reference mode the transfer size signal `siz`
+provides the information about the transfer size.
+
+The main purpose of this mode is to connect peripherals to the CPU or DMA.
+without the need for byte reordering logic between the two.
 
 Another use case would be a RISV-V instruction fetch interface with C extension support,
 where the instruction is always aligned the same way, regardless on whether
@@ -589,20 +597,134 @@ Modern OpenPOWER implementations use ascending order in the core to match the sp
 but use descending order on the system bus, which is usually AMBA AXI based.
 The only practical use case for ascending order would probably be while interfacing with historic hardware.
 
-#### Data packing examples
+## Examples
+
+### Data packing examples
+
+All provided examples are configured for:
+- logarithmic size `SIZ=LOGARITHMIC`,
+- descending order `ORD=DESCENDING`.
+Examples are given for the next data packing configurations:
+- reference mode, fixed of variable size transfers with and without misaligned access support,
+- memory mode, with and without misaligned access support, for both little and big endianness.
+
+The examples list all supported read/write transfers in a table.
+Unsupported transfers can be handles by ignoring the request and responding with an error.
+Alternatively unsupported transfers can just cause undefined behavior.
+
+#### Reference mode
+
+Examples for the following reference mode configurations are provided:
+- data bus width sized transfers with size aligned address,
+- any size transfers with size aligned address,
+- any size transfers with no alignment restrictions address,
+- instruction fetch for RISC-V with C extension.
+
+##### Fixed data width
+
+It is common to only allow full data bus width and aligned transfers when accessing peripherals.
+This case would specify the following parameter values and signal restrictions:
+- reference mode `MOD=REFERENCE`,
+- full alignment required `ALW=$clog2(DBW/SLW)=clog2(BEW)`
+- transfer size equal to data bus width `siz==$clog2(ALW)`,
+- aligned address to data bus width `adr[ALW-1:0]=='0`,
+- the transfer endianness `ndn` is ignored.
+
+The following table lists such transfers for a 32-bit data bus.
+
+| size | `adr[1:0]` | `siz[1:0]` | `wdt[31:00]`/`rdt[31:00]` |
+|------|------------|------------|---------------------------|
+| word | `2'd0`     | `2'd2`     | `{[31:24], [23:16], [15:08], [07:00]}` |
+
+##### Variable data width, aligned
+
+If transfer size restrictions are relaxed down to a single byte,
+small registers can be arranged into a more compact structure,
+thus reducing the address space.
+This case would specify the following parameter values and signal restrictions:
+- reference mode `MOD=REFERENCE`,
+- full alignment required `ALW=$clog2(DBW/SLW)=clog2(BEW)`
+- transfer size from byte to data bus width `0<=siz<=$clog2(ALW)`,
+- address aligned to transfer size `adr[siz-1:0]=='0`,
+- the transfer endianness `ndn` is ignored.
+
+The following table lists such transfers for a 32-bit data bus.
+
+| size | `adr[1:0]` | `siz[1:0]` | `wdt[31:00]`/`rdt[31:00]` |
+|------|------------|------------|---------------------------|
+| byte | `2'd0`     | `2'd0`     | `{  8'bXX,   8'bXX,   8'bXX, [07:00]}` |
+| byte | `2'd1`     | `2'd0`     | `{  8'bXX,   8'bXX,   8'bXX, [07:00]}` |
+| byte | `2'd2`     | `2'd0`     | `{  8'bXX,   8'bXX,   8'bXX, [07:00]}` |
+| byte | `2'd3`     | `2'd0`     | `{  8'bXX,   8'bXX,   8'bXX, [07:00]}` |
+| half | `2'd0`     | `2'd1`     | `{  8'bXX,   8'bXX, [15:08], [07:00]}` |
+| half | `2'd2`     | `2'd1`     | `{  8'bXX,   8'bXX, [15:08], [07:00]}` |
+| word | `2'd0`     | `2'd2`     | `{[31:24], [23:16], [15:08], [07:00]}` |
+
+Such a configuration is also appropriate for a load/store CPU interface,
+since it covers all aligned memory accesses.
+An actual connection to a memory would require a conversion module
+from `REFERENCE` to `MEMORY` mode,
+such a conversion module would have to also handle the endianness signal `ndn`.
+
+A further generalization would entirely remove the alignment restriction to
+enable access to memories which support unaligned accesses.
+
+##### Variable data width, misalignment support
+
+This case would specify the following parameter values and signal restrictions:
+- reference mode `MOD=REFERENCE`,
+- relaxed alignment `ALW=0`
+- transfer size from byte to data bus width `0<=siz<=$clog2(ALW)`,
+- address aligned to transfer size `adr[siz-1:0]=='0`,
+- the transfer endianness `ndn` is ignored.
+
+The following table lists such transfers for a 32-bit data bus.
+
+| size | alignment  | `adr[1:0]` | `siz[1:0]` | `wdt[31:00]`/`rdt[31:00]` |
+|------|------------|------------|------------|---------------------------|
+| byte |    aligned | `2'd0`     | `2'd0`     | `{  8'bXX,   8'bXX,   8'bXX, [07:00]}` |
+| byte |    aligned | `2'd1`     | `2'd0`     | `{  8'bXX,   8'bXX,   8'bXX, [07:00]}` |
+| byte |    aligned | `2'd2`     | `2'd0`     | `{  8'bXX,   8'bXX,   8'bXX, [07:00]}` |
+| byte |    aligned | `2'd3`     | `2'd0`     | `{  8'bXX,   8'bXX,   8'bXX, [07:00]}` |
+| half |    aligned | `2'd0`     | `2'd1`     | `{  8'bXX,   8'bXX, [15:08], [07:00]}` |
+| half | misaligned | `2'd1`     | `2'd1`     | `{  8'bXX,   8'bXX, [15:08], [07:00]}` |
+| half |    aligned | `2'd2`     | `2'd1`     | `{  8'bXX,   8'bXX, [15:08], [07:00]}` |
+| half | misaligned | `2'd3`     | `2'd1`     | `{  8'bXX,   8'bXX, [15:08], [07:00]}` |
+| word |    aligned | `2'd0`     | `2'd2`     | `{[31:24], [23:16], [15:08], [07:00]}` |
+| word | misaligned | `2'd1`     | `2'd2`     | `{[31:24], [23:16], [15:08], [07:00]}` |
+| word | misaligned | `2'd2`     | `2'd2`     | `{[31:24], [23:16], [15:08], [07:00]}` |
+| word | misaligned | `2'd3`     | `2'd2`     | `{[31:24], [23:16], [15:08], [07:00]}` |
+
+##### RISC-V with C extension instruction fetch
+
+This case would specify the following parameter values and signal restrictions:
+- reference mode `MOD=REFERENCE`,
+- relaxed alignment `ALW=1`
+- always attempt to fetch a 32-bit instruction `siz=2'd2`,
+- address aligned to transfer size `adr[0]==1'b0`,
+- only little endian support `ndn=1'b0`.
+
+The following table lists such transfers.
+
+| size | alignment  | `adr[1:0]` | `siz[1:0]` | `wdt[31:00]`/`rdt[31:00]` |
+|------|------------|------------|------------|---------------------------|
+| word |    aligned | `2'd0`     | `2'd2`     | `{[31:24], [23:16], [15:08], [07:00]}` |
+| word | misaligned | `2'd2`     | `2'd2`     | `{[31:24], [23:16], [15:08], [07:00]}` |
+
+#### Memory mode
 
 ##### Endianness and data alignment
 
 The following table defines when an access is aligned depending on
 data transfer size and byte address LSB bits.
 
-| transfer size  | condition               |
-|----------------|-------------------------|
-| byte   (8-bit) | none                    |
-| half  (16-bit) | `$clog2(adr[0:0]) == 0` |
-| word  (32-bit) | `$clog2(adr[1:0]) == 0` |
-| dble  (64-bit) | `$clog2(adr[2:0]) == 0` |
-| quad (128-bit) | `$clog2(adr[2:0]) == 0` |
+| transfer size    | condition               |
+|------------------|-------------------------|
+| `byte`   (8-bit) | none                    |
+| `half`  (16-bit) | `$clog2(adr[0:0]) == 0` |
+| `word`  (32-bit) | `$clog2(adr[1:0]) == 0` |
+| `dble`  (64-bit) | `$clog2(adr[2:0]) == 0` |
+| `quad` (128-bit) | `$clog2(adr[2:0]) == 0` |
 
 The protocol endianness can be either:
 - endianness agnostic, only supporting aligned transfers,
@@ -626,20 +748,20 @@ is shown in the following chapters.
 
 #### Little endian (any alignment)
 
-| size | `adr[1:0]` | alignment  | `ben[3:0]` | `wdt[31:00]`/`rdt[31:00]` |
+| size | alignment  | `adr[1:0]` | `ben[3:0]` | `wdt[31:00]`/`rdt[31:00]` |
 |------|------------|------------|------------|---------------------------|
-| byte | `2'd0`     |    aligned | `4'b0001`  | `{  8'bXX,   8'bXX,   8'bXX, [07:00]}` |
-| byte | `2'd1`     |    aligned | `4'b0010`  | `{  8'bXX,   8'bXX, [07:00],   8'bXX}` |
-| byte | `2'd2`     |    aligned | `4'b0100`  | `{  8'bXX, [07:00],   8'bXX,   8'bXX}` |
-| byte | `2'd3`     |    aligned | `4'b1000`  | `{[07:00],   8'bXX,   8'bXX,   8'bXX}` |
-| half | `2'd0`     |    aligned | `4'b0011`  | `{  8'bXX,   8'bXX, [15:08], [07:00]}` |
-| half | `2'd1`     | misaligned | `4'b0110`  | `{  8'bXX, [15:08], [07:00],   8'bXX}` |
-| half | `2'd2`     |    aligned | `4'b1100`  | `{[15:08], [07:00],   8'bXX,   8'bXX}` |
-| half | `2'd3`     | misaligned | `4'b1001`  | `{[07:00],   8'bXX,   8'bXX, [15:08]}` |
-| word | `2'd0`     |    aligned | `4'b1111`  | `{[31:24], [23:16], [15:08], [07:00]}` |
-| word | `2'd1`     | misaligned | `4'b1111`  | `{[23:16], [15:08], [07:00], [31:24]}` |
-| word | `2'd2`     | misaligned | `4'b1111`  | `{[15:08], [07:00], [31:24], [23:16]}` |
-| word | `2'd3`     | misaligned | `4'b1111`  | `{[07:00], [31:24], [23:16], [15:08]}` |
+| byte |    aligned | `2'd0`     | `4'b0001`  | `{  8'bXX,   8'bXX,   8'bXX, [07:00]}` |
+| byte |    aligned | `2'd1`     | `4'b0010`  | `{  8'bXX,   8'bXX, [07:00],   8'bXX}` |
+| byte |    aligned | `2'd2`     | `4'b0100`  | `{  8'bXX, [07:00],   8'bXX,   8'bXX}` |
+| byte |    aligned | `2'd3`     | `4'b1000`  | `{[07:00],   8'bXX,   8'bXX,   8'bXX}` |
+| half |    aligned | `2'd0`     | `4'b0011`  | `{  8'bXX,   8'bXX, [15:08], [07:00]}` |
+| half | misaligned | `2'd1`     | `4'b0110`  | `{  8'bXX, [15:08], [07:00],   8'bXX}` |
+| half |    aligned | `2'd2`     | `4'b1100`  | `{[15:08], [07:00],   8'bXX,   8'bXX}` |
+| half | misaligned | `2'd3`     | `4'b1001`  | `{[07:00],   8'bXX,   8'bXX, [15:08]}` |
+| word |    aligned | `2'd0`     | `4'b1111`  | `{[31:24], [23:16], [15:08], [07:00]}` |
+| word | misaligned | `2'd1`     | `4'b1111`  | `{[23:16], [15:08], [07:00], [31:24]}` |
+| word | misaligned | `2'd2`     | `4'b1111`  | `{[15:08], [07:00], [31:24], [23:16]}` |
+| word | misaligned | `2'd3`     | `4'b1111`  | `{[07:00], [31:24], [23:16], [15:08]}` |
 
 #### Big endian (any allignment)
 
