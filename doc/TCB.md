@@ -597,6 +597,10 @@ Modern OpenPOWER implementations use ascending order in the core to match the sp
 but use descending order on the system bus, which is usually AMBA AXI based.
 The only practical use case for ascending order would probably be while interfacing with historic hardware.
 
+### Common and independent read/write channels
+
+TODO
+
 ## Examples
 
 ### Data packing examples
@@ -713,6 +717,14 @@ The following table lists such transfers.
 
 #### Memory mode
 
+Examples for the following memory mode configurations are provided:
+- any size transfers with size aligned address,
+- any size transfers with no alignment restrictions address.
+Both configurations are documented for big and little endianness.
+
+The configuration with data bus width sized transfers with size aligned address,
+is functionally identical to the reference mode with the same configuration.
+
 ##### Endianness and data alignment
 
 The following table defines when an access is aligned depending on
@@ -763,22 +775,22 @@ is shown in the following chapters.
 | word | misaligned | `2'd2`     | `4'b1111`  | `{[15:08], [07:00], [31:24], [23:16]}` |
 | word | misaligned | `2'd3`     | `4'b1111`  | `{[07:00], [31:24], [23:16], [15:08]}` |
 
-#### Big endian (any allignment)
+#### Big endian (any alignment)
 
-| size | `adr[1:0]` | alignment  | `ben[0:3]` | `wdt[00:31]`/`rdt[00:31]` |
+| size | alignment  | `adr[1:0]` | `ben[0:3]` | `wdt[00:31]`/`rdt[00:31]` |
 |------|------------|------------|------------|---------------------------|
-| byte | `2'd0`     |    aligned | `4'b1000`  | `{[00:07],   8'bXX,   8'bXX,   8'bXX}` |
-| byte | `2'd1`     |    aligned | `4'b0100`  | `{  8'bXX, [00:07],   8'bXX,   8'bXX}` |
-| byte | `2'd2`     |    aligned | `4'b0010`  | `{  8'bXX,   8'bXX, [00:07],   8'bXX}` |
-| byte | `2'd3`     |    aligned | `4'b0001`  | `{  8'bXX,   8'bXX,   8'bXX, [00:07]}` |
-| half | `2'd0`     |    aligned | `4'b1100`  | `{[00:07], [08:15],   8'bXX,   8'bXX}` |
-| half | `2'd1`     | misaligned | `4'b0110`  | `{  8'bXX, [00:07], [08:15],   8'bXX}` |
-| half | `2'd2`     |    aligned | `4'b0011`  | `{  8'bXX,   8'bXX, [00:07], [08:15]}` |
-| half | `2'd3`     | misaligned | `4'b1001`  | `{[08:15],   8'bXX,   8'bXX, [00:07]}` |
-| word | `2'd0`     |    aligned | `4'b1111`  | `{[00:07], [08:15], [16:23], [24:31]}` |
-| word | `2'd1`     | misaligned | `4'b1111`  | `{[24:31], [00:07], [08:15], [16:23]}` |
-| word | `2'd2`     | misaligned | `4'b1111`  | `{[16:23], [24:31], [00:07], [08:15]}` |
-| word | `2'd3`     | misaligned | `4'b1111`  | `{[08:15], [16:23], [24:31], [00:07]}` |
+| byte |    aligned | `2'd0`     | `4'b1000`  | `{[00:07],   8'bXX,   8'bXX,   8'bXX}` |
+| byte |    aligned | `2'd1`     | `4'b0100`  | `{  8'bXX, [00:07],   8'bXX,   8'bXX}` |
+| byte |    aligned | `2'd2`     | `4'b0010`  | `{  8'bXX,   8'bXX, [00:07],   8'bXX}` |
+| byte |    aligned | `2'd3`     | `4'b0001`  | `{  8'bXX,   8'bXX,   8'bXX, [00:07]}` |
+| half |    aligned | `2'd0`     | `4'b1100`  | `{[00:07], [08:15],   8'bXX,   8'bXX}` |
+| half | misaligned | `2'd1`     | `4'b0110`  | `{  8'bXX, [00:07], [08:15],   8'bXX}` |
+| half |    aligned | `2'd2`     | `4'b0011`  | `{  8'bXX,   8'bXX, [00:07], [08:15]}` |
+| half | misaligned | `2'd3`     | `4'b1001`  | `{[08:15],   8'bXX,   8'bXX, [00:07]}` |
+| word |    aligned | `2'd0`     | `4'b1111`  | `{[00:07], [08:15], [16:23], [24:31]}` |
+| word | misaligned | `2'd1`     | `4'b1111`  | `{[24:31], [00:07], [08:15], [16:23]}` |
+| word | misaligned | `2'd2`     | `4'b1111`  | `{[16:23], [24:31], [00:07], [08:15]}` |
+| word | misaligned | `2'd3`     | `4'b1111`  | `{[08:15], [16:23], [24:31], [00:07]}` |
 
 #### Misalignment handler
 

@@ -1,4 +1,6 @@
-## Reference implementation library
+# Reference implementation library
+
+## Coding guidelines
 
 The reference implementation library is written in SystemVerilog
 and extensively uses the following SystemVerilog specific features:
