@@ -2,12 +2,71 @@
 
 ## RISC-V related recommendations
 
+This section attempts to provide recommendations for designing
+memory mapped peripherals,
+with the focus on them being used with a RISC-V CPU.
+
+### Load/Store addressing
+
+RISC-V ISA I base load/store (`l[bhwdq]`/`s[bhwdq]`) operations
+use a register for a base address and a 12-bit sign-extended offset immediate.
+The two added together create a 4kB window with byte address access granularity.
+Since the immediate is signed, half are below and half are above the base address.
+The following table provides the address range and number of locations
+for available sizes and aligned accesses.
+
+| access type | from       | to         | locations |
+|-------------|------------|------------|-----------|
+| byte        | `-12'h800` | `+12'h7ff` |      4096 |
+| half        | `-12'h800` | `+12'h7fe` |      2048 |
+| word        | `-12'h800` | `+12'h7fc` |      1024 |
+| double      | `-12'h800` | `+12'h7f8` |       512 |
+| quad        | `-12'h800` | `+12'h7f0` |       256 |
+
+Compressed instructions from the C extension load/store (`c.l[wdq]`/`c.s[wdq]`) operations
+use a register for a base address and a zero-extended 5-bit offset immediate, scaled by the access size.
+The two added together create a 4kB window with byte address access granularity.
+Since the immediate is zero-extended, all addresses are above the base address.
+The following table provides the address range and number of locations
+for available sizes and aligned accesses (only the base can be misaligned).
+
+| access type | scale | from     | to       | locations |
+|-------------|-------|----------|----------|-----------|
+| word        |     4 | `7'h000` | `7'h03c` |        32 |
+| double      |     8 | `8'h000` | `8'h0f8` |        32 |
+| quad        |    16 | `9'h000` | `5'h1f0` |        32 |
+
+For a common 32-bit peripheral interface with only full width locations,
+I base instructions can address 1024 locations and
+C extension instructions can address 32 locations.
+
+### ALU operations with immediate operands and branches
+
+
+
 ### Address bus
+
+NOTE: this recommendation is implementation specific.
+It makes sense on designs with the focus on low access latency.
 
 Use as few address bits as possible,
 all of them on the LSB side.
 Due to carry propagation in an adder,
 MSB bits take longer to calculate.
+
+This also makes
+
+### Peripheral registers
+
+| type           | writable | readable | volatile | access rate |
+|----------------|----------|----------|----------|-------------|
+| configuration  | yes      | yes      | no       | low         |
+| control        | yes      | no       |          | medium      |
+| status         | no       | yes      | yes      | medium      |
+| control/status | yes      | yes      | yes      | medium      |
+| data tx/write  | yes      | no       |          | high        |
+| data rx/read   | no       | yes      | yes      | high        |
+| data duplex    | yes      | yes      | yes      | high        |
 
 ### Data bus
 
@@ -21,7 +80,16 @@ MSB bits take longer to calculate.
 
 #### Data registers
 
-FIFO
+#### Data FIFO
+
+The implementation might depend on the data unit size
+which is assumed to be a pawer of two of base unit byte (byte/half/word/double/...).
+
+
+I propose multiple variants:
+1. reference mode fixed address fixed transfer size
 1. reference mode fixed address variable transfer size
-2. 2 locations to allow missalligned accesses to the same address
+2. 2 locations to allow misaligned accesses to the same address
 3. mapping the entire buffer into memory twice
+
+##### 
