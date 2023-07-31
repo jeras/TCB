@@ -749,8 +749,8 @@ The protocol endianness can be either:
 The TCB protocol can be endianness agnostic,
 as long as the address is aligned to the data width.
 
-In this mode, address LSB bits `adr[$clog2(BEW)-1:0]` are
-undefined while driven by a manager and ignored while sampled by a subordinate.
+In this mode, address LSB bits `adr[$clog2(BEW)-1:0]` are zero
+while driven by a manager and ignored while sampled by a subordinate.
 For consistency they should still be part of the address vector.
 
 The manager encodes the address of data transfers smaller than
