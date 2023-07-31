@@ -3,12 +3,13 @@
 ## RISC-V related recommendations
 
 This section attempts to provide recommendations for designing
-memory mapped peripherals,
-with the focus on them being used with a RISC-V CPU.
+memory mapped peripherals to be used with a RISC-V CPU.
+The focus is on instructions containing an immediate,
+since those are the source of relevant limitations.
 
 ### Load/Store addressing
 
-RISC-V ISA I base load/store (`l[bhwdq]`/`s[bhwdq]`) operations
+All RV32I, RV64I and RV128I load/store (`L[BHWDQ]`/`S[BHWDQ]`) operations
 use a register for a base address and a 12-bit sign-extended offset immediate.
 The two added together create a 4kB window with byte address access granularity.
 Since the immediate is signed, half are below and half are above the base address.
@@ -23,7 +24,7 @@ for available sizes and aligned accesses.
 | double      | `-12'h800` | `+12'h7f8` |       512 |
 | quad        | `-12'h800` | `+12'h7f0` |       256 |
 
-Compressed instructions from the C extension load/store (`c.l[wdq]`/`c.s[wdq]`) operations
+Compressed instructions from the C extension load/store (`C.L[WDQ]`/`C.S[WDQ]`) operations
 use a register for a base address and a zero-extended 5-bit offset immediate, scaled by the access size.
 The two added together create a 4kB window with byte address access granularity.
 Since the immediate is zero-extended, all addresses are above the base address.
@@ -40,9 +41,20 @@ For a common 32-bit peripheral interface with only full width locations,
 I base instructions can address 1024 locations and
 C extension instructions can address 32 locations.
 
-### ALU operations with immediate operands and branches
+### Arihmetic/logic operations with immediate operands and branches
 
+RV32/64/128I arithmetic operation `SLTI` (set less than immediate)
+has a 12-bit sign-extended immediate.
+It can be used for measurement comparisons in the range -2048 to 2047.
 
+RV32/64/128I arithmetic operation `SLTIU` (set less than immediate unsigned)
+has a 12-bit zero-extended immediate.
+It can be used for measurement or counter comparisons in the range 0 to 4095.
+
+RV32/64/128I logical operations `ANDI`, `ORI`, `XORI` have a 12-bit sign-extended immediate.
+The immediate 11 LSB bits `[10:0]` can be used as masks for peripheral registers.
+The immediate 12th bit `[11]` is sign extended to full register width `XLEN`,
+so it can only be used to mask all bits from MSB to 11 `[MSB:11]` (MSB can be 32/64/128).
 
 ### Address bus
 
