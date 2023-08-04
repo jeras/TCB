@@ -57,7 +57,8 @@ HDL =${RTL}
 HDL+=${TBN}
 
 # top level file
-TOP ?= tcb_tb
+#TOP ?= tcb_tb
+TOP ?= tcb_lib_endianness_tb
 
 ################################################################################
 # Verilator compiler/linker flags

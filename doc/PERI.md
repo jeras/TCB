@@ -1,8 +1,11 @@
 # Peripherals
 
-## RISC-V related recommendations
+This section describes various design considerations for TCP peripherals,
+with at least some fucus on a RISC-V ISA CPU based SoC.
 
-This section attempts to provide recommendations for designing
+## RISC-V related considerations
+
+This section attempts to provide considerations for designing
 memory mapped peripherals to be used with a RISC-V CPU.
 The focus is on instructions containing an immediate,
 since those are the source of relevant limitations.
@@ -41,7 +44,7 @@ For a common 32-bit peripheral interface with only full width locations,
 I base instructions can address 1024 locations and
 C extension instructions can address 32 locations.
 
-### Arihmetic/logic operations with immediate operands and branches
+### Arithmetic/logic operations with immediate operands
 
 RV32/64/128I arithmetic operation `SLTI` (set less than immediate)
 has a 12-bit sign-extended immediate.
@@ -55,6 +58,22 @@ RV32/64/128I logical operations `ANDI`, `ORI`, `XORI` have a 12-bit sign-extende
 The immediate 11 LSB bits `[10:0]` can be used as masks for peripheral registers.
 The immediate 12th bit `[11]` is sign extended to full register width `XLEN`,
 so it can only be used to mask all bits from MSB to 11 `[MSB:11]` (MSB can be 32/64/128).
+
+### Conditional branches
+
+Instructions `BLT` (branch if less then) and `BGE` (branch if greater or equal)
+with comparing against the zero register R0
+can be used to branch on the sign of a register value,
+or simply the MSB bit of a register.
+
+## Memory mapped register ABI recommendations
+
+This ABI recommendations are intended for peripherals
+implemented using memory mapped registers.
+
+Recommendations are focusing on:
+- RTL with good timing and low power consumption,
+- drivers with few instruction in critical loops.
 
 ### Address bus
 
