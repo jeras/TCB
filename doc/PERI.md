@@ -102,8 +102,9 @@ TODO
 
 ## Memory mapped register ABI recommendations
 
-This ABI recommendations are intended for peripherals
-implemented using memory mapped registers.
+This ABI recommendations are intended for
+peripherals implemented using memory mapped registers
+and the system bus connecting them.
 
 Recommendations are focusing on:
 - RTL optimizations for:
@@ -112,7 +113,9 @@ Recommendations are focusing on:
   - low power consumption,
 - drivers with few instruction in critical loops to maximize access rate.
 
-### Address bus
+### System bus recommendations
+
+#### Address bus
 
 NOTE: this recommendation is implementation specific.
 It makes sense on designs with the focus on low access latency.
@@ -128,7 +131,7 @@ small enough to be addressable with a single pointer register.
 A 12-bit address space can be addressed with RISC-V I base instructions.
 A 7-bit address space of 32-bit registers can be addressed with RISC-V C extension instructions.
 
-### Data bus
+#### Data bus
 
 The most common width for a peripheral data bus is 32-bits,
 this is true even in systems with a 64-bit processor.
@@ -140,6 +143,23 @@ require or prefer atomic access.
 A few examples would be:
 - 64-bit timers/counters,
 - TODO.
+
+It is also common to only access peripheral registers
+with the full data bus width aligned transfers.
+Peripherals can return an error response
+in case of a non conforming transfer request.
+
+#### Independent read/write channels
+
+The main potential advantage of independent read/write channels
+is to allow for full duplex throughput.
+But it only makes sense in case if the peripheral
+can take advantage from such throughput.
+
+Another advantage of independent channels is reduced power consumption.
+Since the read/write addresses are independent,
+it is possible to prevent write accesses from causing toggling in read logic
+and conversely.
 
 ### Peripheral registers
 
@@ -179,9 +199,13 @@ This saved the area and delay from read data multiplexers.
 #### Control/Status registers
 
 Control registers, status registers and combined control/status registers
-access rate depends on whether the peripheral isS
+access rate depends on whether the peripheral is
 designed for polling (high access rate) or is interrupt driven (medium access rate).
 In both cases it can be important to minimize the latency.
+
+Primarily control registers are used by drivers
+to write to inputs into FSM (finite state machine) implemented in RTL,
+while status registers are used to read the outputs from RTL FSM. 
 
 Control register values are often constructed by
 combining individual control field constants with `OR` operations.
@@ -190,23 +214,107 @@ sampling individual status fields using masks applied with `AND` operations.
 For combined control/status registers, there are also use cases,
 where read modify write sequences are used.
 
-Limiting the control/statius registers to 12 relevant bits `[11:0]`
+Limiting the control/status registers to 12 relevant bits `[11:0]`
 with keeping the rest `[31:12]` reserved,
 enables the use of RISC-V instructions `ORI` and `ANDI` to perform
 construction and masking fast and without consuming temporary RISC-V GPR-s.
 
+Limiting the control/status register to 8 LSB relevant bits
+with the rest reserved and using byte load/store instructions,
+could reduce power consumption for high access rate registers.
+
+TODO:
+- set/clear/toggle on write,
+- side effects like clear on read,
+- ...
+
 #### Data registers
+
+Handling data could be placed into categories:
+1. reading a continuously changing (volatile),
+2. writing a value,
+3. communication protocol, with full flow control (request driven),
+4. communication protocol, without full flow control.
+
+Reading continuously changing (volatile) value
+provides a snapshot of the value in time,
+values outside the read cycle are ignored.
+In such use cases, it is common to have an interrupt
+triggered by a category of values or value transitions,
+an alternative is periodic polling.
+Common examples would be:
+- GPIO inputs (switches, buttons),
+- timers and counters,
+- ADC (sensors: thermometer, power supply voltmeter, ...),
+- ...
+
+Writing a value would have the following examples:
+- GPIO outputs,
+- DAC,
+- ...
+
+Bit-banging protocol implementations are a special case,
+where GPIO inputs/outputs are used to emulate a protocol.
+Some protocol require strict timing (UART RX/TX, 1-wire master, ...),
+others don't (SPI master, I2C master, I3C master, JTAG master, ...).
+
+Communication protocols, with full flow control,
+are protocol masters where each data transfer
+is explicitly requested by the peripheral.
+Examples are SPI, I2C, 1-Wire, ...
+
+Communication protocol, without full flow control,
+are protocol slaves where the peripheral does not request each data transfer.
+The protocol might provide no hardware flow control (SPI, JTAG, Ethernet, ...),
+or some form of hardware flow control (UART RTS/CTS, I2C clock extension, ...).
+This communication protocols might also provide some form of software flow control,
+implemented on a higher OSI level.
+
+
+4. communication protocol, where all transfers (transmitted and received)
+   are driven by the observed peripheral
+
+
+1. Data registers are used in case where each data transfer
+   is requested explicitly by the peripheral, for example:
+   Pheripherals where data is constan
+2. data FIFO with register access 
+
+Only cases, where data is accessible as a single unit are considered here.
+If multiple data units are available for access,
+then those are described in the data FIFO section.
+This is not a clean cut distinction,
+so there are some shared consideration between this and the FIFO section.
+
+Different data unit widths are possible:
+- single bit for minimalistic implementations of serial protocols,
+- 8-bits for byte oriented communication protocols (UART, I2C, ...),
+- timers/counters of any width (8/16/24/32/48/64/...),
+- GPIO input/output of any width (1..64, ...).
+
+TODO: side effects.
 
 #### Data FIFO
 
 The implementation might depend on the data unit size
-which is assumed to be a pawer of two of base unit byte (byte/half/word/double/...).
+which is assumed to be a power of two of base unit byte (byte/half/word/double/...).
+
 
 
 I propose multiple variants:
-1. reference mode fixed address fixed transfer size
-1. reference mode fixed address variable transfer size
+1. reference mode fixed address single unit transfer size
+1. reference mode fixed address variable array of units transfer size
 2. 2 locations to allow misaligned accesses to the same address
 3. mapping the entire buffer into memory twice
 
-#####
+| `MOD` | sizes |
+|-------|-------|
+| `REF` | unit  |
+| `REF` | unit  |
+| `MEM` |
+
+##### Reference mode
+
+In TCB reference mode all data is aligned to the LSB side of the register.
+
+
