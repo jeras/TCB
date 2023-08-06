@@ -32,7 +32,7 @@ package tcb_pkg;
   } tcb_size_t;
 
 ////////////////////////////////////////////////////////////////////////////////
-// size/mode/order are compile time parameters
+// size/mode/order/channel (used for compile time parameters)
 ////////////////////////////////////////////////////////////////////////////////
 
   // transfer size encoding
@@ -53,15 +53,14 @@ package tcb_pkg;
     TCB_ASCENDING  = 1'b1   //  ascending order
   } tcb_par_order_t;
 
-////////////////////////////////////////////////////////////////////////////////
-// endianness
-////////////////////////////////////////////////////////////////////////////////
-
-  // endianness
-  typedef enum logic {
-    TCB_LITTLE = 1'b0,  // little-endian
-    TCB_BIG    = 1'b1   // big-endian
-  } tcb_cfg_endian_t;
+  // channel configuration
+  typedef enum bit [1:0] {
+    // 2 bit value {rd,wr}
+    TCB_COMMON_HALF_DUPLEX  = 2'b00,  // common channel with half duplex read/write
+    TCB_COMMON_FULL_DUPLEX  = 2'b11,  // common channel with full duplex read/write
+    TCB_INDEPENDENT_WRITE   = 2'b01,  // independent write channel
+    TCB_INDEPENDENT_READ    = 2'b10   // independent read channel
+  } tcb_par_channel_t;
 
 ////////////////////////////////////////////////////////////////////////////////
 // parameter structure
@@ -71,16 +70,18 @@ package tcb_pkg;
   // TODO: the structure is packed to workaround a Verilator bug
   typedef struct packed {
     // protocol
-    int unsigned    DLY;  // response delay
+    int unsigned      DLY;  // response delay
     // signal widths
-    int unsigned    SLW;  // selection   width (byte width is 8 by default)
-    int unsigned    ABW;  // address bus width
-    int unsigned    DBW;  // data    bus width
-    int unsigned    ALW;  // alignment width
+    int unsigned      SLW;  // selection   width (byte width is 8 by default)
+    int unsigned      ABW;  // address bus width
+    int unsigned      DBW;  // data    bus width
+    int unsigned      ALW;  // alignment width
     // data packing parameters
-    tcb_par_size_t  SIZ;  // transfer size encoding
-    tcb_par_mode_t  MOD;  // data position mode
-    tcb_par_order_t ORD;  // byte order
+    tcb_par_size_t    SIZ;  // transfer size encoding
+    tcb_par_mode_t    MOD;  // data position mode
+    tcb_par_order_t   ORD;  // byte order
+    // channel configuration
+    tcb_par_channel_t CHN;  // channel configuration
   } tcb_par_phy_t;
 
   // physical interface parameter default
@@ -94,8 +95,10 @@ package tcb_pkg;
     ALW: 2,   // $clog2(DBW/SLW)
     // data packing parameters
     SIZ: TCB_LOGARITHMIC,
-    MOD: TCB_REFERENCE,
-    ORD: TCB_DESCENDING
+    MOD: TCB_MEMORY,
+    ORD: TCB_DESCENDING,
+    // channel configuration
+    CHN: TCB_COMMON_HALF_DUPLEX
   };
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -117,6 +120,7 @@ package tcb_pkg;
       bit SIZ;
       bit MOD;
       bit ORD;
+      bit CHN;
     } status;
 
     // comparison
@@ -128,6 +132,7 @@ package tcb_pkg;
     status.SIZ = phy_val.SIZ ==? phy_ref.SIZ;
     status.MOD = phy_val.MOD ==? phy_ref.MOD;
     status.ORD = phy_val.ORD ==? phy_ref.ORD;
+    status.CHN = phy_val.CHN ==? phy_ref.CHN;
 
     // reporting validation status
     if (status.DLY)  $error("parameter mismatch PHY.DLY=%d != PHY.DLY=%d", phy_val.DLY, phy_ref.DLY);
@@ -138,10 +143,21 @@ package tcb_pkg;
     if (status.SIZ)  $error("parameter mismatch PHY.SIZ=%d != PHY.SIZ=%d", phy_val.SIZ, phy_ref.SIZ);
     if (status.MOD)  $error("parameter mismatch PHY.MOD=%d != PHY.MOD=%d", phy_val.MOD, phy_ref.MOD);
     if (status.ORD)  $error("parameter mismatch PHY.ORD=%d != PHY.ORD=%d", phy_val.ORD, phy_ref.ORD);
+    if (status.CHN)  $error("parameter mismatch PHY.CHN=%d != PHY.CHN=%d", phy_val.CHN, phy_ref.CHN);
 
     // return simple status
     return(|status);
   endfunction: tcb_par_phy_match
+
+////////////////////////////////////////////////////////////////////////////////
+// endianness (used for runtime signal values)
+////////////////////////////////////////////////////////////////////////////////
+
+  // endianness
+  typedef enum logic {
+    TCB_LITTLE = 1'b0,  // little-endian
+    TCB_BIG    = 1'b1   // big-endian
+  } tcb_cfg_endian_t;
 
 ////////////////////////////////////////////////////////////////////////////////
 // default structures containing optional signals

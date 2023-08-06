@@ -53,6 +53,7 @@ interface tcb_if
   typedef struct {
     tcb_req_cmd_t       cmd;  // command (optional)
     logic               wen;  // write enable
+    logic               ren;  // write enable
     logic               ndn;  // endianness
     logic [PHY.ABW-1:0] adr;  // address
     logic [PHY_SZW-1:0] siz;  // transfer size
@@ -84,6 +85,19 @@ interface tcb_if
   // TODO: improve description
   // idle (either not valid or ending the current cycle with a transfer)
   assign idl = ~vld | trn;
+
+////////////////////////////////////////////////////////////////////////////////
+// request read/write enable logic depending on channel configuration
+////////////////////////////////////////////////////////////////////////////////
+
+  generate
+  case (PHY.CHN)
+    TCB_COMMON_HALF_DUPLEX: begin assign req.ren =              ~req.wen;        end
+    TCB_COMMON_FULL_DUPLEX: begin                                                end
+    TCB_INDEPENDENT_WRITE : begin assign req.ren = 1'b0;  assign req.wen = 1'b1; end
+    TCB_INDEPENDENT_READ  : begin assign req.ren = 1'b1;  assign req.wen = 1'b0; end
+  endcase
+  endgenerate 
 
 ////////////////////////////////////////////////////////////////////////////////
 // response logic (never outputs on modports)
@@ -118,11 +132,11 @@ interface tcb_if
   endgenerate
 
   // response pipeline combinational input
-  assign dly[0].ena = trn                          ;  // response valid
-  assign dly[0].ren =       ~req.wen               ;  // response read enable
-  assign dly[0].adr =                  req.adr     ;  // response address
-  assign dly[0].siz =                  req.siz     ;  // response logarithmic size
-  assign dly[0].ben = trn & ~req.wen ? req_ben : '0;  // response byte enable
+  assign dly[0].ena = trn                         ;  // response valid
+  assign dly[0].ren =       req.ren               ;  // response read enable
+  assign dly[0].adr =                 req.adr     ;  // response address
+  assign dly[0].siz =                 req.siz     ;  // response logarithmic size
+  assign dly[0].ben = trn & req.ren ? req_ben : '0;  // response byte enable
 
   // response pipeline
   // TODO: avoid toggling if there is not transfer

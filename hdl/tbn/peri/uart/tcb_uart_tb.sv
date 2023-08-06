@@ -42,7 +42,9 @@ module tcb_uart_tb
     // size/mode/order parameters
     SIZ: TCB_PAR_PHY_DEF.SIZ,
     MOD: TCB_PAR_PHY_DEF.MOD,
-    ORD: TCB_PAR_PHY_DEF.ORD
+    ORD: TCB_PAR_PHY_DEF.ORD,
+    // channel configuration
+    CHN: TCB_PAR_PHY_DEF.CHN
   };
 
   localparam tcb_par_phy_t PHY = TCB_PAR_PHY_DEF;
