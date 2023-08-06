@@ -74,7 +74,7 @@ TCB terminology and syntax is mostly based on:
 ### Transaction level terms
 
 A transaction is the atomic exchange of a desired data length requiring one or more transfers.
-The following words can be used to describe a transaction. 
+The following words can be used to describe a transaction.
 **TODO: check for a TLM definition.**
 
 | descriptor | description |
@@ -247,7 +247,7 @@ The handshake ready signal can be active or inactive during reset,
 but it is not allowed to toggle.
 After the reset signal `rst` is released there must be
 at least one clock period before `rdy` can toggle.
- 
+
 This timing is based on the assumption that reset is not used as a normal combinational signal.
 In this case the `vld` signal depends on a register toggling after reset is released,
 and this can only happen with the described timing.
@@ -335,22 +335,27 @@ Most signals are designed to directly interface with ASIC/FPGA SRAM memories:
 |-----------|--------|-------------|
 | `req.cmd` | custom | Custom request command protocol extensions. |
 | `req.ndn` | `1`    | Read/write data endianness. Only used in reference mode. |
-| `req.wen` | `1`    | Write enable (can be omitted for read only devices). |
+| `req.wen` | `1`    | Write enable. |
+| `req.ren` | `1`    | Read enable (only used in full-duplex channel configuration). |
 | `req.adr` | `ABW`  | Address. |
 | `req.siz` | `SIZ`* | Transfer size. Only used in reference mode. |
 | `req.ben` | `BEW`  | Byte enable/select. Only used in memory mode. |
-| `req.wdt` | `DBW`  | Write data (can be omitted for read only devices). |
+| `req.wdt` | `DBW`  | Write data. |
 | `rsp.rdt` | `DBW`  | Read data. |
 | `rsp.sts` | custom | Custom response status protocol extensions. |
+
+The custom protocol extension signals, request command `cmd` and response status `sts`,
+do not directly affect the content of the data transfer.
+They are described in the next section.
 
 Since bi-endianness support is an important part of the TCB protocol,
 the endianness selection signal `ndn` is listed prominently.
 It is a dynamic property of each data transfer
 and therefore a signal and not a parameter.
 
-The custom protocol extension signals, request command `cmd` and response status `sts`,
-do not directly affect the content of the data transfer.
-They are described in the next section.
+For an interface modelled over a memory interface,
+read enable `ren` is not accessible by the used,
+internally it is assigned the negated value of write enable `wen`.
 
 The transfer size signal `siz` is an alternative signal to byte enable `ben`.
 The choice between the two alternatives is described in the [data packing section]().
@@ -449,12 +454,12 @@ and then provide examples of packing with some parameter configurations.
 
 The following parameters affect data packing.
 
-| parameter | default           | type (enumeration) | description |
-|-----------|-------------------|--------------------|-------------|
-| `PHY.ALW` | `clog2(DBW/SLW)`  | `int unsigned`     | Alignment width, number of least significant address bits which are zero. |
-| `PHY.SIZ` | `TCB_LOGARITHMIC` | `tcb_par_size_t`   | Transfer size encoding, logarithmic or linear. |
-| `PHY.MOD` | `TCB_REFERENCE`   | `tcb_par_mode_t`   | Data position mode. |
-| `PHY.ORD` | `TCB_DESCENDING`  | `tcb_par_order_t`  | Byte order, ascending or descending. |
+| parameter | default          | type (enumeration) | description |
+|-----------|------------------|--------------------|-------------|
+| `PHY.ALW` | `clog2(DBW/SLW)` | `int unsigned`     | Alignment width, number of least significant address bits which are zero. |
+| `PHY.SIZ` | `LOGARITHMIC`    | `tcb_par_size_t`   | Transfer size encoding, logarithmic or linear. |
+| `PHY.MOD` | `REFERENCE`      | `tcb_par_mode_t`   | Data position mode. |
+| `PHY.ORD` | `DESCENDING`     | `tcb_par_order_t`  | Byte order, ascending or descending. |
 
 Only a subset of 4 configurations from all parameter combinations
 results in practical and useful data packing rule.
@@ -597,9 +602,61 @@ Modern OpenPOWER implementations use ascending order in the core to match the sp
 but use descending order on the system bus, which is usually AMBA AXI based.
 The only practical use case for ascending order would probably be while interfacing with historic hardware.
 
-### Common and independent read/write channels
+### Channel configuration
 
-TODO
+The `CHN` parameter is used to configure channel read/write capabilities.
+
+| parameter | default              | type (enumeration)  | description |
+|-----------|----------------------|---------------------|-------------|
+| `PHY.CHN` | `COMMON_HALF_DUPLEX` | `tcb_par_channel_t` | Channel configuration. |
+
+The following configurations are defined,
+
+| value                |  `wen` |  `ren` | `wdt`  | `rdt`  | description |
+|----------------------|--------|--------|--------|--------|-------------|
+| `COMMON_HALF_DUPLEX` |  `wen` | `~wen` |   used |   used | Each transfer can only enable either read or write data. |
+| `COMMON_FULL_DUPLEX` |  `wen` |  `ren` |   used |   used | The address is common read/write data can be controlled independently. |
+| `INDEPENDENT_WRITE`  | `1'b1` | `1'b0` |   used | unused | Write data is always enabled, read data is unused. |
+| `INDEPENDENT_READ`   | `1'b0` | `1'b1` | unused |   used | Write data is unused, read data is always enabled. |
+
+#### Common half duplex
+
+This is the common approach based on a SRAM memory interface.
+The address is shared between read/write operations and
+each transfer can only be either a read or a write,
+controlled by the write enable `wen` signal.
+
+| `wen`  | description |
+|--------|-------------|
+| `1'b0` | Write request. |
+| `1'b1` | Read request. |
+
+In this channel configuration the read enable signal `ren`
+is not used, internally can be assigned the negated value of write enable `ren`.
+```Verilog
+assign ren = ~wen;
+```
+
+#### Common full duplex
+
+Use cases:
+- data swap,
+- control request returning status before request,
+- control request returning instant same clock period feedback.
+
+The data swap operation can be used between a CPU GPR and a memory mapped register.
+
+The control request use cases are similar to what RISC-V ISA *Zicsr* instructions do.
+
+The case where read and write enable signals are both inactive during a transfer is reserved.
+
+#### Independent read/write
+
+The read and write operations are separated into independent channels.
+The main purpose is to provide full-duplex access to independent addresses.
+One advantage this approach provides is reduced power consumption in peripherals,
+since during a write access the read data decoder and multiplexer are not active and
+during a read access the write data enable decoder is not active.
 
 ## Examples
 
