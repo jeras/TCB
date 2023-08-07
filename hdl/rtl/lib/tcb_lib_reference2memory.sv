@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// TCB (Tightly Coupled Bus) library mode/alignment/order converter
+// TCB (Tightly Coupled Bus) library reference to memory mode converter
 ////////////////////////////////////////////////////////////////////////////////
 // Copyright 2022 Iztok Jeras
 //
@@ -16,7 +16,7 @@
 // limitations under the License.
 ////////////////////////////////////////////////////////////////////////////////
 
-module tcb_lib_endianness
+module tcb_lib_reference2memory
   import tcb_pkg::*;
 (
   // interfaces
@@ -186,4 +186,4 @@ module tcb_lib_endianness
   // handshake
   assign sub.rdy = man.rdy;
 
-endmodule: tcb_lib_endianness
+endmodule: tcb_lib_reference2memory

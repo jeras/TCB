@@ -82,7 +82,7 @@ interface tcb_if
   // transfer (valid and ready at the same time)
   assign trn = vld & rdy;
 
-  // TODO: improve description
+  // TODO: improve description or maybe remove the signal
   // idle (either not valid or ending the current cycle with a transfer)
   assign idl = ~vld | trn;
 
@@ -97,53 +97,69 @@ interface tcb_if
     TCB_INDEPENDENT_WRITE : begin assign req.ren = 1'b0;  assign req.wen = 1'b1; end
     TCB_INDEPENDENT_READ  : begin assign req.ren = 1'b1;  assign req.wen = 1'b0; end
   endcase
-  endgenerate 
+  endgenerate
 
 ////////////////////////////////////////////////////////////////////////////////
-// response logic (never outputs on modports)
+// in reference mode create byte enable from transfer size
+////////////////////////////////////////////////////////////////////////////////
+
+  generate
+  if (PHY.MOD == TCB_REFERENCE) begin
+    // reference mode
+    for (genvar b=0; b<PHY_BEW; b++) begin
+      case (PHY.SIZ)
+        TCB_LOGARITHMIC:  assign req.ben[b] = b < (2**    req.siz );
+        TCB_LINEAR     :  assign req.ben[b] = b < (2**(2**req.siz));
+      endcase
+    end
+  end
+  endgenerate
+
+////////////////////////////////////////////////////////////////////////////////
+// response pipeline (never outputs on modports)
 ////////////////////////////////////////////////////////////////////////////////
 
   // response pipeline stage
   typedef struct {
-    logic               ena;  // enable
+    logic               ena;  // transfer
     logic               ren;  // read enable
     logic [PHY.ABW-1:0] adr;  // address
     logic [PHY_SZW-1:0] siz;  // transfer size
     logic [PHY_BEW-1:0] ben;  // byte enable
   } tcb_dly_t;
 
-  // response pipeline
+  // response pipeline stages
   tcb_dly_t dly [0:PHY.DLY];
 
-  logic [PHY_BEW-1:0] req_ben;  // byte enable
-
-  // copy or create byte enable from transfer size
-  generate
-  if (PHY.MOD == TCB_REFERENCE) begin
-    for (genvar b=0; b<PHY_BEW; b++) begin
-      case (PHY.SIZ)
-        TCB_LOGARITHMIC:  assign req_ben[b] = b < (2**    req.siz );
-        TCB_LINEAR     :  assign req_ben[b] = b < (2**(2**req.siz));
-      endcase
-    end
-  end else begin
-    assign req_ben = req.ben;
-  end
-  endgenerate
-
   // response pipeline combinational input
-  assign dly[0].ena = trn                         ;  // response valid
-  assign dly[0].ren =       req.ren               ;  // response read enable
-  assign dly[0].adr =                 req.adr     ;  // response address
-  assign dly[0].siz =                 req.siz     ;  // response logarithmic size
-  assign dly[0].ben = trn & req.ren ? req_ben : '0;  // response byte enable
+  assign dly[0].ena = trn                   ;  // transfer
+  assign dly[0].ren =           req.ren     ;  // read enable
+  assign dly[0].adr =           req.adr     ;  // address
+  assign dly[0].siz =           req.siz     ;  // logarithmic size
+  assign dly[0].ben = req.ren ? req.ben : '0;  // byte enable
 
   // response pipeline
-  // TODO: avoid toggling if there is not transfer
   generate
   if (PHY.DLY > 0) begin: gen_dly
+
+    // transfer requires a reset
+    always @(posedge clk, posedge rst)
+    if (rst) begin
+      for (int i=0; i<=DLY; i++) begin
+        dly[i].ena <= 1'b0;
+      end
+    end else begin
+      for (int i=0; i<DLY; i++) begin
+        dly[i+1].ena <= dly[i].ena;
+      end
+    end
+
+    // other response pipeline signals do not require a reset
     always @(posedge clk)
-    dly[1:PHY.DLY] <= dly[0:PHY.DLY-1];
+    for (int i=0; i<DLY; i++) begin
+      if (dly[i].ena) dly[i+1] <= dly[i];
+    end
+
   end: gen_dly
   endgenerate
 

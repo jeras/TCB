@@ -24,7 +24,7 @@ module tcb_gpio_tb
   int unsigned ABW = 32,
   int unsigned DBW = 32,
   // RW channels
-  string IFT = "IRW"
+  tcb_par_channel_t CHN = TCB_COMMON_HALF_DUPLEX
 );
 
   // TODO: parameter propagation through virtual interfaces in classes
@@ -40,11 +40,11 @@ module tcb_gpio_tb
     DBW: DBW,
     ALW: $clog2(DBW/TCB_PAR_PHY_DEF.SLW),
     // size/mode/order parameters
-    SIZ: TCB_PAR_PHY_DEF.SIZ,
-    MOD: TCB_PAR_PHY_DEF.MOD,
-    ORD: TCB_PAR_PHY_DEF.ORD,
+    SIZ: TCB_LOGARITHMIC,
+    MOD: TCB_REFERENCE,
+    ORD: TCB_DESCENDING,
     // channel configuration
-    CHN: TCB_PAR_PHY_DEF.CHN
+    CHN: TCB_COMMON_HALF_DUPLEX
   };
 
   localparam tcb_par_phy_t PHY = TCB_PAR_PHY_DEF;
@@ -158,7 +158,7 @@ module tcb_gpio_tb
 ////////////////////////////////////////////////////////////////////////////////
 
   generate
-  if (IFT == "CRW")
+  if (CHN == TCB_COMMON_HALF_DUPLEX)
   begin: crw
 
   // TCB GPIO

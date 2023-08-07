@@ -18,7 +18,7 @@ RTL+=${PATH_HDL}/rtl/lib/tcb_lib_passthrough.sv
 #RTL+=${PATH_HDL}/rtl/lib/tcb_lib_decoder.sv
 #RTL+=${PATH_HDL}/rtl/lib/tcb_lib_demultiplexer.sv
 #RTL+=${PATH_HDL}/rtl/lib/tcb_lib_error.sv
-RTL+=${PATH_HDL}/rtl/lib/tcb_lib_endianness.sv
+RTL+=${PATH_HDL}/rtl/lib/tcb_lib_reference2memory.sv
 ## GPIO RTL
 #RTL+=${PATH_HDL}/rtl/gpio/tcb_gpio.sv
 ## UART RTL
@@ -52,7 +52,7 @@ HDL+=${TBN}
 
 # top level file
 #TOP ?= tcb_tb
-TOP ?= ${PATH_HDL}/tbn/lib/tcb_lib_endianness_tb
+TOP ?= ${PATH_HDL}/tbn/lib/tcb_lib_reference2memory_tb
 
 ################################################################################
 #

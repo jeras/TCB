@@ -540,11 +540,22 @@ The name _reference_ is based on the idea,
 that if a monitor was placed on multiple points of a mixed configuration interconnect,
 all data would be translated to a common reference before being compared.
 
+###### Memory mode
+
 The `MEMORY` mode defines the same data packing scheme as memories.
 
 In memory mode the the byte enable signal `ben`
 provides the information about the transfer size,
 which is the number of active bits in the `ben` vector.
+
+In memory mode the data endianness signal `ndn`
+is not interpreted by subordinates,
+unless it is used to convert reference mode.
+One case where conversion to reference mode is needed is a bus monitor,
+which is supposed to have a single interpretation of the data.
+TODO: think about endianness again.
+
+###### Reference mode
 
 The `REFERENCE` mode is based on how ISAs define the placement of
 byte/half/word/double into its general purpose registers.
