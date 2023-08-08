@@ -100,9 +100,9 @@ module tcb_lib_reference2memory_tb
   initial
   begin
     // connect virtual interfaces
-    obj_man = new("MAN", tcb_man    );
-    obj_sub = new("MON", tcb_sub    );
-    obj_mem = new("MON", tcb_mem [0]);
+    obj_man = new(tcb_man    );
+    obj_sub = new(tcb_sub    );
+    obj_mem = new(tcb_mem [0]);
     // reset sequence
     rst <= 1'b1;
     repeat (2) @(posedge clk);

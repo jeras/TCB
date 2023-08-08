@@ -218,9 +218,9 @@ module tcb_vip_tb
   initial
   begin
     // connect virtual interfaces
-    obj_man = new("MAN", tcb);
-    obj_mon = new("MON", tcb);
-    obj_sub = new("SUB", tcb);
+    obj_man = new(tcb);
+    obj_mon = new(tcb);
+    obj_sub = new(tcb);
     // reset sequence
     rst = 1'b1;
     repeat (2) @(posedge clk);

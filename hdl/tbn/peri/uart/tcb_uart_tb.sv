@@ -125,7 +125,7 @@ module tcb_uart_tb
     // time dispaly formatting
     $timeformat(-9, 3, "ns", 12);
     // connect virtual interfaces
-    obj_man = new("MAN", tcb_man);
+    obj_man = new(tcb_man);
     // reset sequence
     rst <= 1'b1;
     repeat (2) @(posedge clk);

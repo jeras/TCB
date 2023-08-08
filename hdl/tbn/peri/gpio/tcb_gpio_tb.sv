@@ -31,7 +31,7 @@ module tcb_gpio_tb
   // is not working well in Vivado 2023.1 thus this workaround
 
   // physical interface parameter
-  localparam tcb_par_phy_t PHY1 = '{
+  parameter tcb_par_phy_t PHY1 = '{
     // protocol
     DLY: 0,
     // signal bus widths
@@ -47,7 +47,7 @@ module tcb_gpio_tb
     CHN: TCB_COMMON_HALF_DUPLEX
   };
 
-  localparam tcb_par_phy_t PHY = TCB_PAR_PHY_DEF;
+  parameter tcb_par_phy_t PHY = PHY1;
 
   // GPIO width
   localparam int unsigned GW = 32;
@@ -67,7 +67,7 @@ module tcb_gpio_tb
 */
   // TODO: the above code should be used instead
   // TCB interfaces
-  tcb_if tcb_man     (.clk (clk), .rst (rst));
+  tcb_if #(.PHY (PHY)) tcb_man     (.clk (clk), .rst (rst));
   tcb_if tcb_man_wrc (.clk (clk), .rst (rst));
   tcb_if tcb_man_rdc (.clk (clk), .rst (rst));
 
@@ -75,7 +75,8 @@ module tcb_gpio_tb
   typedef tcb_transfer_c #(.PHY (PHY)) tcb_s;
 
   // TCB class objects
-  tcb_s obj_man;
+  //tcb_s obj_man;
+  tcb_transfer_c #(.PHY (PHY)) obj_man;
 
 ////////////////////////////////////////////////////////////////////////////////
 // data checking
@@ -108,12 +109,16 @@ module tcb_gpio_tb
     // time dispaly formatting
     $timeformat(-9, 3, "ns", 12);
     // connect virtual interfaces
-    obj_man = new("MAN", tcb_man);
+    obj_man = new(tcb_man);
     // reset sequence
     rst <= 1'b1;
     repeat (2) @(posedge clk);
     rst <= 1'b0;
     repeat (1) @(posedge clk);
+
+    // print parameters for debugging purposes
+    tcb_par_phy_print(tcb_man.PHY);
+    tcb_par_phy_print(PHY);
 
     // write configuration (output and enable registers)
     $display("(%t) INFO: writing configuration begin.", $time);
@@ -158,58 +163,58 @@ module tcb_gpio_tb
 ////////////////////////////////////////////////////////////////////////////////
 
   generate
-  if (CHN == TCB_COMMON_HALF_DUPLEX)
-  begin: crw
+  if ((CHN == TCB_COMMON_HALF_DUPLEX) | (CHN == TCB_COMMON_FULL_DUPLEX))
+  begin: cmn
 
-  // TCB GPIO
-  tcb_crw_gpio #(
-    .GW      (GW),
-    // implementation details
-//    bit          CFG_MIN = 1'b0,  // minimalistic implementation
-    .CFG_CDC (2),
-    // implementation device (ASIC/FPGA vendor/device)
-    .CHIP    ("")
-  ) gpio (
-    // GPIO signals
-    .gpio_o  (gpio_o),
-    .gpio_e  (gpio_e),
-    .gpio_i  (gpio_i),
-    // TCB interface
-    .tcb     (tcb_man)
-  );
+    // TCB GPIO
+    tcb_crw_gpio #(
+      .GW      (GW),
+      // implementation details
+  //    bit          CFG_MIN = 1'b0,  // minimalistic implementation
+      .CFG_CDC (2),
+      // implementation device (ASIC/FPGA vendor/device)
+      .CHIP    ("")
+    ) gpio (
+      // GPIO signals
+      .gpio_o  (gpio_o),
+      .gpio_e  (gpio_e),
+      .gpio_i  (gpio_i),
+      // TCB interface
+      .tcb     (tcb_man)
+    );
 
-  end: crw
-  else if (IFT == "IRW")
-  begin: irw
+  end: cmn
+  else
+  begin: ind
 
-  // TCB independent channel splitter
-  tcb_lib_common2independent crw2irw (
-    // CRW subordinate port
-    .tcb_crw_sub (tcb_man),
-    // IRW manager ports
-    .tcb_rdc_man (tcb_man_rdc),
-    .tcb_wrc_man (tcb_man_wrc)
-  );
+    // TCB independent channel splitter
+    tcb_lib_common2independent crw2irw (
+      // CRW subordinate port
+      .tcb_crw_sub (tcb_man),
+      // IRW manager ports
+      .tcb_rdc_man (tcb_man_rdc),
+      .tcb_wrc_man (tcb_man_wrc)
+    );
 
-  // TCB GPIO
-  tcb_irw_gpio #(
-    .GW      (GW),
-    // implementation details
-//    bit          CFG_MIN = 1'b0,  // minimalistic implementation
-    .CFG_CDC (2),
-    // implementation device (ASIC/FPGA vendor/device)
-    .CHIP    ("")
-  ) gpio (
-    // GPIO signals
-    .gpio_o  (gpio_o),
-    .gpio_e  (gpio_e),
-    .gpio_i  (gpio_i),
-    // TCB IRW interface
-    .tcb_wrc (tcb_man_wrc),
-    .tcb_rdc (tcb_man_rdc)
-  );
+    // TCB GPIO
+    tcb_irw_gpio #(
+      .GW      (GW),
+      // implementation details
+  //    bit          CFG_MIN = 1'b0,  // minimalistic implementation
+      .CFG_CDC (2),
+      // implementation device (ASIC/FPGA vendor/device)
+      .CHIP    ("")
+    ) gpio (
+      // GPIO signals
+      .gpio_o  (gpio_o),
+      .gpio_e  (gpio_e),
+      .gpio_i  (gpio_i),
+      // TCB IRW interface
+      .tcb_wrc (tcb_man_wrc),
+      .tcb_rdc (tcb_man_rdc)
+    );
 
-  end: irw
+  end: ind
   endgenerate
 
 ////////////////////////////////////////////////////////////////////////////////

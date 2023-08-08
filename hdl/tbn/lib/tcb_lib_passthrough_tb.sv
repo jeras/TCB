@@ -97,8 +97,8 @@ module tcb_lib_passthrough_tb
   initial
   begin
     // connect virtual interfaces
-    obj_man = new("MAN", tcb_man);
-    obj_sub = new("SUB", tcb_sub);
+    obj_man = new(tcb_man);
+    obj_sub = new(tcb_sub);
     // reset sequence
     rst = 1'b1;
     repeat (2) @(posedge clk);

@@ -102,11 +102,11 @@ package tcb_pkg;
   };
 
 ////////////////////////////////////////////////////////////////////////////////
-// parameter structure validation tasks functions
+// parameter structure validation function
 ////////////////////////////////////////////////////////////////////////////////
 
   // check for equivalence
-  function automatic tcb_par_phy_match(
+  function automatic int tcb_par_phy_match(
     tcb_par_phy_t phy_val,
     tcb_par_phy_t phy_ref   // reference can contain wildcard values
   );
@@ -148,6 +148,26 @@ package tcb_pkg;
     // return simple status
     return(|status);
   endfunction: tcb_par_phy_match
+
+////////////////////////////////////////////////////////////////////////////////
+// parameter structure debug function
+////////////////////////////////////////////////////////////////////////////////
+
+  // print out parameter structure
+  function automatic void tcb_par_phy_print(
+    tcb_par_phy_t phy_val
+  );
+    // reporting validation status
+    $info("parameter PHY.DLY=%d", phy_val.DLY);
+    $info("parameter PHY.SLW=%d", phy_val.SLW);
+    $info("parameter PHY.ABW=%d", phy_val.ABW);
+    $info("parameter PHY.DBW=%d", phy_val.DBW);
+    $info("parameter PHY.ALW=%d", phy_val.ALW);
+    $info("parameter PHY.SIZ=%s", phy_val.SIZ.name());
+    $info("parameter PHY.MOD=%s", phy_val.MOD.name());
+    $info("parameter PHY.ORD=%s", phy_val.ORD.name());
+    $info("parameter PHY.CHN=%s", phy_val.CHN.name());
+  endfunction: tcb_par_phy_print
 
 ////////////////////////////////////////////////////////////////////////////////
 // endianness (used for runtime signal values)

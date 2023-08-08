@@ -51,13 +51,13 @@ package tcb_vip_pkg;
 //      .tcb_req_cmd_t (tcb_req_cmd_t),
 //      .tcb_rsp_sts_t (tcb_rsp_sts_t)
 //    ) tcb_vif_t;
-    typedef virtual tcb_if tcb_vif_t;
 
     string MODE = "MON";
-    tcb_vif_t tcb;
+//    tcb_vif_t tcb;
+    virtual interface tcb_if #(.PHY (PHY)) tcb;
 
     //constructor
-    function new(string MODE = "MON", tcb_vif_t tcb);
+    function new(input virtual interface tcb_if #(.PHY (PHY)) tcb);
       this.MODE = MODE;
       this.tcb = tcb;
       // initialization
