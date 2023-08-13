@@ -126,14 +126,14 @@
           <Attr Name="UsedIn" Val="simulation"/>
         </FileInfo>
       </File>
-      <File Path="$PPRDIR/../../hdl/rtl/peri/uart/tcb_crw_uart.sv">
+      <File Path="$PPRDIR/../../hdl/rtl/peri/uart/tcb_cnd_uart.sv">
         <FileInfo>
           <Attr Name="UsedIn" Val="synthesis"/>
           <Attr Name="UsedIn" Val="implementation"/>
           <Attr Name="UsedIn" Val="simulation"/>
         </FileInfo>
       </File>
-      <File Path="$PPRDIR/../../hdl/rtl/peri/gpio/tcb_crw_gpio.sv">
+      <File Path="$PPRDIR/../../hdl/rtl/peri/gpio/tcb_cnd_gpio.sv">
         <FileInfo>
           <Attr Name="UsedIn" Val="synthesis"/>
           <Attr Name="UsedIn" Val="implementation"/>
@@ -256,14 +256,14 @@
           <Attr Name="UsedIn" Val="simulation"/>
         </FileInfo>
       </File>
-      <File Path="$PPRDIR/../../hdl/rtl/peri/uart/tcb_irw_uart.sv">
+      <File Path="$PPRDIR/../../hdl/rtl/peri/uart/tcb_ind_uart.sv">
         <FileInfo>
           <Attr Name="UsedIn" Val="synthesis"/>
           <Attr Name="UsedIn" Val="implementation"/>
           <Attr Name="UsedIn" Val="simulation"/>
         </FileInfo>
       </File>
-      <File Path="$PPRDIR/../../hdl/rtl/peri/gpio/tcb_irw_gpio.sv">
+      <File Path="$PPRDIR/../../hdl/rtl/peri/gpio/tcb_ind_gpio.sv">
         <FileInfo>
           <Attr Name="UsedIn" Val="synthesis"/>
           <Attr Name="UsedIn" Val="implementation"/>

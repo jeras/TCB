@@ -16,7 +16,7 @@
 // limitations under the License.
 ////////////////////////////////////////////////////////////////////////////////
 
-module tcb_irw_uart #(
+module tcb_ind_uart #(
   // UART parameters
   int unsigned RW = 8,  // baudrate number width
   int unsigned DW = 8,  // shifter data width
@@ -251,5 +251,5 @@ endgenerate
   // interrupt (RX FIFO load is above limit)
   assign irq_rx = (rx_sts_cnt > rx_cfg_irq);
 
-endmodule: tcb_irw_uart
+endmodule: tcb_ind_uart
 

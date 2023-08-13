@@ -162,7 +162,7 @@ module tcb_gpio_tb
   begin: crw
 
   // TCB GPIO
-  tcb_crw_gpio #(
+  tcb_cnd_gpio #(
     .GW      (GW),
     // implementation details
 //    bit          CFG_MIN = 1'b0,  // minimalistic implementation
@@ -185,14 +185,14 @@ module tcb_gpio_tb
   // TCB independent channel splitter
   tcb_lib_common2independent crw2irw (
     // CRW subordinate port
-    .tcb_crw_sub (tcb_man),
+    .tcb_cnd_sub (tcb_man),
     // IRW manager ports
     .tcb_rdc_man (tcb_man_rdc),
     .tcb_wrc_man (tcb_man_wrc)
   );
 
   // TCB GPIO
-  tcb_irw_gpio #(
+  tcb_ind_gpio #(
     .GW      (GW),
     // implementation details
 //    bit          CFG_MIN = 1'b0,  // minimalistic implementation
