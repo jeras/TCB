@@ -20,7 +20,7 @@
 // limitations under the License.
 ////////////////////////////////////////////////////////////////////////////////
 
-module tcb_cnd_gpio #(
+module tcb_cmn_gpio #(
   // GPIO parameters
   int unsigned GW = 32,   // GPIO width
   int unsigned CFG_CDC = 2,     // implement clock domain crossing stages (0 - bypass)
@@ -158,5 +158,5 @@ endgenerate
   // there are no error cases
   assign tcb.rsp.sts = '0;
 
-endmodule: tcb_cnd_gpio
+endmodule: tcb_cmn_gpio
 

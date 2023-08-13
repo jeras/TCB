@@ -207,7 +207,7 @@ module tcb_uart_tb
   begin: crw
 
   // TCB UART
-  tcb_cnd_uart #(
+  tcb_cmn_uart #(
     .DW       (UDW)
   ) uart (
     // UART signals
@@ -227,7 +227,7 @@ module tcb_uart_tb
   // TCB independent channel splitter
   tcb_lib_common2independent crw2irw (
     // CRW subordinate port
-    .tcb_cnd_sub (tcb_man),
+    .tcb_cmn_sub (tcb_man),
     // IRW manager ports
     .tcb_rdc_man (tcb_man_rdc),
     .tcb_wrc_man (tcb_man_wrc)
