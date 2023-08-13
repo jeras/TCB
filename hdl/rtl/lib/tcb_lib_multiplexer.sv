@@ -16,16 +16,18 @@
 // limitations under the License.
 ////////////////////////////////////////////////////////////////////////////////
 
-module tcb_lib_multiplexer #(
-  // interconnect parameters
-  int unsigned PN = 2,      // port number
-  localparam   PL = $clog2(PN)
+module tcb_lib_multiplexer
+  import tcb_pkg::*;
+#(
+  // interconnect parameters (subordinate port number and logirthm)
+  parameter  int unsigned SPN = 2,
+  localparam int unsigned SPL = $clog2(SPN)
 )(
   // control
-  input  logic [PL-1:0] sel,  // select
+  input  logic [SPL-1:0] sel,  // select
   // TCB interfaces
-  tcb_if.sub sub[PN-1:0],  // TCB subordinate ports (manager     devices connect here)
-  tcb_if.man man           // TCB manager     port  (subordinate device connects here)
+  tcb_if.sub sub[SPN-1:0],  // TCB subordinate ports (manager     devices connect here)
+  tcb_if.man man            // TCB manager     port  (subordinate device connects here)
 );
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -36,14 +38,8 @@ module tcb_lib_multiplexer #(
 `else
   // camparing subordinate and manager interface parameters
   generate
-  for (genvar i=0; i<PN; i++) begin: param
-    // bus widths
-    if (sub[i].ABW != man.ABW)  $error("ERROR: %m parameter (sub[%d].ABW = %d) != (man.ABW = %d)", i, sub[i].ABW, man.ABW);
-    if (sub[i].DBW != man.DBW)  $error("ERROR: %m parameter (sub[%d].DBW = %d) != (man.DBW = %d)", i, sub[i].DBW, man.DBW);
-    if (sub[i].SLW != man.SLW)  $error("ERROR: %m parameter (sub[%d].SLW = %d) != (man.SLW = %d)", i, sub[i].SLW, man.SLW);
-    if (sub[i].BEW != man.BEW)  $error("ERROR: %m parameter (sub[%d].BEW = %d) != (man.BEW = %d)", i, sub[i].BEW, man.BEW);
-    // response delay
-    if (sub[i].DLY != man.DLY)  $error("ERROR: %m parameter (sub[%d].DLY = %d) != (man.DLY = %d)", i, sub[i].DLY, man.DLY);
+  for (genvar i=0; i<SPN; i++) begin: param
+    // TODO
   end: param
   endgenerate
 `endif
@@ -52,20 +48,24 @@ module tcb_lib_multiplexer #(
 // local signals
 ////////////////////////////////////////////////////////////////////////////////
 
-  // multiplexer select
-  logic [PL-1:0] sub_sel;
-  logic [PL-1:0] man_sel;
-
-  // handshake
-  logic               tmp_vld [PN-1:0];  // valid
   // request
-  logic               tmp_wen [PN-1:0];  // write enable
-  logic [man.ABW-1:0] tmp_adr [PN-1:0];  // address
-  logic [man.BEW-1:0] tmp_ben [PN-1:0];  // byte enable
-  logic [man.DBW-1:0] tmp_wdt [PN-1:0];  // write data
-  // request optional
-  logic               tmp_lck [PN-1:0];  // arbitration lock
-  logic               tmp_rpt [PN-1:0];  // repeat access
+  typedef struct {
+    tcb_req_cmd_t           cmd;  // command (optional)
+    logic                   wen;  // write enable
+    logic                   ren;  // write enable
+    logic                   ndn;  // endianness
+    logic [man.PHY.ABW-1:0] adr;  // address
+    logic [man.PHY_SZW-1:0] siz;  // transfer size
+    logic [man.PHY_BEW-1:0] ben;  // byte enable
+    logic [man.PHY.DBW-1:0] wdt;  // write data
+  } tcb_req_t;
+
+  // multiplexer select
+  logic [SPL-1:0] sub_sel;
+  logic [SPL-1:0] man_sel;
+
+  logic           tmp_vld [SPN-1:0];  // handshake
+  tcb_req_t       tmp_req [SPN-1:0];  // request
 
 ////////////////////////////////////////////////////////////////////////////////
 // control
@@ -89,31 +89,15 @@ module tcb_lib_multiplexer #(
   // organize request signals into indexable array
   // since a dynamix index can't be used on an array of interfaces
   generate
-  for (genvar i=0; i<PN; i++) begin: gen_req
-    // handshake
-    assign tmp_vld[i] = sub[i].vld;
-    // request
-    assign tmp_wen[i] = sub[i].wen;
-    assign tmp_ben[i] = sub[i].ben;
-    assign tmp_adr[i] = sub[i].adr;
-    assign tmp_wdt[i] = sub[i].wdt;
-    // request optional
-    assign tmp_lck[i] = sub[i].lck;
-    assign tmp_rpt[i] = sub[i].rpt;
+  for (genvar i=0; i<SPN; i++) begin: gen_req
+    assign tmp_vld[i] = sub[i].vld;  // handshake
+    assign tmp_req[i] = sub[i].req;  // request
   end: gen_req
   endgenerate
 
   // multiplexer
-  // handshake
-  assign man.vld = tmp_vld[sub_sel];
-  // request
-  assign man.wen = tmp_wen[sub_sel];
-  assign man.ben = tmp_ben[sub_sel];
-  assign man.adr = tmp_adr[sub_sel];
-  assign man.wdt = tmp_wdt[sub_sel];
-  // request optional
-  assign man.lck = tmp_lck[sub_sel];
-  assign man.rpt = tmp_rpt[sub_sel];
+  assign man.vld = tmp_vld[sub_sel];  // handshake
+  assign man.req = tmp_req[sub_sel];  // request
 
 ////////////////////////////////////////////////////////////////////////////////
 // response
@@ -121,12 +105,9 @@ module tcb_lib_multiplexer #(
 
   // replicate response signals
   generate
-  for (genvar i=0; i<PN; i++) begin: gen_rsp
-    // response
-    assign sub[i].rdt = (man_sel == i[PL-1:0]) ? man.rdt : 'x;  // response phase
-    assign sub[i].err = (man_sel == i[PL-1:0]) ? man.err : 'x;  // response phase
-    // handshake
-    assign sub[i].rdy = (sub_sel == i[PL-1:0]) ? man.rdy : '0;  // request  phase
+  for (genvar i=0; i<SPN; i++) begin: gen_rsp
+    assign sub[i].rsp = (man_sel == i[SPL-1:0]) ? man.rsp : 'x;  // response
+    assign sub[i].rdy = (sub_sel == i[SPL-1:0]) ? man.rdy : '0;  // handshake
   end: gen_rsp
   endgenerate
 

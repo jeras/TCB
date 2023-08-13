@@ -16,23 +16,18 @@
 // limitations under the License.
 ////////////////////////////////////////////////////////////////////////////////
 
-module tcb_lib_demultiplexer #(
-  // bus widths
-  int unsigned AW = 32,     // address     width
-  int unsigned DW = 32,     // data        width
-  int unsigned SW =     8,  // selection   width
-  int unsigned BW = DW/SW,  // byte enable width
-  // response delay
-  int unsigned DLY = 1,
+module tcb_lib_demultiplexer
+  import tcb_pkg::*;
+#(
   // interconnect parameters
-  parameter  int unsigned PN = 2,      // port number
-  localparam int unsigned PL = $clog2(PN)
+  parameter  int unsigned MPN = 2,      // port number
+  localparam int unsigned MPL = $clog2(MPN)
 )(
   // control
-  input  logic [PL-1:0] sel,  // select
+  input  logic [MPL-1:0] sel,  // select
   // TCB interfaces
-  tcb_if.sub sub        ,  // TCB subordinate port  (manager     device connects here)
-  tcb_if.man man[PN-1:0]   // TCB manager     ports (subordinate devices connect here)
+  tcb_if.sub sub         ,  // TCB subordinate port  (manager     device connects here)
+  tcb_if.man man[MPN-1:0]   // TCB manager     ports (subordinate devices connect here)
 );
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -43,14 +38,8 @@ module tcb_lib_demultiplexer #(
 `else
   // camparing subordinate and manager interface parameters
   generate
-  for (genvar i=0; i<PN; i++) begin: param
-    // bus widths
-    if (sub.ABW != man[i].ABW)  $error("ERROR: %m parameter (sub.ABW = %d) != (man[%d].ABW = %d)", sub.ABW, i, man[i].ABW);
-    if (sub.DBW != man[i].DBW)  $error("ERROR: %m parameter (sub.DBW = %d) != (man[%d].DBW = %d)", sub.DBW, i, man[i].DBW);
-    if (sub.SLW != man[i].SLW)  $error("ERROR: %m parameter (sub.SLW = %d) != (man[%d].SLW = %d)", sub.SLW, i, man[i].SLW);
-    if (sub.BEW != man[i].BEW)  $error("ERROR: %m parameter (sub.BEW = %d) != (man[%d].BEW = %d)", sub.BEW, i, man[i].BEW);
-    // response delay
-    if (sub.DLY != man[i].DLY)  $error("ERROR: %m parameter (sub.DLY = %d) != (man[%d].DLY = %d)", sub.DLY, i, man[i].DLY);
+  for (genvar i=0; i<MPN; i++) begin: param
+    // TODO
   end: param
   endgenerate
 `endif
@@ -59,15 +48,18 @@ module tcb_lib_demultiplexer #(
 // local signals
 ////////////////////////////////////////////////////////////////////////////////
 
-  // demultiplexer signals
-  logic [PL-1:0] sub_sel;
-  logic [PL-1:0] man_sel;
-
   // response
-  logic [DW-1:0] tmp_rdt [PN-1:0];  // read data
-  logic          tmp_err [PN-1:0];  // error
-  // handshake
-  logic          tmp_rdy [PN-1:0];  // acknowledge
+  typedef struct {
+    logic [sub.PHY.DBW-1:0] rdt;  // read data
+    tcb_rsp_sts_t           sts;  // status (optional)
+  } tcb_rsp_t;
+
+  // demultiplexer signals
+  logic [MPL-1:0] sub_sel;
+  logic [MPL-1:0] man_sel;
+
+  tcb_rsp_t       tmp_rsp [MPN-1:0];  // response
+  logic           tmp_rdy [MPN-1:0];  // handshake
 
 ////////////////////////////////////////////////////////////////////////////////
 // control
@@ -90,17 +82,9 @@ module tcb_lib_demultiplexer #(
 
   // replicate request signals
   generate
-  for (genvar i=0; i<PN; i++) begin: gen_req
-    // handshake
-    assign man[i].vld = (sub_sel == i) ? sub.vld : '0;
-    // request
-    assign man[i].wen = (sub_sel == i) ? sub.wen : 'x;
-    assign man[i].ben = (sub_sel == i) ? sub.ben : 'x;
-    assign man[i].adr = (sub_sel == i) ? sub.adr : 'x;
-    assign man[i].wdt = (sub_sel == i) ? sub.wdt : 'x;
-    // request optional
-    assign man[i].lck = (sub_sel == i) ? sub.lck : 'x;
-    assign man[i].rpt = (sub_sel == i) ? sub.rpt : 'x;
+  for (genvar i=0; i<MPN; i++) begin: gen_req
+    assign man[i].vld = (sub_sel == i) ? sub.vld : '0;  // handshake
+    assign man[i].req = (sub_sel == i) ? sub.req : 'x;  // request
   end: gen_req
   endgenerate
 
@@ -111,20 +95,14 @@ module tcb_lib_demultiplexer #(
   // organize response signals into indexable array
   // since a dynamic index can't be used on an array of interfaces
   generate
-  for (genvar i=0; i<PN; i++) begin: gen_rsp
-    // response
-    assign tmp_rdt[i] = man[i].rdt;
-    assign tmp_err[i] = man[i].err;
-    // handshake
-    assign tmp_rdy[i] = man[i].rdy;
+  for (genvar i=0; i<MPN; i++) begin: gen_rsp
+    assign tmp_rsp[i] = man[i].rsp;  // response
+    assign tmp_rdy[i] = man[i].rdy;  // handshake
   end: gen_rsp
   endgenerate
 
   // multiplexer
-  // response
-  assign sub.rdt = tmp_rdt[man_sel];  // response phase
-  assign sub.err = tmp_err[man_sel];  // response phase
-  // handskake
-  assign sub.rdy = tmp_rdy[sub_sel];  // request  phase
+  assign sub.rsp = tmp_rsp[man_sel];  // response
+  assign sub.rdy = tmp_rdy[sub_sel];  // handskake
 
 endmodule: tcb_lib_demultiplexer

@@ -16,19 +16,21 @@
 // limitations under the License.
 ////////////////////////////////////////////////////////////////////////////////
 
-module tcb_lib_decoder #(
-  // TCB parameters
-  parameter  int unsigned ABW = 32,   // address width
-  // interconnect parameters
-  parameter  int unsigned PN = 2,     // port number
-  localparam int unsigned PL = $clog2(PN),
+module tcb_lib_decoder
+  import tcb_pkg::*;
+#(
+  // TCB parameters (contains address width)
+  parameter  tcb_par_phy_t  PHY = TCB_PAR_PHY_DEF,
+  // interconnect parameters (subordinate port number and logirthm)
+  parameter  int unsigned SPN = 2,
+  localparam int unsigned SPL = $clog2(SPN),
   // decoder address and mask array
-  parameter  logic [ABW-1:0] DAM [PN-1:0] = '{PN{ABW'('x)}}
+  parameter  logic [PHY.ABW-1:0] DAM [SPN-1:0] = '{SPN{PHY.ABW'('x)}}
 )(
   // TCB interfaces
   tcb_if.sub tcb,  // TCB subordinate port (manager device connects here)
   // control
-  output logic [PL-1:0] sel   // select
+  output logic [SPL-1:0] sel   // select
 );
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -42,38 +44,40 @@ module tcb_lib_decoder #(
 // local signals
 ////////////////////////////////////////////////////////////////////////////////
 
-  logic [ABW-1:0] adr;
+  logic [PHY.ABW-1:0] adr;
 
   // extract address from TCB
-  assign adr = tcb.adr;
+  assign adr = tcb.req.adr;
 
 ////////////////////////////////////////////////////////////////////////////////
 // decoder
 ////////////////////////////////////////////////////////////////////////////////
 
 //  // match
-//  function [PN-1:0] match (
-//    logic [ABW-1:0] val,           // input
-//    logic [ABW-1:0] mch [PN-1:0]   // matching reference
+//  function [SPN-1:0] match (
+//    logic [PHY.ABW-1:0] val,           // input
+//    logic [PHY.ABW-1:0] mch [SPN-1:0]   // matching reference
 //  );
-//    for (int unsigned i=0; i<PN; i++) begin
+//    for (int unsigned i=0; i<SPN; i++) begin
 //      assign match[i] = val ==? mch[i];
 //    end
 //  endfunction: match
 
-  logic mch [PN-1:0];
+  // match
+  logic mch [SPN-1:0];
+
   // match
   generate
-    for (genvar i=0; i<PN; i++) begin
+    for (genvar i=0; i<SPN; i++) begin
       assign mch[i] = adr ==? DAM[i];
     end
   endgenerate
 
   // encode
-  function logic [PL-1:0] encode (logic val [PN-1:0]);
+  function logic [SPL-1:0] encode (logic val [SPN-1:0]);
     encode = 'x;  // optimization of undefined encodings
-    for (int i=PN; i>=0; i--) begin
-      if (val[i])  encode = i[PL-1:0];
+    for (int i=SPN; i>=0; i--) begin
+      if (val[i])  encode = i[SPL-1:0];
     end
   endfunction: encode
 
