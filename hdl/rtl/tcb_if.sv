@@ -21,7 +21,7 @@ interface tcb_if
 #(
   tcb_par_phy_t  PHY = TCB_PAR_PHY_DEF,
   type tcb_req_cmd_t = tcb_req_cmd_def_t,
-  type tcb_rsp_sts_t = tcb_req_cmd_def_t
+  type tcb_rsp_sts_t = tcb_rsp_sts_def_t
 )(
   // system signals
   input  logic clk,  // clock
