@@ -50,7 +50,7 @@ interface tcb_if
   logic rdy;  // ready
 
   // request
-  typedef struct {
+  typedef struct packed {
     tcb_req_cmd_t       cmd;  // command (optional)
     logic               wen;  // write enable
     logic               ren;  // write enable
@@ -62,7 +62,7 @@ interface tcb_if
   } tcb_req_t;
 
   // response
-  typedef struct {
+  typedef struct packed {
     logic [PHY.DBW-1:0] rdt;  // read data
     tcb_rsp_sts_t       sts;  // status (optional)
   } tcb_rsp_t;

@@ -31,13 +31,7 @@ module tcb_lib_register_request #(
 `else
   // camparing subordinate and manager interface parameters
   generate
-    // bus widths
-    if (sub.ABW != man.ABW)  $error("ERROR: %m parameter (sub.ABW = %d) != (man.ABW = %d)", sub.ABW, man.ABW);
-    if (sub.DBW != man.DBW)  $error("ERROR: %m parameter (sub.DBW = %d) != (man.DBW = %d)", sub.DBW, man.DBW);
-    if (sub.SLW != man.SLW)  $error("ERROR: %m parameter (sub.SLW = %d) != (man.SLW = %d)", sub.SLW, man.SLW);
-    if (sub.BEW != man.BEW)  $error("ERROR: %m parameter (sub.BEW = %d) != (man.BEW = %d)", sub.BEW, man.BEW);
-    // response delay
-    if (sub.DLY != man.DLY+1)$error("ERROR: %m parameter (sub.DLY = %d) != (man.DLY = %d)", sub.DLY, man.DLY);
+    // TODO
   endgenerate
 `endif
 
@@ -57,26 +51,17 @@ module tcb_lib_register_request #(
 
   always_ff @(posedge sub.clk)
   begin
-    // request optional
-    man.inc <= sub.inc;
-    man.rpt <= sub.rpt;
-    man.lck <= sub.lck;
-    // request
-    man.wen <= sub.wen;
-    man.siz <= sub.siz;
-    man.ben <= sub.ben;
-    man.adr <= sub.adr;
-    for (int unsigned i=0; i<sub.BEW; i+=sub.SLW*GRN) begin
-      // data granularity
-      if (sub.wen & sub.ben[i]) begin
-        man.wdt[i+:sub.SLW*GRN] <= sub.wdt[i+:sub.SLW*GRN];
-      end
-    end
+    man.req <= sub.req;
+//    // data granularity
+//    for (int unsigned i=0; i<sub.BEW; i+=sub.SLW*GRN) begin
+//      if (sub.wen & sub.ben[i]) begin
+//        man.wdt[i+:sub.SLW*GRN] <= sub.wdt[i+:sub.SLW*GRN];
+//      end
+//    end
   end
 
   // response
-  assign sub.rdt = man.rdt;
-  assign sub.err = man.err;
+  assign sub.rsp = man.rsp;
 
   // handshake (valid is checked to avoid pipeline bubbles)
   assign sub.rdy = man.rdy | ~man.vld;

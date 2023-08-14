@@ -19,8 +19,8 @@
 module tcb_lib_demultiplexer
   import tcb_pkg::*;
 #(
-  // interconnect parameters
-  parameter  int unsigned MPN = 2,      // port number
+  // interconnect parameters (manager port number and logirthm)
+  parameter  int unsigned MPN = 2,
   localparam int unsigned MPL = $clog2(MPN)
 )(
   // control
@@ -48,10 +48,11 @@ module tcb_lib_demultiplexer
 // local signals
 ////////////////////////////////////////////////////////////////////////////////
 
+  // TODO: avoid redefinition
   // response
-  typedef struct {
+  typedef struct packed {
     logic [sub.PHY.DBW-1:0] rdt;  // read data
-    tcb_rsp_sts_t           sts;  // status (optional)
+    tcb_rsp_sts_def_t       sts;  // status (optional)
   } tcb_rsp_t;
 
   // demultiplexer signals
@@ -83,8 +84,8 @@ module tcb_lib_demultiplexer
   // replicate request signals
   generate
   for (genvar i=0; i<MPN; i++) begin: gen_req
-    assign man[i].vld = (sub_sel == i) ? sub.vld : '0;  // handshake
-    assign man[i].req = (sub_sel == i) ? sub.req : 'x;  // request
+    assign man[i].vld = (sub_sel == i) ? sub.vld : 1'b0;  // handshake
+    assign man[i].req = (sub_sel == i) ? sub.req :   'x;  // request
   end: gen_req
   endgenerate
 

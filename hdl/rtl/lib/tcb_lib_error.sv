@@ -18,7 +18,7 @@
 
 module tcb_lib_error (
   // system bus interface
-  tcb_if.sub bus
+  tcb_if.sub sub
 );
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -26,12 +26,12 @@ module tcb_lib_error (
 ////////////////////////////////////////////////////////////////////////////////
 
 // response is immediate
-assign bus.rdy = 1'b1;
+assign sub.rdy = 1'b1;
 
 // data is don't care
-assign bus.rdt = 'x;
+assign sub.rsp.rdt = 'x;
 
 // the response is always an error
-assign bus.err = 1'b1;
+assign sub.rsp.sts.err = 1'b1;
 
 endmodule: tcb_lib_error

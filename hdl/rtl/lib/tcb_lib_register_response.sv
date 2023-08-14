@@ -31,13 +31,7 @@ module tcb_lib_register_response #(
 `else
   // comparing subordinate and manager interface parameters
   generate
-    // bus widths
-    if (sub.ABW != man.ABW)  $error("ERROR: %m parameter (sub.ABW = %d) != (man.ABW = %d)", sub.ABW, man.ABW);
-    if (sub.DBW != man.DBW)  $error("ERROR: %m parameter (sub.DBW = %d) != (man.DBW = %d)", sub.DBW, man.DBW);
-    if (sub.SLW != man.SLW)  $error("ERROR: %m parameter (sub.SLW = %d) != (man.SLW = %d)", sub.SLW, man.SLW);
-    if (sub.BEW != man.BEW)  $error("ERROR: %m parameter (sub.BEW = %d) != (man.BEW = %d)", sub.BEW, man.BEW);
-    // response delay
-    if (sub.DLY != man.DLY+1)$error("ERROR: %m parameter (sub.DLY = %d) != (man.DLY = %d)", sub.DLY, man.DLY);
+    // TODO
   endgenerate
 `endif
 
@@ -45,30 +39,20 @@ module tcb_lib_register_response #(
 // register response path
 ////////////////////////////////////////////////////////////////////////////////
 
-  // handshake
-  assign man.vld = sub.vld;
-
-  // request optional
-  assign man.inc = sub.inc;
-  assign man.rpt = sub.rpt;
-  assign man.lck = sub.lck;
-  // request
-  assign man.wen = sub.wen;
-  assign man.siz = sub.siz;
-  assign man.ben = sub.ben;
-  assign man.adr = sub.adr;
-  assign man.wdt = sub.wdt;
+  assign man.vld = sub.vld;  // handshake
+  assign man.req = sub.req;  // request
 
   always_ff @(posedge man.clk)
   begin
-    // response
-    for (int unsigned i=0; i<man.BEW; i+=man.SLW*GRN) begin
-      // data granularity
-      if (man.rbe[man.DLY][i]) begin
-        sub.rdt[i+:man.SLW*GRN] <= man.rdt[i+:man.SLW*GRN];
+    // TODO: only on read enable
+    // data granularity
+    for (int unsigned i=0; i<man.PHY_BEW; i+=man.PHY.SLW*GRN) begin
+      if (man.rbe[man.PHY.DLY][i]) begin
+        sub.rsp.rdt[i+:man.PHY.SLW*GRN] <= man.rsp.rdt[i+:man.PHY.SLW*GRN];
       end
     end
-    sub.err <= man.err;
+    // response status
+    sub.rsp.sts <= man.rsp.sts;
   end
 
   // handshake

@@ -114,7 +114,7 @@ generate
 if (CFG_RSP_MIN) begin: gen_rsp_min
 
   // only the GPIO input can be read
-  assign tcb.rdt = gpio_r;
+  assign tcb.rsp.rdt = gpio_r;
 
 end: gen_rsp_min
 // normal implementation

@@ -49,7 +49,7 @@ module tcb_lib_multiplexer
 ////////////////////////////////////////////////////////////////////////////////
 
   // request
-  typedef struct {
+  typedef struct packed {
     tcb_req_cmd_t           cmd;  // command (optional)
     logic                   wen;  // write enable
     logic                   ren;  // write enable
