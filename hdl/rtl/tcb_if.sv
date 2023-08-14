@@ -77,10 +77,14 @@ interface tcb_if
 
   // handshake
   logic trn;  // transfer
+  logic stl;  // stall
   logic idl;  // idle
 
   // transfer (valid and ready at the same time)
   assign trn = vld & rdy;
+
+  // stall (valid while not ready)
+  assign stl = vld & ~rdy;
 
   // TODO: improve description
   // idle (either not valid or ending the current cycle with a transfer)
@@ -164,6 +168,7 @@ interface tcb_if
     input  rsp,
     // local signals
     input  trn,
+    input  stl,
     input  idl,
     input  dly
   );
@@ -181,6 +186,7 @@ interface tcb_if
     input  rsp,
     // local signals
     input  trn,
+    input  stl,
     input  idl,
     input  dly
   );
@@ -198,6 +204,7 @@ interface tcb_if
     output rsp,
     // local signals
     input  trn,
+    input  stl,
     input  idl,
     input  dly
   );
