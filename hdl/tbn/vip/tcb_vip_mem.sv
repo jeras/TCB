@@ -20,11 +20,11 @@ module tcb_vip_mem
   import tcb_pkg::*;
   import tcb_vip_pkg::*;
 #(
-  int unsigned SZ = 2**8,
-  int unsigned PN = 1
+  int unsigned SIZ = 2**8,
+  int unsigned SPN = 1
 )(
   // TCB interface (without modport constraints)
-  tcb_if.sub tcb [0:PN-1]
+  tcb_if.sub tcb [0:SPN-1]
 );
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -33,7 +33,7 @@ module tcb_vip_mem
 
   // TODO: detect Xilinx Vivado simulator instead
 //  `ifdef VERILATOR
-  logic [8-1:0] mem [0:SZ-1];  // 4194304
+  logic [8-1:0] mem [0:SIZ-1];  // 4194304
 //  `else
 //  logic [8-1:0] mem [0:1757700-1];
 //  `endif
@@ -76,7 +76,7 @@ module tcb_vip_mem
   function int write_hex (
     string fn,
     int unsigned start_addr = 0,
-    int unsigned finish_addr = SZ-1
+    int unsigned finish_addr = SIZ-1
   );
     int code;  // status code
     int fd;    // file descriptor
@@ -97,7 +97,7 @@ module tcb_vip_mem
 ////////////////////////////////////////////////////////////////////////////////
 
   generate
-  for (genvar i=0; i<PN; i++) begin: port
+  for (genvar i=0; i<SPN; i++) begin: port
 
     int unsigned tmp_req_siz;
 
@@ -130,7 +130,7 @@ module tcb_vip_mem
             // byte address
             adr = b + int'(tcb[i].req.adr);
             dat = tmp_req_wdt[b];
-            mem[adr%SZ] <= dat;
+            mem[adr%SIZ] <= dat;
           end
         end else begin
           $display("DEBUG: tcb[%d]: write adr=%08X=%d, ben=%04b, wdt=%08X", i, tcb[i].req.adr, tcb[i].req.adr, tcb[i].req.ben, tmp_req_wdt);
@@ -138,7 +138,7 @@ module tcb_vip_mem
             // byte address
             adr = b + int'(tcb[i].req.adr);
             dat = tmp_req_wdt[adr%tcb[i].PHY_BEW];
-            if (tcb[i].req.ben[b])  mem[adr%SZ] <= dat;
+            if (tcb[i].req.ben[b])  mem[adr%SIZ] <= dat;
           end
         end
       end
@@ -159,12 +159,12 @@ module tcb_vip_mem
           tmp_rsp_rdt = '{default: 'x};
           for (int unsigned b=0; b<tmp_req_siz; b++) begin
             adr = b + int'(tcb[i].req.adr);
-            tmp_rsp_rdt[0][b] = mem[adr%SZ];
+            tmp_rsp_rdt[0][b] = mem[adr%SIZ];
           end
         end else begin
           for (int unsigned b=0; b<tcb[i].PHY_BEW; b++) begin
             adr = b + int'(tcb[i].req.adr);
-            tmp_rsp_rdt[0][adr%tcb[i].PHY_BEW] = tcb[i].req.ben[b] ? mem[adr%SZ] : 'x;
+            tmp_rsp_rdt[0][adr%tcb[i].PHY_BEW] = tcb[i].req.ben[b] ? mem[adr%SIZ] : 'x;
           end
         end
       end else begin

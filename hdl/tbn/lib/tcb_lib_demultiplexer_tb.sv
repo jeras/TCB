@@ -27,10 +27,10 @@ module tcb_lib_demultiplexer_tb
   // response delay
   int unsigned DLY = 1,
   // interconnect parameters
-  int unsigned PN = 3,      // port number
-  int unsigned PL = $clog2(PN),
+  int unsigned MPN = 3,      // port number
+  int unsigned MPL = $clog2(MPN),
   // decoder address and mask array
-  parameter  logic [ABW-1:0] DAM [PN-1:0] = '{PN{ABW'('x)}}
+  parameter  logic [ABW-1:0] DAM [MPN-1:0] = '{MPN{ABW'('x)}}
 );
 
   // system signals
@@ -42,14 +42,14 @@ module tcb_lib_demultiplexer_tb
   logic           err;  // error response
 
   // control
-  logic  [PL-1:0] sel;  // select
+  logic  [MPL-1:0] sel;  // select
 
 ////////////////////////////////////////////////////////////////////////////////
 // local signals
 ////////////////////////////////////////////////////////////////////////////////
 
-  tcb_if #(.ABW (ABW), .DBW (DBW)) tcb_man           (.clk (clk), .rst (rst));
-  tcb_if #(.ABW (ABW), .DBW (DBW)) tcb_sub  [PN-1:0] (.clk (clk), .rst (rst));
+  tcb_if #(.ABW (ABW), .DBW (DBW)) tcb_man            (.clk (clk), .rst (rst));
+  tcb_if #(.ABW (ABW), .DBW (DBW)) tcb_sub  [MPN-1:0] (.clk (clk), .rst (rst));
 
 ////////////////////////////////////////////////////////////////////////////////
 // test sequence
@@ -105,10 +105,10 @@ module tcb_lib_demultiplexer_tb
 // VIP instances
 ////////////////////////////////////////////////////////////////////////////////
 
-  tcb_vip_dev #("MAN") man              (.tcb (tcb_man));  // manager
-  tcb_vip_dev #("MON") mon_man          (.tcb (tcb_man));  // manager monitor
-  tcb_vip_dev #("MON") mon_sub [PN-1:0] (.tcb (tcb_sub));  // subordinate monitor
-  tcb_vip_dev #("SUB") sub     [PN-1:0] (.tcb (tcb_sub));  // subordinate
+  tcb_vip_dev #("MAN") man               (.tcb (tcb_man));  // manager
+  tcb_vip_dev #("MON") mon_man           (.tcb (tcb_man));  // manager monitor
+  tcb_vip_dev #("MON") mon_sub [MPN-1:0] (.tcb (tcb_sub));  // subordinate monitor
+  tcb_vip_dev #("SUB") sub     [MPN-1:0] (.tcb (tcb_sub));  // subordinate
 
 ////////////////////////////////////////////////////////////////////////////////
 // DUT instances
@@ -119,7 +119,7 @@ module tcb_lib_demultiplexer_tb
     // arbitration priority mode
 //  .MD   (),
     // interconnect parameters
-    .PN   (PN),
+    .MPN   (MPN),
     // decoder address and mask array
     .DAM  (DAM)
   ) arb (
@@ -130,7 +130,7 @@ module tcb_lib_demultiplexer_tb
   // RTL demultiplexer DUT
   tcb_lib_demultiplexer #(
     // interconnect parameters
-    .PN   (PN)
+    .MPN   (MPN)
   ) dut (
     // control
     .sel  (sel),

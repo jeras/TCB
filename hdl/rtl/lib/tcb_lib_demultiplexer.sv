@@ -52,6 +52,8 @@ module tcb_lib_demultiplexer
   logic [MPL-1:0] sub_sel;
   logic [MPL-1:0] man_sel;
 
+  typedef sub.rsp_t rsp_t;
+
   sub.rsp_t       tmp_rsp [MPN-1:0];  // response
   logic           tmp_rdy [MPN-1:0];  // handshake
 

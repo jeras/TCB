@@ -27,10 +27,10 @@ module tcb_lib_multiplexer_tb
   // response delay
   int unsigned DLY = 1,
   // interconnect parameters
-  int unsigned PN = 3,      // port number
-  int unsigned PL = $clog2(PN),
+  int unsigned SPN = 3,      // port number
+  int unsigned SPL = $clog2(SPN),
   // port priorities (lower number is higher priority)
-  int unsigned PRI [PN-1:0] = '{2, 1, 0}
+  int unsigned PRI [SPN-1:0] = '{2, 1, 0}
 );
 
   // system signals
@@ -38,20 +38,20 @@ module tcb_lib_multiplexer_tb
   logic rst;  // reset
 
   // response
-  //logic [DBW-1:0] rdt [PN-1:0];  // read data
-  //logic           err [PN-1:0];  // error response
+  //logic [DBW-1:0] rdt [SPN-1:0];  // read data
+  //logic           err [SPN-1:0];  // error response
   logic [DBW-1:0] rdt;  // read data
   logic           err;  // error response
 
   // control
-  logic  [PL-1:0] sel;  // select
+  logic  [SPL-1:0] sel;  // select
 
 ////////////////////////////////////////////////////////////////////////////////
 // local signals
 ////////////////////////////////////////////////////////////////////////////////
 
-  tcb_if #(.ABW (ABW), .DBW (DBW)) tcb_man  [PN-1:0] (.clk (clk), .rst (rst));
-  tcb_if #(.ABW (ABW), .DBW (DBW)) tcb_sub           (.clk (clk), .rst (rst));
+  tcb_if #(.ABW (ABW), .DBW (DBW)) tcb_man  [SPN-1:0] (.clk (clk), .rst (rst));
+  tcb_if #(.ABW (ABW), .DBW (DBW)) tcb_sub            (.clk (clk), .rst (rst));
 
 ////////////////////////////////////////////////////////////////////////////////
 // test sequence
@@ -72,7 +72,7 @@ module tcb_lib_multiplexer_tb
     #1;
     fork
       begin: req
-//        for (int unsigned i=0; i<PN; i++) begin
+//        for (int unsigned i=0; i<SPN; i++) begin
 //          man[i].write(32'h01234567, 4'b1111, 32'h89ABCDEF, err);
 //          man[i].read (32'h76543210, 4'b1111, rdt         , err);
 //        end
@@ -118,10 +118,10 @@ module tcb_lib_multiplexer_tb
 // VIP component instances
 ////////////////////////////////////////////////////////////////////////////////
 
-  tcb_vip_dev #("MAN") man     [PN-1:0] (.tcb (tcb_man));  // manager
-  tcb_vip_dev #("MON") mon_man [PN-1:0] (.tcb (tcb_man));  // manager monitor
-  tcb_vip_dev #("MON") mon_sub          (.tcb (tcb_sub));  // subordinate monitor
-  tcb_vip_dev #("SUB") sub              (.tcb (tcb_sub));  // subordinate
+  tcb_vip_dev #("MAN") man     [SPN-1:0] (.tcb (tcb_man));  // manager
+  tcb_vip_dev #("MON") mon_man [SPN-1:0] (.tcb (tcb_man));  // manager monitor
+  tcb_vip_dev #("MON") mon_sub           (.tcb (tcb_sub));  // subordinate monitor
+  tcb_vip_dev #("SUB") sub               (.tcb (tcb_sub));  // subordinate
 
 ////////////////////////////////////////////////////////////////////////////////
 // DUT instances
@@ -132,7 +132,7 @@ module tcb_lib_multiplexer_tb
     // arbitration priority mode
 //  .MD   (),
     // interconnect parameters
-    .PN   (PN),
+    .SPN   (SPN),
     // port priorities (lower number is higher priority)
     .PRI  (PRI)
   ) arb (
@@ -143,7 +143,7 @@ module tcb_lib_multiplexer_tb
   // RTL multiplexer DUT
   tcb_lib_multiplexer #(
     // interconnect parameters
-    .PN   (PN)
+    .SPN   (SPN)
   ) dut (
     // control
     .sel  (sel),
