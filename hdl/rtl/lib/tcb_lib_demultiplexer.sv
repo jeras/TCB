@@ -48,18 +48,11 @@ module tcb_lib_demultiplexer
 // local signals
 ////////////////////////////////////////////////////////////////////////////////
 
-  // TODO: avoid redefinition
-  // response
-  typedef struct packed {
-    logic [sub.PHY.DBW-1:0] rdt;  // read data
-    tcb_rsp_sts_def_t       sts;  // status (optional)
-  } tcb_rsp_t;
-
   // demultiplexer signals
   logic [MPL-1:0] sub_sel;
   logic [MPL-1:0] man_sel;
 
-  tcb_rsp_t       tmp_rsp [MPN-1:0];  // response
+  sub.rsp_t       tmp_rsp [MPN-1:0];  // response
   logic           tmp_rdy [MPN-1:0];  // handshake
 
 ////////////////////////////////////////////////////////////////////////////////

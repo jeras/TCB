@@ -16,7 +16,7 @@
 // limitations under the License.
 ////////////////////////////////////////////////////////////////////////////////
 
-module tcb_lib_endianness
+module tcb_lib_converter
   import tcb_pkg::*;
 (
   // interfaces
@@ -186,4 +186,4 @@ module tcb_lib_endianness
   // handshake
   assign sub.rdy = man.rdy;
 
-endmodule: tcb_lib_endianness
+endmodule: tcb_lib_converter

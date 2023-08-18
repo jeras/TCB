@@ -48,24 +48,12 @@ module tcb_lib_multiplexer
 // local signals
 ////////////////////////////////////////////////////////////////////////////////
 
-  // request
-  typedef struct packed {
-    tcb_req_cmd_t           cmd;  // command (optional)
-    logic                   wen;  // write enable
-    logic                   ren;  // write enable
-    logic                   ndn;  // endianness
-    logic [man.PHY.ABW-1:0] adr;  // address
-    logic [man.PHY_SZW-1:0] siz;  // transfer size
-    logic [man.PHY_BEW-1:0] ben;  // byte enable
-    logic [man.PHY.DBW-1:0] wdt;  // write data
-  } tcb_req_t;
-
   // multiplexer select
   logic [SPL-1:0] sub_sel;
   logic [SPL-1:0] man_sel;
 
   logic           tmp_vld [SPN-1:0];  // handshake
-  tcb_req_t       tmp_req [SPN-1:0];  // request
+  man.req_t       tmp_req [SPN-1:0];  // request
 
 ////////////////////////////////////////////////////////////////////////////////
 // control

@@ -16,7 +16,7 @@
 // limitations under the License.
 ////////////////////////////////////////////////////////////////////////////////
 
-module tcb_lib_endianness_tb
+module tcb_lib_converter_tb
   import tcb_pkg::*;
   import tcb_vip_pkg::*;
 #(
@@ -153,7 +153,7 @@ module tcb_lib_endianness_tb
 // DUT instance
 ////////////////////////////////////////////////////////////////////////////////
 
-  tcb_lib_endianness dut (
+  tcb_lib_converter dut (
     .sub  (tcb_man),
     .man  (tcb_sub),
     .mal  ()
@@ -169,4 +169,4 @@ module tcb_lib_endianness_tb
     $dumpvars;
   end
 
-endmodule: tcb_lib_endianness_tb
+endmodule: tcb_lib_converter_tb

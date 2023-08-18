@@ -59,17 +59,17 @@ interface tcb_if
     logic [PHY_SZW-1:0] siz;  // transfer size
     logic [PHY_BEW-1:0] ben;  // byte enable
     logic [PHY.DBW-1:0] wdt;  // write data
-  } tcb_req_t;
+  } req_t;
 
   // response
   typedef struct packed {
     logic [PHY.DBW-1:0] rdt;  // read data
     tcb_rsp_sts_t       sts;  // status (optional)
-  } tcb_rsp_t;
+  } rsp_t;
 
   // request/response
-  tcb_req_t req;
-  tcb_rsp_t rsp;
+  req_t req;
+  rsp_t rsp;
 
 ////////////////////////////////////////////////////////////////////////////////
 // transaction handshake logic
@@ -114,10 +114,10 @@ interface tcb_if
     logic [PHY.ABW-1:0] adr;  // address
     logic [PHY_SZW-1:0] siz;  // transfer size
     logic [PHY_BEW-1:0] ben;  // byte enable
-  } tcb_dly_t;
+  } dly_t;
 
   // response pipeline
-  tcb_dly_t dly [0:PHY.DLY];
+  dly_t dly [0:PHY.DLY];
 
   logic [PHY_BEW-1:0] req_ben;  // byte enable
 

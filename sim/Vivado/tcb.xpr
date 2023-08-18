@@ -172,7 +172,7 @@
           <Attr Name="UsedIn" Val="simulation"/>
         </FileInfo>
       </File>
-      <File Path="$PPRDIR/../../hdl/rtl/lib/tcb_lib_endianness.sv">
+      <File Path="$PPRDIR/../../hdl/rtl/lib/tcb_lib_converter.sv">
         <FileInfo>
           <Attr Name="UsedIn" Val="synthesis"/>
           <Attr Name="UsedIn" Val="implementation"/>
@@ -314,7 +314,7 @@
           <Attr Name="UsedIn" Val="simulation"/>
         </FileInfo>
       </File>
-      <File Path="$PPRDIR/../../hdl/tbn/lib/tcb_lib_endianness_tb.sv">
+      <File Path="$PPRDIR/../../hdl/tbn/lib/tcb_lib_converter_tb.sv">
         <FileInfo>
           <Attr Name="UsedIn" Val="synthesis"/>
           <Attr Name="UsedIn" Val="implementation"/>
@@ -379,7 +379,7 @@
           <Attr Name="UsedIn" Val="simulation"/>
         </FileInfo>
       </File>
-      <File Path="$PPRDIR/tcb_lib_endianness_tb_behav.wcfg">
+      <File Path="$PPRDIR/tcb_lib_converter_tb_behav.wcfg">
         <FileInfo>
           <Attr Name="UserDisabled" Val="1"/>
           <Attr Name="UsedIn" Val="simulation"/>
@@ -391,13 +391,13 @@
           <Attr Name="UsedIn" Val="simulation"/>
         </FileInfo>
       </File>
-      <File Path="$PPRDIR/tcb_lib_endianness_tb_behav1.wcfg">
+      <File Path="$PPRDIR/tcb_lib_converter_tb_behav1.wcfg">
         <FileInfo>
           <Attr Name="UserDisabled" Val="1"/>
           <Attr Name="UsedIn" Val="simulation"/>
         </FileInfo>
       </File>
-      <File Path="$PPRDIR/tcb_lib_endianness_tb_behav2.wcfg">
+      <File Path="$PPRDIR/tcb_lib_converter_tb_behav2.wcfg">
         <FileInfo>
           <Attr Name="UserDisabled" Val="1"/>
           <Attr Name="UsedIn" Val="simulation"/>
@@ -430,11 +430,11 @@
         <Option Name="XSimWcfgFile" Val="$PPRDIR/tcb_lib_register_request_tb_behav.wcfg"/>
         <Option Name="XSimWcfgFile" Val="$PPRDIR/tcb_lib_register_response_tb_behav.wcfg"/>
         <Option Name="XSimWcfgFile" Val="$PPRDIR/tcb_lib_register_backpressure_tb_behav.wcfg"/>
-        <Option Name="XSimWcfgFile" Val="$PPRDIR/tcb_lib_endianness_tb_behav.wcfg"/>
-        <Option Name="XSimWcfgFile" Val="$PPRDIR/tcb_lib_endianness_tb_behav.wcfg"/>
+        <Option Name="XSimWcfgFile" Val="$PPRDIR/tcb_lib_converter_tb_behav.wcfg"/>
+        <Option Name="XSimWcfgFile" Val="$PPRDIR/tcb_lib_converter_tb_behav.wcfg"/>
         <Option Name="XSimWcfgFile" Val="$PPRDIR/tcb_vip_tb_behav.wcfg"/>
-        <Option Name="XSimWcfgFile" Val="$PPRDIR/tcb_lib_endianness_tb_behav1.wcfg"/>
-        <Option Name="XSimWcfgFile" Val="$PPRDIR/tcb_lib_endianness_tb_behav2.wcfg"/>
+        <Option Name="XSimWcfgFile" Val="$PPRDIR/tcb_lib_converter_tb_behav1.wcfg"/>
+        <Option Name="XSimWcfgFile" Val="$PPRDIR/tcb_lib_converter_tb_behav2.wcfg"/>
         <Option Name="XSimWcfgFile" Val="$PPRDIR/tcb_gpio_tb_behav.wcfg"/>
       </Config>
     </FileSet>
