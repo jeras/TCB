@@ -18,7 +18,7 @@
 
 module tcb_vip_mem
   import tcb_pkg::*;
-  import tcb_vip_pkg::*;
+//  import tcb_vip_pkg::*;
 #(
   int unsigned SIZ = 2**8,
   int unsigned SPN = 1
