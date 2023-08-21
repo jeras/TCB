@@ -4,7 +4,7 @@
 <!-- Copyright 1986-2022 Xilinx, Inc. All Rights Reserved.                   -->
 <!-- Copyright 2022-2023 Advanced Micro Devices, Inc. All Rights Reserved.   -->
 
-<Project Product="Vivado" Version="7" Minor="63" Path="/home/izi/VLSI/TCB/sim/Vivado/tcb.xpr">
+<Project Product="Vivado" Version="7" Minor="63" Path="/home/izi/VLSI/rp32/submodules/tcb/sim/vivado/tcb.xpr">
   <DefaultLaunch Dir="$PRUNDIR"/>
   <Configuration>
     <Option Name="Id" Val="286462eb9e1e45178249586ae072c3ae"/>
@@ -69,7 +69,7 @@
     <Option Name="WTActivehdlLaunchSim" Val="0"/>
     <Option Name="WTXSimExportSim" Val="1"/>
     <Option Name="WTModelSimExportSim" Val="1"/>
-    <Option Name="WTQuestaExportSim" Val="1"/>
+    <Option Name="WTQuestaExportSim" Val="3"/>
     <Option Name="WTIesExportSim" Val="0"/>
     <Option Name="WTVcsExportSim" Val="1"/>
     <Option Name="WTRivieraExportSim" Val="1"/>
@@ -385,7 +385,7 @@
           <Attr Name="UsedIn" Val="simulation"/>
         </FileInfo>
       </File>
-      <File Path="$PPRDIR/tcb_vip_tb_behav.wcfg">
+      <File Path="$PPRDIR/../../../../../TCB/sim/Vivado/tcb_vip_tb_behav.wcfg">
         <FileInfo>
           <Attr Name="UserDisabled" Val="1"/>
           <Attr Name="UsedIn" Val="simulation"/>
@@ -432,7 +432,7 @@
         <Option Name="XSimWcfgFile" Val="$PPRDIR/tcb_lib_register_backpressure_tb_behav.wcfg"/>
         <Option Name="XSimWcfgFile" Val="$PPRDIR/tcb_lib_converter_tb_behav.wcfg"/>
         <Option Name="XSimWcfgFile" Val="$PPRDIR/tcb_lib_converter_tb_behav.wcfg"/>
-        <Option Name="XSimWcfgFile" Val="$PPRDIR/tcb_vip_tb_behav.wcfg"/>
+        <Option Name="XSimWcfgFile" Val="$PPRDIR/../../../../../TCB/sim/Vivado/tcb_vip_tb_behav.wcfg"/>
         <Option Name="XSimWcfgFile" Val="$PPRDIR/tcb_lib_converter_tb_behav1.wcfg"/>
         <Option Name="XSimWcfgFile" Val="$PPRDIR/tcb_lib_converter_tb_behav2.wcfg"/>
         <Option Name="XSimWcfgFile" Val="$PPRDIR/tcb_gpio_tb_behav.wcfg"/>
