@@ -95,13 +95,16 @@ interface tcb_if
 ////////////////////////////////////////////////////////////////////////////////
 
   generate
-  case (PHY.CHN)
-    TCB_COMMON_HALF_DUPLEX: begin assign req.ren =              ~req.wen;        end
-    TCB_COMMON_FULL_DUPLEX: begin                                                end
-    TCB_INDEPENDENT_WRITE : begin assign req.ren = 1'b0;  assign req.wen = 1'b1; end
-    TCB_INDEPENDENT_READ  : begin assign req.ren = 1'b1;  assign req.wen = 1'b0; end
-  endcase
-  endgenerate 
+//  case (PHY.CHN)
+//    TCB_COMMON_HALF_DUPLEX: begin assign req.ren =              ~req.wen;        end
+//    TCB_COMMON_FULL_DUPLEX: begin                                                end
+//    TCB_INDEPENDENT_WRITE : begin assign req.ren = 1'b0;  assign req.wen = 1'b1; end
+//    TCB_INDEPENDENT_READ  : begin assign req.ren = 1'b1;  assign req.wen = 1'b0; end
+//  endcase
+    if (PHY.CHN != TCB_COMMON_FULL_DUPLEX) begin
+//      assign req.ren = ~req.wen;
+    end
+  endgenerate
 
 ////////////////////////////////////////////////////////////////////////////////
 // response logic (never outputs on modports)

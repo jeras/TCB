@@ -307,26 +307,20 @@ package tcb_vip_pkg;
 // transaction class
 ////////////////////////////////////////////////////////////////////////////////
 
-    virtual class tcb_transaction_c #(
-      // TCB widths
-      int unsigned SIZ = PHY_BEW  // transaction size in bytes
-    );
-
       // TCB transaction request structure
       typedef struct {
         // request
+        tcb_cfg_endian_t             ndn;
         logic                        wen;
         logic          [PHY.ABW-1:0] adr;
-        logic [SIZ-1:0][PHY.SLW-1:0] wdt;
-        // endianness
-        tcb_cfg_endian_t             ndn;
+        logic   [8-1:0][PHY.SLW-1:0] wdt;
       } transaction_request_t;
 
       // TCB transaction response structure
       typedef struct {
         // response
-        logic [SIZ-1:0][PHY.SLW-1:0] rdt;
-        logic                        sts;
+        logic   [8-1:0][PHY.SLW-1:0] rdt;
+        tcb_rsp_sts_t                sts;
       } transaction_response_t;
 
       // TCB transaction structure
@@ -337,6 +331,7 @@ package tcb_vip_pkg;
 
       // read/write request transaction of power of 2 size
       static function automatic transfer_array_t transaction_request (
+        int unsigned          siz,
         // TCB transaction structure
         transaction_request_t transaction_req
       );
@@ -347,11 +342,11 @@ package tcb_vip_pkg;
         int unsigned len;
         transfer_array_t transfer_array;
         // number of transfer_array
-        len = SIZ / PHY_BEW + (SIZ % PHY_BEW ? 1 : 0);
+        len = siz / PHY_BEW + (siz % PHY_BEW ? 1 : 0);
         transfer_array = new[len];
 //        transfer_array = new[len]('{default: super.TRANSFER_INIT});
         // check if the transfer meets size requirements
-        if (SIZ != 2**$clog2(SIZ)) begin
+        if (siz != 2**$clog2(siz)) begin
           $error("ERROR: Transaction size is not power of 2.");
         end
         // check if the transfer meets alignment requirements
@@ -368,11 +363,11 @@ package tcb_vip_pkg;
           transfer_array[i].req.ben = '0;
           transfer_array[i].req.siz = (PHY.SIZ == TCB_LINEAR) ? PHY_BEW : $clog2(PHY_BEW);
         end
-        if (SIZ <= PHY_BEW) begin
-          transfer_array[0].req.siz = (PHY.SIZ == TCB_LINEAR) ?     SIZ : $clog2(    SIZ);
+        if (siz <= PHY_BEW) begin
+          transfer_array[0].req.siz = (PHY.SIZ == TCB_LINEAR) ?     siz : $clog2(    siz);
         end
         // data signals
-        for (int unsigned i=0; i<SIZ; i++) begin
+        for (int unsigned i=0; i<siz; i++) begin
           // address offset
           off = i / PHY_BEW;
           // mode processor/memory
@@ -393,7 +388,7 @@ package tcb_vip_pkg;
           if (transaction_req.ndn == TCB_LITTLE) begin
             transfer_array[off].req.wdt[byt] = transaction_req.wdt[          i];
           end else begin
-            transfer_array[off].req.wdt[byt] = transaction_req.wdt[SIZ - 1 - i];
+            transfer_array[off].req.wdt[byt] = transaction_req.wdt[siz - 1 - i];
           end
         end
         return(transfer_array);
@@ -401,6 +396,7 @@ package tcb_vip_pkg;
 
       // read/write response transaction of power of 2 size
       static function automatic transaction_response_t transaction_response (
+        int unsigned          siz,
         transfer_array_t transfer_array
       );
         // temporary variables
@@ -410,7 +406,7 @@ package tcb_vip_pkg;
         int unsigned len;
         transaction_response_t transaction_rsp = '{rdt: 'x, sts: '0};
         // data signals
-        for (int unsigned i=0; i<SIZ; i++) begin
+        for (int unsigned i=0; i<siz; i++) begin
           // address offset
           off = i / PHY_BEW;
           // mode processor/memory
@@ -429,14 +425,12 @@ package tcb_vip_pkg;
           if (transfer_array[off].req.ndn == TCB_LITTLE) begin
             transaction_rsp.rdt[          i] = transfer_array[off].rsp.rdt[byt];
           end else begin
-            transaction_rsp.rdt[SIZ - 1 - i] = transfer_array[off].rsp.rdt[byt];
+            transaction_rsp.rdt[siz - 1 - i] = transfer_array[off].rsp.rdt[byt];
           end
           transaction_rsp.sts               |= transfer_array[off].rsp.sts;
         end
         return(transaction_rsp);
       endfunction: transaction_response
-
-    endclass: tcb_transaction_c
 
 ////////////////////////////////////////////////////////////////////////////////
 // transaction
@@ -454,15 +448,14 @@ package tcb_vip_pkg;
       input  tcb_cfg_endian_t                 ndn = TCB_LITTLE
     );
       transfer_array_t transfer_array;
-      typedef tcb_transaction_c #(1) tcb_transaction_p;
-      tcb_transaction_p::transaction_t transaction;
+      transaction_t transaction;
       // request
-      transaction.req = '{wen: wen, adr: adr, wdt: wdt, ndn: ndn};
-      transfer_array = tcb_transaction_p::transaction_request(transaction.req);
+      transaction.req = '{ndn: ndn, wen: wen, adr: adr, wdt: wdt};
+      transfer_array = transaction_request(1, transaction.req);
       // transaction
       transfer_sequencer(transfer_array);
       // response
-      transaction.rsp = tcb_transaction_p::transaction_response(transfer_array);
+      transaction.rsp = transaction_response(1, transfer_array);
       // cleanup
       transfer_array.delete;
       // outputs
@@ -482,15 +475,14 @@ package tcb_vip_pkg;
       input  tcb_cfg_endian_t                 ndn = TCB_LITTLE
     );
       transfer_array_t transfer_array;
-      typedef tcb_transaction_c #(2) tcb_transaction_p;
-      tcb_transaction_p::transaction_t transaction;
+      transaction_t transaction;
       // request
-      transaction.req = '{wen: wen, adr: adr, wdt: wdt, ndn: ndn};
-      transfer_array = tcb_transaction_p::transaction_request(transaction.req);
+      transaction.req = '{ndn: ndn, wen: wen, adr: adr, wdt: wdt};
+      transfer_array = transaction_request(2, transaction.req);
       // transaction
       transfer_sequencer(transfer_array);
       // response
-      transaction.rsp = tcb_transaction_p::transaction_response(transfer_array);
+      transaction.rsp = transaction_response(2, transfer_array);
       // cleanup
       transfer_array.delete;
       // outputs
@@ -510,15 +502,14 @@ package tcb_vip_pkg;
       input  tcb_cfg_endian_t                 ndn = TCB_LITTLE
     );
       transfer_array_t transfer_array;
-      typedef tcb_transaction_c #(4) tcb_transaction_p;
-      tcb_transaction_p::transaction_t transaction;
+      transaction_t transaction;
       // request
-      transaction.req = '{wen: wen, adr: adr, wdt: wdt, ndn: ndn};
-      transfer_array = tcb_transaction_p::transaction_request(transaction.req);
+      transaction.req = '{ndn: ndn, wen: wen, adr: adr, wdt: wdt};
+      transfer_array = transaction_request(4, transaction.req);
       // transaction
       transfer_sequencer(transfer_array);
       // response
-      transaction.rsp = tcb_transaction_p::transaction_response(transfer_array);
+      transaction.rsp = transaction_response(4, transfer_array);
       // cleanup
       transfer_array.delete;
       // outputs
@@ -538,15 +529,14 @@ package tcb_vip_pkg;
       input  tcb_cfg_endian_t                 ndn = TCB_LITTLE
     );
       transfer_array_t transfer_array;
-      typedef tcb_transaction_c #(8) tcb_transaction_p;
-      tcb_transaction_p::transaction_t transaction;
+      transaction_t transaction;
       // request
-      transaction.req = '{wen: wen, adr: adr, wdt: wdt, ndn: ndn};
-      transfer_array = tcb_transaction_p::transaction_request(transaction.req);
+      transaction.req = '{ndn: ndn, wen: wen, adr: adr, wdt: wdt};
+      transfer_array = transaction_request(8, transaction.req);
       // transaction
       transfer_sequencer(transfer_array);
       // response
-      transaction.rsp = tcb_transaction_p::transaction_response(transfer_array);
+      transaction.rsp = transaction_response(8, transfer_array);
       // cleanup
       transfer_array.delete;
       // outputs
@@ -566,15 +556,14 @@ package tcb_vip_pkg;
       input  tcb_cfg_endian_t                 ndn = TCB_LITTLE
     );
       transfer_array_t transfer_array;
-      typedef tcb_transaction_c #(16) tcb_transaction_p;
-      tcb_transaction_p::transaction_t transaction;
+      transaction_t transaction;
       // request
-      transaction.req = '{wen: wen, adr: adr, wdt: wdt, ndn: ndn};
-      transfer_array = tcb_transaction_p::transaction_request(transaction.req);
+      transaction.req = '{ndn: ndn, wen: wen, adr: adr, wdt: wdt};
+      transfer_array = transaction_request(16, transaction.req);
       // transaction
       transfer_sequencer(transfer_array);
       // response
-      transaction.rsp = tcb_transaction_p::transaction_response(transfer_array);
+      transaction.rsp = transaction_response(16, transfer_array);
       // cleanup
       transfer_array.delete;
       // outputs
