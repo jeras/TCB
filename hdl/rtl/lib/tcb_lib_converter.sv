@@ -101,9 +101,10 @@ module tcb_lib_converter
 
           // REFERENCE -> MEMORY
           if (sub.PHY.ALW > 0) begin
-              assign man.req.adr = {sub.req.adr[PHY.ALW-1:0], PHY.ALW'('0)};
+            // TODO range should be [max:2]
+            assign man.req.adr = {sub.req.adr[sub.PHY.ALW-1:0], sub.PHY.ALW'('0)};
           end else begin
-              assign man.req.adr = sub.req.adr;
+            assign man.req.adr = sub.req.adr;
           end
           for (genvar i=0; i<man.PHY_BEW; i++) begin
             int siz = 2**sub.req.siz;
@@ -148,9 +149,10 @@ module tcb_lib_converter
 
           // MEMORY -> MEMORY
           if (sub.PHY.ALW > 0) begin
-              assign man.req.adr = {sub.req.adr[PHY.ALW-1:0], PHY.ALW'('0)};
+            // TODO range should be [max:2]
+            assign man.req.adr = {sub.req.adr[sub.PHY.ALW-1:0], sub.PHY.ALW'('0)};
           end else begin
-              assign man.req.adr = sub.req.adr;
+            assign man.req.adr = sub.req.adr;
           end
           for (genvar i=0; i<man.PHY_BEW; i++) begin
             if (sub.PHY.ORD == man.PHY.ORD) begin
