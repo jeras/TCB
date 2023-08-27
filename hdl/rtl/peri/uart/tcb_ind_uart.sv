@@ -39,12 +39,12 @@ module tcb_ind_uart #(
   // UART
   input  logic uart_rxd,  // receive
   output logic uart_txd,  // transmit
-  // TCB IRW interface
-  tcb_if.sub tcb_rdc,
-  tcb_if.sub tcb_wrc,
   // interrupts
   output logic irq_tx,    // TX FIFO load is below limit
-  output logic irq_rx     // RX FIFO load is above limit
+  output logic irq_rx,    // RX FIFO load is above limit
+  // TCB IRW interface
+  tcb_if.sub tcb_rdc,
+  tcb_if.sub tcb_wrc
 );
 
 ////////////////////////////////////////////////////////////////////////////////

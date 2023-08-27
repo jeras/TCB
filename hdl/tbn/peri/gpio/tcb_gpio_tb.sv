@@ -24,7 +24,7 @@ module tcb_gpio_tb
   int unsigned ABW = 32,
   int unsigned DBW = 32,
   // RW channels
-  string IFT = "IRW"
+  tcb_par_channel_t CHN = TCB_COMMON_HALF_DUPLEX
 );
 
   // TODO: parameter propagation through virtual interfaces in classes
@@ -158,8 +158,8 @@ module tcb_gpio_tb
 ////////////////////////////////////////////////////////////////////////////////
 
   generate
-  if (IFT == "CRW")
-  begin: crw
+  if (CHN == TCB_COMMON_HALF_DUPLEX)
+  begin: cmn
 
   // TCB GPIO
   tcb_cmn_gpio #(
@@ -178,12 +178,12 @@ module tcb_gpio_tb
     .tcb     (tcb_man)
   );
 
-  end: crw
-  else if (IFT == "IRW")
-  begin: irw
+  end: cmn
+  else
+  begin: ind
 
   // TCB independent channel splitter
-  tcb_lib_common2independent crw2irw (
+  tcb_lib_common2independent cmn2ind (
     // CRW subordinate port
     .tcb_cmn_sub (tcb_man),
     // IRW manager ports
@@ -209,7 +209,7 @@ module tcb_gpio_tb
     .tcb_rdc (tcb_man_rdc)
   );
 
-  end: irw
+  end: ind
   endgenerate
 
 ////////////////////////////////////////////////////////////////////////////////

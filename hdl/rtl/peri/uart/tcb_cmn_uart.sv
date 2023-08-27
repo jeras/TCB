@@ -39,11 +39,11 @@ module tcb_cmn_uart #(
   // UART
   input  logic uart_rxd,  // receive
   output logic uart_txd,  // transmit
-  // TCB interface
-  tcb_if.sub   tcb,
   // interrupts
   output logic irq_tx,    // TX FIFO load is below limit
-  output logic irq_rx     // RX FIFO load is above limit
+  output logic irq_rx,    // RX FIFO load is above limit
+  // TCB interface
+  tcb_if.sub   tcb
 );
 
 ////////////////////////////////////////////////////////////////////////////////
