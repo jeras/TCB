@@ -92,7 +92,7 @@ module tcb_lib_converter
           // REFERENCE -> REFERENCE
           assign man.req.adr = sub.req.adr;
           assign man.req.siz = sub.req.siz;
-        //assign man.req.ben = sub.req.ben;
+          assign man.req.ben = sub.req.ben;  // unused
           assign man_req_wdt = sub_req_wdt;
           assign sub_rsp_rdt = man_rsp_rdt;
 
@@ -107,7 +107,7 @@ module tcb_lib_converter
           else begin
             assign man.req.adr = sub.req.adr;
           end
-          for (genvar i=0; i<man.PHY_BEW; i++) begin
+          for (genvar i=0; i<man.PHY_BEW; i++) begin: byteenable
             int siz = 2**sub.req.siz;
             // multiplexer select signal
             always_comb
@@ -133,7 +133,7 @@ module tcb_lib_converter
                 assign sub_rsp_rdt[i] = man_rsp_rdt[man.PHY.BEW-1-sel_rsp_rdt[i]];
               end: ascending
             endcase
-          end
+          end: byteenable
 
         end: man_memory
       endcase
@@ -153,21 +153,21 @@ module tcb_lib_converter
             // TODO range should be [max:2]
             assign man.req.adr = {sub.req.adr[sub.PHY.ALW-1:0], sub.PHY.ALW'('0)};
           end: alignment
-          else begin
+          else begin: noalignment
             assign man.req.adr = sub.req.adr;
-          end
+          end: noalignment
           for (genvar i=0; i<man.PHY_BEW; i++) begin: byteenable
             if (sub.PHY.ORD == man.PHY.ORD) begin: order_same
               // same byte order
-              assign man_req_wdt[i] = sub_req_wdt[              sel_req_wdt[i]];
-              assign man.req.ben[i] = sub.req.ben[                          i ];
-              assign sub_rsp_rdt[i] = man_rsp_rdt[              sel_rsp_rdt[i]];
+              assign man.req.ben[i] = sub.req.ben[              i];
+              assign man_req_wdt[i] = sub_req_wdt[              i];
+              assign sub_rsp_rdt[i] = man_rsp_rdt[              i];
             end: order_same
             else begin: order_opposite
               // reversed byte order
-              assign man_req_wdt[i] = sub_req_wdt[man.PHY_BEW-1-sel_req_wdt[i]];
-              assign man.req.ben[i] = sub.req.ben[man.PHY_BEW-1-            i ];
-              assign sub_rsp_rdt[i] = man_rsp_rdt[man.PHY_BEW-1-sel_rsp_rdt[i]];
+              assign man.req.ben[i] = sub.req.ben[man.PHY_BEW-1-i];
+              assign man_req_wdt[i] = sub_req_wdt[man.PHY_BEW-1-i];
+              assign sub_rsp_rdt[i] = man_rsp_rdt[man.PHY_BEW-1-i];
             end: order_opposite
           end: byteenable
 
