@@ -94,16 +94,19 @@ interface tcb_if
 // request read/write enable logic depending on channel configuration
 ////////////////////////////////////////////////////////////////////////////////
 
+  // local read enable
+  logic req_ren;
+
   generate
-//  case (PHY.CHN)
-//    TCB_COMMON_HALF_DUPLEX: begin assign req.ren =              ~req.wen;        end
-//    TCB_COMMON_FULL_DUPLEX: begin                                                end
-//    TCB_INDEPENDENT_WRITE : begin assign req.ren = 1'b0;  assign req.wen = 1'b1; end
-//    TCB_INDEPENDENT_READ  : begin assign req.ren = 1'b1;  assign req.wen = 1'b0; end
-//  endcase
-    if (PHY.CHN != TCB_COMMON_FULL_DUPLEX) begin
-//      assign req.ren = ~req.wen;
-    end
+  // hardcoded values for independent channels
+  case (PHY.CHN)
+    TCB_COMMON_HALF_DUPLEX: begin                                                end
+    TCB_COMMON_FULL_DUPLEX: begin                                                end
+    TCB_INDEPENDENT_WRITE : begin assign req.ren = 1'b0;  assign req.wen = 1'b1; end
+    TCB_INDEPENDENT_READ  : begin assign req.ren = 1'b1;  assign req.wen = 1'b0; end
+  endcase
+  // read enable is copied from negated write enable cor common half duplex channel
+  if (PHY.CHN == TCB_COMMON_HALF_DUPLEX)  assign req_ren = ~req.wen;
   endgenerate
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -122,36 +125,38 @@ interface tcb_if
   // response pipeline
   dly_t dly [0:PHY.DLY];
 
-  logic [PHY_BEW-1:0] req_ben;  // byte enable
+  // local byte enable
+  logic [PHY_BEW-1:0] req_ben;
 
-  // copy or create byte enable from transfer size
+  // transfer size encoding
   generate
-  if (PHY.MOD == TCB_REFERENCE) begin
+  if (PHY.MOD == TCB_REFERENCE) begin: byteenable
     for (genvar b=0; b<PHY_BEW; b++) begin
       case (PHY.SIZ)
         TCB_LOGARITHMIC:  assign req_ben[b] = b < (2**    req.siz );
         TCB_LINEAR     :  assign req_ben[b] = b < (2**(2**req.siz));
       endcase
     end
-  end else begin
+  end: byteenable
+  else begin
     assign req_ben = req.ben;
   end
   endgenerate
 
   // response pipeline combinational input
   assign dly[0].ena = trn                         ;  // response valid
-  assign dly[0].ren =       req.ren               ;  // response read enable
+  assign dly[0].ren =       req_ren               ;  // response read enable
   assign dly[0].adr =                 req.adr     ;  // response address
   assign dly[0].siz =                 req.siz     ;  // response logarithmic size
-  assign dly[0].ben = trn & req.ren ? req_ben : '0;  // response byte enable
+  assign dly[0].ben = trn & req_ren ? req_ben : '0;  // response byte enable
 
   // response pipeline
   // TODO: avoid toggling if there is not transfer
   generate
-  if (PHY.DLY > 0) begin: gen_dly
+  if (PHY.DLY > 0) begin: delay
     always @(posedge clk)
     dly[1:PHY.DLY] <= dly[0:PHY.DLY-1];
-  end: gen_dly
+  end: delay
   endgenerate
 
 ////////////////////////////////////////////////////////////////////////////////
