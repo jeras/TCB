@@ -24,21 +24,22 @@ module tcb_lib_converter_tb
   int unsigned ABW = 32,
   int unsigned DBW = 32,
   // response delay
-  int unsigned DLY = 1
+  int unsigned DLY = 0
 );
 
   // TODO: parameter propagation through virtual interfaces in classes
   // is not working well thus this workaround
 
   // physical interface parameter
-  localparam tcb_par_phy_t PHY1 = '{
+  localparam tcb_par_phy_t PHY = '{
     // protocol
     DLY: DLY,
     // signal bus widths
     SLW: TCB_PAR_PHY_DEF.SLW,
     ABW: ABW,
     DBW: DBW,
-    ALW: $clog2(DBW/TCB_PAR_PHY_DEF.SLW),
+//  ALW: $clog2(DBW/TCB_PAR_PHY_DEF.SLW),
+    ALW: 0,
     // size/mode/order parameters
     SIZ: TCB_PAR_PHY_DEF.SIZ,
     MOD: TCB_PAR_PHY_DEF.MOD,
@@ -47,7 +48,7 @@ module tcb_lib_converter_tb
     CHN: TCB_PAR_PHY_DEF.CHN
   };
 
-  localparam tcb_par_phy_t PHY = TCB_PAR_PHY_DEF;
+//  localparam tcb_par_phy_t PHY = TCB_PAR_PHY_DEF;
 
 ////////////////////////////////////////////////////////////////////////////////
 // local signals
@@ -56,17 +57,11 @@ module tcb_lib_converter_tb
   // system signals
   logic clk;  // clock
   logic rst;  // reset
-/*
+
   // TCB interfaces
   tcb_if #(.PHY (PHY)) tcb_man       (.clk (clk), .rst (rst));
   tcb_if #(.PHY (PHY)) tcb_sub       (.clk (clk), .rst (rst));
   tcb_if #(.PHY (PHY)) tcb_mem [0:0] (.clk (clk), .rst (rst));
-*/
-  // TODO: the above code should be used instead
-  // TCB interfaces
-  tcb_if tcb_man       (.clk (clk), .rst (rst));
-  tcb_if tcb_sub       (.clk (clk), .rst (rst));
-  tcb_if tcb_mem [0:0] (.clk (clk), .rst (rst));
 
   // parameterized class specialization
   typedef tcb_transfer_c #(.PHY (PHY)) tcb_s;
@@ -158,6 +153,11 @@ module tcb_lib_converter_tb
     .man  (tcb_sub),
     .mal  ()
   );
+
+//  tcb_lib_passthrough dut (
+//    .sub  (tcb_man),
+//    .man  (tcb_sub)
+//  );
 
 ////////////////////////////////////////////////////////////////////////////////
 // VCD/FST waveform trace
