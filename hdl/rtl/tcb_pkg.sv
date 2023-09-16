@@ -68,7 +68,7 @@ package tcb_pkg;
 
   // physical interface parameter structure
   // TODO: the structure is packed to workaround a Verilator bug
-  typedef struct packed {
+  typedef struct {
     // protocol
     int unsigned      DLY;  // response delay
     // signal widths
