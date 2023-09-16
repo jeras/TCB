@@ -85,9 +85,9 @@ module tcb_lib_converter
 
   generate
   case (sub.PHY.MOD)
-    TCB_REFERENCE: begin
+    TCB_REFERENCE: begin: sub_reference
       case (man.PHY.MOD)
-        TCB_REFERENCE: begin
+        TCB_REFERENCE: begin: man_reference
 
           // REFERENCE -> REFERENCE
           assign man.req.adr = sub.req.adr;
@@ -96,14 +96,15 @@ module tcb_lib_converter
           assign man_req_wdt = sub_req_wdt;
           assign sub_rsp_rdt = man_rsp_rdt;
 
-        end
-        TCB_MEMORY: begin
+        end: man_reference
+        TCB_MEMORY: begin: man_memory
 
           // REFERENCE -> MEMORY
-          if (sub.PHY.ALW > 0) begin
+          if (sub.PHY.ALW > 0) begin: alignment
             // TODO range should be [max:2]
             assign man.req.adr = {sub.req.adr[sub.PHY.ALW-1:0], sub.PHY.ALW'('0)};
-          end else begin
+          end: alignment
+          else begin
             assign man.req.adr = sub.req.adr;
           end
           for (genvar i=0; i<man.PHY_BEW; i++) begin
@@ -112,65 +113,67 @@ module tcb_lib_converter
             always_comb
             case (sub.req.ndn)
               // little endian
-              1'b0: begin
+              1'b0: begin: little
                 sel_req_wdt[i] = (man.req.adr[$clog2(sub.PHY_BEW)-1:0]       + i) % sub.PHY_BEW;
-              end
-              1'b1: begin
+              end: little
+              1'b1: begin: big
                 sel_req_wdt[i] = (man.req.adr[$clog2(sub.PHY_BEW)-1:0] + siz - i) % sub.PHY_BEW;
-              end
+              end: big
             endcase
             // multiplexer
             case (man.PHY.ORD)
-              TCB_DESCENDING: begin
+              TCB_DESCENDING: begin: descending
                 assign man.req.ben[i] = sub.req.ben[              sel_req_wdt[i]];
                 assign man_req_wdt[i] = sub_req_wdt[              sel_req_wdt[i]];
                 assign sub_rsp_rdt[i] = man_rsp_rdt[              sel_rsp_rdt[i]];
-              end
-              TCB_ASCENDING : begin
+              end: descending
+              TCB_ASCENDING : begin: ascending
                 assign man.req.ben[i] = sub.req.ben[man.PHY.BEW-1-sel_req_wdt[i]];
                 assign man_req_wdt[i] = sub_req_wdt[man.PHY.BEW-1-sel_req_wdt[i]];
                 assign sub_rsp_rdt[i] = man_rsp_rdt[man.PHY.BEW-1-sel_rsp_rdt[i]];
-              end
+              end: ascending
             endcase
           end
 
-        end
+        end: man_memory
       endcase
-    end
-    TCB_MEMORY: begin
+    end: sub_reference
+    TCB_MEMORY: begin: sub_memory
       case (man.PHY.MOD)
-        TCB_REFERENCE: begin
+        TCB_REFERENCE: begin: man_reference
 
           // MEMORY -> REFERENCE
           // TODO: not a big priority
 
-        end
-        TCB_MEMORY: begin
+        end: man_reference
+        TCB_MEMORY: begin: man_memory
 
           // MEMORY -> MEMORY
-          if (sub.PHY.ALW > 0) begin
+          if (sub.PHY.ALW > 0) begin: alignment
             // TODO range should be [max:2]
             assign man.req.adr = {sub.req.adr[sub.PHY.ALW-1:0], sub.PHY.ALW'('0)};
-          end else begin
+          end: alignment
+          else begin
             assign man.req.adr = sub.req.adr;
           end
-          for (genvar i=0; i<man.PHY_BEW; i++) begin
-            if (sub.PHY.ORD == man.PHY.ORD) begin
+          for (genvar i=0; i<man.PHY_BEW; i++) begin: byteenable
+            if (sub.PHY.ORD == man.PHY.ORD) begin: order_same
               // same byte order
               assign man_req_wdt[i] = sub_req_wdt[              sel_req_wdt[i]];
               assign man.req.ben[i] = sub.req.ben[                          i ];
               assign sub_rsp_rdt[i] = man_rsp_rdt[              sel_rsp_rdt[i]];
-            end else begin
+            end: order_same
+            else begin: order_opposite
               // reversed byte order
               assign man_req_wdt[i] = sub_req_wdt[man.PHY_BEW-1-sel_req_wdt[i]];
               assign man.req.ben[i] = sub.req.ben[man.PHY_BEW-1-            i ];
               assign sub_rsp_rdt[i] = man_rsp_rdt[man.PHY_BEW-1-sel_rsp_rdt[i]];
-            end
-          end
+            end: order_opposite
+          end: byteenable
 
-        end
+        end: man_memory
       endcase
-    end
+    end: sub_memory
   endcase
   endgenerate
 
