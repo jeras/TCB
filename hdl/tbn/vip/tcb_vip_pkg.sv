@@ -46,12 +46,11 @@ package tcb_vip_pkg;
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
-//    typedef virtual tcb_if #(
-//      .PHY           (PHY),
-//      .tcb_req_cmd_t (tcb_req_cmd_t),
-//      .tcb_rsp_sts_t (tcb_rsp_sts_t)
-//    ) tcb_vif_t;
-    typedef virtual tcb_if tcb_vif_t;
+    typedef virtual tcb_if #(
+      .PHY           (PHY),
+      .tcb_req_cmd_t (tcb_req_cmd_t),
+      .tcb_rsp_sts_t (tcb_rsp_sts_t)
+    ) tcb_vif_t;
 
     string MODE = "MON";
     tcb_vif_t tcb;
@@ -341,6 +340,7 @@ package tcb_vip_pkg;
         int unsigned off;  // address offset
         // the requested transaction is organized into transfer_array
         int unsigned len;
+        // return transfer array
         transfer_array_t transfer_array;
         // number of transfer_array
         len = siz / PHY_BEW + (siz % PHY_BEW ? 1 : 0);
@@ -351,8 +351,12 @@ package tcb_vip_pkg;
           $error("ERROR: Transaction size is not power of 2.");
         end
         // check if the transfer meets alignment requirements
-        if ((PHY.ALW > 0) && (|transaction_req.adr[PHY.ALW-1:0])) begin
-          $error("ERROR: Transaction address is not aligned to supported size.");
+        if (PHY.ALW > 0) begin
+          logic [PHY.ALW-1:0] adr_alw;
+          adr_alw = transaction_req.adr[PHY.ALW-1:0];
+          if (|adr_alw) begin
+            $error("ERROR: Transaction address is not aligned to supported size. adr[%d:0]=%0b", PHY.ALW-1, adr_alw);
+          end
         end
         // control and address signals
         for (int unsigned i=0; i<len; i++) begin
