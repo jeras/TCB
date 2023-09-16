@@ -120,28 +120,26 @@ module tcb_vip_mem
     // write access
     always @(posedge tcb[i].clk)
     if (tcb[i].trn) begin
-      if (tcb[i].req.wen) begin
+      if (tcb[i].req.wen) begin: write
         // temporary variables
         automatic int unsigned               adr;
-        automatic logic [tcb[i].PHY.SLW-1:0] dat;
-        if (tcb[i].PHY.MOD == TCB_REFERENCE) begin
+        if (tcb[i].PHY.MOD == TCB_REFERENCE) begin: reference
           $display("DEBUG: tcb[%d]: write adr=%08X=%d, tmp_req_siz=%d, wdt=%08X", i, tcb[i].req.adr, tcb[i].req.adr, tmp_req_siz, tmp_req_wdt);
-          for (int unsigned b=0; b<tmp_req_siz; b++) begin
+          for (int unsigned b=0; b<tmp_req_siz; b++) begin: byteenable
             // byte address
             adr = b + int'(tcb[i].req.adr);
-            dat = tmp_req_wdt[b];
-            mem[adr%SIZ] <= dat;
-          end
-        end else begin
+            mem[adr%SIZ] <= tmp_req_wdt[b];
+          end: byteenable
+        end: reference
+        else begin: memory
           $display("DEBUG: tcb[%d]: write adr=%08X=%d, ben=%04b, wdt=%08X", i, tcb[i].req.adr, tcb[i].req.adr, tcb[i].req.ben, tmp_req_wdt);
-          for (int unsigned b=0; b<tcb[i].PHY_BEW; b++) begin
+          for (int unsigned b=0; b<tcb[i].PHY_BEW; b++) begin: byteenable
             // byte address
             adr = b + int'(tcb[i].req.adr);
-            dat = tmp_req_wdt[adr%tcb[i].PHY_BEW];
-            if (tcb[i].req.ben[b])  mem[adr%SIZ] <= dat;
-          end
-        end
-      end
+            if (tcb[i].req.ben[adr%tcb[i].PHY_BEW])  mem[adr%SIZ] <= tmp_req_wdt[adr%tcb[i].PHY_BEW];
+          end: byteenable
+        end: memory
+      end: write
     end
 
     // initialize read data array
@@ -152,22 +150,25 @@ module tcb_vip_mem
     // combinational read data
     always @(*)
     if (tcb[i].trn) begin
-      if (~tcb[i].req.wen) begin
+      if (~tcb[i].req.wen) begin: read
         // temporary variables
         automatic int unsigned adr;
-        if (tcb[i].PHY.MOD == TCB_REFERENCE) begin
+        if (tcb[i].PHY.MOD == TCB_REFERENCE) begin: reference
           tmp_rsp_rdt = '{default: 'x};
-          for (int unsigned b=0; b<tmp_req_siz; b++) begin
+          for (int unsigned b=0; b<tmp_req_siz; b++) begin: byteenable
             adr = b + int'(tcb[i].req.adr);
             tmp_rsp_rdt[0][b] = mem[adr%SIZ];
-          end
-        end else begin
-          for (int unsigned b=0; b<tcb[i].PHY_BEW; b++) begin
+          end: byteenable
+        end: reference
+        else begin: memory
+          for (int unsigned b=0; b<tcb[i].PHY_BEW; b++) begin: byteenable
             adr = b + int'(tcb[i].req.adr);
-            tmp_rsp_rdt[0][adr%tcb[i].PHY_BEW] = tcb[i].req.ben[b] ? mem[adr%SIZ] : 'x;
-          end
-        end
-      end else begin
+            if (tcb[i].req.ben[adr%tcb[i].PHY_BEW])  tmp_rsp_rdt[0][adr%tcb[i].PHY_BEW] = mem[adr%SIZ];
+            else                                     tmp_rsp_rdt[0][adr%tcb[i].PHY_BEW] = 'x;
+          end: byteenable
+        end: memory
+      end: read
+      else begin
         tmp_rsp_rdt[0] = 'x;
       end
     end else begin
@@ -175,16 +176,16 @@ module tcb_vip_mem
     end
 
     // read data delay pipeline
-    for (genvar d=1; d<=tcb[i].PHY.DLY; d++) begin
+    for (genvar d=1; d<=tcb[i].PHY.DLY; d++) begin: delay
       always @(posedge tcb[i].clk)
       begin
-        for (int unsigned b=0; b<tcb[i].PHY_BEW; b++) begin
+        for (int unsigned b=0; b<tcb[i].PHY_BEW; b++) begin: byteenable
           if (tcb[i].dly[d-1].ben[b]) begin
             tmp_rsp_rdt[d][b] <= tmp_rsp_rdt[d-1][b];
           end
-        end
+        end: byteenable
       end
-    end
+    end: delay
 
     // map read data from an unpacked array
     assign tcb[i].rsp.rdt = tmp_rsp_rdt[tcb[i].PHY.DLY];
