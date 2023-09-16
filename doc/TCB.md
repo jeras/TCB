@@ -377,11 +377,18 @@ The request command signals `cmd` are used to:
 | `req.cmd.rpt` | `1`   | Repeat address access. |
 | `req.cmd.inc` | `1`   | Incrementing address access. |
 
-The arbitration lock `lck` is used to implement atomic accesses:
+The arbitration lock `lck` is used to implement atomic accesses
+by combining multiple transfers into a single transaction:
 - split transaction misaligned access,
 - transactions larger than data bus/transfer size,
 - uninterruptible burst transactions,
 - ...
+
+NOTE: The lock signal `lck` has a similar functionality to AXI-Stream `LAST` signal,
+but with an inverted active state (`lck = ~LAST`).
+While with AXI-Stream the common case are long packets ending with a LAST pulse,
+for a system bus single transfer transactions are more common than large transactions.
+The `lck` signal polarity is selected to be inactive by default.
 
 The repeat address access `rpt` is used to reduce power consumption on repeated read accesses to the same address.
 The incrementing address access `inc` is used to tell prefetch mechanisms whether the address is the expected one.
