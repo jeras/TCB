@@ -56,10 +56,10 @@ package tcb_pkg;
   // channel configuration
   typedef enum bit [1:0] {
     // 2 bit value {rd,wr}
-    TCB_COMMON_HALF_DUPLEX = 2'b00,  // common channel with half duplex read/write
-    TCB_COMMON_FULL_DUPLEX = 2'b11,  // common channel with full duplex read/write
-    TCB_INDEPENDENT_WRITE  = 2'b01,  // independent write channel
-    TCB_INDEPENDENT_READ   = 2'b10   // independent read channel
+    TCB_COMMON_HALF_DUPLEX  = 2'b00,  // common channel with half duplex read/write
+    TCB_COMMON_FULL_DUPLEX  = 2'b11,  // common channel with full duplex read/write
+    TCB_INDEPENDENT_WRITE   = 2'b01,  // independent write channel
+    TCB_INDEPENDENT_READ    = 2'b10   // independent read channel
   } tcb_par_channel_t;
 
 ////////////////////////////////////////////////////////////////////////////////

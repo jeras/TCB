@@ -20,35 +20,68 @@ module tcb_lib_converter_tb
   import tcb_pkg::*;
   import tcb_vip_pkg::*;
 #(
-  // TCB widths
-  int unsigned ABW = 32,
-  int unsigned DBW = 32,
-  // response delay
-  int unsigned DLY = 0
+  // protocol
+  int unsigned      MAN_DLY = TCB_PAR_PHY_DEF.DLY,  // response delay
+  // signal widths
+  int unsigned      MAN_SLW = TCB_PAR_PHY_DEF.SLW,  // selection   width (byte width is 8 by default)
+  int unsigned      MAN_ABW = TCB_PAR_PHY_DEF.ABW,  // address bus width
+  int unsigned      MAN_DBW = TCB_PAR_PHY_DEF.DBW,  // data    bus width
+  int unsigned      MAN_ALW = TCB_PAR_PHY_DEF.ALW,  // alignment width
+  // data packing parameters for manager/subordinate
+  tcb_par_size_t    MAN_SIZ = TCB_PAR_PHY_DEF.SIZ,  // manager     transfer size encoding
+  tcb_par_mode_t    MAN_MOD = TCB_PAR_PHY_DEF.MOD,  // manager     data position mode
+  tcb_par_order_t   MAN_ORD = TCB_PAR_PHY_DEF.ORD,  // manager     byte order
+  // channel configuration
+  tcb_par_channel_t MAN_CHN = TCB_PAR_PHY_DEF.CHN,  // channel configuration
+
+  // protocol
+  int unsigned      SUB_DLY = TCB_PAR_PHY_DEF.DLY,  // response delay
+  // signal widths
+  int unsigned      SUB_SLW = TCB_PAR_PHY_DEF.SLW,  // selection   width (byte width is 8 by default)
+  int unsigned      SUB_ABW = TCB_PAR_PHY_DEF.ABW,  // address bus width
+  int unsigned      SUB_DBW = TCB_PAR_PHY_DEF.DBW,  // data    bus width
+  int unsigned      SUB_ALW = TCB_PAR_PHY_DEF.ALW,  // alignment width
+  // data packing parameters for manager/subordinate
+  tcb_par_size_t    SUB_SIZ = TCB_PAR_PHY_DEF.SIZ,  // subordinate transfer size encoding
+  tcb_par_mode_t    SUB_MOD = TCB_PAR_PHY_DEF.MOD,  // subordinate data position mode
+  tcb_par_order_t   SUB_ORD = TCB_PAR_PHY_DEF.ORD,  // subordinate byte order
+  // channel configuration
+  tcb_par_channel_t SUB_CHN = TCB_PAR_PHY_DEF.CHN   // channel configuration
 );
 
-  // TODO: parameter propagation through virtual interfaces in classes
-  // is not working well thus this workaround
-
-  // physical interface parameter
-  localparam tcb_par_phy_t PHY = '{
+  // manager physical interface parameter
+  localparam tcb_par_phy_t MAN_PHY = '{
     // protocol
-    DLY: DLY,
+    DLY: MAN_DLY,
     // signal bus widths
-    SLW: TCB_PAR_PHY_DEF.SLW,
-    ABW: ABW,
-    DBW: DBW,
-//  ALW: $clog2(DBW/TCB_PAR_PHY_DEF.SLW),
-    ALW: 0,
+    SLW: MAN_SLW,
+    ABW: MAN_ABW,
+    DBW: MAN_DBW,
+    ALW: MAN_ALW,
     // size/mode/order parameters
-    SIZ: TCB_PAR_PHY_DEF.SIZ,
-    MOD: TCB_PAR_PHY_DEF.MOD,
-    ORD: TCB_PAR_PHY_DEF.ORD,
+    SIZ: MAN_SIZ,
+    MOD: MAN_MOD,
+    ORD: MAN_ORD,
     // channel configuration
-    CHN: TCB_PAR_PHY_DEF.CHN
+    CHN: MAN_CHN
   };
 
-//  localparam tcb_par_phy_t PHY = TCB_PAR_PHY_DEF;
+  // subordinate physical interface parameter
+  localparam tcb_par_phy_t SUB_PHY = '{
+    // protocol
+    DLY: SUB_DLY,
+    // signal bus widths
+    SLW: SUB_SLW,
+    ABW: SUB_ABW,
+    DBW: SUB_DBW,
+    ALW: SUB_ALW,
+    // size/mode/order parameters
+    SIZ: SUB_SIZ,
+    MOD: SUB_MOD,
+    ORD: SUB_ORD,
+    // channel configuration
+    CHN: SUB_CHN
+  };
 
 ////////////////////////////////////////////////////////////////////////////////
 // local signals
@@ -59,29 +92,22 @@ module tcb_lib_converter_tb
   logic rst;  // reset
 
   // TCB interfaces
-  tcb_if #(.PHY (PHY)) tcb_man       (.clk (clk), .rst (rst));
-  tcb_if #(.PHY (PHY)) tcb_sub       (.clk (clk), .rst (rst));
-  tcb_if #(.PHY (PHY)) tcb_mem [0:0] (.clk (clk), .rst (rst));
-
-  // parameterized class specialization
-  typedef tcb_transfer_c #(.PHY (PHY)) tcb_s;
+  tcb_if #(.PHY (MAN_PHY)) tcb_man       (.clk (clk), .rst (rst));
+  tcb_if #(.PHY (SUB_PHY)) tcb_sub       (.clk (clk), .rst (rst));
+  tcb_if #(.PHY (SUB_PHY)) tcb_mem [0:0] (.clk (clk), .rst (rst));
 
   // TCB class objects
-  tcb_s obj_man;
-  tcb_s obj_sub;
-  tcb_s obj_mem;
+  tcb_transfer_c #(.PHY (MAN_PHY)) obj_man;
+  tcb_transfer_c #(.PHY (SUB_PHY)) obj_sub;
+  tcb_transfer_c #(.PHY (SUB_PHY)) obj_mem;
 
 ////////////////////////////////////////////////////////////////////////////////
 // data checking
 ////////////////////////////////////////////////////////////////////////////////
 
   // response
-  logic [PHY.DBW-1:0] rdt;  // read data
-  tcb_rsp_sts_def_t   sts;  // status response
-
-  logic [ 8-1:0] rdt8 ;  //  8-bit read data
-  logic [16-1:0] rdt16;  // 16-bit read data
-  logic [32-1:0] rdt32;  // 32-bit read data
+  logic [tcb_man.PHY_BEW-1:0][tcb_man.PHY.SLW] rdt;  // read data
+  tcb_rsp_sts_def_t                            sts;  // status response
 
 ////////////////////////////////////////////////////////////////////////////////
 // test sequence
@@ -112,14 +138,14 @@ module tcb_lib_converter_tb
     obj_man.write16(32'h00000022, 16'h7654    , sts);
     obj_man.write32(32'h00000030, 32'h76543210, sts);
     // read sequence
-    obj_man.read8  (32'h00000010, rdt8        , sts);
-    obj_man.read8  (32'h00000011, rdt8        , sts);
-    obj_man.read8  (32'h00000012, rdt8        , sts);
-    obj_man.read8  (32'h00000013, rdt8        , sts);
-    obj_man.read16 (32'h00000020, rdt16       , sts);
-    obj_man.read16 (32'h00000022, rdt16       , sts);
-    obj_man.read32 (32'h00000030, rdt32       , sts);
-    // read sequence
+    obj_man.read8  (32'h00000010, rdt[1-1:0]  , sts);
+    obj_man.read8  (32'h00000011, rdt[1-1:0]  , sts);
+    obj_man.read8  (32'h00000012, rdt[1-1:0]  , sts);
+    obj_man.read8  (32'h00000013, rdt[1-1:0]  , sts);
+    obj_man.read16 (32'h00000020, rdt[2-1:0]  , sts);
+    obj_man.read16 (32'h00000022, rdt[2-1:0]  , sts);
+    obj_man.read32 (32'h00000030, rdt[4-1:0]  , sts);
+    // check sequence
     obj_man.check8 (32'h00000010,        8'h10, 1'b0);
     obj_man.check8 (32'h00000011,      8'h32  , 1'b0);
     obj_man.check8 (32'h00000012,    8'h54    , 1'b0);

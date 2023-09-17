@@ -353,7 +353,7 @@ package tcb_vip_pkg;
         // check if the transfer meets alignment requirements
         if (PHY.ALW > 0) begin
           logic [PHY.ALW-1:0] adr_alw;
-          adr_alw = transaction_req.adr[PHY.ALW-1:0];
+          adr_alw = transaction_req.adr[(PHY.ALW>0?(PHY.ALW-1):0):0];
           if (|adr_alw) begin
             $error("ERROR: Transaction address is not aligned to supported size. adr[%d:0]=%0b", PHY.ALW-1, adr_alw);
           end
