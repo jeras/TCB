@@ -106,8 +106,8 @@ module tcb_lib_converter_tb
 ////////////////////////////////////////////////////////////////////////////////
 
   // response
-  logic [tcb_man.PHY_BEW-1:0][tcb_man.PHY.SLW] rdt;  // read data
-  tcb_rsp_sts_def_t                            sts;  // status response
+  logic [tcb_man.PHY_BEW-1:0][tcb_man.PHY.SLW-1:0] rdt;  // read data
+  tcb_rsp_sts_def_t                                sts;  // status response
 
 ////////////////////////////////////////////////////////////////////////////////
 // test sequence

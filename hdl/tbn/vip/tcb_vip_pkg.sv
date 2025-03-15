@@ -351,6 +351,7 @@ package tcb_vip_pkg;
           $error("ERROR: Transaction size is not power of 2.");
         end
         // check if the transfer meets alignment requirements
+//        adr%siz==0
         if (PHY.ALW > 0) begin
           logic [PHY.ALW-1:0] adr_alw;
           adr_alw = transaction_req.adr[(PHY.ALW>0?(PHY.ALW-1):0):0];
