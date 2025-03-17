@@ -21,16 +21,16 @@ module tcb_lib_decoder
 #(
   // TCB parameters (contains address width)
   parameter  tcb_par_phy_t  PHY = TCB_PAR_PHY_DEF,
-  // interconnect parameters (subordinate port number and logirthm)
-  parameter  int unsigned SPN = 2,
-  localparam int unsigned SPL = $clog2(SPN),
+  // interconnect parameters (manager port number and logarithm)
+  parameter  int unsigned MPN = 2,
+  localparam int unsigned MPL = $clog2(MPN),
   // decoder address and mask array
-  parameter  logic [PHY.ABW-1:0] DAM [SPN-1:0] = '{SPN{PHY.ABW'('x)}}
+  parameter  logic [PHY.ABW-1:0] DAM [MPN-1:0] = '{MPN{PHY.ABW'('x)}}
 )(
   // TCB interfaces
   tcb_if.sub tcb,  // TCB subordinate port (manager device connects here)
-  // control
-  output logic [SPL-1:0] sel   // select
+  // select
+  output logic [MPL-1:0] sel
 );
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -54,30 +54,30 @@ module tcb_lib_decoder
 ////////////////////////////////////////////////////////////////////////////////
 
 //  // match
-//  function [SPN-1:0] match (
+//  function [MPN-1:0] match (
 //    logic [PHY.ABW-1:0] val,           // input
-//    logic [PHY.ABW-1:0] mch [SPN-1:0]   // matching reference
+//    logic [PHY.ABW-1:0] mch [MPN-1:0]   // matching reference
 //  );
-//    for (int unsigned i=0; i<SPN; i++) begin
+//    for (int unsigned i=0; i<MPN; i++) begin
 //      assign match[i] = val ==? mch[i];
 //    end
 //  endfunction: match
 
   // match
-  logic mch [SPN-1:0];
+  logic mch [MPN-1:0];
 
   // match
   generate
-    for (genvar i=0; i<SPN; i++) begin
+    for (genvar i=0; i<MPN; i++) begin
       assign mch[i] = adr ==? DAM[i];
     end
   endgenerate
 
   // encode
-  function logic [SPL-1:0] encode (logic val [SPN-1:0]);
+  function logic [MPL-1:0] encode (logic val [MPN-1:0]);
     encode = 'x;  // optimization of undefined encodings
-    for (int i=SPN; i>=0; i--) begin
-      if (val[i])  encode = i[SPL-1:0];
+    for (int i=MPN; i>=0; i--) begin
+      if (val[i])  encode = i[MPL-1:0];
     end
   endfunction: encode
 

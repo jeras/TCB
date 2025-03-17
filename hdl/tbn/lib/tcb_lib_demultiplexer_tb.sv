@@ -115,11 +115,9 @@ module tcb_lib_demultiplexer_tb
 ////////////////////////////////////////////////////////////////////////////////
 
   // RTL decoder DUT
-  tcb_lib_dec #(
-    // arbitration priority mode
-//  .MD   (),
+  tcb_lib_decoder #(
     // interconnect parameters
-    .MPN   (MPN),
+    .MPN  (MPN),
     // decoder address and mask array
     .DAM  (DAM)
   ) arb (

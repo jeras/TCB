@@ -19,12 +19,12 @@
 module tcb_lib_demultiplexer
   import tcb_pkg::*;
 #(
-  // interconnect parameters (manager port number and logirthm)
+  // interconnect parameters (manager port number and logarithm)
   parameter  int unsigned MPN = 2,
   localparam int unsigned MPL = $clog2(MPN)
 )(
-  // control
-  input  logic [MPL-1:0] sel,  // select
+  // select
+  input  logic [MPL-1:0] sel,
   // TCB interfaces
   tcb_if.sub sub         ,  // TCB subordinate port  (manager     device connects here)
   tcb_if.man man[MPN-1:0]   // TCB manager     ports (subordinate devices connect here)
