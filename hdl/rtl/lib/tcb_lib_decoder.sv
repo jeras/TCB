@@ -20,12 +20,12 @@ module tcb_lib_decoder
   import tcb_pkg::*;
 #(
   // TCB parameters (contains address width)
-  parameter  tcb_par_phy_t  PHY = TCB_PAR_PHY_DEF,
+  parameter  tcb_par_phy_t PHY = TCB_PAR_PHY_DEF,
   // interconnect parameters (manager port number and logarithm)
   parameter  int unsigned MPN = 2,
   localparam int unsigned MPL = $clog2(MPN),
   // decoder address and mask array
-  parameter  logic [PHY.ABW-1:0] DAM [MPN-1:0] = '{MPN{PHY.ABW'('x)}}
+  parameter  logic [PHY.ABW-1:0] DAM [MPN-1:0] = '{default: 'x}
 )(
   // TCB interfaces
   tcb_if.sub tcb,  // TCB subordinate port (manager device connects here)

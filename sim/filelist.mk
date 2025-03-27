@@ -29,7 +29,7 @@ RTL+=${PATH_HDL}/rtl/lib/tcb_lib_converter.sv
 
 # SystemVerilog VIP
 TBN+=${PATH_HDL}/tbn/vip/tcb_vip_pkg.sv
-TBN+=${PATH_HDL}/tbn/vip/tcb_vip_mem.sv
+TBN+=${PATH_HDL}/tbn/vip/tcb_vip_memory.sv
 #TBN+=${PATH_HDL}/tbn/vip/tcb_vip_tb.sv
 # LIBrary
 #TBN+=${PATH_HDL}/tbn/lib/tcb_lib_passthrough_tb.sv

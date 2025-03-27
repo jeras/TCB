@@ -36,10 +36,7 @@ interface tcb_if
   localparam int unsigned PHY_BEW = PHY.DBW / PHY.SLW;
 
   // transfer size width calculation
-  localparam int unsigned PHY_SZW_LIN = $clog2(       PHY_BEW   );  // linear
-  localparam int unsigned PHY_SZW_LOG = $clog2($clog2(PHY_BEW)+1);  // logarithmic (default)
-  // transfer size width selection
-  localparam int unsigned PHY_SZW = (PHY.SIZ == TCB_LINEAR) ? PHY_SZW_LIN : PHY_SZW_LOG;
+  localparam int unsigned PHY_SZW = $clog2($clog2(PHY_BEW)+1);
 
 ////////////////////////////////////////////////////////////////////////////////
 // I/O ports
@@ -132,10 +129,7 @@ interface tcb_if
   generate
   if (PHY.MOD == TCB_REFERENCE) begin: byteenable
     for (genvar b=0; b<PHY_BEW; b++) begin
-      case (PHY.SIZ)
-        TCB_LOGARITHMIC:  assign req_ben[b] = b < (2**    req.siz );
-        TCB_LINEAR     :  assign req_ben[b] = b < (2**(2**req.siz));
-      endcase
+      assign req_ben[b] = b < (2**req.siz);
     end
   end: byteenable
   else begin

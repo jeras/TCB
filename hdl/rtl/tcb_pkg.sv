@@ -35,12 +35,6 @@ package tcb_pkg;
 // size/mode/order/channel (used for compile time parameters)
 ////////////////////////////////////////////////////////////////////////////////
 
-  // transfer size encoding
-  typedef enum bit {
-    TCB_LOGARITHMIC = 1'b0,  // logarithmic (2^n)
-    TCB_LINEAR      = 1'b1   // linear (n)
-  } tcb_par_size_t;
-
   // data position mode
   typedef enum bit {
     TCB_REFERENCE = 1'b0,  // always LSB aligned
@@ -68,7 +62,7 @@ package tcb_pkg;
 
   // physical interface parameter structure
   // TODO: the structure is packed to workaround a Verilator bug
-  typedef struct {
+  typedef struct packed {
     // protocol
     int unsigned      DLY;  // response delay
     // signal widths
@@ -77,7 +71,6 @@ package tcb_pkg;
     int unsigned      DBW;  // data    bus width
     int unsigned      ALW;  // alignment width
     // data packing parameters
-    tcb_par_size_t    SIZ;  // transfer size encoding
     tcb_par_mode_t    MOD;  // data position mode
     tcb_par_order_t   ORD;  // byte order
     // channel configuration
@@ -94,7 +87,6 @@ package tcb_pkg;
     DBW: 32,
     ALW: 2,   // $clog2(DBW/SLW)
     // data packing parameters
-    SIZ: TCB_LOGARITHMIC,
     MOD: TCB_MEMORY,
     ORD: TCB_DESCENDING,
     // channel configuration
@@ -129,7 +121,6 @@ package tcb_pkg;
     status.ABW = phy_val.ABW ==? phy_ref.ABW;
     status.DBW = phy_val.DBW ==? phy_ref.DBW;
     status.ALW = phy_val.ALW ==? phy_ref.ALW;
-    status.SIZ = phy_val.SIZ ==? phy_ref.SIZ;
     status.MOD = phy_val.MOD ==? phy_ref.MOD;
     status.ORD = phy_val.ORD ==? phy_ref.ORD;
     status.CHN = phy_val.CHN ==? phy_ref.CHN;
@@ -140,7 +131,6 @@ package tcb_pkg;
     if (status.ABW)  $error("parameter mismatch PHY.ABW=%d != PHY.ABW=%d", phy_val.ABW, phy_ref.ABW);
     if (status.DBW)  $error("parameter mismatch PHY.DBW=%d != PHY.DBW=%d", phy_val.DBW, phy_ref.DBW);
     if (status.ALW)  $error("parameter mismatch PHY.ALW=%d != PHY.ALW=%d", phy_val.ALW, phy_ref.ALW);
-    if (status.SIZ)  $error("parameter mismatch PHY.SIZ=%d != PHY.SIZ=%d", phy_val.SIZ, phy_ref.SIZ);
     if (status.MOD)  $error("parameter mismatch PHY.MOD=%d != PHY.MOD=%d", phy_val.MOD, phy_ref.MOD);
     if (status.ORD)  $error("parameter mismatch PHY.ORD=%d != PHY.ORD=%d", phy_val.ORD, phy_ref.ORD);
     if (status.CHN)  $error("parameter mismatch PHY.CHN=%d != PHY.CHN=%d", phy_val.CHN, phy_ref.CHN);

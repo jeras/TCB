@@ -16,7 +16,7 @@
 // limitations under the License.
 ////////////////////////////////////////////////////////////////////////////////
 
-module tcb_vip_mem
+module tcb_vip_memory
   import tcb_pkg::*;
 //  import tcb_vip_pkg::*;
 #(
@@ -69,7 +69,6 @@ module tcb_vip_mem
     int unsigned start_addr = 0,
     int unsigned finish_addr = SIZ-1
   );
-    int code;  // status code
     int fd;    // file descriptor
     fd = $fopen(fn, "w");
     for (int unsigned addr=start_addr; addr<finish_addr; addr+=4) begin
@@ -80,7 +79,6 @@ module tcb_vip_mem
   //    end
     end
     $fclose(fd);
-    return code;
   endfunction: write_hex
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -106,10 +104,10 @@ module tcb_vip_mem
     // map write data to a packed array
     assign tmp_req_wdt = tcb[i].req.wdt;
 
-    assign tmp_req_siz = (tcb[i].PHY.SIZ == TCB_LINEAR) ? tcb[i].req.siz : 2**tcb[i].req.siz;
+    assign tmp_req_siz = 2**tcb[i].req.siz;
 
     // write access
-    always @(posedge tcb[i].clk)
+    always_ff @(posedge tcb[i].clk)
     if (tcb[i].trn) begin
       if (tcb[i].req.wen) begin: write
         // temporary variables
@@ -139,13 +137,13 @@ module tcb_vip_mem
     end
 
     // combinational read data
-    always @(*)
+    always_comb
     if (tcb[i].trn) begin
       if (~tcb[i].req.wen) begin: read
         // temporary variables
         automatic int unsigned adr;
         if (tcb[i].PHY.MOD == TCB_REFERENCE) begin: reference
-          tmp_rsp_rdt = '{default: 'x};
+          tmp_rsp_rdt[0] = '{default: 'x};
           for (int unsigned b=0; b<tmp_req_siz; b++) begin: byteenable
             adr = b + int'(tcb[i].req.adr);
             tmp_rsp_rdt[0][b] = mem[adr%SIZ];
@@ -184,4 +182,4 @@ module tcb_vip_mem
   end: port
   endgenerate
 
-endmodule: tcb_vip_mem
+endmodule: tcb_vip_memory

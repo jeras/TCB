@@ -75,10 +75,10 @@ module tcb_lib_register_backpressure_tb
 // VIP instances
 ////////////////////////////////////////////////////////////////////////////////
 
-  tcb_vip_dev #("MAN") man     (.tcb (tcb_man));  // manager
-  tcb_vip_dev #("MON") mon_man (.tcb (tcb_man));  // manager monitor
-  tcb_vip_dev #("MON") mon_sub (.tcb (tcb_sub));  // subordinate monitor
-  tcb_vip_mem #("SUB") mem     (.tcb (tcb_mem));  // subordinate
+  tcb_vip_dev    #("MAN") man     (.tcb (tcb_man));  // manager
+  tcb_vip_dev    #("MON") mon_man (.tcb (tcb_man));  // manager monitor
+  tcb_vip_dev    #("MON") mon_sub (.tcb (tcb_sub));  // subordinate monitor
+  tcb_vip_memory #("SUB") mem     (.tcb (tcb_mem));  // subordinate
 
   // connect interfaces to interface array
   tcb_lib_passthrough pas [0:0] (.sub (tcb_sub), .man (tcb_mem));

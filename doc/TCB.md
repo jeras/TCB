@@ -464,7 +464,6 @@ The following parameters affect data packing.
 | parameter | default          | type (enumeration) | description |
 |-----------|------------------|--------------------|-------------|
 | `PHY.ALW` | `clog2(DBW/SLW)` | `int unsigned`     | Alignment width, number of least significant address bits which are zero. |
-| `PHY.SIZ` | `LOGARITHMIC`    | `tcb_par_size_t`   | Transfer size encoding, logarithmic or linear. |
 | `PHY.MOD` | `REFERENCE`      | `tcb_par_mode_t`   | Data position mode. |
 | `PHY.ORD` | `DESCENDING`     | `tcb_par_order_t`  | Byte order, ascending or descending. |
 
@@ -497,6 +496,8 @@ other values in between can be used for custom implementations.
 
 ##### Transfer size encoding
 
+TODO: remove references to LINEAR size.
+
 The `SIZ` parameter encoding defines the following options.
 - `LOGARITHMIC`,
 - `LINEAR`.
@@ -522,13 +523,6 @@ The width of the transfer size signal `siz` in the logarithmic case is
 
 NOTE: The linear option is an experimental proposal and
 is not yet compatible with any other standard or implementation.
-
-A more generic option `LINEAR` allows for any number of bytes
-up to the data bus width to be transferred.
-In this case the number of transferred bytes is `num=siz+1`.
-
-The width of the transfer size signal `siz` in the linear case is
-`clog2(DBW/SLW)==clog2(BEW)`.
 
 The byte enable signal `ben` is restricted in both the logarithmic and linear cases to
 only number long sequences of adjacent active bits (representing data bytes),

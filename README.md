@@ -36,11 +36,11 @@ for the rest of the code.
 
 ### VIP (Verification IP)
 
-| module                                      | status | description |
-|---------------------------------------------|--------|-------------|
-| [`tcb_vip_pkg`](hdl/tbn/vip/tcb_vip_pkg.sv) | VIP    | Package containing manager/monitor/subordinate code. |
-| [`tcb_vip_mem`](hdl/tbn/vip/tcb_vip_mem.sv) | VIP    | Multi port memory model. |
-| [`tcb_vip_tb` ](hdl/tbn/vip/tcb_vip_tb.sv ) | VIP    | Testbench for core VIP functionality. |
+| module                                           | status | description |
+|--------------------------------------------------|--------|-------------|
+| [`tcb_vip_pkg`](hdl/tbn/vip/tcb_vip_pkg.sv)      | VIP    | Package containing manager/monitor/subordinate code. |
+| [`tcb_vip_memory`](hdl/tbn/vip/tcb_if_memory.sv) | VIP    | Multi port memory model. |
+| [`tcb_vip_tb` ](hdl/tbn/vip/tcb_vip_tb.sv )      | VIP    | Testbench for core VIP functionality. |
 
 ### Reference implementation library
 

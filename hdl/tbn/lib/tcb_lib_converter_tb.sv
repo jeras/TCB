@@ -165,7 +165,7 @@ module tcb_lib_converter_tb
 ////////////////////////////////////////////////////////////////////////////////
 
   // memory model subordinate
-  tcb_vip_mem         mem       (.tcb (tcb_mem));
+  tcb_vip_memory      mem       (.tcb (tcb_mem));
 
   // connect interfaces to interface array
   tcb_lib_passthrough pas [0:0] (.sub (tcb_sub), .man (tcb_mem));

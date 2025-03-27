@@ -41,7 +41,7 @@ package tcb_vip_pkg;
     localparam int unsigned PHY_SZW_LIN = $clog2(       PHY_BEW   );  // linear
     localparam int unsigned PHY_SZW_LOG = $clog2($clog2(PHY_BEW)+1);  // logarithmic (default)
     // transfer size width selection
-    localparam int unsigned PHY_SZW = (PHY.SIZ == TCB_LINEAR) ? PHY_SZW_LIN : PHY_SZW_LOG;
+    localparam int unsigned PHY_SZW = PHY_SZW_LOG;
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
@@ -367,10 +367,10 @@ package tcb_vip_pkg;
           transfer_array[i].req.ndn = transaction_req.ndn;
           transfer_array[i].req.adr = transaction_req.adr;
           transfer_array[i].req.ben = '0;
-          transfer_array[i].req.siz = (PHY.SIZ == TCB_LINEAR) ? PHY_BEW : $clog2(PHY_BEW);
+          transfer_array[i].req.siz = $clog2(PHY_BEW);
         end
         if (siz <= PHY_BEW) begin
-          transfer_array[0].req.siz = (PHY.SIZ == TCB_LINEAR) ?     siz : $clog2(    siz);
+          transfer_array[0].req.siz = $clog2(    siz);
         end
         // data signals
         for (int unsigned i=0; i<siz; i++) begin

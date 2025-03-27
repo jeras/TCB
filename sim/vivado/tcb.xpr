@@ -308,7 +308,7 @@
           <Attr Name="UsedIn" Val="simulation"/>
         </FileInfo>
       </File>
-      <File Path="$PPRDIR/../../hdl/tbn/vip/tcb_vip_mem.sv">
+      <File Path="$PPRDIR/../../hdl/tbn/vip/tcb_vip_memory.sv">
         <FileInfo>
           <Attr Name="UsedIn" Val="synthesis"/>
           <Attr Name="UsedIn" Val="implementation"/>
