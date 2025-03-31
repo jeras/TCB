@@ -37,8 +37,8 @@ package tcb_pkg;
 
   // data position mode
   typedef enum bit {
-    TCB_REFERENCE = 1'b0,  // always LSB aligned
-    TCB_MEMORY    = 1'b1   // position depends on address
+    TCB_RISC_V = 1'b0,  // always LSB aligned
+    TCB_MEMORY = 1'b1   // position depends on address
   } tcb_par_mode_t;
 
   // byte order

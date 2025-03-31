@@ -54,6 +54,7 @@ interface tcb_if
     logic               ndn;  // endianness
     logic [PHY.ABW-1:0] adr;  // address
     logic [PHY_SZW-1:0] siz;  // transfer size
+    logic               uns;  // unsigned
     logic [PHY_BEW-1:0] ben;  // byte enable
     logic [PHY.DBW-1:0] wdt;  // write data
   } req_t;
@@ -116,6 +117,7 @@ interface tcb_if
     logic               ren;  // read enable
     logic [PHY.ABW-1:0] adr;  // address
     logic [PHY_SZW-1:0] siz;  // transfer size
+    logic               uns;  // unsigned
     logic [PHY_BEW-1:0] ben;  // byte enable
   } dly_t;
 
@@ -127,7 +129,7 @@ interface tcb_if
 
   // transfer size encoding
   generate
-  if (PHY.MOD == TCB_REFERENCE) begin: byteenable
+  if (PHY.MOD == TCB_RISC_V) begin: byteenable
     for (genvar b=0; b<PHY_BEW; b++) begin
       assign req_ben[b] = b < (2**req.siz);
     end

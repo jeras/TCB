@@ -113,14 +113,15 @@ module tcb_vip_memory
         // temporary variables
         automatic int unsigned adr;
 
-        if (tcb[i].PHY.MOD == TCB_REFERENCE) begin: reference
+        if (tcb[i].PHY.MOD == TCB_RISC_V) begin: risc_v
 //          $display("DEBUG: tcb[%d]: write adr=%08X=%d, tmp_req_siz=%d, wdt=%08X", i, tcb[i].req.adr, tcb[i].req.adr, tmp_req_siz, tmp_req_wdt);
-          for (int unsigned b=0; b<tmp_req_siz; b++) begin: byteenable
+          for (int unsigned b=0; b<tcb[i].PHY_BEW; b++) begin: size
             // byte address
             adr = b + int'(tcb[i].req.adr);
-            mem[adr%SIZ] <= tmp_req_wdt[b];
-          end: byteenable
-        end: reference
+            // write only transfer size bytes
+            if (b < tmp_req_siz)  mem[adr%SIZ] <= tmp_req_wdt[b];
+          end: size
+        end: risc_v
 
         else begin: memory
 //          $display("DEBUG: tcb[%d]: write adr=%08X=%d, ben=%04b, wdt=%08X", i, tcb[i].req.adr, tcb[i].req.adr, tcb[i].req.ben, tmp_req_wdt);
@@ -146,13 +147,16 @@ module tcb_vip_memory
         // temporary variables
         automatic int unsigned adr;
 
-        if (tcb[i].PHY.MOD == TCB_REFERENCE) begin: reference
+        if (tcb[i].PHY.MOD == TCB_RISC_V) begin: risc_v
           tmp_rsp_rdt[0] = '{default: 'x};
-          for (int unsigned b=0; b<tmp_req_siz; b++) begin: byteenable
+          for (int unsigned b=0; b<tcb[i].PHY_BEW; b++) begin: size
+            // byte address
             adr = b + int'(tcb[i].req.adr);
-            tmp_rsp_rdt[0][b] = mem[adr%SIZ];
-          end: byteenable
-        end: reference
+            // read only transfer size bytes, the rest are sign/zero extended
+            if (b < tmp_req_siz)  tmp_rsp_rdt[0][b] = mem[adr%SIZ];
+            else                  tmp_rsp_rdt[0][b] = {tcb[i].PHY.SLW{tmp_rsp_rdt[0][b-1][tcb[i].PHY.SLW-1] & ~tcb[i].req.uns}};
+          end: size
+        end: risc_v
 
         else begin: memory
           for (int unsigned b=0; b<tcb[i].PHY_BEW; b++) begin: byteenable
@@ -174,11 +178,19 @@ module tcb_vip_memory
     for (genvar d=1; d<=tcb[i].PHY.DLY; d++) begin: delay
       always @(posedge tcb[i].clk)
       begin
-        for (int unsigned b=0; b<tcb[i].PHY_BEW; b++) begin: byteenable
-          if (tcb[i].dly[d-1].ben[b]) begin
-            tmp_rsp_rdt[d][b] <= tmp_rsp_rdt[d-1][b];
-          end
-        end: byteenable
+
+        if (tcb[i].PHY.MOD == TCB_RISC_V) begin: risc_v
+          tmp_rsp_rdt[d] <= tmp_rsp_rdt[d-1];
+        end: risc_v
+
+        else begin: memory
+          for (int unsigned b=0; b<tcb[i].PHY_BEW; b++) begin: byteenable
+            if (tcb[i].dly[d-1].ben[b]) begin
+              tmp_rsp_rdt[d][b] <= tmp_rsp_rdt[d-1][b];
+            end
+          end: byteenable
+        end: memory
+
       end
     end: delay
 

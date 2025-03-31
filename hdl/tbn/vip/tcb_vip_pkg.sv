@@ -104,6 +104,7 @@ package tcb_vip_pkg;
       logic                            ndn;  // endianness
       logic [PHY.ABW-1:0]              adr;  // address
       logic [PHY_SZW-1:0]              siz;  // logarithmic size
+      logic                            uns;  // unsigned
       logic [PHY_BEW-1:0]              ben;  // byte enable
       logic [PHY_BEW-1:0][PHY.SLW-1:0] wdt;  // write data
     } transfer_request_t;
@@ -135,6 +136,7 @@ package tcb_vip_pkg;
         ndn: 1'bx,
         adr: 'x,
         siz: 'x,
+        uns: 'x,
         ben: 'x,
         wdt: 'x
       },
@@ -181,6 +183,7 @@ package tcb_vip_pkg;
       tcb.req.ndn = req.ndn;
       tcb.req.adr = req.adr;
       tcb.req.siz = req.siz;
+      tcb.req.uns = req.uns;
       tcb.req.ben = req.ben;
       tcb.req.wdt = req.wdt;
       // backpressure
@@ -199,6 +202,7 @@ package tcb_vip_pkg;
       tcb.req.ndn = 'x;
       tcb.req.adr = 'x;
       tcb.req.siz = 'x;
+      tcb.req.uns = 'x;
       tcb.req.ben = 'x;
       tcb.req.wdt = 'x;
     endtask: transfer_req_drv
@@ -254,6 +258,7 @@ package tcb_vip_pkg;
       req.ndn = tcb.req.ndn;
       req.adr = tcb.req.adr;
       req.siz = tcb.req.siz;
+      req.uns = tcb.req.uns;
       req.ben = tcb.req.ben;
       req.wdt = tcb.req.wdt;
     endtask: transfer_req_lsn
@@ -368,6 +373,7 @@ package tcb_vip_pkg;
           transfer_array[i].req.adr = transaction_req.adr;
           transfer_array[i].req.ben = '0;
           transfer_array[i].req.siz = $clog2(PHY_BEW);
+          transfer_array[i].req.uns = transaction_req.uns;
         end
         if (siz <= PHY_BEW) begin
           transfer_array[0].req.siz = $clog2(    siz);
@@ -377,7 +383,7 @@ package tcb_vip_pkg;
           // address offset
           off = i / PHY_BEW;
           // mode processor/memory
-          if (PHY.MOD == TCB_REFERENCE) begin
+          if (PHY.MOD == TCB_RISC_V) begin
             // all data bytes are LSB aligned
             byt = i;
           end else if (PHY.MOD == TCB_MEMORY) begin
@@ -416,7 +422,7 @@ package tcb_vip_pkg;
           // address offset
           off = i / PHY_BEW;
           // mode processor/memory
-          if (PHY.MOD == TCB_REFERENCE) begin
+          if (PHY.MOD == TCB_RISC_V) begin
             // all data bytes are LSB aligned
             byt = i;
           end else if (PHY.MOD == TCB_MEMORY) begin
