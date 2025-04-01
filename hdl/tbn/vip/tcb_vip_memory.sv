@@ -23,7 +23,7 @@ module tcb_vip_memory
   int unsigned SIZ = 2**8,
   int unsigned SPN = 1
 )(
-  // TCB interface (without modport constraints)
+  // TCB interface
   tcb_if.sub tcb [0:SPN-1]
 );
 
