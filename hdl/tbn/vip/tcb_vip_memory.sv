@@ -20,7 +20,11 @@ module tcb_vip_memory
   import tcb_pkg::*;
 //  import tcb_vip_pkg::*;
 #(
+  // memory file name
+  string       MFN = "",
+  // memory size
   int unsigned SIZ = 2**8,
+  // slave port number
   int unsigned SPN = 1
 )(
   // TCB interface
@@ -41,6 +45,14 @@ module tcb_vip_memory
 ////////////////////////////////////////////////////////////////////////////////
 // initialization
 ////////////////////////////////////////////////////////////////////////////////
+
+  // load memory at initial if a file is provided as parameter
+  initial
+  begin
+    if (MFN) begin
+      read_bin(MFN);
+    end
+  end
 
   // read binary into memory
   function int read_bin (
@@ -67,11 +79,11 @@ module tcb_vip_memory
   function void write_hex (
     string fn,
     int unsigned start_addr = 0,
-    int unsigned finish_addr = SIZ-1
+    int unsigned end_addr = SIZ-1
   );
     int fd;    // file descriptor
     fd = $fopen(fn, "w");
-    for (int unsigned addr=start_addr; addr<finish_addr; addr+=4) begin
+    for (int unsigned addr=start_addr; addr<end_addr; addr+=4) begin
   //    if (s.DW == 32) begin
         $fwrite(fd, "%h%h%h%h\n", mem[addr+3], mem[addr+2], mem[addr+1], mem[addr+0]);
   //    end else begin
