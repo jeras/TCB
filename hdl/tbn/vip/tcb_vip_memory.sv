@@ -119,7 +119,7 @@ module tcb_vip_memory
     assign tmp_req_siz = 2**tcb[i].req.siz;
 
     // write access
-    always_ff @(posedge tcb[i].clk)
+    always @(posedge tcb[i].clk)
     if (tcb[i].trn) begin
       if (tcb[i].req.wen) begin: write
         // temporary variables
