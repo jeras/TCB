@@ -50,7 +50,7 @@ module tcb_vip_memory
   initial
   begin
     if (MFN) begin
-      read_bin(MFN);
+      void'(read_bin(MFN));
     end
   end
 
