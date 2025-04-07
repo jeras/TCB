@@ -55,7 +55,7 @@ module tcb_lib_demultiplexer
   // TODO: remove once simulators support access to types inside interfaces
   // response
   typedef struct packed {
-    logic [sub.PHY.DBW-1:0] rdt;  // read data
+    logic [sub.PHY.DAT-1:0] rdt;  // read data
     tcb_rsp_sts_def_t       sts;  // status (optional)
   } sub_rsp_t;
 

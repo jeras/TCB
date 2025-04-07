@@ -67,8 +67,8 @@ package tcb_pkg;
     int unsigned      DLY;  // response delay
     // signal widths
     int unsigned      SLW;  // selection   width (byte width is 8 by default)
-    int unsigned      ABW;  // address bus width
-    int unsigned      DBW;  // data    bus width
+    int unsigned      ADR;  // address bus width
+    int unsigned      DAT;  // data    bus width
     int unsigned      ALW;  // alignment width
     // data packing parameters
     tcb_par_mode_t    MOD;  // data position mode
@@ -83,9 +83,9 @@ package tcb_pkg;
     DLY: 0,
     // signal widths
     SLW: 8,
-    ABW: 32,
-    DBW: 32,
-    ALW: 2,   // $clog2(DBW/SLW)
+    ADR: 32,
+    DAT: 32,
+    ALW: 2,   // $clog2(DAT/SLW)
     // data packing parameters
     MOD: TCB_MEMORY,
     ORD: TCB_DESCENDING,
@@ -106,8 +106,8 @@ package tcb_pkg;
     struct packed {
       bit DLY;
       bit SLW;
-      bit ABW;
-      bit DBW;
+      bit ADR;
+      bit DAT;
       bit ALW;
       bit SIZ;
       bit MOD;
@@ -118,8 +118,8 @@ package tcb_pkg;
     // comparison
     status.DLY = phy_val.DLY ==? phy_ref.DLY;
     status.SLW = phy_val.SLW ==? phy_ref.SLW;
-    status.ABW = phy_val.ABW ==? phy_ref.ABW;
-    status.DBW = phy_val.DBW ==? phy_ref.DBW;
+    status.ADR = phy_val.ADR ==? phy_ref.ADR;
+    status.DAT = phy_val.DAT ==? phy_ref.DAT;
     status.ALW = phy_val.ALW ==? phy_ref.ALW;
     status.MOD = phy_val.MOD ==? phy_ref.MOD;
     status.ORD = phy_val.ORD ==? phy_ref.ORD;
@@ -128,8 +128,8 @@ package tcb_pkg;
     // reporting validation status
     if (status.DLY)  $error("parameter mismatch PHY.DLY=%d != PHY.DLY=%d", phy_val.DLY, phy_ref.DLY);
     if (status.SLW)  $error("parameter mismatch PHY.SLW=%d != PHY.SLW=%d", phy_val.SLW, phy_ref.SLW);
-    if (status.ABW)  $error("parameter mismatch PHY.ABW=%d != PHY.ABW=%d", phy_val.ABW, phy_ref.ABW);
-    if (status.DBW)  $error("parameter mismatch PHY.DBW=%d != PHY.DBW=%d", phy_val.DBW, phy_ref.DBW);
+    if (status.ADR)  $error("parameter mismatch PHY.ADR=%d != PHY.ADR=%d", phy_val.ADR, phy_ref.ADR);
+    if (status.DAT)  $error("parameter mismatch PHY.DAT=%d != PHY.DAT=%d", phy_val.DAT, phy_ref.DAT);
     if (status.ALW)  $error("parameter mismatch PHY.ALW=%d != PHY.ALW=%d", phy_val.ALW, phy_ref.ALW);
     if (status.MOD)  $error("parameter mismatch PHY.MOD=%d != PHY.MOD=%d", phy_val.MOD, phy_ref.MOD);
     if (status.ORD)  $error("parameter mismatch PHY.ORD=%d != PHY.ORD=%d", phy_val.ORD, phy_ref.ORD);

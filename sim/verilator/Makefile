@@ -73,13 +73,13 @@ endif
 ################################################################################
 
 # TCB address/data bus widths
-ABW ?= 32
-DBW ?= 32
+ADR ?= 32
+DAT ?= 32
 # TCB response delay
 DLY ?= 1
 
-#PAR += -GABW=${ABW}
-#PAR += -GDBW=${DBW}
+#PAR += -GADR=${ADR}
+#PAR += -GDAT=${DAT}
 #PAR += -GDLY=${DLY}
 
 ################################################################################

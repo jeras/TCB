@@ -32,8 +32,8 @@ module tcb_lib_register_backpressure #(
   // camparing subordinate and manager interface parameters
   generate
     // bus widths
-    if (sub.ABW != man.ABW)  $error("ERROR: %m parameter (sub.ABW = %d) != (man.ABW = %d)", sub.ABW, man.ABW);
-    if (sub.DBW != man.DBW)  $error("ERROR: %m parameter (sub.DBW = %d) != (man.DBW = %d)", sub.DBW, man.DBW);
+    if (sub.ADR != man.ADR)  $error("ERROR: %m parameter (sub.ADR = %d) != (man.ADR = %d)", sub.ADR, man.ADR);
+    if (sub.DAT != man.DAT)  $error("ERROR: %m parameter (sub.DAT = %d) != (man.DAT = %d)", sub.DAT, man.DAT);
     if (sub.SLW != man.SLW)  $error("ERROR: %m parameter (sub.SLW = %d) != (man.SLW = %d)", sub.SLW, man.SLW);
     if (sub.BEW != man.BEW)  $error("ERROR: %m parameter (sub.BEW = %d) != (man.BEW = %d)", sub.BEW, man.BEW);
     // response delay
@@ -51,10 +51,10 @@ module tcb_lib_register_backpressure #(
   logic               tmp_lck;  // arbitration lock
   // request
   logic               tmp_wen;  // write enable
-  logic [sub.ABW-1:0] tmp_adr;  // address
+  logic [sub.ADR-1:0] tmp_adr;  // address
   logic [sub.SZW-1:0] tmp_siz;  // logarithmic size
   logic [sub.BEW-1:0] tmp_ben;  // byte enable
-  logic [sub.DBW-1:0] tmp_wdt;  // write data
+  logic [sub.DAT-1:0] tmp_wdt;  // write data
 
   always_ff @(posedge sub.clk)
   begin

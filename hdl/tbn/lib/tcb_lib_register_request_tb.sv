@@ -21,10 +21,10 @@ module tcb_lib_register_request_tb
   import tcb_vip_pkg::*;
 #(
   // TCB widths
-  int unsigned ABW = 32,       // address bus width
-  int unsigned DBW = 32,       // data    bus width
+  int unsigned ADR = 32,       // address bus width
+  int unsigned DAT = 32,       // data    bus width
   int unsigned SLW =       8,  // selection   width
-  int unsigned BEW = DBW/SLW,  // byte enable width
+  int unsigned BEW = DAT/SLW,  // byte enable width
   // response delay
   int unsigned DLY = 1,
   // bus hold granularity (byte granularity by default)
@@ -39,16 +39,16 @@ module tcb_lib_register_request_tb
   logic rst;  // reset
 
   // response
-  logic [DBW-1:0] rdt;  // read data
+  logic [DAT-1:0] rdt;  // read data
   logic           err;  // error response
 
 ////////////////////////////////////////////////////////////////////////////////
 // local signals
 ////////////////////////////////////////////////////////////////////////////////
 
-  tcb_if #(.ABW (ABW), .DBW (DBW), .DLY (DLY_MAN)) tcb_man       (.clk (clk), .rst (rst));
-  tcb_if #(.ABW (ABW), .DBW (DBW), .DLY (DLY_SUB)) tcb_sub       (.clk (clk), .rst (rst));
-  tcb_if #(.ABW (ABW), .DBW (DBW), .DLY (DLY_SUB)) tcb_mem [0:0] (.clk (clk), .rst (rst));
+  tcb_if #(.ADR (ADR), .DAT (DAT), .DLY (DLY_MAN)) tcb_man       (.clk (clk), .rst (rst));
+  tcb_if #(.ADR (ADR), .DAT (DAT), .DLY (DLY_SUB)) tcb_sub       (.clk (clk), .rst (rst));
+  tcb_if #(.ADR (ADR), .DAT (DAT), .DLY (DLY_SUB)) tcb_mem [0:0] (.clk (clk), .rst (rst));
 
 ////////////////////////////////////////////////////////////////////////////////
 // test sequence

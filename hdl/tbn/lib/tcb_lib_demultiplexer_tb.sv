@@ -20,17 +20,17 @@ module tcb_lib_demultiplexer_tb
   import tcb_vip_pkg::*;
 #(
   // TCB widths
-  int unsigned ABW = 32,       // address bus width
-  int unsigned DBW = 32,       // data    bus width
+  int unsigned ADR = 32,       // address bus width
+  int unsigned DAT = 32,       // data    bus width
   int unsigned SLW =       8,  // selection   width
-  int unsigned BEW = DBW/SLW,  // byte enable width
+  int unsigned BEW = DAT/SLW,  // byte enable width
   // response delay
   int unsigned DLY = 1,
   // interconnect parameters
   int unsigned MPN = 3,      // port number
   int unsigned MPL = $clog2(MPN),
   // decoder address and mask array
-  parameter  logic [ABW-1:0] DAM [MPN-1:0] = '{MPN{ABW'('x)}}
+  parameter  logic [ADR-1:0] DAM [MPN-1:0] = '{MPN{ADR'('x)}}
 );
 
   // system signals
@@ -38,7 +38,7 @@ module tcb_lib_demultiplexer_tb
   logic rst;  // reset
 
   // response
-  logic [DBW-1:0] rdt;  // read data
+  logic [DAT-1:0] rdt;  // read data
   logic           err;  // error response
 
   // control
@@ -48,8 +48,8 @@ module tcb_lib_demultiplexer_tb
 // local signals
 ////////////////////////////////////////////////////////////////////////////////
 
-  tcb_if #(.ABW (ABW), .DBW (DBW)) tcb_man            (.clk (clk), .rst (rst));
-  tcb_if #(.ABW (ABW), .DBW (DBW)) tcb_sub  [MPN-1:0] (.clk (clk), .rst (rst));
+  tcb_if #(.ADR (ADR), .DAT (DAT)) tcb_man            (.clk (clk), .rst (rst));
+  tcb_if #(.ADR (ADR), .DAT (DAT)) tcb_sub  [MPN-1:0] (.clk (clk), .rst (rst));
 
 ////////////////////////////////////////////////////////////////////////////////
 // test sequence

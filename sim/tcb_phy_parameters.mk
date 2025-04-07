@@ -6,8 +6,8 @@
 MAN_DLY ?= 0
 # signal widths
 MAN_SLW ?= 8
-MAN_ABW ?= 17
-MAN_DBW ?= 32
+MAN_ADR ?= 17
+MAN_DAT ?= 32
 MAN_ALW ?= 0
 # data packing parameters
 MAN_SIZ ?= ${TCB_LOGARITHMIC}
@@ -20,8 +20,8 @@ MAN_CHN ?= ${TCB_COMMON_HALF_DUPLEX}
 SUB_DLY ?= 0
 # signal widths
 SUB_SLW ?= 8
-SUB_ABW ?= 17
-SUB_DBW ?= 32
+SUB_ADR ?= 17
+SUB_DAT ?= 32
 SUB_ALW ?= 0
 # data packing parameters
 SUB_SIZ ?= ${TCB_LOGARITHMIC}

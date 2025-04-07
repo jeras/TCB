@@ -35,7 +35,7 @@ package tcb_vip_pkg;
 ////////////////////////////////////////////////////////////////////////////////
 
     // byte enable width
-    localparam int unsigned PHY_BEW = PHY.DBW / PHY.SLW;
+    localparam int unsigned PHY_BEW = PHY.DAT / PHY.SLW;
 
     // transfer size width calculation
     localparam int unsigned PHY_SZW_LIN = $clog2(       PHY_BEW   );  // linear
@@ -102,7 +102,7 @@ package tcb_vip_pkg;
       tcb_req_cmd_t                    cmd;  // command (optional)
       logic                            wen;  // write enable
       logic                            ndn;  // endianness
-      logic [PHY.ABW-1:0]              adr;  // address
+      logic [PHY.ADR-1:0]              adr;  // address
       logic [PHY_SZW-1:0]              siz;  // logarithmic size
       logic                            uns;  // unsigned
       logic [PHY_BEW-1:0]              ben;  // byte enable
@@ -317,7 +317,7 @@ package tcb_vip_pkg;
         // request
         tcb_cfg_endian_t             ndn;
         logic                        wen;
-        logic          [PHY.ABW-1:0] adr;
+        logic          [PHY.ADR-1:0] adr;
         logic   [8-1:0][PHY.SLW-1:0] wdt;
       } transaction_request_t;
 
@@ -452,7 +452,7 @@ package tcb_vip_pkg;
     task automatic transaction8 (
       // request
       input  logic                            wen,
-      input  logic              [PHY.ABW-1:0] adr,
+      input  logic              [PHY.ADR-1:0] adr,
       input  logic       [1-1:0][PHY.SLW-1:0] wdt,
       // response
       output logic       [1-1:0][PHY.SLW-1:0] rdt,
@@ -479,7 +479,7 @@ package tcb_vip_pkg;
     task automatic transaction16 (
       // request
       input  logic                            wen,
-      input  logic              [PHY.ABW-1:0] adr,
+      input  logic              [PHY.ADR-1:0] adr,
       input  logic       [2-1:0][PHY.SLW-1:0] wdt,
       // response
       output logic       [2-1:0][PHY.SLW-1:0] rdt,
@@ -506,7 +506,7 @@ package tcb_vip_pkg;
     task automatic transaction32 (
       // request
       input  logic                            wen,
-      input  logic              [PHY.ABW-1:0] adr,
+      input  logic              [PHY.ADR-1:0] adr,
       input  logic       [4-1:0][PHY.SLW-1:0] wdt,
       // response
       output logic       [4-1:0][PHY.SLW-1:0] rdt,
@@ -533,7 +533,7 @@ package tcb_vip_pkg;
     task automatic transaction64 (
       // request
       input  logic                            wen,
-      input  logic              [PHY.ABW-1:0] adr,
+      input  logic              [PHY.ADR-1:0] adr,
       input  logic       [8-1:0][PHY.SLW-1:0] wdt,
       // response
       output logic       [8-1:0][PHY.SLW-1:0] rdt,
@@ -560,7 +560,7 @@ package tcb_vip_pkg;
     task automatic transaction128 (
       // request
       input  logic                            wen,
-      input  logic              [PHY.ABW-1:0] adr,
+      input  logic              [PHY.ADR-1:0] adr,
       input  logic      [16-1:0][PHY.SLW-1:0] wdt,
       // response
       output logic      [16-1:0][PHY.SLW-1:0] rdt,
@@ -585,7 +585,7 @@ package tcb_vip_pkg;
     endtask: transaction128
 
     task write8 (
-      input  logic         [PHY.ABW-1:0] adr,
+      input  logic         [PHY.ADR-1:0] adr,
       input  logic  [1-1:0][PHY.SLW-1:0] wdt,
       output logic                       sts
     );
@@ -594,7 +594,7 @@ package tcb_vip_pkg;
     endtask: write8
 
     task read8 (
-      input  logic         [PHY.ABW-1:0] adr,
+      input  logic         [PHY.ADR-1:0] adr,
       output logic  [1-1:0][PHY.SLW-1:0] rdt,
       output logic                       sts
     );
@@ -603,7 +603,7 @@ package tcb_vip_pkg;
     endtask: read8
 
     task check8 (
-      input  logic         [PHY.ABW-1:0] adr,
+      input  logic         [PHY.ADR-1:0] adr,
       input  logic  [1-1:0][PHY.SLW-1:0] rdt,
       input  logic                       sts
     );
@@ -616,7 +616,7 @@ package tcb_vip_pkg;
     endtask: check8
 
     task write16 (
-      input  logic         [PHY.ABW-1:0] adr,
+      input  logic         [PHY.ADR-1:0] adr,
       input  logic  [2-1:0][PHY.SLW-1:0] wdt,
       output logic                       sts
     );
@@ -625,7 +625,7 @@ package tcb_vip_pkg;
     endtask: write16
 
     task read16 (
-      input  logic         [PHY.ABW-1:0] adr,
+      input  logic         [PHY.ADR-1:0] adr,
       output logic  [2-1:0][PHY.SLW-1:0] rdt,
       output logic                       sts
     );
@@ -634,7 +634,7 @@ package tcb_vip_pkg;
     endtask: read16
 
     task check16 (
-      input  logic         [PHY.ABW-1:0] adr,
+      input  logic         [PHY.ADR-1:0] adr,
       input  logic  [2-1:0][PHY.SLW-1:0] rdt,
       input  logic                       sts
     );
@@ -647,7 +647,7 @@ package tcb_vip_pkg;
     endtask: check16
 
     task write32 (
-      input  logic         [PHY.ABW-1:0] adr,
+      input  logic         [PHY.ADR-1:0] adr,
       input  logic  [4-1:0][PHY.SLW-1:0] wdt,
       output logic                       sts
     );
@@ -656,7 +656,7 @@ package tcb_vip_pkg;
     endtask: write32
 
     task read32 (
-      input  logic         [PHY.ABW-1:0] adr,
+      input  logic         [PHY.ADR-1:0] adr,
       output logic  [4-1:0][PHY.SLW-1:0] rdt,
       output logic                       sts
     );
@@ -665,7 +665,7 @@ package tcb_vip_pkg;
     endtask: read32
 
     task check32 (
-      input  logic         [PHY.ABW-1:0] adr,
+      input  logic         [PHY.ADR-1:0] adr,
       input  logic  [4-1:0][PHY.SLW-1:0] rdt,
       input  logic                       sts
     );
@@ -678,7 +678,7 @@ package tcb_vip_pkg;
     endtask: check32
 
     task write64 (
-      input  logic         [PHY.ABW-1:0] adr,
+      input  logic         [PHY.ADR-1:0] adr,
       input  logic  [8-1:0][PHY.SLW-1:0] wdt,
       output logic                       sts
     );
@@ -687,7 +687,7 @@ package tcb_vip_pkg;
     endtask: write64
 
     task read64 (
-      input  logic         [PHY.ABW-1:0] adr,
+      input  logic         [PHY.ADR-1:0] adr,
       output logic  [8-1:0][PHY.SLW-1:0] rdt,
       output logic                       sts
     );
@@ -696,7 +696,7 @@ package tcb_vip_pkg;
     endtask: read64
 
     task check64 (
-      input  logic         [PHY.ABW-1:0] adr,
+      input  logic         [PHY.ADR-1:0] adr,
       input  logic  [8-1:0][PHY.SLW-1:0] rdt,
       input  logic                       sts
     );
@@ -709,7 +709,7 @@ package tcb_vip_pkg;
     endtask: check64
 
     task write128 (
-      input  logic         [PHY.ABW-1:0] adr,
+      input  logic         [PHY.ADR-1:0] adr,
       input  logic [16-1:0][PHY.SLW-1:0] wdt,
       output logic                       sts
     );
@@ -718,7 +718,7 @@ package tcb_vip_pkg;
     endtask: write128
 
     task read128 (
-      input  logic         [PHY.ABW-1:0] adr,
+      input  logic         [PHY.ADR-1:0] adr,
       output logic [16-1:0][PHY.SLW-1:0] rdt,
       output logic                       sts
     );
@@ -727,7 +727,7 @@ package tcb_vip_pkg;
     endtask: read128
 
     task check128 (
-      input  logic         [PHY.ABW-1:0] adr,
+      input  logic         [PHY.ADR-1:0] adr,
       input  logic [16-1:0][PHY.SLW-1:0] rdt,
       input  logic                       sts
     );

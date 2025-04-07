@@ -33,7 +33,7 @@ interface tcb_if
 ////////////////////////////////////////////////////////////////////////////////
 
   // byte enable width
-  localparam int unsigned PHY_BEW = PHY.DBW / PHY.SLW;
+  localparam int unsigned PHY_BEW = PHY.DAT / PHY.SLW;
 
   // transfer size width calculation
   localparam int unsigned PHY_SZW = $clog2($clog2(PHY_BEW)+1);
@@ -52,16 +52,16 @@ interface tcb_if
     logic               wen;  // write enable
     logic               ren;  // write enable
     logic               ndn;  // endianness
-    logic [PHY.ABW-1:0] adr;  // address
+    logic [PHY.ADR-1:0] adr;  // address
     logic [PHY_SZW-1:0] siz;  // transfer size
     logic               uns;  // unsigned
     logic [PHY_BEW-1:0] ben;  // byte enable
-    logic [PHY.DBW-1:0] wdt;  // write data
+    logic [PHY.DAT-1:0] wdt;  // write data
   } req_t;
 
   // response
   typedef struct packed {
-    logic [PHY.DBW-1:0] rdt;  // read data
+    logic [PHY.DAT-1:0] rdt;  // read data
     tcb_rsp_sts_t       sts;  // status (optional)
   } rsp_t;
 
@@ -115,7 +115,7 @@ interface tcb_if
   typedef struct {
     logic               ena;  // enable
     logic               ren;  // read enable
-    logic [PHY.ABW-1:0] adr;  // address
+    logic [PHY.ADR-1:0] adr;  // address
     logic [PHY_SZW-1:0] siz;  // transfer size
     logic               uns;  // unsigned
     logic [PHY_BEW-1:0] ben;  // byte enable

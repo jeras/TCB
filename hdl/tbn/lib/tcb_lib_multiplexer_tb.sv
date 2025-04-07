@@ -20,10 +20,10 @@ module tcb_lib_multiplexer_tb
   import tcb_vip_pkg::*;
 #(
   // TCB widths
-  int unsigned ABW = 32,       // address bus width
-  int unsigned DBW = 32,       // data    bus width
+  int unsigned ADR = 32,       // address bus width
+  int unsigned DAT = 32,       // data    bus width
   int unsigned SLW =       8,  // selection   width
-  int unsigned BEW = DBW/SLW,  // byte enable width
+  int unsigned BEW = DAT/SLW,  // byte enable width
   // response delay
   int unsigned DLY = 1,
   // interconnect parameters
@@ -38,9 +38,9 @@ module tcb_lib_multiplexer_tb
   logic rst;  // reset
 
   // response
-  //logic [DBW-1:0] rdt [SPN-1:0];  // read data
+  //logic [DAT-1:0] rdt [SPN-1:0];  // read data
   //logic           err [SPN-1:0];  // error response
-  logic [DBW-1:0] rdt;  // read data
+  logic [DAT-1:0] rdt;  // read data
   logic           err;  // error response
 
   // control
@@ -50,8 +50,8 @@ module tcb_lib_multiplexer_tb
 // local signals
 ////////////////////////////////////////////////////////////////////////////////
 
-  tcb_if #(.ABW (ABW), .DBW (DBW)) tcb_man  [SPN-1:0] (.clk (clk), .rst (rst));
-  tcb_if #(.ABW (ABW), .DBW (DBW)) tcb_sub            (.clk (clk), .rst (rst));
+  tcb_if #(.ADR (ADR), .DAT (DAT)) tcb_man  [SPN-1:0] (.clk (clk), .rst (rst));
+  tcb_if #(.ADR (ADR), .DAT (DAT)) tcb_sub            (.clk (clk), .rst (rst));
 
 ////////////////////////////////////////////////////////////////////////////////
 // test sequence

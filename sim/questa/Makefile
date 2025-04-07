@@ -15,8 +15,8 @@ TOP ?= tcb_lib_converter_tb
 MAN_PAR += -GMAN_DLY=${MAN_DLY}
 # signal widths
 MAN_PAR += -GMAN_SLW=${MAN_SLW}
-MAN_PAR += -GMAN_ABW=${MAN_ABW}
-MAN_PAR += -GMAN_DBW=${MAN_DBW}
+MAN_PAR += -GMAN_ADR=${MAN_ADR}
+MAN_PAR += -GMAN_DAT=${MAN_DAT}
 MAN_PAR += -GMAN_ALW=${MAN_ALW}
 # data packing parameters
 MAN_PAR ?= -GMAN_SIZ=${MAN_SIZ}
@@ -29,8 +29,8 @@ MAN_PAR ?= -GCHN_CHN=${MAN_CHN}
 SUB_PAR += -GSUB_DLY=${SUB_DLY}
 # signal widths
 SUB_PAR += -GSUB_SLW=${SUB_SLW}
-SUB_PAR += -GSUB_ABW=${SUB_ABW}
-SUB_PAR += -GSUB_DBW=${SUB_DBW}
+SUB_PAR += -GSUB_ADR=${SUB_ADR}
+SUB_PAR += -GSUB_DAT=${SUB_DAT}
 SUB_PAR += -GSUB_ALW=${SUB_ALW}
 # data packing parameters
 SUB_PAR ?= -GSUB_SIZ=${SUB_SIZ}

@@ -46,7 +46,7 @@ module tcb_cmn_gpio #(
 `else
 generate
   if (tcb.PHY.DLY !=  0)  $error("ERROR: %m parameter DLY validation failed");
-  if (tcb.PHY.DBW != 32)  $error("ERROR: %m parameter DBW validation failed");
+  if (tcb.PHY.DAT != 32)  $error("ERROR: %m parameter DAT validation failed");
   if (         GW >  32)  $error("ERROR: %m parameter GW exceeds the data bus width");
 endgenerate
 `endif

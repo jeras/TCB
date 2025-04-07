@@ -48,8 +48,8 @@ module tcb_ind_gpio #(
 generate
   if (tcb_wrc.PHY.DLY !=  0)  $error("ERROR: %m parameter DLY validation failed");
   if (tcb_rdc.PHY.DLY !=  0)  $error("ERROR: %m parameter DLY validation failed");
-  if (tcb_wrc.PHY.DBW != 32)  $error("ERROR: %m parameter DBW validation failed");
-  if (tcb_rdc.PHY.DBW != 32)  $error("ERROR: %m parameter DBW validation failed");
+  if (tcb_wrc.PHY.DAT != 32)  $error("ERROR: %m parameter DAT validation failed");
+  if (tcb_rdc.PHY.DAT != 32)  $error("ERROR: %m parameter DAT validation failed");
   if (             GW >  32)  $error("ERROR: %m parameter GW exceeds the data bus width");
 endgenerate
 `endif

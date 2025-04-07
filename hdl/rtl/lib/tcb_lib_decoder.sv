@@ -25,7 +25,7 @@ module tcb_lib_decoder
   parameter  int unsigned SPN = 2,
   localparam int unsigned SPL = $clog2(SPN),
   // decoder address and mask array
-  parameter  logic [PHY.ABW-1:0] DAM [SPN-1:0] = '{default: 'x}
+  parameter  logic [PHY.ADR-1:0] DAM [SPN-1:0] = '{default: 'x}
 )(
   // TCB interfaces
   tcb_if.sub tcb,  // TCB subordinate port (manager device connects here)
@@ -44,7 +44,7 @@ module tcb_lib_decoder
 // local signals
 ////////////////////////////////////////////////////////////////////////////////
 
-  logic [PHY.ABW-1:0] adr;
+  logic [PHY.ADR-1:0] adr;
 
   // extract address from TCB
   assign adr = tcb.req.adr;
@@ -55,8 +55,8 @@ module tcb_lib_decoder
 
 //  // match
 //  function [SPN-1:0] match (
-//    logic [PHY.ABW-1:0] val,           // input
-//    logic [PHY.ABW-1:0] mch [SPN-1:0]   // matching reference
+//    logic [PHY.ADR-1:0] val,           // input
+//    logic [PHY.ADR-1:0] mch [SPN-1:0]   // matching reference
 //  );
 //    for (int unsigned i=0; i<SPN; i++) begin
 //      assign match[i] = val ==? mch[i];

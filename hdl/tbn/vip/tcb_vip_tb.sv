@@ -21,8 +21,8 @@ module tcb_vip_tb
   import tcb_vip_pkg::*;
 #(
   // TCB widths
-  int unsigned ABW = 32,
-  int unsigned DBW = 32,
+  int unsigned ADR = 32,
+  int unsigned DAT = 32,
   // response delay
   int unsigned DLY = 0,
   // memory port number
@@ -38,9 +38,9 @@ module tcb_vip_tb
     DLY: DLY,
     // signal bus widths
     SLW: TCB_PAR_PHY_DEF.SLW,
-    ABW: ABW,
-    DBW: DBW,
-    ALW: $clog2(DBW/TCB_PAR_PHY_DEF.SLW),
+    ADR: ADR,
+    DAT: DAT,
+    ALW: $clog2(DAT/TCB_PAR_PHY_DEF.SLW),
     // size/mode/order parameters
     SIZ: TCB_PAR_PHY_DEF.SIZ,
     MOD: TCB_PAR_PHY_DEF.MOD,
@@ -178,7 +178,7 @@ module tcb_vip_tb
 ////////////////////////////////////////////////////////////////////////////////
 
   // response
-  logic [PHY.DBW-1:0] rdt;  // read data
+  logic [PHY.DAT-1:0] rdt;  // read data
   tcb_rsp_sts_def_t   sts;  // status response
 
   logic [  8-1:0] rdt8  ;  //   8-bit read data

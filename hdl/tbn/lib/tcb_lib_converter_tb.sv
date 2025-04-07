@@ -24,8 +24,8 @@ module tcb_lib_converter_tb
   int unsigned      MAN_DLY = TCB_PAR_PHY_DEF.DLY,  // response delay
   // signal widths
   int unsigned      MAN_SLW = TCB_PAR_PHY_DEF.SLW,  // selection   width (byte width is 8 by default)
-  int unsigned      MAN_ABW = TCB_PAR_PHY_DEF.ABW,  // address bus width
-  int unsigned      MAN_DBW = TCB_PAR_PHY_DEF.DBW,  // data    bus width
+  int unsigned      MAN_ADR = TCB_PAR_PHY_DEF.ADR,  // address bus width
+  int unsigned      MAN_DAT = TCB_PAR_PHY_DEF.DAT,  // data    bus width
   int unsigned      MAN_ALW = TCB_PAR_PHY_DEF.ALW,  // alignment width
   // data packing parameters for manager/subordinate
   tcb_par_size_t    MAN_SIZ = TCB_PAR_PHY_DEF.SIZ,  // manager     transfer size encoding
@@ -38,8 +38,8 @@ module tcb_lib_converter_tb
   int unsigned      SUB_DLY = TCB_PAR_PHY_DEF.DLY,  // response delay
   // signal widths
   int unsigned      SUB_SLW = TCB_PAR_PHY_DEF.SLW,  // selection   width (byte width is 8 by default)
-  int unsigned      SUB_ABW = TCB_PAR_PHY_DEF.ABW,  // address bus width
-  int unsigned      SUB_DBW = TCB_PAR_PHY_DEF.DBW,  // data    bus width
+  int unsigned      SUB_ADR = TCB_PAR_PHY_DEF.ADR,  // address bus width
+  int unsigned      SUB_DAT = TCB_PAR_PHY_DEF.DAT,  // data    bus width
   int unsigned      SUB_ALW = TCB_PAR_PHY_DEF.ALW,  // alignment width
   // data packing parameters for manager/subordinate
   tcb_par_size_t    SUB_SIZ = TCB_PAR_PHY_DEF.SIZ,  // subordinate transfer size encoding
@@ -55,8 +55,8 @@ module tcb_lib_converter_tb
     DLY: MAN_DLY,
     // signal bus widths
     SLW: MAN_SLW,
-    ABW: MAN_ABW,
-    DBW: MAN_DBW,
+    ADR: MAN_ADR,
+    DAT: MAN_DAT,
     ALW: MAN_ALW,
     // size/mode/order parameters
     SIZ: MAN_SIZ,
@@ -72,8 +72,8 @@ module tcb_lib_converter_tb
     DLY: SUB_DLY,
     // signal bus widths
     SLW: SUB_SLW,
-    ABW: SUB_ABW,
-    DBW: SUB_DBW,
+    ADR: SUB_ADR,
+    DAT: SUB_DAT,
     ALW: SUB_ALW,
     // size/mode/order parameters
     SIZ: SUB_SIZ,

@@ -100,13 +100,13 @@
          <obj_property name="ElementShortName">rbe[0:1][3:0]</obj_property>
          <obj_property name="ObjectShortName">rbe[0:1][3:0]</obj_property>
       </wvobject>
-      <wvobject type="array" fp_name="/tcb_lib_register_backpressure_tb/tcb_man/ABW">
-         <obj_property name="ElementShortName">ABW[31:0]</obj_property>
-         <obj_property name="ObjectShortName">ABW[31:0]</obj_property>
+      <wvobject type="array" fp_name="/tcb_lib_register_backpressure_tb/tcb_man/ADR">
+         <obj_property name="ElementShortName">ADR[31:0]</obj_property>
+         <obj_property name="ObjectShortName">ADR[31:0]</obj_property>
       </wvobject>
-      <wvobject type="array" fp_name="/tcb_lib_register_backpressure_tb/tcb_man/DBW">
-         <obj_property name="ElementShortName">DBW[31:0]</obj_property>
-         <obj_property name="ObjectShortName">DBW[31:0]</obj_property>
+      <wvobject type="array" fp_name="/tcb_lib_register_backpressure_tb/tcb_man/DAT">
+         <obj_property name="ElementShortName">DAT[31:0]</obj_property>
+         <obj_property name="ObjectShortName">DAT[31:0]</obj_property>
       </wvobject>
       <wvobject type="array" fp_name="/tcb_lib_register_backpressure_tb/tcb_man/SLW">
          <obj_property name="ElementShortName">SLW[31:0]</obj_property>
@@ -213,13 +213,13 @@
          <obj_property name="ElementShortName">rbe[0:1][3:0]</obj_property>
          <obj_property name="ObjectShortName">rbe[0:1][3:0]</obj_property>
       </wvobject>
-      <wvobject type="array" fp_name="/tcb_lib_register_backpressure_tb/tcb_sub/ABW">
-         <obj_property name="ElementShortName">ABW[31:0]</obj_property>
-         <obj_property name="ObjectShortName">ABW[31:0]</obj_property>
+      <wvobject type="array" fp_name="/tcb_lib_register_backpressure_tb/tcb_sub/ADR">
+         <obj_property name="ElementShortName">ADR[31:0]</obj_property>
+         <obj_property name="ObjectShortName">ADR[31:0]</obj_property>
       </wvobject>
-      <wvobject type="array" fp_name="/tcb_lib_register_backpressure_tb/tcb_sub/DBW">
-         <obj_property name="ElementShortName">DBW[31:0]</obj_property>
-         <obj_property name="ObjectShortName">DBW[31:0]</obj_property>
+      <wvobject type="array" fp_name="/tcb_lib_register_backpressure_tb/tcb_sub/DAT">
+         <obj_property name="ElementShortName">DAT[31:0]</obj_property>
+         <obj_property name="ObjectShortName">DAT[31:0]</obj_property>
       </wvobject>
       <wvobject type="array" fp_name="/tcb_lib_register_backpressure_tb/tcb_sub/SLW">
          <obj_property name="ElementShortName">SLW[31:0]</obj_property>
@@ -325,13 +325,13 @@
          <obj_property name="ElementShortName">rbe[0:1][3:0]</obj_property>
          <obj_property name="ObjectShortName">rbe[0:1][3:0]</obj_property>
       </wvobject>
-      <wvobject type="array" fp_name="/tcb_lib_register_backpressure_tb/\tcb_mem[0] /ABW">
-         <obj_property name="ElementShortName">ABW[31:0]</obj_property>
-         <obj_property name="ObjectShortName">ABW[31:0]</obj_property>
+      <wvobject type="array" fp_name="/tcb_lib_register_backpressure_tb/\tcb_mem[0] /ADR">
+         <obj_property name="ElementShortName">ADR[31:0]</obj_property>
+         <obj_property name="ObjectShortName">ADR[31:0]</obj_property>
       </wvobject>
-      <wvobject type="array" fp_name="/tcb_lib_register_backpressure_tb/\tcb_mem[0] /DBW">
-         <obj_property name="ElementShortName">DBW[31:0]</obj_property>
-         <obj_property name="ObjectShortName">DBW[31:0]</obj_property>
+      <wvobject type="array" fp_name="/tcb_lib_register_backpressure_tb/\tcb_mem[0] /DAT">
+         <obj_property name="ElementShortName">DAT[31:0]</obj_property>
+         <obj_property name="ObjectShortName">DAT[31:0]</obj_property>
       </wvobject>
       <wvobject type="array" fp_name="/tcb_lib_register_backpressure_tb/\tcb_mem[0] /SLW">
          <obj_property name="ElementShortName">SLW[31:0]</obj_property>

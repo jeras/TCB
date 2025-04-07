@@ -292,20 +292,20 @@ In addition to the base protocol parameter `DLY` there are parameters for:
 | parameter | default          | type           | description |
 |-----------|------------------|----------------|-------------|
 | `PHY.SLW` | `8`              | `int unsigned` | Selection width (in most cases it should be 8, the size of a byte). |
-| `PHY.ABW` | `32`             | `int unsigned` | Address bus width. |
-| `PHY.DBW` | `32`             | `int unsigned` | Data bus width. |
-| `PHY_BEW` | `DBW/SLW`        | `int unsigned` | Byte enable width is the number of selection width units fitting into the data width. |
+| `PHY.ADR` | `32`             | `int unsigned` | Address bus width. |
+| `PHY.DAT` | `32`             | `int unsigned` | Data bus width. |
+| `PHY_BEW` | `DAT/SLW`        | `int unsigned` | Byte enable width is the number of selection width units fitting into the data width. |
 
 The selection width parameter `SLW` defines the number of bits in a byte,
 for all standard use cases this defaults to 8.
 TODO: research use cases where `SLW` is not the default.
 
-There are few restrictions on the address bus width `ABW`.
+There are few restrictions on the address bus width `ADR`.
 Sometimes the size of the RISC-V load/store immediate (12-bit) is relevant.
 Similarly ARM defines a 12-bit memory management page size.
 
 Since TCB was designed with 32-bit CPU/SoC/peripherals in mind,
-32-bit is the default data bus width `DBW` and 4-bit is the default byte enable width `BEW`.
+32-bit is the default data bus width `DAT` and 4-bit is the default byte enable width `BEW`.
 Byte enable width `BEW` is a calculated local parameter,
 it should not passed across module hierarchy.
 
@@ -337,11 +337,11 @@ Most signals are designed to directly interface with ASIC/FPGA SRAM memories:
 | `req.ndn` | `1`    | Read/write data endianness. Only used in reference mode. |
 | `req.wen` | `1`    | Write enable. |
 | `req.ren` | `1`    | Read enable (only used in full-duplex channel configuration). |
-| `req.adr` | `ABW`  | Address. |
+| `req.adr` | `ADR`  | Address. |
 | `req.siz` | `SIZ`* | Transfer size. Only used in reference mode. |
 | `req.ben` | `BEW`  | Byte enable/select. Only used in memory mode. |
-| `req.wdt` | `DBW`  | Write data. |
-| `rsp.rdt` | `DBW`  | Read data. |
+| `req.wdt` | `DAT`  | Write data. |
+| `rsp.rdt` | `DAT`  | Read data. |
 | `rsp.sts` | custom | Custom response status protocol extensions. |
 
 The custom protocol extension signals, request command `cmd` and response status `sts`,
@@ -424,7 +424,7 @@ an adapter is needed which would provide:
 - a default for outputs and
 - a handler for inputs.
 The output default shall be chosen to match the protocol subset.
-(`wen=1'b0` and `wdt=DBW'bx` for ROM).
+(`wen=1'b0` and `wdt=DAT'bx` for ROM).
 The input handler can either ignore the signal or cause an error condition.
 Default output values can always be ignored by an input handler, or simply no handler is needed.
 
@@ -434,7 +434,7 @@ The following table defines some defaults and handlers.
 |--------------|-----------|----------|---------|
 | interconnect | `req.cmd` |    `'b0` | Subordinates can ignore it. |
 | ROM          | `req.wen` |   `1'b0` | Respond with error on write access to subordinate without write support. |
-| ROM          | `req.wdt` | `DBW'bx` | Can be ignored, `wen` requires handling. |
+| ROM          | `req.wdt` | `DAT'bx` | Can be ignored, `wen` requires handling. |
 | peripheral   | `req.ben` | `BEW'b1` | Access with less than the full width shall trigger an error. |
 | interconnect | `rsp.sts` |    `'b0` | Can be ignored, if no error conditions are possible, otherwise requires and external handler (watchdog, ...). |
 
@@ -463,7 +463,7 @@ The following parameters affect data packing.
 
 | parameter | default          | type (enumeration) | description |
 |-----------|------------------|--------------------|-------------|
-| `PHY.ALW` | `clog2(DBW/SLW)` | `int unsigned`     | Alignment width, number of least significant address bits which are zero. |
+| `PHY.ALW` | `clog2(DAT/SLW)` | `int unsigned`     | Alignment width, number of least significant address bits which are zero. |
 | `PHY.MOD` | `REFERENCE`      | `tcb_par_mode_t`   | Data position mode. |
 | `PHY.ORD` | `DESCENDING`     | `tcb_par_order_t`  | Byte order, ascending or descending. |
 
@@ -519,7 +519,7 @@ the number of bytes being transferred is `num=2**siz`.
 | `'d4` |   16 | long   | 128-bit wide data. |
 
 The width of the transfer size signal `siz` in the logarithmic case is
-`clog2(clog2(DBW/SLW))==clog2(clog2(BEW))`.
+`clog2(clog2(DAT/SLW))==clog2(clog2(BEW))`.
 
 NOTE: The linear option is an experimental proposal and
 is not yet compatible with any other standard or implementation.
@@ -687,7 +687,7 @@ Examples for the following reference mode configurations are provided:
 It is common to only allow full data bus width and aligned transfers when accessing peripherals.
 This case would specify the following parameter values and signal restrictions:
 - reference mode `MOD=REFERENCE`,
-- full alignment required `ALW=$clog2(DBW/SLW)=clog2(BEW)`
+- full alignment required `ALW=$clog2(DAT/SLW)=clog2(BEW)`
 - transfer size equal to data bus width `siz==$clog2(ALW)`,
 - aligned address to data bus width `adr[ALW-1:0]=='0`,
 - the transfer endianness `ndn` is ignored.
@@ -705,7 +705,7 @@ small registers can be arranged into a more compact structure,
 thus reducing the address space.
 This case would specify the following parameter values and signal restrictions:
 - reference mode `MOD=REFERENCE`,
-- full alignment required `ALW=$clog2(DBW/SLW)=clog2(BEW)`
+- full alignment required `ALW=$clog2(DAT/SLW)=clog2(BEW)`
 - transfer size from byte to data bus width `0<=siz<=$clog2(ALW)`,
 - address aligned to transfer size `adr[siz-1:0]=='0`,
 - the transfer endianness `ndn` is ignored.
@@ -812,7 +812,7 @@ while driven by a manager and ignored while sampled by a subordinate.
 For consistency they should still be part of the address vector.
 
 The manager encodes the address of data transfers smaller than
-the full data bus width (`DBW`) using only byte enable (`BEN`).
+the full data bus width (`DAT`) using only byte enable (`BEN`).
 The mapping of aligned accesses for little/big endian managers
 is shown in the following chapters.
 
