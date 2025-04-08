@@ -72,8 +72,8 @@ module tcb_lib_riscv2memory
 ////////////////////////////////////////////////////////////////////////////////
 
   // write/read data packed arrays
-  logic [sub.PHY_BEN-1:0][sub.PHY.SLW-1:0] sub_req_wdt, sub_rsp_rdt;
-  logic [man.PHY_BEN-1:0][man.PHY.SLW-1:0] man_req_wdt, man_rsp_rdt;
+  logic [sub.PHY_BEN-1:0][sub.PHY.UNT-1:0] sub_req_wdt, sub_rsp_rdt;
+  logic [man.PHY_BEN-1:0][man.PHY.UNT-1:0] man_req_wdt, man_rsp_rdt;
 
   // write data multiplexer select
   logic [$clog2(sub.PHY_BEN)-1:0] sel_req_wdt [man.PHY_BEN-1:0];

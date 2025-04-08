@@ -34,7 +34,7 @@ module tcb_lib_register_backpressure #(
     // bus widths
     if (sub.ADR != man.ADR)  $error("ERROR: %m parameter (sub.ADR = %d) != (man.ADR = %d)", sub.ADR, man.ADR);
     if (sub.DAT != man.DAT)  $error("ERROR: %m parameter (sub.DAT = %d) != (man.DAT = %d)", sub.DAT, man.DAT);
-    if (sub.SLW != man.SLW)  $error("ERROR: %m parameter (sub.SLW = %d) != (man.SLW = %d)", sub.SLW, man.SLW);
+    if (sub.UNT != man.UNT)  $error("ERROR: %m parameter (sub.UNT = %d) != (man.UNT = %d)", sub.UNT, man.UNT);
     if (sub.BEN != man.BEN)  $error("ERROR: %m parameter (sub.BEN = %d) != (man.BEN = %d)", sub.BEN, man.BEN);
     // response delay
     if (sub.DLY != man.DLY)  $error("ERROR: %m parameter (sub.DLY = %d) != (man.DLY = %d)", sub.DLY, man.DLY);
@@ -68,10 +68,10 @@ module tcb_lib_register_backpressure #(
       tmp_siz <= sub.siz;
       tmp_ben <= sub.ben;
       tmp_adr <= sub.adr;
-      for (int unsigned i=0; i<sub.BEN; i+=sub.SLW*GRN) begin
+      for (int unsigned i=0; i<sub.BEN; i+=sub.UNT*GRN) begin
         // data granularity
         if (sub.wen & sub.ben[i]) begin
-          tmp_wdt[i+:sub.SLW*GRN] <= sub.wdt[i+:sub.SLW*GRN];
+          tmp_wdt[i+:sub.UNT*GRN] <= sub.wdt[i+:sub.UNT*GRN];
         end
       end
     end

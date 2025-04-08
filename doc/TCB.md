@@ -291,14 +291,14 @@ In addition to the base protocol parameter `DLY` there are parameters for:
 
 | parameter | default          | type           | description |
 |-----------|------------------|----------------|-------------|
-| `PHY.SLW` | `8`              | `int unsigned` | Selection width (in most cases it should be 8, the size of a byte). |
+| `PHY.UNT` | `8`              | `int unsigned` | Data unit width (in most cases it should be 8, the size of a byte). |
 | `PHY.ADR` | `32`             | `int unsigned` | Address bus width. |
 | `PHY.DAT` | `32`             | `int unsigned` | Data bus width. |
-| `PHY_BEN` | `DAT/SLW`        | `int unsigned` | Byte enable width is the number of selection width units fitting into the data width. |
+| `PHY_BEN` | `DAT/UNT`        | `int unsigned` | Byte enable width is the number of unit widths fitting into the data width. |
 
-The selection width parameter `SLW` defines the number of bits in a byte,
+The data unit width parameter `UNT` defines the number of bits in a byte,
 for all standard use cases this defaults to 8.
-TODO: research use cases where `SLW` is not the default.
+TODO: research use cases where `UNT` is not the default.
 
 There are few restrictions on the address bus width `ADR`.
 Sometimes the size of the RISC-V load/store immediate (12-bit) is relevant.
@@ -463,7 +463,7 @@ The following parameters affect data packing.
 
 | parameter | default          | type (enumeration) | description |
 |-----------|------------------|--------------------|-------------|
-| `PHY.ALW` | `clog2(DAT/SLW)` | `int unsigned`     | Alignment width, number of least significant address bits which are zero. |
+| `PHY.ALW` | `clog2(DAT/UNT)` | `int unsigned`     | Alignment width, number of least significant address bits which are zero. |
 | `PHY.MOD` | `REFERENCE`      | `tcb_par_mode_t`   | Data position mode. |
 | `PHY.ORD` | `DESCENDING`     | `tcb_par_order_t`  | Byte order, ascending or descending. |
 
@@ -519,7 +519,7 @@ the number of bytes being transferred is `num=2**siz`.
 | `'d4` |   16 | long   | 128-bit wide data. |
 
 The width of the transfer size signal `siz` in the logarithmic case is
-`clog2(clog2(DAT/SLW))==clog2(clog2(BEN))`.
+`clog2(clog2(DAT/UNT))==clog2(clog2(BEN))`.
 
 NOTE: The linear option is an experimental proposal and
 is not yet compatible with any other standard or implementation.
@@ -687,7 +687,7 @@ Examples for the following reference mode configurations are provided:
 It is common to only allow full data bus width and aligned transfers when accessing peripherals.
 This case would specify the following parameter values and signal restrictions:
 - reference mode `MOD=REFERENCE`,
-- full alignment required `ALW=$clog2(DAT/SLW)=clog2(BEN)`
+- full alignment required `ALW=$clog2(DAT/UNT)=clog2(BEN)`
 - transfer size equal to data bus width `siz==$clog2(ALW)`,
 - aligned address to data bus width `adr[ALW-1:0]=='0`,
 - the transfer endianness `ndn` is ignored.
@@ -705,7 +705,7 @@ small registers can be arranged into a more compact structure,
 thus reducing the address space.
 This case would specify the following parameter values and signal restrictions:
 - reference mode `MOD=REFERENCE`,
-- full alignment required `ALW=$clog2(DAT/SLW)=clog2(BEN)`
+- full alignment required `ALW=$clog2(DAT/UNT)=clog2(BEN)`
 - transfer size from byte to data bus width `0<=siz<=$clog2(ALW)`,
 - address aligned to transfer size `adr[siz-1:0]=='0`,
 - the transfer endianness `ndn` is ignored.

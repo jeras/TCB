@@ -33,7 +33,7 @@ interface tcb_if
 ////////////////////////////////////////////////////////////////////////////////
 
   // byte enable width
-  localparam int unsigned PHY_BEN = PHY.DAT / PHY.SLW;
+  localparam int unsigned PHY_BEN = PHY.DAT / PHY.UNT;
 
   // transfer size width calculation
   localparam int unsigned PHY_SIZ = $clog2($clog2(PHY_BEN)+1);

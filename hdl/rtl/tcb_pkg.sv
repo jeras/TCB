@@ -66,7 +66,7 @@ package tcb_pkg;
     // protocol
     int unsigned      DLY;  // response delay
     // signal widths
-    int unsigned      SLW;  // selection   width (byte width is 8 by default)
+    int unsigned      UNT;  // data unit   width (byte width is 8 by default)
     int unsigned      ADR;  // address bus width
     int unsigned      DAT;  // data    bus width
     int unsigned      ALW;  // alignment width
@@ -82,10 +82,10 @@ package tcb_pkg;
     // protocol
     DLY: 0,
     // signal widths
-    SLW: 8,
+    UNT: 8,
     ADR: 32,
     DAT: 32,
-    ALW: 2,   // $clog2(DAT/SLW)
+    ALW: 2,   // $clog2(DAT/UNT)
     // data packing parameters
     MOD: TCB_MEMORY,
     ORD: TCB_DESCENDING,
@@ -105,7 +105,7 @@ package tcb_pkg;
     // status structure
     struct packed {
       bit DLY;
-      bit SLW;
+      bit UNT;
       bit ADR;
       bit DAT;
       bit ALW;
@@ -117,7 +117,7 @@ package tcb_pkg;
 
     // comparison
     status.DLY = phy_val.DLY ==? phy_ref.DLY;
-    status.SLW = phy_val.SLW ==? phy_ref.SLW;
+    status.UNT = phy_val.UNT ==? phy_ref.UNT;
     status.ADR = phy_val.ADR ==? phy_ref.ADR;
     status.DAT = phy_val.DAT ==? phy_ref.DAT;
     status.ALW = phy_val.ALW ==? phy_ref.ALW;
@@ -127,7 +127,7 @@ package tcb_pkg;
 
     // reporting validation status
     if (status.DLY)  $error("parameter mismatch PHY.DLY=%d != PHY.DLY=%d", phy_val.DLY, phy_ref.DLY);
-    if (status.SLW)  $error("parameter mismatch PHY.SLW=%d != PHY.SLW=%d", phy_val.SLW, phy_ref.SLW);
+    if (status.UNT)  $error("parameter mismatch PHY.UNT=%d != PHY.UNT=%d", phy_val.UNT, phy_ref.UNT);
     if (status.ADR)  $error("parameter mismatch PHY.ADR=%d != PHY.ADR=%d", phy_val.ADR, phy_ref.ADR);
     if (status.DAT)  $error("parameter mismatch PHY.DAT=%d != PHY.DAT=%d", phy_val.DAT, phy_ref.DAT);
     if (status.ALW)  $error("parameter mismatch PHY.ALW=%d != PHY.ALW=%d", phy_val.ALW, phy_ref.ALW);

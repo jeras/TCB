@@ -37,10 +37,10 @@ module tcb_vip_tb
     // protocol
     DLY: DLY,
     // signal bus widths
-    SLW: TCB_PAR_PHY_DEF.SLW,
+    UNT: TCB_PAR_PHY_DEF.UNT,
     ADR: ADR,
     DAT: DAT,
-    ALW: $clog2(DAT/TCB_PAR_PHY_DEF.SLW),
+    ALW: $clog2(DAT/TCB_PAR_PHY_DEF.UNT),
     // size/mode/order parameters
     SIZ: TCB_PAR_PHY_DEF.SIZ,
     MOD: TCB_PAR_PHY_DEF.MOD,
@@ -111,11 +111,11 @@ module tcb_vip_tb
               adr: 'h00,
               siz: $clog2(tcb.PHY_BEN),
               ben: '1,
-              wdt: tcb_s::data_test_f((tcb.PHY.SLW/2)'(2*i+0))
+              wdt: tcb_s::data_test_f((tcb.PHY.UNT/2)'(2*i+0))
             },
             // response
             rsp: '{
-              rdt: tcb_s::data_test_f((tcb.PHY.SLW/2)'(2*i+1)),
+              rdt: tcb_s::data_test_f((tcb.PHY.UNT/2)'(2*i+1)),
               sts: '0
             },
             // timing

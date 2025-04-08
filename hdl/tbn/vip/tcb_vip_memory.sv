@@ -103,8 +103,8 @@ module tcb_vip_memory
     int unsigned tmp_req_siz;
 
     // read/write data packed arrays
-    logic [tcb[i].PHY_BEN-1:0][tcb[i].PHY.SLW-1:0] tmp_req_wdt;
-    logic [tcb[i].PHY_BEN-1:0][tcb[i].PHY.SLW-1:0] tmp_rsp_rdt [0:tcb[i].PHY.DLY];
+    logic [tcb[i].PHY_BEN-1:0][tcb[i].PHY.UNT-1:0] tmp_req_wdt;
+    logic [tcb[i].PHY_BEN-1:0][tcb[i].PHY.UNT-1:0] tmp_rsp_rdt [0:tcb[i].PHY.DLY];
 
     // as a memory model, there is no immediate need for backpressure, this feature might be added in the future
     assign tcb[i].rdy = 1'b1;
@@ -166,7 +166,7 @@ module tcb_vip_memory
             adr = b + int'(tcb[i].req.adr);
             // read only transfer size bytes, the rest are sign/zero extended
             if (b < tmp_req_siz)  tmp_rsp_rdt[0][b] = mem[adr%SIZ];
-            else                  tmp_rsp_rdt[0][b] = {tcb[i].PHY.SLW{tmp_rsp_rdt[0][b-1][tcb[i].PHY.SLW-1] & ~tcb[i].req.uns}};
+            else                  tmp_rsp_rdt[0][b] = {tcb[i].PHY.UNT{tmp_rsp_rdt[0][b-1][tcb[i].PHY.UNT-1] & ~tcb[i].req.uns}};
           end: size
         end: risc_v
 

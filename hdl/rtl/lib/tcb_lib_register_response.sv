@@ -46,9 +46,9 @@ module tcb_lib_register_response #(
   begin
     // TODO: only on read enable
     // data granularity
-    for (int unsigned i=0; i<man.PHY_BEN; i+=man.PHY.SLW*GRN) begin
+    for (int unsigned i=0; i<man.PHY_BEN; i+=man.PHY.UNT*GRN) begin
       if (man.rbe[man.PHY.DLY][i]) begin
-        sub.rsp.rdt[i+:man.PHY.SLW*GRN] <= man.rsp.rdt[i+:man.PHY.SLW*GRN];
+        sub.rsp.rdt[i+:man.PHY.UNT*GRN] <= man.rsp.rdt[i+:man.PHY.UNT*GRN];
       end
     end
     // response status

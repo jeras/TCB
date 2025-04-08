@@ -14,7 +14,7 @@ TOP ?= tcb_lib_converter_tb
 # protocol
 MAN_PAR += -GMAN_DLY=${MAN_DLY}
 # signal widths
-MAN_PAR += -GMAN_SLW=${MAN_SLW}
+MAN_PAR += -GMAN_UNT=${MAN_UNT}
 MAN_PAR += -GMAN_ADR=${MAN_ADR}
 MAN_PAR += -GMAN_DAT=${MAN_DAT}
 MAN_PAR += -GMAN_ALW=${MAN_ALW}
@@ -28,7 +28,7 @@ MAN_PAR ?= -GCHN_CHN=${MAN_CHN}
 # protocol
 SUB_PAR += -GSUB_DLY=${SUB_DLY}
 # signal widths
-SUB_PAR += -GSUB_SLW=${SUB_SLW}
+SUB_PAR += -GSUB_UNT=${SUB_UNT}
 SUB_PAR += -GSUB_ADR=${SUB_ADR}
 SUB_PAR += -GSUB_DAT=${SUB_DAT}
 SUB_PAR += -GSUB_ALW=${SUB_ALW}

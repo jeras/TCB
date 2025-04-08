@@ -23,7 +23,7 @@ module tcb_lib_converter_tb
   // protocol
   int unsigned      MAN_DLY = TCB_PAR_PHY_DEF.DLY,  // response delay
   // signal widths
-  int unsigned      MAN_SLW = TCB_PAR_PHY_DEF.SLW,  // selection   width (byte width is 8 by default)
+  int unsigned      MAN_UNT = TCB_PAR_PHY_DEF.UNT,  // data unit   width (byte width is 8 by default)
   int unsigned      MAN_ADR = TCB_PAR_PHY_DEF.ADR,  // address bus width
   int unsigned      MAN_DAT = TCB_PAR_PHY_DEF.DAT,  // data    bus width
   int unsigned      MAN_ALW = TCB_PAR_PHY_DEF.ALW,  // alignment width
@@ -37,7 +37,7 @@ module tcb_lib_converter_tb
   // protocol
   int unsigned      SUB_DLY = TCB_PAR_PHY_DEF.DLY,  // response delay
   // signal widths
-  int unsigned      SUB_SLW = TCB_PAR_PHY_DEF.SLW,  // selection   width (byte width is 8 by default)
+  int unsigned      SUB_UNT = TCB_PAR_PHY_DEF.UNT,  // data unit   width (byte width is 8 by default)
   int unsigned      SUB_ADR = TCB_PAR_PHY_DEF.ADR,  // address bus width
   int unsigned      SUB_DAT = TCB_PAR_PHY_DEF.DAT,  // data    bus width
   int unsigned      SUB_ALW = TCB_PAR_PHY_DEF.ALW,  // alignment width
@@ -54,7 +54,7 @@ module tcb_lib_converter_tb
     // protocol
     DLY: MAN_DLY,
     // signal bus widths
-    SLW: MAN_SLW,
+    UNT: MAN_UNT,
     ADR: MAN_ADR,
     DAT: MAN_DAT,
     ALW: MAN_ALW,
@@ -71,7 +71,7 @@ module tcb_lib_converter_tb
     // protocol
     DLY: SUB_DLY,
     // signal bus widths
-    SLW: SUB_SLW,
+    UNT: SUB_UNT,
     ADR: SUB_ADR,
     DAT: SUB_DAT,
     ALW: SUB_ALW,
@@ -106,7 +106,7 @@ module tcb_lib_converter_tb
 ////////////////////////////////////////////////////////////////////////////////
 
   // response
-  logic [tcb_man.PHY_BEN-1:0][tcb_man.PHY.SLW-1:0] rdt;  // read data
+  logic [tcb_man.PHY_BEN-1:0][tcb_man.PHY.UNT-1:0] rdt;  // read data
   tcb_rsp_sts_def_t                                sts;  // status response
 
 ////////////////////////////////////////////////////////////////////////////////

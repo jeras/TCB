@@ -109,9 +109,9 @@
          <obj_property name="ElementShortName">DAT[31:0]</obj_property>
          <obj_property name="ObjectShortName">DAT[31:0]</obj_property>
       </wvobject>
-      <wvobject type="array" fp_name="/tcb_lib_converter_tb/tcb_man/SLW">
-         <obj_property name="ElementShortName">SLW[31:0]</obj_property>
-         <obj_property name="ObjectShortName">SLW[31:0]</obj_property>
+      <wvobject type="array" fp_name="/tcb_lib_converter_tb/tcb_man/UNT">
+         <obj_property name="ElementShortName">UNT[31:0]</obj_property>
+         <obj_property name="ObjectShortName">UNT[31:0]</obj_property>
       </wvobject>
       <wvobject type="array" fp_name="/tcb_lib_converter_tb/tcb_man/BEN">
          <obj_property name="ElementShortName">BEN[31:0]</obj_property>
@@ -209,9 +209,9 @@
          <obj_property name="ElementShortName">DAT[31:0]</obj_property>
          <obj_property name="ObjectShortName">DAT[31:0]</obj_property>
       </wvobject>
-      <wvobject type="array" fp_name="/tcb_lib_converter_tb/tcb_sub/SLW">
-         <obj_property name="ElementShortName">SLW[31:0]</obj_property>
-         <obj_property name="ObjectShortName">SLW[31:0]</obj_property>
+      <wvobject type="array" fp_name="/tcb_lib_converter_tb/tcb_sub/UNT">
+         <obj_property name="ElementShortName">UNT[31:0]</obj_property>
+         <obj_property name="ObjectShortName">UNT[31:0]</obj_property>
       </wvobject>
       <wvobject type="array" fp_name="/tcb_lib_converter_tb/tcb_sub/BEN">
          <obj_property name="ElementShortName">BEN[31:0]</obj_property>
