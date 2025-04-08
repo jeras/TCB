@@ -98,6 +98,7 @@ module tcb_lib_riscv2memory
     // byte mapping and signed/unsigned extension
     for (genvar i=0; i<man.PHY_BEN; i++) begin: byteenable
       int siz = 2**sub.req.siz;
+
       // multiplexer select signal
       always_comb
       case (sub.req.ndn)
@@ -105,21 +106,23 @@ module tcb_lib_riscv2memory
         1'b0: begin: little
           sel_req_wdt[i] = (man.req.adr[$clog2(sub.PHY_BEN)-1:0]       + i) % sub.PHY_BEN;
         end: little
+        // little endian
         1'b1: begin: big
           sel_req_wdt[i] = (man.req.adr[$clog2(sub.PHY_BEN)-1:0] + siz - i) % sub.PHY_BEN;
         end: big
       endcase
+
       // multiplexer
-      assign man.req.ben[i] = sub.req.ben[              sel_req_wdt[i]];
-      assign man_req_wdt[i] = sub_req_wdt[              sel_req_wdt[i]];
-      assign sub_rsp_rdt[i] = man_rsp_rdt[              sel_rsp_rdt[i]];
+      assign man.req.ben[i] = sub.req.ben[sel_req_wdt[i]];
+      assign man_req_wdt[i] = sub_req_wdt[sel_req_wdt[i]];
+      assign sub_rsp_rdt[i] = man_rsp_rdt[sel_rsp_rdt[i]];
     end: byteenable
 
   endgenerate
 
   // delay man_rsp_rdt
   // TODO: this now only works for DLY=1, generalize it
-  always_ff @(posedge sub.clk, posedge sub.rst)
+  always_ff @(posedge sub.clk)
   sel_rsp_rdt <= sel_req_wdt;
 
   // write/read data packed array to/from vector
