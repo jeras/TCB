@@ -66,20 +66,20 @@
       <obj_property name="ElementShortName">PHY</obj_property>
       <obj_property name="ObjectShortName">PHY</obj_property>
    </wvobject>
-   <wvobject type="array" fp_name="/tcb_uart_tb/tcb_man/PHY_BEW">
-      <obj_property name="ElementShortName">PHY_BEW[31:0]</obj_property>
-      <obj_property name="ObjectShortName">PHY_BEW[31:0]</obj_property>
+   <wvobject type="array" fp_name="/tcb_uart_tb/tcb_man/PHY_BEN">
+      <obj_property name="ElementShortName">PHY_BEN[31:0]</obj_property>
+      <obj_property name="ObjectShortName">PHY_BEN[31:0]</obj_property>
    </wvobject>
-   <wvobject type="array" fp_name="/tcb_uart_tb/tcb_man/PHY_SZW_LIN">
-      <obj_property name="ElementShortName">PHY_SZW_LIN[31:0]</obj_property>
-      <obj_property name="ObjectShortName">PHY_SZW_LIN[31:0]</obj_property>
+   <wvobject type="array" fp_name="/tcb_uart_tb/tcb_man/PHY_SIZ_LIN">
+      <obj_property name="ElementShortName">PHY_SIZ_LIN[31:0]</obj_property>
+      <obj_property name="ObjectShortName">PHY_SIZ_LIN[31:0]</obj_property>
    </wvobject>
-   <wvobject type="array" fp_name="/tcb_uart_tb/tcb_man/PHY_SZW_LOG">
-      <obj_property name="ElementShortName">PHY_SZW_LOG[31:0]</obj_property>
-      <obj_property name="ObjectShortName">PHY_SZW_LOG[31:0]</obj_property>
+   <wvobject type="array" fp_name="/tcb_uart_tb/tcb_man/PHY_SIZ_LOG">
+      <obj_property name="ElementShortName">PHY_SIZ_LOG[31:0]</obj_property>
+      <obj_property name="ObjectShortName">PHY_SIZ_LOG[31:0]</obj_property>
    </wvobject>
-   <wvobject type="array" fp_name="/tcb_uart_tb/tcb_man/PHY_SZW">
-      <obj_property name="ElementShortName">PHY_SZW[31:0]</obj_property>
-      <obj_property name="ObjectShortName">PHY_SZW[31:0]</obj_property>
+   <wvobject type="array" fp_name="/tcb_uart_tb/tcb_man/PHY_SIZ">
+      <obj_property name="ElementShortName">PHY_SIZ[31:0]</obj_property>
+      <obj_property name="ObjectShortName">PHY_SIZ[31:0]</obj_property>
    </wvobject>
 </wave_config>

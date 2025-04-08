@@ -53,7 +53,7 @@ module tcb_lib_register_request #(
   begin
     man.req <= sub.req;
 //    // data granularity
-//    for (int unsigned i=0; i<sub.BEW; i+=sub.SLW*GRN) begin
+//    for (int unsigned i=0; i<sub.BEN; i+=sub.SLW*GRN) begin
 //      if (sub.wen & sub.ben[i]) begin
 //        man.wdt[i+:sub.SLW*GRN] <= sub.wdt[i+:sub.SLW*GRN];
 //      end

@@ -294,7 +294,7 @@ In addition to the base protocol parameter `DLY` there are parameters for:
 | `PHY.SLW` | `8`              | `int unsigned` | Selection width (in most cases it should be 8, the size of a byte). |
 | `PHY.ADR` | `32`             | `int unsigned` | Address bus width. |
 | `PHY.DAT` | `32`             | `int unsigned` | Data bus width. |
-| `PHY_BEW` | `DAT/SLW`        | `int unsigned` | Byte enable width is the number of selection width units fitting into the data width. |
+| `PHY_BEN` | `DAT/SLW`        | `int unsigned` | Byte enable width is the number of selection width units fitting into the data width. |
 
 The selection width parameter `SLW` defines the number of bits in a byte,
 for all standard use cases this defaults to 8.
@@ -305,8 +305,8 @@ Sometimes the size of the RISC-V load/store immediate (12-bit) is relevant.
 Similarly ARM defines a 12-bit memory management page size.
 
 Since TCB was designed with 32-bit CPU/SoC/peripherals in mind,
-32-bit is the default data bus width `DAT` and 4-bit is the default byte enable width `BEW`.
-Byte enable width `BEW` is a calculated local parameter,
+32-bit is the default data bus width `DAT` and 4-bit is the default byte enable width `BEN`.
+Byte enable width `BEN` is a calculated local parameter,
 it should not passed across module hierarchy.
 
 #### Data packing parameters
@@ -339,7 +339,7 @@ Most signals are designed to directly interface with ASIC/FPGA SRAM memories:
 | `req.ren` | `1`    | Read enable (only used in full-duplex channel configuration). |
 | `req.adr` | `ADR`  | Address. |
 | `req.siz` | `SIZ`* | Transfer size. Only used in reference mode. |
-| `req.ben` | `BEW`  | Byte enable/select. Only used in memory mode. |
+| `req.ben` | `BEN`  | Byte enable/select. Only used in memory mode. |
 | `req.wdt` | `DAT`  | Write data. |
 | `rsp.rdt` | `DAT`  | Read data. |
 | `rsp.sts` | custom | Custom response status protocol extensions. |
@@ -435,7 +435,7 @@ The following table defines some defaults and handlers.
 | interconnect | `req.cmd` |    `'b0` | Subordinates can ignore it. |
 | ROM          | `req.wen` |   `1'b0` | Respond with error on write access to subordinate without write support. |
 | ROM          | `req.wdt` | `DAT'bx` | Can be ignored, `wen` requires handling. |
-| peripheral   | `req.ben` | `BEW'b1` | Access with less than the full width shall trigger an error. |
+| peripheral   | `req.ben` | `BEN'b1` | Access with less than the full width shall trigger an error. |
 | interconnect | `rsp.sts` |    `'b0` | Can be ignored, if no error conditions are possible, otherwise requires and external handler (watchdog, ...). |
 
 The custom request command also has sensible defaults.
@@ -476,9 +476,9 @@ The rest are reserved with no intention to be documented and implemented.
 | `REFERENCE` | `DESCENDING` | any          | ignored | Packing used by CPU registers. |
 | `REFERENCE` | `ASCENDING`  | any          | ignored | Reserved, not used. |
 | `MEMORY`    | `DESCENDING` | 0            | both    | RISC-V memory model with misaligned access support. |
-| `MEMORY`    | `DESCENDING` | `clog2(BEW)` | both    | RISC-V memory model with only aligned accesses supported. |
+| `MEMORY`    | `DESCENDING` | `clog2(BEN)` | both    | RISC-V memory model with only aligned accesses supported. |
 | `MEMORY`    | `ASCENDING`  | 0            | both    | Reserved, not used. |
-| `MEMORY`    | `ASCENDING`  | `clog2(BEW)` | both    | OpenPOWER storage operands. |
+| `MEMORY`    | `ASCENDING`  | `clog2(BEN)` | both    | OpenPOWER storage operands. |
 
 The reference mode is a new concept added to TCB.
 
@@ -490,7 +490,7 @@ The OpenPOWER specific configuration is included for historic compatibility, and
 
 Alignment width `ALW` defines what kind of data alignments are supported.
 The values can be between `0` (no alignment requirements)
-and `clog2(BEW)` (full alignment is required).
+and `clog2(BEN)` (full alignment is required).
 Only this two values are documented,
 other values in between can be used for custom implementations.
 
@@ -519,7 +519,7 @@ the number of bytes being transferred is `num=2**siz`.
 | `'d4` |   16 | long   | 128-bit wide data. |
 
 The width of the transfer size signal `siz` in the logarithmic case is
-`clog2(clog2(DAT/SLW))==clog2(clog2(BEW))`.
+`clog2(clog2(DAT/SLW))==clog2(clog2(BEN))`.
 
 NOTE: The linear option is an experimental proposal and
 is not yet compatible with any other standard or implementation.
@@ -687,7 +687,7 @@ Examples for the following reference mode configurations are provided:
 It is common to only allow full data bus width and aligned transfers when accessing peripherals.
 This case would specify the following parameter values and signal restrictions:
 - reference mode `MOD=REFERENCE`,
-- full alignment required `ALW=$clog2(DAT/SLW)=clog2(BEW)`
+- full alignment required `ALW=$clog2(DAT/SLW)=clog2(BEN)`
 - transfer size equal to data bus width `siz==$clog2(ALW)`,
 - aligned address to data bus width `adr[ALW-1:0]=='0`,
 - the transfer endianness `ndn` is ignored.
@@ -705,7 +705,7 @@ small registers can be arranged into a more compact structure,
 thus reducing the address space.
 This case would specify the following parameter values and signal restrictions:
 - reference mode `MOD=REFERENCE`,
-- full alignment required `ALW=$clog2(DAT/SLW)=clog2(BEW)`
+- full alignment required `ALW=$clog2(DAT/SLW)=clog2(BEN)`
 - transfer size from byte to data bus width `0<=siz<=$clog2(ALW)`,
 - address aligned to transfer size `adr[siz-1:0]=='0`,
 - the transfer endianness `ndn` is ignored.
@@ -807,7 +807,7 @@ The protocol endianness can be either:
 The TCB protocol can be endianness agnostic,
 as long as the address is aligned to the data width.
 
-In this mode, address LSB bits `adr[$clog2(BEW)-1:0]` are zero
+In this mode, address LSB bits `adr[$clog2(BEN)-1:0]` are zero
 while driven by a manager and ignored while sampled by a subordinate.
 For consistency they should still be part of the address vector.
 

@@ -35,13 +35,13 @@ package tcb_vip_pkg;
 ////////////////////////////////////////////////////////////////////////////////
 
     // byte enable width
-    localparam int unsigned PHY_BEW = PHY.DAT / PHY.SLW;
+    localparam int unsigned PHY_BEN = PHY.DAT / PHY.SLW;
 
     // transfer size width calculation
-    localparam int unsigned PHY_SZW_LIN = $clog2(       PHY_BEW   );  // linear
-    localparam int unsigned PHY_SZW_LOG = $clog2($clog2(PHY_BEW)+1);  // logarithmic (default)
+    localparam int unsigned PHY_SIZ_LIN = $clog2(       PHY_BEN   );  // linear
+    localparam int unsigned PHY_SIZ_LOG = $clog2($clog2(PHY_BEN)+1);  // logarithmic (default)
     // transfer size width selection
-    localparam int unsigned PHY_SZW = PHY_SZW_LOG;
+    localparam int unsigned PHY_SIZ = PHY_SIZ_LOG;
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
@@ -82,13 +82,13 @@ package tcb_vip_pkg;
 ////////////////////////////////////////////////////////////////////////////////
 
     // data organized into packed bytes
-    typedef logic [PHY_BEW-1:0][PHY.SLW-1:0] data_byte_t;
+    typedef logic [PHY_BEN-1:0][PHY.SLW-1:0] data_byte_t;
 
     // created data for tests
     static function automatic data_byte_t data_test_f (
       input logic [PHY.SLW/2-1:0] val = 'x
     );
-      for (int unsigned i=0; i<PHY_BEW; i++) begin
+      for (int unsigned i=0; i<PHY_BEN; i++) begin
         data_test_f[i] = {val, i[PHY.SLW/2-1:0]};
       end
     endfunction: data_test_f
@@ -103,15 +103,15 @@ package tcb_vip_pkg;
       logic                            wen;  // write enable
       logic                            ndn;  // endianness
       logic [PHY.ADR-1:0]              adr;  // address
-      logic [PHY_SZW-1:0]              siz;  // logarithmic size
+      logic [PHY_SIZ-1:0]              siz;  // logarithmic size
       logic                            uns;  // unsigned
-      logic [PHY_BEW-1:0]              ben;  // byte enable
-      logic [PHY_BEW-1:0][PHY.SLW-1:0] wdt;  // write data
+      logic [PHY_BEN-1:0]              ben;  // byte enable
+      logic [PHY_BEN-1:0][PHY.SLW-1:0] wdt;  // write data
     } transfer_request_t;
 
     // TCB transfer response structure
     typedef struct {
-      logic [PHY_BEW-1:0][PHY.SLW-1:0] rdt;  // read data
+      logic [PHY_BEN-1:0][PHY.SLW-1:0] rdt;  // read data
       tcb_rsp_sts_t                    sts;  // status (optional)
     } transfer_response_t;
 
@@ -348,7 +348,7 @@ package tcb_vip_pkg;
         // return transfer array
         transfer_array_t transfer_array;
         // number of transfer_array
-        len = siz / PHY_BEW + (siz % PHY_BEW ? 1 : 0);
+        len = siz / PHY_BEN + (siz % PHY_BEN ? 1 : 0);
         transfer_array = new[len];
         transfer_array = new[len]('{default: TRANSFER_INIT});
         // check if the transfer meets size requirements
@@ -372,27 +372,27 @@ package tcb_vip_pkg;
           transfer_array[i].req.ndn = transaction_req.ndn;
           transfer_array[i].req.adr = transaction_req.adr;
           transfer_array[i].req.ben = '0;
-          transfer_array[i].req.siz = $clog2(PHY_BEW);
+          transfer_array[i].req.siz = $clog2(PHY_BEN);
           transfer_array[i].req.uns = transaction_req.uns;
         end
-        if (siz <= PHY_BEW) begin
+        if (siz <= PHY_BEN) begin
           transfer_array[0].req.siz = $clog2(    siz);
         end
         // data signals
         for (int unsigned i=0; i<siz; i++) begin
           // address offset
-          off = i / PHY_BEW;
+          off = i / PHY_BEN;
           // mode processor/memory
           if (PHY.MOD == TCB_RISC_V) begin
             // all data bytes are LSB aligned
             byt = i;
           end else if (PHY.MOD == TCB_MEMORY) begin
             // all data bytes are LSB aligned
-            byt = (i + transaction_req.adr) % PHY_BEW;
+            byt = (i + transaction_req.adr) % PHY_BEN;
           end
           // order descending/ascending
           if (PHY.ORD == TCB_ASCENDING) begin
-            byt = PHY_BEW - 1 - byt;
+            byt = PHY_BEN - 1 - byt;
           end
           // request
           transfer_array[off].req.ben[byt] = 1'b1;
@@ -420,18 +420,18 @@ package tcb_vip_pkg;
         // data signals
         for (int unsigned i=0; i<siz; i++) begin
           // address offset
-          off = i / PHY_BEW;
+          off = i / PHY_BEN;
           // mode processor/memory
           if (PHY.MOD == TCB_RISC_V) begin
             // all data bytes are LSB aligned
             byt = i;
           end else if (PHY.MOD == TCB_MEMORY) begin
             // all data bytes are LSB aligned
-            byt = (i + transfer_array[off].req.adr) % PHY_BEW;
+            byt = (i + transfer_array[off].req.adr) % PHY_BEN;
           end
           // order descending/ascending
           if (PHY.ORD == TCB_ASCENDING) begin
-            byt = PHY_BEW - 1 - byt;
+            byt = PHY_BEN - 1 - byt;
           end
           // endianness
           if (transfer_array[off].req.ndn == TCB_LITTLE) begin

@@ -33,10 +33,10 @@ interface tcb_if
 ////////////////////////////////////////////////////////////////////////////////
 
   // byte enable width
-  localparam int unsigned PHY_BEW = PHY.DAT / PHY.SLW;
+  localparam int unsigned PHY_BEN = PHY.DAT / PHY.SLW;
 
   // transfer size width calculation
-  localparam int unsigned PHY_SZW = $clog2($clog2(PHY_BEW)+1);
+  localparam int unsigned PHY_SIZ = $clog2($clog2(PHY_BEN)+1);
 
 ////////////////////////////////////////////////////////////////////////////////
 // I/O ports
@@ -53,9 +53,9 @@ interface tcb_if
     logic               ren;  // write enable
     logic               ndn;  // endianness
     logic [PHY.ADR-1:0] adr;  // address
-    logic [PHY_SZW-1:0] siz;  // transfer size
+    logic [PHY_SIZ-1:0] siz;  // transfer size
     logic               uns;  // unsigned
-    logic [PHY_BEW-1:0] ben;  // byte enable
+    logic [PHY_BEN-1:0] ben;  // byte enable
     logic [PHY.DAT-1:0] wdt;  // write data
   } req_t;
 
@@ -116,21 +116,21 @@ interface tcb_if
     logic               ena;  // enable
     logic               ren;  // read enable
     logic [PHY.ADR-1:0] adr;  // address
-    logic [PHY_SZW-1:0] siz;  // transfer size
+    logic [PHY_SIZ-1:0] siz;  // transfer size
     logic               uns;  // unsigned
-    logic [PHY_BEW-1:0] ben;  // byte enable
+    logic [PHY_BEN-1:0] ben;  // byte enable
   } dly_t;
 
   // response pipeline
   dly_t dly [0:PHY.DLY];
 
   // local byte enable
-  logic [PHY_BEW-1:0] req_ben;
+  logic [PHY_BEN-1:0] req_ben;
 
   // transfer size encoding
   generate
   if (PHY.MOD == TCB_RISC_V) begin: byteenable
-    for (genvar b=0; b<PHY_BEW; b++) begin
+    for (genvar b=0; b<PHY_BEN; b++) begin
       assign req_ben[b] = b < (2**req.siz);
     end
   end: byteenable

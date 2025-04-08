@@ -35,7 +35,7 @@ module tcb_lib_register_backpressure #(
     if (sub.ADR != man.ADR)  $error("ERROR: %m parameter (sub.ADR = %d) != (man.ADR = %d)", sub.ADR, man.ADR);
     if (sub.DAT != man.DAT)  $error("ERROR: %m parameter (sub.DAT = %d) != (man.DAT = %d)", sub.DAT, man.DAT);
     if (sub.SLW != man.SLW)  $error("ERROR: %m parameter (sub.SLW = %d) != (man.SLW = %d)", sub.SLW, man.SLW);
-    if (sub.BEW != man.BEW)  $error("ERROR: %m parameter (sub.BEW = %d) != (man.BEW = %d)", sub.BEW, man.BEW);
+    if (sub.BEN != man.BEN)  $error("ERROR: %m parameter (sub.BEN = %d) != (man.BEN = %d)", sub.BEN, man.BEN);
     // response delay
     if (sub.DLY != man.DLY)  $error("ERROR: %m parameter (sub.DLY = %d) != (man.DLY = %d)", sub.DLY, man.DLY);
   endgenerate
@@ -52,8 +52,8 @@ module tcb_lib_register_backpressure #(
   // request
   logic               tmp_wen;  // write enable
   logic [sub.ADR-1:0] tmp_adr;  // address
-  logic [sub.SZW-1:0] tmp_siz;  // logarithmic size
-  logic [sub.BEW-1:0] tmp_ben;  // byte enable
+  logic [sub.SIZ-1:0] tmp_siz;  // logarithmic size
+  logic [sub.BEN-1:0] tmp_ben;  // byte enable
   logic [sub.DAT-1:0] tmp_wdt;  // write data
 
   always_ff @(posedge sub.clk)
@@ -68,7 +68,7 @@ module tcb_lib_register_backpressure #(
       tmp_siz <= sub.siz;
       tmp_ben <= sub.ben;
       tmp_adr <= sub.adr;
-      for (int unsigned i=0; i<sub.BEW; i+=sub.SLW*GRN) begin
+      for (int unsigned i=0; i<sub.BEN; i+=sub.SLW*GRN) begin
         // data granularity
         if (sub.wen & sub.ben[i]) begin
           tmp_wdt[i+:sub.SLW*GRN] <= sub.wdt[i+:sub.SLW*GRN];

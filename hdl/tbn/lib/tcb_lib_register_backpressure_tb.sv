@@ -23,7 +23,7 @@ module tcb_lib_register_backpressure_tb
   int unsigned ADR = 32,       // address bus width
   int unsigned DAT = 32,       // data    bus width
   int unsigned SLW =       8,  // selection   width
-  int unsigned BEW = DAT/SLW,  // byte enable width
+  int unsigned BEN = DAT/SLW,  // byte enable width
   // response delay
   int unsigned DLY = 1,
   // bus hold granularity (byte granularity by default)

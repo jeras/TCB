@@ -109,7 +109,7 @@ module tcb_vip_tb
               wen: lst_wen[idx_wen],
               ndn: 1'b0,
               adr: 'h00,
-              siz: $clog2(tcb.PHY_BEW),
+              siz: $clog2(tcb.PHY_BEN),
               ben: '1,
               wdt: tcb_s::data_test_f((tcb.PHY.SLW/2)'(2*i+0))
             },

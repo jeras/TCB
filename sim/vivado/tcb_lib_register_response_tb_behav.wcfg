@@ -113,13 +113,13 @@
          <obj_property name="ElementShortName">SLW[31:0]</obj_property>
          <obj_property name="ObjectShortName">SLW[31:0]</obj_property>
       </wvobject>
-      <wvobject type="array" fp_name="/tcb_lib_converter_tb/tcb_man/BEW">
-         <obj_property name="ElementShortName">BEW[31:0]</obj_property>
-         <obj_property name="ObjectShortName">BEW[31:0]</obj_property>
+      <wvobject type="array" fp_name="/tcb_lib_converter_tb/tcb_man/BEN">
+         <obj_property name="ElementShortName">BEN[31:0]</obj_property>
+         <obj_property name="ObjectShortName">BEN[31:0]</obj_property>
       </wvobject>
-      <wvobject type="array" fp_name="/tcb_lib_converter_tb/tcb_man/SZW">
-         <obj_property name="ElementShortName">SZW[31:0]</obj_property>
-         <obj_property name="ObjectShortName">SZW[31:0]</obj_property>
+      <wvobject type="array" fp_name="/tcb_lib_converter_tb/tcb_man/SIZ">
+         <obj_property name="ElementShortName">SIZ[31:0]</obj_property>
+         <obj_property name="ObjectShortName">SIZ[31:0]</obj_property>
       </wvobject>
       <wvobject type="array" fp_name="/tcb_lib_converter_tb/tcb_man/DLY">
          <obj_property name="ElementShortName">DLY[31:0]</obj_property>
@@ -213,13 +213,13 @@
          <obj_property name="ElementShortName">SLW[31:0]</obj_property>
          <obj_property name="ObjectShortName">SLW[31:0]</obj_property>
       </wvobject>
-      <wvobject type="array" fp_name="/tcb_lib_converter_tb/tcb_sub/BEW">
-         <obj_property name="ElementShortName">BEW[31:0]</obj_property>
-         <obj_property name="ObjectShortName">BEW[31:0]</obj_property>
+      <wvobject type="array" fp_name="/tcb_lib_converter_tb/tcb_sub/BEN">
+         <obj_property name="ElementShortName">BEN[31:0]</obj_property>
+         <obj_property name="ObjectShortName">BEN[31:0]</obj_property>
       </wvobject>
-      <wvobject type="array" fp_name="/tcb_lib_converter_tb/tcb_sub/SZW">
-         <obj_property name="ElementShortName">SZW[31:0]</obj_property>
-         <obj_property name="ObjectShortName">SZW[31:0]</obj_property>
+      <wvobject type="array" fp_name="/tcb_lib_converter_tb/tcb_sub/SIZ">
+         <obj_property name="ElementShortName">SIZ[31:0]</obj_property>
+         <obj_property name="ObjectShortName">SIZ[31:0]</obj_property>
       </wvobject>
       <wvobject type="array" fp_name="/tcb_lib_converter_tb/tcb_sub/DLY">
          <obj_property name="ElementShortName">DLY[31:0]</obj_property>

@@ -103,8 +103,8 @@ module tcb_vip_memory
     int unsigned tmp_req_siz;
 
     // read/write data packed arrays
-    logic [tcb[i].PHY_BEW-1:0][tcb[i].PHY.SLW-1:0] tmp_req_wdt;
-    logic [tcb[i].PHY_BEW-1:0][tcb[i].PHY.SLW-1:0] tmp_rsp_rdt [0:tcb[i].PHY.DLY];
+    logic [tcb[i].PHY_BEN-1:0][tcb[i].PHY.SLW-1:0] tmp_req_wdt;
+    logic [tcb[i].PHY_BEN-1:0][tcb[i].PHY.SLW-1:0] tmp_rsp_rdt [0:tcb[i].PHY.DLY];
 
     // as a memory model, there is no immediate need for backpressure, this feature might be added in the future
     assign tcb[i].rdy = 1'b1;
@@ -127,7 +127,7 @@ module tcb_vip_memory
 
         if (tcb[i].PHY.MOD == TCB_RISC_V) begin: risc_v
 //          $display("DEBUG: tcb[%d]: write adr=%08X=%d, tmp_req_siz=%d, wdt=%08X", i, tcb[i].req.adr, tcb[i].req.adr, tmp_req_siz, tmp_req_wdt);
-          for (int unsigned b=0; b<tcb[i].PHY_BEW; b++) begin: size
+          for (int unsigned b=0; b<tcb[i].PHY_BEN; b++) begin: size
             // byte address
             adr = b + int'(tcb[i].req.adr);
             // write only transfer size bytes
@@ -137,10 +137,10 @@ module tcb_vip_memory
 
         else begin: memory
 //          $display("DEBUG: tcb[%d]: write adr=%08X=%d, ben=%04b, wdt=%08X", i, tcb[i].req.adr, tcb[i].req.adr, tcb[i].req.ben, tmp_req_wdt);
-          for (int unsigned b=0; b<tcb[i].PHY_BEW; b++) begin: byteenable
+          for (int unsigned b=0; b<tcb[i].PHY_BEN; b++) begin: byteenable
             // byte address
             adr = b + int'(tcb[i].req.adr);
-            if (tcb[i].req.ben[adr%tcb[i].PHY_BEW])  mem[adr%SIZ] <= tmp_req_wdt[adr%tcb[i].PHY_BEW];
+            if (tcb[i].req.ben[adr%tcb[i].PHY_BEN])  mem[adr%SIZ] <= tmp_req_wdt[adr%tcb[i].PHY_BEN];
           end: byteenable
         end: memory
 
@@ -161,7 +161,7 @@ module tcb_vip_memory
 
         if (tcb[i].PHY.MOD == TCB_RISC_V) begin: risc_v
           tmp_rsp_rdt[0] = '{default: 'x};
-          for (int unsigned b=0; b<tcb[i].PHY_BEW; b++) begin: size
+          for (int unsigned b=0; b<tcb[i].PHY_BEN; b++) begin: size
             // byte address
             adr = b + int'(tcb[i].req.adr);
             // read only transfer size bytes, the rest are sign/zero extended
@@ -171,10 +171,10 @@ module tcb_vip_memory
         end: risc_v
 
         else begin: memory
-          for (int unsigned b=0; b<tcb[i].PHY_BEW; b++) begin: byteenable
+          for (int unsigned b=0; b<tcb[i].PHY_BEN; b++) begin: byteenable
             adr = b + int'(tcb[i].req.adr);
-            if (tcb[i].req.ben[adr%tcb[i].PHY_BEW])  tmp_rsp_rdt[0][adr%tcb[i].PHY_BEW] = mem[adr%SIZ];
-            else                                     tmp_rsp_rdt[0][adr%tcb[i].PHY_BEW] = 'x;
+            if (tcb[i].req.ben[adr%tcb[i].PHY_BEN])  tmp_rsp_rdt[0][adr%tcb[i].PHY_BEN] = mem[adr%SIZ];
+            else                                     tmp_rsp_rdt[0][adr%tcb[i].PHY_BEN] = 'x;
           end: byteenable
         end: memory
 
@@ -196,7 +196,7 @@ module tcb_vip_memory
         end: risc_v
 
         else begin: memory
-          for (int unsigned b=0; b<tcb[i].PHY_BEW; b++) begin: byteenable
+          for (int unsigned b=0; b<tcb[i].PHY_BEN; b++) begin: byteenable
             if (tcb[i].dly[d-1].ben[b]) begin
               tmp_rsp_rdt[d][b] <= tmp_rsp_rdt[d-1][b];
             end

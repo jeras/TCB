@@ -60,8 +60,8 @@ module tcb_lib_multiplexer
     logic                   ren;  // write enable
     logic                   ndn;  // endianness
     logic [man.PHY.ADR-1:0] adr;  // address
-    logic [man.PHY_SZW-1:0] siz;  // transfer size
-    logic [man.PHY_BEW-1:0] ben;  // byte enable
+    logic [man.PHY_SIZ-1:0] siz;  // transfer size
+    logic [man.PHY_BEN-1:0] ben;  // byte enable
     logic [man.PHY.DAT-1:0] wdt;  // write data
   } man_req_t;
 

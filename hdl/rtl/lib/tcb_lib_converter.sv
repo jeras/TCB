@@ -71,13 +71,13 @@ module tcb_lib_converter
 ////////////////////////////////////////////////////////////////////////////////
 
   // write/read data packed arrays
-  logic [sub.PHY_BEW-1:0][sub.PHY.SLW-1:0] sub_req_wdt, sub_rsp_rdt;
-  logic [man.PHY_BEW-1:0][man.PHY.SLW-1:0] man_req_wdt, man_rsp_rdt;
+  logic [sub.PHY_BEN-1:0][sub.PHY.SLW-1:0] sub_req_wdt, sub_rsp_rdt;
+  logic [man.PHY_BEN-1:0][man.PHY.SLW-1:0] man_req_wdt, man_rsp_rdt;
 
   // write data multiplexer select
-  logic [$clog2(sub.PHY_BEW)-1:0] sel_req_wdt [man.PHY_BEW-1:0];
+  logic [$clog2(sub.PHY_BEN)-1:0] sel_req_wdt [man.PHY_BEN-1:0];
   // read data multiplexer select
-  logic [$clog2(sub.PHY_BEW)-1:0] sel_rsp_rdt [man.PHY_BEW-1:0];
+  logic [$clog2(sub.PHY_BEN)-1:0] sel_rsp_rdt [man.PHY_BEN-1:0];
 
   // write/read data packed array from vector
   assign sub_req_wdt = sub.req.wdt;
@@ -107,17 +107,17 @@ module tcb_lib_converter
           else begin
             assign man.req.adr = sub.req.adr;
           end
-          for (genvar i=0; i<man.PHY_BEW; i++) begin: byteenable
+          for (genvar i=0; i<man.PHY_BEN; i++) begin: byteenable
             int siz = 2**sub.req.siz;
             // multiplexer select signal
             always_comb
             case (sub.req.ndn)
               // little endian
               1'b0: begin: little
-                sel_req_wdt[i] = (man.req.adr[$clog2(sub.PHY_BEW)-1:0]       + i) % sub.PHY_BEW;
+                sel_req_wdt[i] = (man.req.adr[$clog2(sub.PHY_BEN)-1:0]       + i) % sub.PHY_BEN;
               end: little
               1'b1: begin: big
-                sel_req_wdt[i] = (man.req.adr[$clog2(sub.PHY_BEW)-1:0] + siz - i) % sub.PHY_BEW;
+                sel_req_wdt[i] = (man.req.adr[$clog2(sub.PHY_BEN)-1:0] + siz - i) % sub.PHY_BEN;
               end: big
             endcase
             // multiplexer
@@ -128,9 +128,9 @@ module tcb_lib_converter
                 assign sub_rsp_rdt[i] = man_rsp_rdt[              sel_rsp_rdt[i]];
               end: descending
               TCB_ASCENDING : begin: ascending
-                assign man.req.ben[i] = sub.req.ben[man.PHY.BEW-1-sel_req_wdt[i]];
-                assign man_req_wdt[i] = sub_req_wdt[man.PHY.BEW-1-sel_req_wdt[i]];
-                assign sub_rsp_rdt[i] = man_rsp_rdt[man.PHY.BEW-1-sel_rsp_rdt[i]];
+                assign man.req.ben[i] = sub.req.ben[man.PHY.BEN-1-sel_req_wdt[i]];
+                assign man_req_wdt[i] = sub_req_wdt[man.PHY.BEN-1-sel_req_wdt[i]];
+                assign sub_rsp_rdt[i] = man_rsp_rdt[man.PHY.BEN-1-sel_rsp_rdt[i]];
               end: ascending
             endcase
           end: byteenable
@@ -156,7 +156,7 @@ module tcb_lib_converter
           else begin: noalignment
             assign man.req.adr = sub.req.adr;
           end: noalignment
-          for (genvar i=0; i<man.PHY_BEW; i++) begin: byteenable
+          for (genvar i=0; i<man.PHY_BEN; i++) begin: byteenable
             if (sub.PHY.ORD == man.PHY.ORD) begin: order_same
               // same byte order
               assign man.req.ben[i] = sub.req.ben[              i];
@@ -165,9 +165,9 @@ module tcb_lib_converter
             end: order_same
             else begin: order_opposite
               // reversed byte order
-              assign man.req.ben[i] = sub.req.ben[man.PHY_BEW-1-i];
-              assign man_req_wdt[i] = sub_req_wdt[man.PHY_BEW-1-i];
-              assign sub_rsp_rdt[i] = man_rsp_rdt[man.PHY_BEW-1-i];
+              assign man.req.ben[i] = sub.req.ben[man.PHY_BEN-1-i];
+              assign man_req_wdt[i] = sub_req_wdt[man.PHY_BEN-1-i];
+              assign sub_rsp_rdt[i] = man_rsp_rdt[man.PHY_BEN-1-i];
             end: order_opposite
           end: byteenable
 
