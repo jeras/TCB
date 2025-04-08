@@ -80,23 +80,22 @@ module tcb_lib_riscv2memory
   // read data multiplexer select
   logic [$clog2(sub.PHY_BEN)-1:0] sel_rsp_rdt [man.PHY_BEN-1:0];
 
-  // write/read data packed array from vector
+  // write/read data packed array to/from vector
   assign sub_req_wdt = sub.req.wdt;
-  assign man_rsp_rdt = man.rsp.rdt;
+  assign sub.rsp.rdt = sub_rsp_rdt;
 
   // RISC-V to MEMORY mode conversion
   generate
 
     // mask unaligned address bits
     if (sub.PHY.ALW > 0) begin: alignment
-      // TODO range should be [max:2]
-      assign man.req.adr = {sub.req.adr[sub.PHY.ALW-1:0], sub.PHY.ALW'('0)};
+      assign man.req.adr = {sub.req.adr[sub.PHY.ADR-1:sub.PHY.ALW], sub.PHY.ALW'('0)};
     end: alignment
     else begin
       assign man.req.adr = sub.req.adr;
     end
 
-    // byte mapping
+    // byte mapping and signed/unsigned extension
     for (genvar i=0; i<man.PHY_BEN; i++) begin: byteenable
       int siz = 2**sub.req.siz;
       // multiplexer select signal
@@ -118,9 +117,14 @@ module tcb_lib_riscv2memory
 
   endgenerate
 
-  // write/read data packed array to vector
+  // delay man_rsp_rdt
+  // TODO: this now only works for DLY=1, generalize it
+  always_ff @(posedge sub.clk, posedge sub.rst)
+  sel_rsp_rdt <= sel_req_wdt;
+
+  // write/read data packed array to/from vector
   assign man.req.wdt = man_req_wdt;
-  assign sub.rsp.rdt = sub_rsp_rdt;
+  assign man_rsp_rdt = man.rsp.rdt;
 
 ////////////////////////////////////////////////////////////////////////////////
 // response
