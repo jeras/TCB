@@ -41,6 +41,8 @@ module tcb_lib_riscv2memory
 
 // TODO: REFERENCE mode with ASCENDING byte order is not supported
 
+// TODO: this file need a proper testbench and a serious cleanup
+
 ////////////////////////////////////////////////////////////////////////////////
 // request
 ////////////////////////////////////////////////////////////////////////////////
@@ -71,16 +73,16 @@ module tcb_lib_riscv2memory
 // write/read data
 ////////////////////////////////////////////////////////////////////////////////
 
-  // write/read data packed arrays
+  // request/response data packed arrays
   logic [sub.PHY_BEN-1:0][sub.PHY.UNT-1:0] sub_req_wdt, sub_rsp_rdt;
   logic [man.PHY_BEN-1:0][man.PHY.UNT-1:0] man_req_wdt, man_rsp_rdt;
 
   // request/response data byte enable
-  logic [sub.PHY_BEN-1:0] req_ben;
-  logic [sub.PHY_BEN-1:0] rsp_ben;
+  logic [sub.PHY_BEN-1:0]                  sub_req_ben, sub_rsp_ben;
+  logic [man.PHY_BEN-1:0]                  man_req_ben, man_rsp_ben;
   
   // response unsigned
-  logic rsp_uns;
+  logic                                                 sub_rsp_uns;
 
   // write/read data multiplexer select
   logic [$clog2(sub.PHY_BEN)-1:0] sel_req_wdt [man.PHY_BEN-1:0];
@@ -128,11 +130,12 @@ module tcb_lib_riscv2memory
       endcase
 
       // byte enable
-      assign req_ben[i] = (i >= adr) & (i < adr+siz);
+      assign sub_req_ben[i] = (i <= siz);
 
       // multiplexer
-      assign man_req_wdt[i] = req_ben[            i ] ? sub_req_wdt[sel_req_wdt[i]] : 'x;
-      assign sub_rsp_rdt[i] = rsp_ben[sel_rsp_rdt[i]] ? man_rsp_rdt[sel_rsp_rdt[i]] : (rsp_uns ? '0 : {sub.PHY.UNT{man_rsp_rdt[(adr+siz-1) % sub.PHY_BEN][sub.PHY.UNT-1]}});
+      assign man_req_ben[i] =                  sub_req_ben[sel_req_wdt[i]];
+      assign man_req_wdt[i] = man_req_ben[i] ? sub_req_wdt[sel_req_wdt[i]] : 'x;
+      assign sub_rsp_rdt[i] = sub_rsp_ben[i] ? man_rsp_rdt[sel_rsp_rdt[i]] : (sub_rsp_uns ? '0 : {sub.PHY.UNT{man_rsp_rdt[(adr+siz-1) % sub.PHY_BEN][sub.PHY.UNT-1]}});
     end: byteenable
 
   endgenerate
@@ -141,13 +144,13 @@ module tcb_lib_riscv2memory
   // TODO: this now only works for DLY=1, generalize it
   always_ff @(posedge sub.clk)
   if (sub.trn & ~sub.req.wen) begin
-    sel_rsp_rdt <=     sel_req_rdt;
-    rsp_ben     <=     req_ben;
-    rsp_uns     <= sub.req.uns;
+    sel_rsp_rdt <= sel_req_rdt;
+    sub_rsp_ben <= sub_req_ben;
+    sub_rsp_uns <= sub.req.uns;
   end
 
   // write/read data packed array to/from vector
-  assign man.req.ben =     req_ben;
+  assign man.req.ben = man_req_ben;
   assign man.req.wdt = man_req_wdt;
   assign man_rsp_rdt = man.rsp.rdt;
 
