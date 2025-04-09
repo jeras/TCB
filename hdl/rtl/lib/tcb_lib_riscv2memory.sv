@@ -83,8 +83,9 @@ module tcb_lib_riscv2memory
   logic rsp_uns;
 
   // write/read data multiplexer select
-  logic [$clog2(sub.PHY_BEN)-1:0] req_sel [man.PHY_BEN-1:0];
-  logic [$clog2(sub.PHY_BEN)-1:0] rsp_sel [man.PHY_BEN-1:0];
+  logic [$clog2(sub.PHY_BEN)-1:0] sel_req_wdt [man.PHY_BEN-1:0];
+  logic [$clog2(sub.PHY_BEN)-1:0] sel_req_rdt [man.PHY_BEN-1:0];
+  logic [$clog2(sub.PHY_BEN)-1:0] sel_rsp_rdt [man.PHY_BEN-1:0];
 
   // address segment
   int siz;
@@ -115,16 +116,23 @@ module tcb_lib_riscv2memory
       // multiplexer select signal (little/big endian)
       always_comb
       case (sub.req.ndn)
-        TCB_LITTLE:  req_sel[i] = (adr       + i) % sub.PHY_BEN;
-        TCB_BIG   :  req_sel[i] = (adr + siz - i) % sub.PHY_BEN;
+        TCB_LITTLE:  sel_req_rdt[i] = (adr    +i) % sub.PHY_BEN;
+        TCB_BIG   :  sel_req_rdt[i] = (adr+siz-i) % sub.PHY_BEN;
+      endcase
+
+      // multiplexer select signal (little/big endian)
+      always_comb
+      case (sub.req.ndn)
+        TCB_LITTLE:  sel_req_wdt[i] = (i    -adr) % sub.PHY_BEN;
+        TCB_BIG   :  sel_req_wdt[i] = (i+siz+adr) % sub.PHY_BEN;  // TODO: test
       endcase
 
       // byte enable
       assign req_ben[i] = (i >= adr) & (i < adr+siz);
 
       // multiplexer
-      assign man_req_wdt[i] = req_ben[        i ] ? sub_req_wdt[req_sel[i]] : 'x;
-      assign sub_rsp_rdt[i] = rsp_ben[rsp_sel[i]] ? man_rsp_rdt[rsp_sel[i]] : (rsp_uns ? '0 : {sub.PHY.UNT{man_rsp_rdt[(adr+siz-1) % sub.PHY_BEN][sub.PHY.UNT-1]}});
+      assign man_req_wdt[i] = req_ben[            i ] ? sub_req_wdt[sel_req_wdt[i]] : 'x;
+      assign sub_rsp_rdt[i] = rsp_ben[sel_rsp_rdt[i]] ? man_rsp_rdt[sel_rsp_rdt[i]] : (rsp_uns ? '0 : {sub.PHY.UNT{man_rsp_rdt[(adr+siz-1) % sub.PHY_BEN][sub.PHY.UNT-1]}});
     end: byteenable
 
   endgenerate
@@ -132,10 +140,10 @@ module tcb_lib_riscv2memory
   // delay man_rsp_rdt
   // TODO: this now only works for DLY=1, generalize it
   always_ff @(posedge sub.clk)
-  begin
-    rsp_sel <=     req_sel;
-    rsp_ben <=     req_ben;
-    rsp_uns <= sub.req.uns;
+  if (sub.trn & ~sub.req.wen) begin
+    sel_rsp_rdt <=     sel_req_rdt;
+    rsp_ben     <=     req_ben;
+    rsp_uns     <= sub.req.uns;
   end
 
   // write/read data packed array to/from vector
