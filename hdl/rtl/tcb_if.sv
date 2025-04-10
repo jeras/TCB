@@ -72,13 +72,16 @@ interface tcb_if
   rsp_t rsp;
 
 ////////////////////////////////////////////////////////////////////////////////
-// transaction handshake logic
+// transaction handshake and misalignment logic
 ////////////////////////////////////////////////////////////////////////////////
 
   // handshake
   logic trn;  // transfer
   logic stl;  // stall
   logic idl;  // idle
+
+  // misalignment
+  logic mal;
 
   // transfer (valid and ready at the same time)
   assign trn = vld & rdy;
@@ -89,6 +92,24 @@ interface tcb_if
   // TODO: improve description
   // idle (either not valid or ending the current cycle with a transfer)
   assign idl = ~vld | trn;
+
+  // TODO: this check only works in TCB_RISC_V mode, add check for TCB_MEMORY mode
+  // misalignment
+  generate
+  if (PHY.ALW > 0) begin: misalignment_mask
+    always_comb
+    begin
+      logic [PHY.ALW-1:0] msk;
+      for (int unsigned i=0; i<PHY.ALW; i++) begin
+        msk[i] = i < req.siz;
+      end
+      mal |= req.adr[PHY.ALW-1:0] & msk;
+    end
+  end: misalignment_mask
+  else begin
+    assign mal = 1'b0;
+  end
+  endgenerate
 
 ////////////////////////////////////////////////////////////////////////////////
 // request read/write enable logic depending on channel configuration
@@ -131,14 +152,16 @@ interface tcb_if
 
   // transfer size encoding
   generate
-  if (PHY.MOD == TCB_RISC_V) begin: byteenable
-    for (genvar b=0; b<PHY_BEN; b++) begin
-      assign req_ben[b] = b < (2**req.siz);
+  case (PHY.MOD)
+    TCB_RISC_V: begin: byteenable
+      for (genvar b=0; b<PHY_BEN; b++) begin
+        assign req_ben[b] = b < (2**req.siz);
+      end
+    end: byteenable
+    TCB_MEMORY: begin
+      assign req_ben = req.ben;
     end
-  end: byteenable
-  else begin
-    assign req_ben = req.ben;
-  end
+  endcase
   endgenerate
 
   // response pipeline combinational input
@@ -177,6 +200,7 @@ interface tcb_if
     input  trn,
     input  stl,
     input  idl,
+    input  mal,
     input  dly
   );
 
@@ -195,6 +219,7 @@ interface tcb_if
     input  trn,
     input  stl,
     input  idl,
+    input  mal,
     input  dly
   );
 
@@ -213,6 +238,7 @@ interface tcb_if
     input  trn,
     input  stl,
     input  idl,
+    input  mal,
     input  dly
   );
 

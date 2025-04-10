@@ -21,9 +21,7 @@ module tcb_lib_riscv2memory
 (
   // interfaces
   tcb_if.sub sub,    // TCB subordinate port (manager     device connects here)
-  tcb_if.man man,    // TCB manager     port (subordinate device connects here)
-  // subordinate port control/status
-  output logic mal   // misaligned access
+  tcb_if.man man     // TCB manager     port (subordinate device connects here)
 );
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -56,22 +54,11 @@ module tcb_lib_riscv2memory
   assign man.req.ndn = sub.req.ndn;
 
 ////////////////////////////////////////////////////////////////////////////////
-// address alignment
-////////////////////////////////////////////////////////////////////////////////
-
-  // decodings for read and write access are identical
-  always_comb
-  unique case (sub.req.siz)
-    'd0    : mal = 1'b0;
-    'd1    : mal = |sub.req.adr[0:0];
-    'd2    : mal = |sub.req.adr[1:0];
-    'd3    : mal = |sub.req.adr[2:0];
-    default: mal = 1'bx;
-  endcase
-
-////////////////////////////////////////////////////////////////////////////////
 // write/read data
 ////////////////////////////////////////////////////////////////////////////////
+
+  // request/response endianness
+  logic                                        req_mal,     rsp_mal;
 
   // request/response data packed arrays
   logic [sub.PHY_BEN-1:0][sub.PHY.UNT-1:0] sub_req_wdt, sub_rsp_rdt;
@@ -86,17 +73,13 @@ module tcb_lib_riscv2memory
   // request/response endianness
   logic                                        req_ndn,     rsp_ndn;
 
+////////////////////////////////////////////////////////////////////////////////
+// address alignment
+////////////////////////////////////////////////////////////////////////////////
+
   // request/response address segment
   assign req_adr = sub.req             .adr[sub.PHY_LOG-1:0];
   assign rsp_adr = sub.dly[sub.PHY.DLY].adr[sub.PHY_LOG-1:0];
-
-  // request/response endianness
-  assign req_ndn = sub.req             .ndn;
-  assign rsp_ndn = sub.dly[sub.PHY.DLY].ndn;
-
-  // write/read data packed array to/from vector
-  assign sub_req_wdt = sub.req.wdt;
-  assign sub.rsp.rdt = sub_rsp_rdt;
 
   // mask unaligned address bits
   generate
@@ -108,11 +91,23 @@ module tcb_lib_riscv2memory
     end
   endgenerate
 
+////////////////////////////////////////////////////////////////////////////////
+// multiplexers
+////////////////////////////////////////////////////////////////////////////////
+
+  // request/response endianness
+  assign req_ndn = sub.req             .ndn;
+  assign rsp_ndn = sub.dly[sub.PHY.DLY].ndn;
+
   // RISC-V mode (subordinate interface) byte enable
   always_comb
   for (int unsigned i=0; i<sub.PHY_BEN; i++) begin: ben_riscv
     sub_req_ben[i] = (i < 2**sub.req.siz) ? 1'b1 : 1'b0;
   end: ben_riscv
+
+  // write/read data packed array to/from vector
+  assign sub_req_wdt = sub.mal ? 'x : sub.req.wdt;
+  assign sub.rsp.rdt =                sub_rsp_rdt;
 
   // TODO: do not implement rotations if misaligned accesses are not implemented.
   // request path multiplexer (little/big endian)
@@ -127,10 +122,6 @@ module tcb_lib_riscv2memory
         man.req.ben[i] = sub_req_ben[(sub.PHY_BEN-(i-req_adr)) % sub.PHY_BEN];
         man_req_wdt[i] = sub_req_wdt[(sub.PHY_BEN-(i-req_adr)) % sub.PHY_BEN];
       end
-//      default   : begin
-//        man_req_ben[i] = 'x;
-//        man_req_wdt[i] = 'x;
-//      end
     endcase
   end: req_riscv2memory
 
@@ -146,10 +137,6 @@ module tcb_lib_riscv2memory
       TCB_BIG   : begin
         sub_rsp_rdt[i] = man_rsp_rdt[(sub.PHY_BEN-(i+rsp_adr)) % sub.PHY_BEN];
       end
-//      default   : begin
-//        man_req_ben[i] = 'x;
-//        man_req_wdt[i] = 'x;
-//      end
     endcase
   end: rsp_riscv2memory
 
