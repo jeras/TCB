@@ -383,10 +383,10 @@ package tcb_vip_pkg;
           // address offset
           off = i / PHY_BEN;
           // mode processor/memory
-          if (PHY.MOD == TCB_RISC_V) begin
+          if (PHY.MOD == TCB_LOG_SIZE) begin
             // all data bytes are LSB aligned
             byt = i;
-          end else if (PHY.MOD == TCB_MEMORY) begin
+          end else if (PHY.MOD == TCB_BYTE_ENA) begin
             // all data bytes are LSB aligned
             byt = (i + transaction_req.adr) % PHY_BEN;
           end
@@ -422,10 +422,10 @@ package tcb_vip_pkg;
           // address offset
           off = i / PHY_BEN;
           // mode processor/memory
-          if (PHY.MOD == TCB_RISC_V) begin
+          if (PHY.MOD == TCB_LOG_SIZE) begin
             // all data bytes are LSB aligned
             byt = i;
-          end else if (PHY.MOD == TCB_MEMORY) begin
+          end else if (PHY.MOD == TCB_BYTE_ENA) begin
             // all data bytes are LSB aligned
             byt = (i + transfer_array[off].req.adr) % PHY_BEN;
           end

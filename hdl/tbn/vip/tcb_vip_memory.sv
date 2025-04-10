@@ -125,7 +125,7 @@ module tcb_vip_memory
         // temporary variables
         automatic int unsigned adr;
 
-        if (tcb[i].PHY.MOD == TCB_RISC_V) begin: risc_v
+        if (tcb[i].PHY.MOD == TCB_LOG_SIZE) begin: risc_v
 //          $display("DEBUG: tcb[%d]: write adr=%08X=%d, tmp_req_siz=%d, wdt=%08X", i, tcb[i].req.adr, tcb[i].req.adr, tmp_req_siz, tmp_req_wdt);
           for (int unsigned b=0; b<tcb[i].PHY_BEN; b++) begin: size
             // byte address
@@ -159,7 +159,7 @@ module tcb_vip_memory
         // temporary variables
         automatic int unsigned adr;
 
-        if (tcb[i].PHY.MOD == TCB_RISC_V) begin: risc_v
+        if (tcb[i].PHY.MOD == TCB_LOG_SIZE) begin: risc_v
           tmp_rsp_rdt[0] = '{default: 'x};
           for (int unsigned b=0; b<tcb[i].PHY_BEN; b++) begin: size
             // byte address
@@ -191,7 +191,7 @@ module tcb_vip_memory
       always @(posedge tcb[i].clk)
       begin
 
-        if (tcb[i].PHY.MOD == TCB_RISC_V) begin: risc_v
+        if (tcb[i].PHY.MOD == TCB_LOG_SIZE) begin: risc_v
           tmp_rsp_rdt[d] <= tmp_rsp_rdt[d-1];
         end: risc_v
 

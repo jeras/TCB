@@ -37,8 +37,8 @@ package tcb_pkg;
 
   // data position mode
   typedef enum bit {
-    TCB_RISC_V = 1'b0,  // RISC-V
-    TCB_MEMORY = 1'b1   // memory
+    TCB_LOG_SIZE = 1'b0,  // logarithmic size
+    TCB_BYTE_ENA = 1'b1   // byte enable
   } tcb_par_mode_t;
 
   // byte order
@@ -88,7 +88,7 @@ package tcb_pkg;
     ALN: 2,   // $clog2(DAT/UNT)
     // data packing parameters
     ORD: TCB_DESCENDING,
-    MOD: TCB_MEMORY,
+    MOD: TCB_BYTE_ENA,
     // channel configuration
     CHN: TCB_COMMON_HALF_DUPLEX
   };

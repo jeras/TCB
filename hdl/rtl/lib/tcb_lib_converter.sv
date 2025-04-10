@@ -97,7 +97,7 @@ module tcb_lib_converter
           assign sub_rsp_rdt = man_rsp_rdt;
 
         end: man_reference
-        TCB_MEMORY: begin: man_memory
+        TCB_BYTE_ENA: begin: man_memory
 
           // REFERENCE -> MEMORY
           if (sub.PHY.ALN > 0) begin: alignment
@@ -138,7 +138,7 @@ module tcb_lib_converter
         end: man_memory
       endcase
     end: sub_reference
-    TCB_MEMORY: begin: sub_memory
+    TCB_BYTE_ENA: begin: sub_memory
       case (man.PHY.MOD)
         TCB_REFERENCE: begin: man_reference
 
@@ -146,7 +146,7 @@ module tcb_lib_converter
           // TODO: not a big priority
 
         end: man_reference
-        TCB_MEMORY: begin: man_memory
+        TCB_BYTE_ENA: begin: man_memory
 
           // MEMORY -> MEMORY
           if (sub.PHY.ALN > 0) begin: alignment

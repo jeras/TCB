@@ -139,7 +139,7 @@ interface tcb_if
   // local offset
   assign req_off = req.adr[PHY_OFF-1:0];
 
-  // TODO: this check only works in TCB_RISC_V mode, add check for TCB_MEMORY mode
+  // TODO: this check only works in TCB_LOG_SIZE mode, add check for TCB_BYTE_ENA mode
   // misalignment
   generate
     if (PHY.ALN > 0) begin: misalignment_mask
@@ -158,12 +158,12 @@ interface tcb_if
     // transfer size encoding
   generate
   case (PHY.MOD)
-    TCB_RISC_V: begin: byteenable
+    TCB_LOG_SIZE: begin: byteenable
       for (genvar b=0; b<PHY_BEN; b++) begin
         assign req_ben[b] = b < (2**req.siz);
       end
     end: byteenable
-    TCB_MEMORY: begin
+    TCB_BYTE_ENA: begin
       assign req_ben = req.ben;
     end
   endcase

@@ -73,12 +73,12 @@ module tcb_vip_protocol_checker (
         assert (( tcb.req.wen !== 1'bx) && ( tcb.req.wen !== 1'bz)) else $fatal("TCB: tcb.req.wen is undefined during a cycle.");
         case (tcb.PHY.MOD)
 
-          TCB_RISC_V:
+          TCB_LOG_SIZE:
           begin
             assert (^tcb.req.siz !== 1'bx) else $fatal("TCB: tcb.req.siz is undefined during a cycle.");
           end
 
-          TCB_MEMORY:
+          TCB_BYTE_ENA:
           begin
             assert (^tcb.req.ben !== 1'bx) else $fatal("TCB: tcb.req.ben is undefined during a cycle.");
           end

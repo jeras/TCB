@@ -7,8 +7,8 @@ TCB_LOGARITHMIC = 0
 TCB_LINEAR      = 1
 
 # data position mode
-TCB_RISC_V = 0
-TCB_MEMORY = 1
+TCB_LOG_SIZE = 0
+TCB_BYTE_ENA = 1
 
 # byte order
 TCB_DESCENDING = 0

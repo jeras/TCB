@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// TCB (Tightly Coupled Bus) library RISC-V to MEMORY mode conversion
+// TCB (Tightly Coupled Bus) library log. size to byte enable mode conversion
 ////////////////////////////////////////////////////////////////////////////////
 // Copyright 2022 Iztok Jeras
 //
@@ -16,7 +16,7 @@
 // limitations under the License.
 ////////////////////////////////////////////////////////////////////////////////
 
-module tcb_lib_riscv2memory
+module tcb_lib_logsize2byteena
   import tcb_pkg::*;
 (
   // interfaces
@@ -96,11 +96,11 @@ module tcb_lib_riscv2memory
   assign req_ndn = sub.req             .ndn;
   assign rsp_ndn = sub.dly[sub.PHY.DLY].ndn;
 
-  // RISC-V mode (subordinate interface) byte enable
+  // logarithmic size mode (subordinate interface) byte enable
   always_comb
-  for (int unsigned i=0; i<sub.PHY_BEN; i++) begin: ben_riscv
+  for (int unsigned i=0; i<sub.PHY_BEN; i++) begin: logsize2byteena
     sub_req_ben[i] = (i < 2**sub.req.siz) ? 1'b1 : 1'b0;
-  end: ben_riscv
+  end: logsize2byteena
 
   // write/read data packed array to/from vector
   assign sub_req_wdt = sub.req.wdt;
@@ -109,7 +109,7 @@ module tcb_lib_riscv2memory
   // TODO: do not implement rotations if misaligned accesses are not implemented.
   // request path multiplexer (little/big endian)
   always_comb
-  for (int unsigned i=0; i<sub.PHY_BEN; i++) begin: req_riscv2memory
+  for (int unsigned i=0; i<sub.PHY_BEN; i++) begin: req_logsize2byteena
     unique case (sub.req.ndn)
       TCB_LITTLE: begin
         man.req.ben[i] = sub_req_ben[(            (i-req_off)) % sub.PHY_BEN];
@@ -120,13 +120,13 @@ module tcb_lib_riscv2memory
         man_req_wdt[i] = sub_req_wdt[(sub.PHY_BEN-(i-req_off)) % sub.PHY_BEN];
       end
     endcase
-  end: req_riscv2memory
+  end: req_logsize2byteena
 
   // response path multiplexer
   // TODO: do not implement rotations if misaligned accesses are not implemented.
   // request path multiplexer (little/big endian)
   always_comb
-  for (int unsigned i=0; i<sub.PHY_BEN; i++) begin: rsp_riscv2memory
+  for (int unsigned i=0; i<sub.PHY_BEN; i++) begin: rsp_logsize2byteena
     unique case (sub.req.ndn)
       TCB_LITTLE: begin
         sub_rsp_rdt[i] = man_rsp_rdt[(            (i+rsp_off)) % sub.PHY_BEN];
@@ -135,7 +135,7 @@ module tcb_lib_riscv2memory
         sub_rsp_rdt[i] = man_rsp_rdt[(sub.PHY_BEN-(i+rsp_off)) % sub.PHY_BEN];
       end
     endcase
-  end: rsp_riscv2memory
+  end: rsp_logsize2byteena
 
   // write/read data packed array to/from vector
   assign man.req.wdt = man_req_wdt;
@@ -151,4 +151,4 @@ module tcb_lib_riscv2memory
   // handshake
   assign sub.rdy = man.rdy;
 
-endmodule: tcb_lib_riscv2memory
+endmodule: tcb_lib_logsize2byteena
