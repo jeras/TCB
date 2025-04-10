@@ -37,8 +37,8 @@ package tcb_pkg;
 
   // data position mode
   typedef enum bit {
-    TCB_RISC_V = 1'b0,  // always LSB aligned
-    TCB_MEMORY = 1'b1   // position depends on address
+    TCB_RISC_V = 1'b0,  // RISC-V
+    TCB_MEMORY = 1'b1   // memory
   } tcb_par_mode_t;
 
   // byte order
@@ -48,7 +48,7 @@ package tcb_pkg;
   } tcb_par_order_t;
 
   // channel configuration
-  typedef enum bit [1:0] {
+  typedef enum bit [2-1:0] {
     // 2 bit value {rd,wr}
     TCB_COMMON_HALF_DUPLEX = 2'b00,  // common channel with half duplex read/write
     TCB_COMMON_FULL_DUPLEX = 2'b11,  // common channel with full duplex read/write
@@ -66,13 +66,13 @@ package tcb_pkg;
     // protocol
     int unsigned      DLY;  // response delay
     // signal widths
-    int unsigned      UNT;  // data unit   width (byte width is 8 by default)
-    int unsigned      ADR;  // address bus width
-    int unsigned      DAT;  // data    bus width
+    int unsigned      UNT;  // data unit width (byte width is 8 by default)
+    int unsigned      ADR;  // address   width
+    int unsigned      DAT;  // data      width
     int unsigned      ALW;  // alignment width
     // data packing parameters
-    tcb_par_mode_t    MOD;  // data position mode
     tcb_par_order_t   ORD;  // byte order
+    tcb_par_mode_t    MOD;  // data position mode
     // channel configuration
     tcb_par_channel_t CHN;  // channel configuration
   } tcb_par_phy_t;
@@ -87,8 +87,8 @@ package tcb_pkg;
     DAT: 32,
     ALW: 2,   // $clog2(DAT/UNT)
     // data packing parameters
-    MOD: TCB_MEMORY,
     ORD: TCB_DESCENDING,
+    MOD: TCB_MEMORY,
     // channel configuration
     CHN: TCB_COMMON_HALF_DUPLEX
   };
@@ -110,8 +110,8 @@ package tcb_pkg;
       bit DAT;
       bit ALW;
       bit SIZ;
-      bit MOD;
       bit ORD;
+      bit MOD;
       bit CHN;
     } status;
 
@@ -121,8 +121,8 @@ package tcb_pkg;
     status.ADR = phy_val.ADR ==? phy_ref.ADR;
     status.DAT = phy_val.DAT ==? phy_ref.DAT;
     status.ALW = phy_val.ALW ==? phy_ref.ALW;
-    status.MOD = phy_val.MOD ==? phy_ref.MOD;
     status.ORD = phy_val.ORD ==? phy_ref.ORD;
+    status.MOD = phy_val.MOD ==? phy_ref.MOD;
     status.CHN = phy_val.CHN ==? phy_ref.CHN;
 
     // reporting validation status
@@ -131,8 +131,8 @@ package tcb_pkg;
     if (status.ADR)  $error("parameter mismatch PHY.ADR=%d != PHY.ADR=%d", phy_val.ADR, phy_ref.ADR);
     if (status.DAT)  $error("parameter mismatch PHY.DAT=%d != PHY.DAT=%d", phy_val.DAT, phy_ref.DAT);
     if (status.ALW)  $error("parameter mismatch PHY.ALW=%d != PHY.ALW=%d", phy_val.ALW, phy_ref.ALW);
-    if (status.MOD)  $error("parameter mismatch PHY.MOD=%d != PHY.MOD=%d", phy_val.MOD, phy_ref.MOD);
     if (status.ORD)  $error("parameter mismatch PHY.ORD=%d != PHY.ORD=%d", phy_val.ORD, phy_ref.ORD);
+    if (status.MOD)  $error("parameter mismatch PHY.MOD=%d != PHY.MOD=%d", phy_val.MOD, phy_ref.MOD);
     if (status.CHN)  $error("parameter mismatch PHY.CHN=%d != PHY.CHN=%d", phy_val.CHN, phy_ref.CHN);
 
     // return simple status

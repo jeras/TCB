@@ -77,80 +77,83 @@ module tcb_lib_riscv2memory
   logic [sub.PHY_BEN-1:0][sub.PHY.UNT-1:0] sub_req_wdt, sub_rsp_rdt;
   logic [man.PHY_BEN-1:0][man.PHY.UNT-1:0] man_req_wdt, man_rsp_rdt;
 
-  // request/response data byte enable
-  logic [sub.PHY_BEN-1:0]                  sub_req_ben, sub_rsp_ben;
-  logic [man.PHY_BEN-1:0]                  man_req_ben, man_rsp_ben;
-  
-  // response unsigned
-  logic                                                 sub_rsp_uns;
+  // byte enable
+  logic [sub.PHY_BEN-1:0]                  sub_req_ben             ;
 
-  // write/read data multiplexer select
-  logic [$clog2(sub.PHY_BEN)-1:0] sel_req_wdt [man.PHY_BEN-1:0];
-  logic [$clog2(sub.PHY_BEN)-1:0] sel_req_rdt [man.PHY_BEN-1:0];
-  logic [$clog2(sub.PHY_BEN)-1:0] sel_rsp_rdt [man.PHY_BEN-1:0];
+  // request/response address segment
+  logic [sub.PHY_LOG-1:0]                      req_adr,     rsp_adr;
 
-  // address segment
-  int siz;
-  logic [$clog2(sub.PHY_BEN)-1:0] adr;
+  // request/response endianness
+  logic                                        req_ndn,     rsp_ndn;
 
-  // address segment
-  assign siz = 2**sub.req.siz;
-  assign adr = sub.req.adr[$clog2(sub.PHY_BEN)-1:0];
+  // request/response address segment
+  assign req_adr = sub.req             .adr[sub.PHY_LOG-1:0];
+  assign rsp_adr = sub.dly[sub.PHY.DLY].adr[sub.PHY_LOG-1:0];
+
+  // request/response endianness
+  assign req_ndn = sub.req             .ndn;
+  assign rsp_ndn = sub.dly[sub.PHY.DLY].ndn;
 
   // write/read data packed array to/from vector
   assign sub_req_wdt = sub.req.wdt;
   assign sub.rsp.rdt = sub_rsp_rdt;
 
-  // RISC-V to MEMORY mode conversion
+  // mask unaligned address bits
   generate
-
-    // mask unaligned address bits
     if (sub.PHY.ALW > 0) begin: alignment
       assign man.req.adr = {sub.req.adr[sub.PHY.ADR-1:sub.PHY.ALW], sub.PHY.ALW'('0)};
     end: alignment
     else begin
       assign man.req.adr = sub.req.adr;
     end
-
-    // byte mapping and signed/unsigned extension
-    for (genvar i=0; i<man.PHY_BEN; i++) begin: byteenable
-
-      // multiplexer select signal (little/big endian)
-      always_comb
-      case (sub.req.ndn)
-        TCB_LITTLE:  sel_req_rdt[i] = (adr    +i) % sub.PHY_BEN;
-        TCB_BIG   :  sel_req_rdt[i] = (adr+siz-i) % sub.PHY_BEN;
-      endcase
-
-      // multiplexer select signal (little/big endian)
-      always_comb
-      case (sub.req.ndn)
-        TCB_LITTLE:  sel_req_wdt[i] = (i    -adr) % sub.PHY_BEN;
-        TCB_BIG   :  sel_req_wdt[i] = (i+siz+adr) % sub.PHY_BEN;  // TODO: test
-      endcase
-
-      // byte enable
-      assign sub_req_ben[i] = (i <= siz);
-
-      // multiplexer
-      assign man_req_ben[i] =                  sub_req_ben[sel_req_wdt[i]];
-      assign man_req_wdt[i] = man_req_ben[i] ? sub_req_wdt[sel_req_wdt[i]] : 'x;
-      assign sub_rsp_rdt[i] = sub_rsp_ben[i] ? man_rsp_rdt[sel_rsp_rdt[i]] : (sub_rsp_uns ? '0 : {sub.PHY.UNT{man_rsp_rdt[(adr+siz-1) % sub.PHY_BEN][sub.PHY.UNT-1]}});
-    end: byteenable
-
   endgenerate
 
-  // delay man_rsp_rdt
-  // TODO: this now only works for DLY=1, generalize it
-  always_ff @(posedge sub.clk)
-  if (sub.trn & ~sub.req.wen) begin
-    sel_rsp_rdt <= sel_req_rdt;
-    sub_rsp_ben <= sub_req_ben;
-    sub_rsp_uns <= sub.req.uns;
-  end
+  // RISC-V mode (subordinate interface) byte enable
+  always_comb
+  for (int unsigned i=0; i<sub.PHY_BEN; i++) begin: ben_riscv
+    sub_req_ben[i] = (i < 2**sub.req.siz) ? 1'b1 : 1'b0;
+  end: ben_riscv
+
+  // TODO: do not implement rotations if misaligned accesses are not implemented.
+  // request path multiplexer (little/big endian)
+  always_comb
+  for (int unsigned i=0; i<sub.PHY_BEN; i++) begin: req_riscv2memory
+    unique case (sub.req.ndn)
+      TCB_LITTLE: begin
+        man.req.ben[i] = sub_req_ben[(            (i-req_adr)) % sub.PHY_BEN];
+        man_req_wdt[i] = sub_req_wdt[(            (i-req_adr)) % sub.PHY_BEN];
+      end
+      TCB_BIG   : begin
+        man.req.ben[i] = sub_req_ben[(sub.PHY_BEN-(i-req_adr)) % sub.PHY_BEN];
+        man_req_wdt[i] = sub_req_wdt[(sub.PHY_BEN-(i-req_adr)) % sub.PHY_BEN];
+      end
+//      default   : begin
+//        man_req_ben[i] = 'x;
+//        man_req_wdt[i] = 'x;
+//      end
+    endcase
+  end: req_riscv2memory
+
+  // response path multiplexer
+  // TODO: do not implement rotations if misaligned accesses are not implemented.
+  // request path multiplexer (little/big endian)
+  always_comb
+  for (int unsigned i=0; i<sub.PHY_BEN; i++) begin: rsp_riscv2memory
+    unique case (sub.req.ndn)
+      TCB_LITTLE: begin
+        sub_rsp_rdt[i] = man_rsp_rdt[(            (i+rsp_adr)) % sub.PHY_BEN];
+      end
+      TCB_BIG   : begin
+        sub_rsp_rdt[i] = man_rsp_rdt[(sub.PHY_BEN-(i+rsp_adr)) % sub.PHY_BEN];
+      end
+//      default   : begin
+//        man_req_ben[i] = 'x;
+//        man_req_wdt[i] = 'x;
+//      end
+    endcase
+  end: rsp_riscv2memory
 
   // write/read data packed array to/from vector
-  assign man.req.ben = man_req_ben;
   assign man.req.wdt = man_req_wdt;
   assign man_rsp_rdt = man.rsp.rdt;
 

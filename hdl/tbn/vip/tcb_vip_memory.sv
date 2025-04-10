@@ -166,7 +166,7 @@ module tcb_vip_memory
             adr = b + int'(tcb[i].req.adr);
             // read only transfer size bytes, the rest are sign/zero extended
             if (b < tmp_req_siz)  tmp_rsp_rdt[0][b] = mem[adr%SIZ];
-            else                  tmp_rsp_rdt[0][b] = {tcb[i].PHY.UNT{tmp_rsp_rdt[0][b-1][tcb[i].PHY.UNT-1] & ~tcb[i].req.uns}};
+            else                  tmp_rsp_rdt[0][b] = 'x;
           end: size
         end: risc_v
 

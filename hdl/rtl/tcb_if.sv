@@ -32,11 +32,14 @@ interface tcb_if
 // local parameters
 ////////////////////////////////////////////////////////////////////////////////
 
-  // byte enable width
+  // byte enable width (number of units inside data)
   localparam int unsigned PHY_BEN = PHY.DAT / PHY.UNT;
 
-  // transfer size width calculation
-  localparam int unsigned PHY_SIZ = $clog2($clog2(PHY_BEN)+1);
+  // logarithm of byte enable width (number of masked address bits for memory access)
+  localparam int unsigned PHY_LOG = $clog2(PHY_BEN);
+
+  // logarithmic transfer size width 
+  localparam int unsigned PHY_SIZ = $clog2(PHY_LOG+1);
 
 ////////////////////////////////////////////////////////////////////////////////
 // I/O ports
@@ -50,11 +53,10 @@ interface tcb_if
   typedef struct packed {
     tcb_req_cmd_t       cmd;  // command (optional)
     logic               wen;  // write enable
-    logic               ren;  // write enable
+    logic               ren;  // read enable
     logic               ndn;  // endianness
     logic [PHY.ADR-1:0] adr;  // address
-    logic [PHY_SIZ-1:0] siz;  // transfer size
-    logic               uns;  // unsigned
+    logic [PHY_SIZ-1:0] siz;  // logarithmic transfer size
     logic [PHY_BEN-1:0] ben;  // byte enable
     logic [PHY.DAT-1:0] wdt;  // write data
   } req_t;
@@ -115,9 +117,9 @@ interface tcb_if
   typedef struct {
     logic               ena;  // enable
     logic               ren;  // read enable
+    logic               ndn;  // endianness
     logic [PHY.ADR-1:0] adr;  // address
-    logic [PHY_SIZ-1:0] siz;  // transfer size
-    logic               uns;  // unsigned
+    logic [PHY_SIZ-1:0] siz;  // logarithmic transfer size
     logic [PHY_BEN-1:0] ben;  // byte enable
   } dly_t;
 
@@ -140,11 +142,12 @@ interface tcb_if
   endgenerate
 
   // response pipeline combinational input
-  assign dly[0].ena = trn                         ;  // response valid
-  assign dly[0].ren =       req_ren               ;  // response read enable
-  assign dly[0].adr =                 req.adr     ;  // response address
-  assign dly[0].siz =                 req.siz     ;  // response logarithmic size
-  assign dly[0].ben = trn & req_ren ? req_ben : '0;  // response byte enable
+  assign dly[0].ena = trn                         ;  // valid
+  assign dly[0].ren =       req_ren               ;  // read enable
+  assign dly[0].ndn =                 req.ndn     ;  // endianness
+  assign dly[0].adr =                 req.adr     ;  // address
+  assign dly[0].siz =                 req.siz     ;  // logarithmic transfer size
+  assign dly[0].ben = trn & req_ren ? req_ben : '0;  // byte enable
 
   // response pipeline
   // TODO: avoid toggling if there is not transfer

@@ -76,7 +76,6 @@ module tcb_vip_protocol_checker (
           TCB_RISC_V:
           begin
             assert (^tcb.req.siz !== 1'bx) else $fatal("TCB: tcb.req.siz is undefined during a cycle.");
-            assert ( tcb.req.uns !== 1'bx) else $fatal("TCB: tcb.req.uns is undefined during a cycle.");
           end
 
           TCB_MEMORY:
