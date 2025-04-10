@@ -463,7 +463,7 @@ The following parameters affect data packing.
 
 | parameter | default          | type (enumeration) | description |
 |-----------|------------------|--------------------|-------------|
-| `PHY.ALW` | `clog2(DAT/UNT)` | `int unsigned`     | Alignment width, number of least significant address bits which are zero. |
+| `PHY.ALN` | `clog2(DAT/UNT)` | `int unsigned`     | Alignment width, number of least significant address bits which are zero. |
 | `PHY.MOD` | `REFERENCE`      | `tcb_par_mode_t`   | Data position mode. |
 | `PHY.ORD` | `DESCENDING`     | `tcb_par_order_t`  | Byte order, ascending or descending. |
 
@@ -471,7 +471,7 @@ Only a subset of 4 configurations from all parameter combinations
 results in practical and useful data packing rule.
 The rest are reserved with no intention to be documented and implemented.
 
-| `MOD`       | `ORD`        | `ALW`        | `ndn`   | description |
+| `MOD`       | `ORD`        | `ALN`        | `ndn`   | description |
 |-------------|--------------|--------------|---------|-------------|
 | `REFERENCE` | `DESCENDING` | any          | ignored | Packing used by CPU registers. |
 | `REFERENCE` | `ASCENDING`  | any          | ignored | Reserved, not used. |
@@ -488,7 +488,7 @@ The OpenPOWER specific configuration is included for historic compatibility, and
 
 ##### Alignment width
 
-Alignment width `ALW` defines what kind of data alignments are supported.
+Alignment width `ALN` defines what kind of data alignments are supported.
 The values can be between `0` (no alignment requirements)
 and `clog2(BEN)` (full alignment is required).
 Only this two values are documented,
@@ -530,7 +530,7 @@ with all other bits inactive.
 The same restriction for the number applies as for the transfer size signal `siz`.
 
 How active bytes are aligned inside the entire data bus is further defined by
-other parameters `ALW`/`MOD`/`ORD`, the address `adr` and the endianness signal `ndn`.
+other parameters `ALN`/`MOD`/`ORD`, the address `adr` and the endianness signal `ndn`.
 
 ##### Data position mode
 
@@ -687,9 +687,9 @@ Examples for the following reference mode configurations are provided:
 It is common to only allow full data bus width and aligned transfers when accessing peripherals.
 This case would specify the following parameter values and signal restrictions:
 - reference mode `MOD=REFERENCE`,
-- full alignment required `ALW=$clog2(DAT/UNT)=clog2(BEN)`
-- transfer size equal to data bus width `siz==$clog2(ALW)`,
-- aligned address to data bus width `adr[ALW-1:0]=='0`,
+- full alignment required `ALN=$clog2(DAT/UNT)=clog2(BEN)`
+- transfer size equal to data bus width `siz==$clog2(ALN)`,
+- aligned address to data bus width `adr[ALN-1:0]=='0`,
 - the transfer endianness `ndn` is ignored.
 
 The following table lists such transfers for a 32-bit data bus.
@@ -705,8 +705,8 @@ small registers can be arranged into a more compact structure,
 thus reducing the address space.
 This case would specify the following parameter values and signal restrictions:
 - reference mode `MOD=REFERENCE`,
-- full alignment required `ALW=$clog2(DAT/UNT)=clog2(BEN)`
-- transfer size from byte to data bus width `0<=siz<=$clog2(ALW)`,
+- full alignment required `ALN=$clog2(DAT/UNT)=clog2(BEN)`
+- transfer size from byte to data bus width `0<=siz<=$clog2(ALN)`,
 - address aligned to transfer size `adr[siz-1:0]=='0`,
 - the transfer endianness `ndn` is ignored.
 
@@ -735,8 +735,8 @@ enable access to memories which support unaligned accesses.
 
 This case would specify the following parameter values and signal restrictions:
 - reference mode `MOD=REFERENCE`,
-- relaxed alignment `ALW=0`
-- transfer size from byte to data bus width `0<=siz<=$clog2(ALW)`,
+- relaxed alignment `ALN=0`
+- transfer size from byte to data bus width `0<=siz<=$clog2(ALN)`,
 - address aligned to transfer size `adr[siz-1:0]=='0`,
 - the transfer endianness `ndn` is ignored.
 
@@ -761,7 +761,7 @@ The following table lists such transfers for a 32-bit data bus.
 
 This case would specify the following parameter values and signal restrictions:
 - reference mode `MOD=REFERENCE`,
-- relaxed alignment `ALW=1`
+- relaxed alignment `ALN=1`
 - always attempt to fetch a 32-bit instruction `siz=2'd2`,
 - address aligned to transfer size `adr[0]==1'b0`,
 - only little endian support `ndn=1'b0`.

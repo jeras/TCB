@@ -26,7 +26,7 @@ module tcb_lib_converter_tb
   int unsigned      MAN_UNT = TCB_PAR_PHY_DEF.UNT,  // data unit   width (byte width is 8 by default)
   int unsigned      MAN_ADR = TCB_PAR_PHY_DEF.ADR,  // address bus width
   int unsigned      MAN_DAT = TCB_PAR_PHY_DEF.DAT,  // data    bus width
-  int unsigned      MAN_ALW = TCB_PAR_PHY_DEF.ALW,  // alignment width
+  int unsigned      MAN_ALN = TCB_PAR_PHY_DEF.ALN,  // alignment width
   // data packing parameters for manager/subordinate
   tcb_par_size_t    MAN_SIZ = TCB_PAR_PHY_DEF.SIZ,  // manager     transfer size encoding
   tcb_par_mode_t    MAN_MOD = TCB_PAR_PHY_DEF.MOD,  // manager     data position mode
@@ -40,7 +40,7 @@ module tcb_lib_converter_tb
   int unsigned      SUB_UNT = TCB_PAR_PHY_DEF.UNT,  // data unit   width (byte width is 8 by default)
   int unsigned      SUB_ADR = TCB_PAR_PHY_DEF.ADR,  // address bus width
   int unsigned      SUB_DAT = TCB_PAR_PHY_DEF.DAT,  // data    bus width
-  int unsigned      SUB_ALW = TCB_PAR_PHY_DEF.ALW,  // alignment width
+  int unsigned      SUB_ALN = TCB_PAR_PHY_DEF.ALN,  // alignment width
   // data packing parameters for manager/subordinate
   tcb_par_size_t    SUB_SIZ = TCB_PAR_PHY_DEF.SIZ,  // subordinate transfer size encoding
   tcb_par_mode_t    SUB_MOD = TCB_PAR_PHY_DEF.MOD,  // subordinate data position mode
@@ -57,7 +57,7 @@ module tcb_lib_converter_tb
     UNT: MAN_UNT,
     ADR: MAN_ADR,
     DAT: MAN_DAT,
-    ALW: MAN_ALW,
+    ALN: MAN_ALN,
     // size/mode/order parameters
     SIZ: MAN_SIZ,
     MOD: MAN_MOD,
@@ -74,7 +74,7 @@ module tcb_lib_converter_tb
     UNT: SUB_UNT,
     ADR: SUB_ADR,
     DAT: SUB_DAT,
-    ALW: SUB_ALW,
+    ALN: SUB_ALN,
     // size/mode/order parameters
     SIZ: SUB_SIZ,
     MOD: SUB_MOD,

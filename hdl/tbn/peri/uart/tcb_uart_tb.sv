@@ -38,7 +38,7 @@ module tcb_uart_tb
     UNT: TCB_PAR_PHY_DEF.UNT,
     ADR: ADR,
     DAT: DAT,
-    ALW: $clog2(DAT/TCB_PAR_PHY_DEF.UNT),
+    ALN: $clog2(DAT/TCB_PAR_PHY_DEF.UNT),
     // size/mode/order parameters
     SIZ: TCB_PAR_PHY_DEF.SIZ,
     MOD: TCB_PAR_PHY_DEF.MOD,

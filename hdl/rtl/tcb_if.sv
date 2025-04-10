@@ -35,11 +35,11 @@ interface tcb_if
   // byte enable width (number of units inside data)
   localparam int unsigned PHY_BEN = PHY.DAT / PHY.UNT;
 
-  // logarithm of byte enable width (number of masked address bits for memory access)
-  localparam int unsigned PHY_LOG = $clog2(PHY_BEN);
+  // offset width (number of address bits defining offset of unit inside data)
+  localparam int unsigned PHY_OFF = $clog2(PHY_BEN);
 
-  // logarithmic transfer size width 
-  localparam int unsigned PHY_SIZ = $clog2(PHY_LOG+1);
+  // logarithmic transfer size width
+  localparam int unsigned PHY_SIZ = $clog2(PHY_OFF+1);
 
 ////////////////////////////////////////////////////////////////////////////////
 // I/O ports
@@ -80,9 +80,6 @@ interface tcb_if
   logic stl;  // stall
   logic idl;  // idle
 
-  // misalignment
-  logic mal;
-
   // transfer (valid and ready at the same time)
   assign trn = vld & rdy;
 
@@ -92,24 +89,6 @@ interface tcb_if
   // TODO: improve description
   // idle (either not valid or ending the current cycle with a transfer)
   assign idl = ~vld | trn;
-
-  // TODO: this check only works in TCB_RISC_V mode, add check for TCB_MEMORY mode
-  // misalignment
-  generate
-  if (PHY.ALW > 0) begin: misalignment_mask
-    always_comb
-    begin
-      logic [PHY.ALW-1:0] msk;
-      for (int unsigned i=0; i<PHY.ALW; i++) begin
-        msk[i] = i < req.siz;
-      end
-      mal |= req.adr[PHY.ALW-1:0] & msk;
-    end
-  end: misalignment_mask
-  else begin
-    assign mal = 1'b0;
-  end
-  endgenerate
 
 ////////////////////////////////////////////////////////////////////////////////
 // request read/write enable logic depending on channel configuration
@@ -139,7 +118,8 @@ interface tcb_if
     logic               ena;  // enable
     logic               ren;  // read enable
     logic               ndn;  // endianness
-    logic [PHY.ADR-1:0] adr;  // address
+    logic [PHY_OFF-1:0] off;  // offset
+    logic [PHY.ALN-1:0] aln;  // alignment
     logic [PHY_SIZ-1:0] siz;  // logarithmic transfer size
     logic [PHY_BEN-1:0] ben;  // byte enable
   } dly_t;
@@ -147,10 +127,35 @@ interface tcb_if
   // response pipeline
   dly_t dly [0:PHY.DLY];
 
+  // local offset
+  logic [PHY_OFF-1:0] req_off;
+
+  // local alignment
+  logic [PHY.ALN-1:0] req_aln;
+
   // local byte enable
   logic [PHY_BEN-1:0] req_ben;
 
-  // transfer size encoding
+  // local offset
+  assign req_off = req.adr[PHY_OFF-1:0];
+
+  // TODO: this check only works in TCB_RISC_V mode, add check for TCB_MEMORY mode
+  // misalignment
+  generate
+    if (PHY.ALN > 0) begin: misalignment_mask
+      always_comb
+      begin
+        for (int unsigned i=0; i<PHY.ALN; i++) begin
+          req_aln[i] = (i < req.siz) ? req.adr[PHY.ALN-1:0] : 1'b0;
+        end
+      end
+    end: misalignment_mask
+    else begin
+      assign aln = 1'b0;
+    end
+  endgenerate
+
+    // transfer size encoding
   generate
   case (PHY.MOD)
     TCB_RISC_V: begin: byteenable
@@ -168,7 +173,8 @@ interface tcb_if
   assign dly[0].ena = trn                         ;  // valid
   assign dly[0].ren =       req_ren               ;  // read enable
   assign dly[0].ndn =                 req.ndn     ;  // endianness
-  assign dly[0].adr =                 req.adr     ;  // address
+  assign dly[0].off =                 req_off     ;  // offset
+  assign dly[0].aln =                 req_aln     ;  // alignment
   assign dly[0].siz =                 req.siz     ;  // logarithmic transfer size
   assign dly[0].ben = trn & req_ren ? req_ben : '0;  // byte enable
 
@@ -200,7 +206,6 @@ interface tcb_if
     input  trn,
     input  stl,
     input  idl,
-    input  mal,
     input  dly
   );
 
@@ -219,7 +224,6 @@ interface tcb_if
     input  trn,
     input  stl,
     input  idl,
-    input  mal,
     input  dly
   );
 
@@ -238,7 +242,6 @@ interface tcb_if
     input  trn,
     input  stl,
     input  idl,
-    input  mal,
     input  dly
   );
 

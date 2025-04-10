@@ -100,9 +100,9 @@ module tcb_lib_converter
         TCB_MEMORY: begin: man_memory
 
           // REFERENCE -> MEMORY
-          if (sub.PHY.ALW > 0) begin: alignment
+          if (sub.PHY.ALN > 0) begin: alignment
             // TODO range should be [max:2]
-            assign man.req.adr = {sub.req.adr[sub.PHY.ALW-1:0], sub.PHY.ALW'('0)};
+            assign man.req.adr = {sub.req.adr[sub.PHY.ALN-1:0], sub.PHY.ALN'('0)};
           end: alignment
           else begin
             assign man.req.adr = sub.req.adr;
@@ -149,9 +149,9 @@ module tcb_lib_converter
         TCB_MEMORY: begin: man_memory
 
           // MEMORY -> MEMORY
-          if (sub.PHY.ALW > 0) begin: alignment
+          if (sub.PHY.ALN > 0) begin: alignment
             // TODO range should be [max:2]
-            assign man.req.adr = {sub.req.adr[sub.PHY.ALW-1:0], sub.PHY.ALW'('0)};
+            assign man.req.adr = {sub.req.adr[sub.PHY.ALN-1:0], sub.PHY.ALN'('0)};
           end: alignment
           else begin: noalignment
             assign man.req.adr = sub.req.adr;

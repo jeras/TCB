@@ -57,9 +57,6 @@ module tcb_lib_riscv2memory
 // write/read data
 ////////////////////////////////////////////////////////////////////////////////
 
-  // request/response endianness
-  logic                                        req_mal,     rsp_mal;
-
   // request/response data packed arrays
   logic [sub.PHY_BEN-1:0][sub.PHY.UNT-1:0] sub_req_wdt, sub_rsp_rdt;
   logic [man.PHY_BEN-1:0][man.PHY.UNT-1:0] man_req_wdt, man_rsp_rdt;
@@ -68,7 +65,7 @@ module tcb_lib_riscv2memory
   logic [sub.PHY_BEN-1:0]                  sub_req_ben             ;
 
   // request/response address segment
-  logic [sub.PHY_LOG-1:0]                      req_adr,     rsp_adr;
+  logic [sub.PHY_OFF-1:0]                      req_off,     rsp_off;
 
   // request/response endianness
   logic                                        req_ndn,     rsp_ndn;
@@ -78,13 +75,13 @@ module tcb_lib_riscv2memory
 ////////////////////////////////////////////////////////////////////////////////
 
   // request/response address segment
-  assign req_adr = sub.req             .adr[sub.PHY_LOG-1:0];
-  assign rsp_adr = sub.dly[sub.PHY.DLY].adr[sub.PHY_LOG-1:0];
+  assign req_off = sub.dly[0          ].off;
+  assign rsp_off = sub.dly[sub.PHY.DLY].off;
 
   // mask unaligned address bits
   generate
-    if (sub.PHY.ALW > 0) begin: alignment
-      assign man.req.adr = {sub.req.adr[sub.PHY.ADR-1:sub.PHY.ALW], sub.PHY.ALW'('0)};
+    if (sub.PHY.ALN > 0) begin: alignment
+      assign man.req.adr = {sub.req.adr[sub.PHY.ADR-1:sub.PHY.ALN], sub.PHY.ALN'('0)};
     end: alignment
     else begin
       assign man.req.adr = sub.req.adr;
@@ -106,8 +103,8 @@ module tcb_lib_riscv2memory
   end: ben_riscv
 
   // write/read data packed array to/from vector
-  assign sub_req_wdt = sub.mal ? 'x : sub.req.wdt;
-  assign sub.rsp.rdt =                sub_rsp_rdt;
+  assign sub_req_wdt = sub.req.wdt;
+  assign sub.rsp.rdt = sub_rsp_rdt;
 
   // TODO: do not implement rotations if misaligned accesses are not implemented.
   // request path multiplexer (little/big endian)
@@ -115,12 +112,12 @@ module tcb_lib_riscv2memory
   for (int unsigned i=0; i<sub.PHY_BEN; i++) begin: req_riscv2memory
     unique case (sub.req.ndn)
       TCB_LITTLE: begin
-        man.req.ben[i] = sub_req_ben[(            (i-req_adr)) % sub.PHY_BEN];
-        man_req_wdt[i] = sub_req_wdt[(            (i-req_adr)) % sub.PHY_BEN];
+        man.req.ben[i] = sub_req_ben[(            (i-req_off)) % sub.PHY_BEN];
+        man_req_wdt[i] = sub_req_wdt[(            (i-req_off)) % sub.PHY_BEN];
       end
       TCB_BIG   : begin
-        man.req.ben[i] = sub_req_ben[(sub.PHY_BEN-(i-req_adr)) % sub.PHY_BEN];
-        man_req_wdt[i] = sub_req_wdt[(sub.PHY_BEN-(i-req_adr)) % sub.PHY_BEN];
+        man.req.ben[i] = sub_req_ben[(sub.PHY_BEN-(i-req_off)) % sub.PHY_BEN];
+        man_req_wdt[i] = sub_req_wdt[(sub.PHY_BEN-(i-req_off)) % sub.PHY_BEN];
       end
     endcase
   end: req_riscv2memory
@@ -132,10 +129,10 @@ module tcb_lib_riscv2memory
   for (int unsigned i=0; i<sub.PHY_BEN; i++) begin: rsp_riscv2memory
     unique case (sub.req.ndn)
       TCB_LITTLE: begin
-        sub_rsp_rdt[i] = man_rsp_rdt[(            (i+rsp_adr)) % sub.PHY_BEN];
+        sub_rsp_rdt[i] = man_rsp_rdt[(            (i+rsp_off)) % sub.PHY_BEN];
       end
       TCB_BIG   : begin
-        sub_rsp_rdt[i] = man_rsp_rdt[(sub.PHY_BEN-(i+rsp_adr)) % sub.PHY_BEN];
+        sub_rsp_rdt[i] = man_rsp_rdt[(sub.PHY_BEN-(i+rsp_off)) % sub.PHY_BEN];
       end
     endcase
   end: rsp_riscv2memory

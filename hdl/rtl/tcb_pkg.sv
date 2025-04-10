@@ -69,7 +69,7 @@ package tcb_pkg;
     int unsigned      UNT;  // data unit width (byte width is 8 by default)
     int unsigned      ADR;  // address   width
     int unsigned      DAT;  // data      width
-    int unsigned      ALW;  // alignment width
+    int unsigned      ALN;  // alignment width
     // data packing parameters
     tcb_par_order_t   ORD;  // byte order
     tcb_par_mode_t    MOD;  // data position mode
@@ -85,7 +85,7 @@ package tcb_pkg;
     UNT: 8,
     ADR: 32,
     DAT: 32,
-    ALW: 2,   // $clog2(DAT/UNT)
+    ALN: 2,   // $clog2(DAT/UNT)
     // data packing parameters
     ORD: TCB_DESCENDING,
     MOD: TCB_MEMORY,
@@ -108,7 +108,7 @@ package tcb_pkg;
       bit UNT;
       bit ADR;
       bit DAT;
-      bit ALW;
+      bit ALN;
       bit SIZ;
       bit ORD;
       bit MOD;
@@ -120,7 +120,7 @@ package tcb_pkg;
     status.UNT = phy_val.UNT ==? phy_ref.UNT;
     status.ADR = phy_val.ADR ==? phy_ref.ADR;
     status.DAT = phy_val.DAT ==? phy_ref.DAT;
-    status.ALW = phy_val.ALW ==? phy_ref.ALW;
+    status.ALN = phy_val.ALN ==? phy_ref.ALN;
     status.ORD = phy_val.ORD ==? phy_ref.ORD;
     status.MOD = phy_val.MOD ==? phy_ref.MOD;
     status.CHN = phy_val.CHN ==? phy_ref.CHN;
@@ -130,7 +130,7 @@ package tcb_pkg;
     if (status.UNT)  $error("parameter mismatch PHY.UNT=%d != PHY.UNT=%d", phy_val.UNT, phy_ref.UNT);
     if (status.ADR)  $error("parameter mismatch PHY.ADR=%d != PHY.ADR=%d", phy_val.ADR, phy_ref.ADR);
     if (status.DAT)  $error("parameter mismatch PHY.DAT=%d != PHY.DAT=%d", phy_val.DAT, phy_ref.DAT);
-    if (status.ALW)  $error("parameter mismatch PHY.ALW=%d != PHY.ALW=%d", phy_val.ALW, phy_ref.ALW);
+    if (status.ALN)  $error("parameter mismatch PHY.ALN=%d != PHY.ALN=%d", phy_val.ALN, phy_ref.ALN);
     if (status.ORD)  $error("parameter mismatch PHY.ORD=%d != PHY.ORD=%d", phy_val.ORD, phy_ref.ORD);
     if (status.MOD)  $error("parameter mismatch PHY.MOD=%d != PHY.MOD=%d", phy_val.MOD, phy_ref.MOD);
     if (status.CHN)  $error("parameter mismatch PHY.CHN=%d != PHY.CHN=%d", phy_val.CHN, phy_ref.CHN);
