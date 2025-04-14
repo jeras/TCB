@@ -121,7 +121,7 @@ module tcb_vip_memory
     assign wdt = tcb[i].req.wdt;
 
     // write access
-    always @(posedge tcb[i].clk)
+    always_ff @(posedge tcb[i].clk)
     if (tcb[i].trn) begin
       if (tcb[i].req.wen) begin: write
         for (int unsigned b=0; b<BEN; b++) begin: bytes
