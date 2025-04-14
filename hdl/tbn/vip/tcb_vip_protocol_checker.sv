@@ -66,21 +66,21 @@ module tcb_vip_protocol_checker (
     protocol_check <= 1'b1;
     if (protocol_check) begin
       // VALID must always be defined
-      assert ((tcb.vld !== 1'bx) && (tcb.vld !== 1'bz)) else $fatal("TCB: tcb.vld is undefined.");
+      assert ((tcb.vld !== 1'bx) && (tcb.vld !== 1'bz)) else $fatal(0, "TCB: tcb.vld is undefined.");
       // if VALID is active other request signal must also be defined
       if (tcb.vld == 1'b1) begin
-        assert (( tcb.rdy     !== 1'bx) && ( tcb.rdy     !== 1'bz)) else $fatal("TCB: tcb.rdy is undefined during a cycle.");
-        assert (( tcb.req.wen !== 1'bx) && ( tcb.req.wen !== 1'bz)) else $fatal("TCB: tcb.req.wen is undefined during a cycle.");
+        assert (( tcb.rdy     !== 1'bx) && ( tcb.rdy     !== 1'bz)) else $fatal(0, "TCB: tcb.rdy is undefined during a cycle.");
+        assert (( tcb.req.wen !== 1'bx) && ( tcb.req.wen !== 1'bz)) else $fatal(0, "TCB: tcb.req.wen is undefined during a cycle.");
         case (tcb.PHY.MOD)
 
           TCB_LOG_SIZE:
           begin
-            assert (^tcb.req.siz !== 1'bx) else $fatal("TCB: tcb.req.siz is undefined during a cycle.");
+            assert (^tcb.req.siz !== 1'bx) else $fatal(0, "TCB: tcb.req.siz is undefined during a cycle.");
           end
 
           TCB_BYTE_ENA:
           begin
-            assert (^tcb.req.ben !== 1'bx) else $fatal("TCB: tcb.req.ben is undefined during a cycle.");
+            assert (^tcb.req.ben !== 1'bx) else $fatal(0, "TCB: tcb.req.ben is undefined during a cycle.");
           end
 
           default:
