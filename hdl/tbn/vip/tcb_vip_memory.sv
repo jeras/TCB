@@ -111,7 +111,7 @@ module tcb_vip_memory
 
     // read/write data packed arrays
     logic [BEN-1:0][UNT-1:0] wdt;
-    logic [BEN-1:0][UNT-1:0] rdt [0:DLY];
+    logic [BEN-1:0][UNT-1:0] rdt [0:DLY] = '{default: 'x};
 
     // request address and size
     assign adr =    int'(tcb[i].req.adr);
@@ -137,11 +137,6 @@ module tcb_vip_memory
           endcase
         end: bytes
       end: write
-    end
-
-    // initialize read data array
-    initial begin
-      rdt = '{default: 'x};
     end
 
     // combinational read data
