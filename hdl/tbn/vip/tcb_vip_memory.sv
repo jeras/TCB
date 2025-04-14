@@ -100,105 +100,88 @@ module tcb_vip_memory
   generate
   for (genvar i=0; i<SPN; i++) begin: port
 
-    int unsigned tmp_req_siz;
+    localparam DLY = tcb[i].PHY.DLY;
+    localparam UNT = tcb[i].PHY.UNT;
+    localparam BEN = tcb[i].PHY_BEN;
+
+    // request address and size (TCB_LOG_SIZE mode)
+    int unsigned adr;
+    int unsigned siz;
 
     // read/write data packed arrays
-    logic [tcb[i].PHY_BEN-1:0][tcb[i].PHY.UNT-1:0] tmp_req_wdt;
-    logic [tcb[i].PHY_BEN-1:0][tcb[i].PHY.UNT-1:0] tmp_rsp_rdt [0:tcb[i].PHY.DLY];
+    logic [BEN-1:0][UNT-1:0] wdt;
+    logic [BEN-1:0][UNT-1:0] rdt [0:DLY];
 
-    // as a memory model, there is no immediate need for backpressure, this feature might be added in the future
-    assign tcb[i].rdy = 1'b1;
-
-    // as a memory model, there is no immediate need for error responses, this feature might be added in the future
-    // TODO
-    assign tcb[i].rsp.sts = 1'b0; // '{err: 1'b0, default: '0};
+    // request address and size
+    assign adr =    int'(tcb[i].req.adr);
+    assign siz = 2**int'(tcb[i].req.siz);
 
     // map write data to a packed array
-    assign tmp_req_wdt = tcb[i].req.wdt;
-
-    assign tmp_req_siz = 2**tcb[i].req.siz;
+    assign wdt = tcb[i].req.wdt;
 
     // write access
     always @(posedge tcb[i].clk)
     if (tcb[i].trn) begin
       if (tcb[i].req.wen) begin: write
-        // temporary variables
-        automatic int unsigned adr;
-
-        if (tcb[i].PHY.MOD == TCB_LOG_SIZE) begin: risc_v
-//          $display("DEBUG: tcb[%d]: write adr=%08X=%d, tmp_req_siz=%d, wdt=%08X", i, tcb[i].req.adr, tcb[i].req.adr, tmp_req_siz, tmp_req_wdt);
-          for (int unsigned b=0; b<tcb[i].PHY_BEN; b++) begin: size
-            // byte address
-            adr = b + int'(tcb[i].req.adr);
-            // write only transfer size bytes
-            if (b < tmp_req_siz)  mem[adr%SIZ] <= tmp_req_wdt[b];
-          end: size
-        end: risc_v
-
-        else begin: memory
-//          $display("DEBUG: tcb[%d]: write adr=%08X=%d, ben=%04b, wdt=%08X", i, tcb[i].req.adr, tcb[i].req.adr, tcb[i].req.ben, tmp_req_wdt);
-          for (int unsigned b=0; b<tcb[i].PHY_BEN; b++) begin: byteenable
-            // byte address
-            adr = b + int'(tcb[i].req.adr);
-            if (tcb[i].req.ben[adr%tcb[i].PHY_BEN])  mem[adr%SIZ] <= tmp_req_wdt[adr%tcb[i].PHY_BEN];
-          end: byteenable
-        end: memory
-
+        for (int unsigned b=0; b<BEN; b++) begin: bytes
+          case (tcb[i].PHY.MOD)
+            TCB_LOG_SIZE: begin: log_size
+              // write only transfer size bytes
+              if (b < siz)  mem[(adr+b)%SIZ] <= wdt[b];
+            end: log_size
+            TCB_BYTE_ENA: begin: byte_ena
+              // write only enabled bytes
+              if (tcb[i].req.ben[(adr+b)%BEN])  mem[(adr+b)%SIZ] <= wdt[(adr+b)%BEN];
+            end: byte_ena
+          endcase
+        end: bytes
       end: write
     end
 
     // initialize read data array
     initial begin
-      tmp_rsp_rdt = '{default: 'x};
+      rdt = '{default: 'x};
     end
 
     // combinational read data
     always_comb
     if (tcb[i].trn) begin
       if (~tcb[i].req.wen) begin: read
-        // temporary variables
-        automatic int unsigned adr;
-
-        if (tcb[i].PHY.MOD == TCB_LOG_SIZE) begin: risc_v
-          tmp_rsp_rdt[0] = '{default: 'x};
-          for (int unsigned b=0; b<tcb[i].PHY_BEN; b++) begin: size
-            // byte address
-            adr = b + int'(tcb[i].req.adr);
-            // read only transfer size bytes, the rest are sign/zero extended
-            if (b < tmp_req_siz)  tmp_rsp_rdt[0][b] = mem[adr%SIZ];
-            else                  tmp_rsp_rdt[0][b] = 'x;
-          end: size
-        end: risc_v
-
-        else begin: memory
-          for (int unsigned b=0; b<tcb[i].PHY_BEN; b++) begin: byteenable
-            adr = b + int'(tcb[i].req.adr);
-            if (tcb[i].req.ben[adr%tcb[i].PHY_BEN])  tmp_rsp_rdt[0][adr%tcb[i].PHY_BEN] = mem[adr%SIZ];
-            else                                     tmp_rsp_rdt[0][adr%tcb[i].PHY_BEN] = 'x;
-          end: byteenable
-        end: memory
-
+        for (int unsigned b=0; b<BEN; b++) begin: bytes
+          case (tcb[i].PHY.MOD)
+            TCB_LOG_SIZE: begin: log_size
+              // read only transfer size bytes, the rest remains undefined
+              if (b < siz)  rdt[0][b] = mem[(adr+b)%SIZ];
+              else          rdt[0][b] = 'x;
+            end: log_size
+            TCB_BYTE_ENA: begin: byte_ena
+              // read only enabled bytes, the rest remains undefined
+              if (tcb[i].req.ben[(adr+b)%BEN])  rdt[0][(adr+b)%BEN] = mem[(adr+b)%SIZ];
+              else                              rdt[0][(adr+b)%BEN] = 'x;
+            end: byte_ena
+          endcase
+        end: bytes
       end: read
       else begin
-        tmp_rsp_rdt[0] = 'x;
+        rdt[0] = 'x;
       end
     end else begin
-      tmp_rsp_rdt[0] = 'x;
+      rdt[0] = 'x;
     end
 
     // read data delay pipeline
-    for (genvar d=1; d<=tcb[i].PHY.DLY; d++) begin: delay
+    for (genvar d=1; d<=DLY; d++) begin: delay
       always @(posedge tcb[i].clk)
       begin
 
         if (tcb[i].PHY.MOD == TCB_LOG_SIZE) begin: risc_v
-          tmp_rsp_rdt[d] <= tmp_rsp_rdt[d-1];
+          rdt[d] <= rdt[d-1];
         end: risc_v
 
         else begin: memory
-          for (int unsigned b=0; b<tcb[i].PHY_BEN; b++) begin: byteenable
+          for (int unsigned b=0; b<BEN; b++) begin: byteenable
             if (tcb[i].dly[d-1].ben[b]) begin
-              tmp_rsp_rdt[d][b] <= tmp_rsp_rdt[d-1][b];
+              rdt[d][b] <= rdt[d-1][b];
             end
           end: byteenable
         end: memory
@@ -207,7 +190,14 @@ module tcb_vip_memory
     end: delay
 
     // map read data from an unpacked array
-    assign tcb[i].rsp.rdt = tmp_rsp_rdt[tcb[i].PHY.DLY];
+    assign tcb[i].rsp.rdt = rdt[DLY];
+
+    // as a memory model, there is no immediate need for error responses, this feature might be added in the future
+    // TODO
+    assign tcb[i].rsp.sts = 1'b0; // '{err: 1'b0, default: '0};
+
+    // as a memory model, there is no immediate need for backpressure, this feature might be added in the future
+    assign tcb[i].rdy = 1'b1;
 
   end: port
   endgenerate
