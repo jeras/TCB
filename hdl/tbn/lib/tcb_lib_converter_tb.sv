@@ -28,11 +28,11 @@ module tcb_lib_converter_tb
   int unsigned      MAN_DAT = TCB_PAR_PHY_DEF.DAT,  // data    bus width
   int unsigned      MAN_ALN = TCB_PAR_PHY_DEF.ALN,  // alignment width
   // data packing parameters for manager/subordinate
-  tcb_par_size_t    MAN_SIZ = TCB_PAR_PHY_DEF.SIZ,  // manager     transfer size encoding
-  tcb_par_mode_t    MAN_MOD = TCB_PAR_PHY_DEF.MOD,  // manager     data position mode
-  tcb_par_order_t   MAN_ORD = TCB_PAR_PHY_DEF.ORD,  // manager     byte order
+  tcb_phy_size_t    MAN_SIZ = TCB_PAR_PHY_DEF.SIZ,  // manager     transfer size encoding
+  tcb_phy_mode_t    MAN_MOD = TCB_PAR_PHY_DEF.MOD,  // manager     data position mode
+  tcb_phy_order_t   MAN_ORD = TCB_PAR_PHY_DEF.ORD,  // manager     byte order
   // channel configuration
-  tcb_par_channel_t MAN_CHN = TCB_PAR_PHY_DEF.CHN,  // channel configuration
+  tcb_phy_channel_t MAN_CHN = TCB_PAR_PHY_DEF.CHN,  // channel configuration
 
   // protocol
   int unsigned      SUB_DLY = TCB_PAR_PHY_DEF.DLY,  // response delay
@@ -42,15 +42,15 @@ module tcb_lib_converter_tb
   int unsigned      SUB_DAT = TCB_PAR_PHY_DEF.DAT,  // data    bus width
   int unsigned      SUB_ALN = TCB_PAR_PHY_DEF.ALN,  // alignment width
   // data packing parameters for manager/subordinate
-  tcb_par_size_t    SUB_SIZ = TCB_PAR_PHY_DEF.SIZ,  // subordinate transfer size encoding
-  tcb_par_mode_t    SUB_MOD = TCB_PAR_PHY_DEF.MOD,  // subordinate data position mode
-  tcb_par_order_t   SUB_ORD = TCB_PAR_PHY_DEF.ORD,  // subordinate byte order
+  tcb_phy_size_t    SUB_SIZ = TCB_PAR_PHY_DEF.SIZ,  // subordinate transfer size encoding
+  tcb_phy_mode_t    SUB_MOD = TCB_PAR_PHY_DEF.MOD,  // subordinate data position mode
+  tcb_phy_order_t   SUB_ORD = TCB_PAR_PHY_DEF.ORD,  // subordinate byte order
   // channel configuration
-  tcb_par_channel_t SUB_CHN = TCB_PAR_PHY_DEF.CHN   // channel configuration
+  tcb_phy_channel_t SUB_CHN = TCB_PAR_PHY_DEF.CHN   // channel configuration
 );
 
   // manager physical interface parameter
-  localparam tcb_par_phy_t MAN_PHY = '{
+  localparam tcb_phy_t MAN_PHY = '{
     // protocol
     DLY: MAN_DLY,
     // signal bus widths
@@ -67,7 +67,7 @@ module tcb_lib_converter_tb
   };
 
   // subordinate physical interface parameter
-  localparam tcb_par_phy_t SUB_PHY = '{
+  localparam tcb_phy_t SUB_PHY = '{
     // protocol
     DLY: SUB_DLY,
     // signal bus widths

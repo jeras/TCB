@@ -24,14 +24,14 @@ module tcb_uart_tb
   int unsigned ADR = 32,
   int unsigned DAT = 32,
   // RW channels
-  tcb_par_channel_t CHN = TCB_COMMON_HALF_DUPLEX
+  tcb_phy_channel_t CHN = TCB_COMMON_HALF_DUPLEX
 );
 
   // TODO: parameter propagation through virtual interfaces in classes
   // is not working well in Vivado 2023.1 thus this workaround
 
   // physical interface parameter
-  localparam tcb_par_phy_t PHY1 = '{
+  localparam tcb_phy_t PHY1 = '{
     // protocol
     DLY: 0,
     // signal bus widths
@@ -47,7 +47,7 @@ module tcb_uart_tb
     CHN: TCB_PAR_PHY_DEF.CHN
   };
 
-  localparam tcb_par_phy_t PHY = TCB_PAR_PHY_DEF;
+  localparam tcb_phy_t PHY = TCB_PAR_PHY_DEF;
 
   // GPIO width
   localparam int unsigned GW = 32;

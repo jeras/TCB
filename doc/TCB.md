@@ -464,8 +464,8 @@ The following parameters affect data packing.
 | parameter | default          | type (enumeration) | description |
 |-----------|------------------|--------------------|-------------|
 | `PHY.ALN` | `clog2(DAT/UNT)` | `int unsigned`     | Alignment width, number of least significant address bits which are zero. |
-| `PHY.MOD` | `REFERENCE`      | `tcb_par_mode_t`   | Data position mode. |
-| `PHY.ORD` | `DESCENDING`     | `tcb_par_order_t`  | Byte order, ascending or descending. |
+| `PHY.MOD` | `REFERENCE`      | `tcb_phy_mode_t`   | Data position mode. |
+| `PHY.ORD` | `DESCENDING`     | `tcb_phy_order_t`  | Byte order, ascending or descending. |
 
 Only a subset of 4 configurations from all parameter combinations
 results in practical and useful data packing rule.
@@ -609,7 +609,7 @@ The `CHN` parameter is used to configure channel read/write capabilities.
 
 | parameter | default              | type (enumeration)  | description |
 |-----------|----------------------|---------------------|-------------|
-| `PHY.CHN` | `COMMON_HALF_DUPLEX` | `tcb_par_channel_t` | Channel configuration. |
+| `PHY.CHN` | `COMMON_HALF_DUPLEX` | `tcb_phy_channel_t` | Channel configuration. |
 
 The following configurations are defined,
 

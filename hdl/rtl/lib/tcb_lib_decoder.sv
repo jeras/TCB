@@ -20,7 +20,7 @@ module tcb_lib_decoder
   import tcb_pkg::*;
 #(
   // TCB parameters (contains address width)
-  parameter  tcb_par_phy_t PHY = TCB_PAR_PHY_DEF,
+  parameter  tcb_phy_t PHY = TCB_PAR_PHY_DEF,
   // interconnect parameters (subordinate port number and logarithm)
   parameter  int unsigned SPN = 2,
   localparam int unsigned SPL = $clog2(SPN),

@@ -19,7 +19,7 @@
 interface tcb_if
   import tcb_pkg::*;
 #(
-  tcb_par_phy_t  PHY = TCB_PAR_PHY_DEF,
+  tcb_phy_t  PHY = TCB_PAR_PHY_DEF,
   type tcb_req_cmd_t = tcb_req_cmd_def_t,
   type tcb_rsp_sts_t = tcb_rsp_sts_def_t
 )(

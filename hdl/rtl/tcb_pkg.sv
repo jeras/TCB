@@ -28,7 +28,8 @@ package tcb_pkg;
     TCB_HALF = 1,  //  16-bit half-word
     TCB_WORD = 2,  //  32-bit word
     TCB_DBLE = 3,  //  64-bit double-word
-    TCB_QUAD = 4   // 128-bit quad-word
+    TCB_QUAD = 4,  // 128-bit quad-word
+    TCB_OCTA = 8   // 256-bit octa-word
   } tcb_size_t;
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -39,13 +40,13 @@ package tcb_pkg;
   typedef enum bit {
     TCB_LOG_SIZE = 1'b0,  // logarithmic size
     TCB_BYTE_ENA = 1'b1   // byte enable
-  } tcb_par_mode_t;
+  } tcb_phy_mode_t;
 
   // byte order
   typedef enum bit {
     TCB_DESCENDING = 1'b0,  // descending order
     TCB_ASCENDING  = 1'b1   //  ascending order
-  } tcb_par_order_t;
+  } tcb_phy_order_t;
 
   // channel configuration
   typedef enum bit [2-1:0] {
@@ -54,7 +55,7 @@ package tcb_pkg;
     TCB_COMMON_FULL_DUPLEX = 2'b11,  // common channel with full duplex read/write
     TCB_INDEPENDENT_WRITE  = 2'b01,  // independent write channel
     TCB_INDEPENDENT_READ   = 2'b10   // independent read channel
-  } tcb_par_channel_t;
+  } tcb_phy_channel_t;
 
 ////////////////////////////////////////////////////////////////////////////////
 // parameter structure
@@ -71,14 +72,14 @@ package tcb_pkg;
     int unsigned      DAT;  // data      width
     int unsigned      ALN;  // alignment width
     // data packing parameters
-    tcb_par_order_t   ORD;  // byte order
-    tcb_par_mode_t    MOD;  // data position mode
+    tcb_phy_order_t   ORD;  // byte order
+    tcb_phy_mode_t    MOD;  // data position mode
     // channel configuration
-    tcb_par_channel_t CHN;  // channel configuration
-  } tcb_par_phy_t;
+    tcb_phy_channel_t CHN;  // channel configuration
+  } tcb_phy_t;
 
   // physical interface parameter default
-  localparam tcb_par_phy_t TCB_PAR_PHY_DEF = '{
+  localparam tcb_phy_t TCB_PAR_PHY_DEF = '{
     // protocol
     DLY: 0,
     // signal widths
@@ -97,47 +98,51 @@ package tcb_pkg;
 // parameter structure validation tasks functions
 ////////////////////////////////////////////////////////////////////////////////
 
+  // status structure
+  typedef struct packed {
+    bit DLY;
+    bit UNT;
+    bit ADR;
+    bit DAT;
+    bit ALN;
+    bit SIZ;
+    bit ORD;
+    bit MOD;
+    bit CHN;
+  } tcb_phy_match_t;
+
   // check for equivalence
-  function automatic tcb_par_phy_match(
-    tcb_par_phy_t phy_val,
-    tcb_par_phy_t phy_ref   // reference can contain wildcard values
+  function automatic tcb_phy_match (
+    tcb_phy_t       phy_val,
+    tcb_phy_t       phy_ref,  // reference can contain wildcard values
+    tcb_phy_match_t match = '1
   );
-    // status structure
-    struct packed {
-      bit DLY;
-      bit UNT;
-      bit ADR;
-      bit DAT;
-      bit ALN;
-      bit SIZ;
-      bit ORD;
-      bit MOD;
-      bit CHN;
-    } status;
+    // status for each PHY element
+    tcb_phy_match_t status;
 
     // comparison
-    status.DLY = phy_val.DLY ==? phy_ref.DLY;
-    status.UNT = phy_val.UNT ==? phy_ref.UNT;
-    status.ADR = phy_val.ADR ==? phy_ref.ADR;
-    status.DAT = phy_val.DAT ==? phy_ref.DAT;
-    status.ALN = phy_val.ALN ==? phy_ref.ALN;
-    status.ORD = phy_val.ORD ==? phy_ref.ORD;
-    status.MOD = phy_val.MOD ==? phy_ref.MOD;
-    status.CHN = phy_val.CHN ==? phy_ref.CHN;
+    status.DLY = match ? (phy_val.DLY ==? phy_ref.DLY) : 1'b1;
+    status.UNT = match ? (phy_val.UNT ==? phy_ref.UNT) : 1'b1;
+    status.ADR = match ? (phy_val.ADR ==? phy_ref.ADR) : 1'b1;
+    status.DAT = match ? (phy_val.DAT ==? phy_ref.DAT) : 1'b1;
+    status.ALN = match ? (phy_val.ALN ==? phy_ref.ALN) : 1'b1;
+    status.ORD = match ? (phy_val.ORD ==? phy_ref.ORD) : 1'b1;
+    status.MOD = match ? (phy_val.MOD ==? phy_ref.MOD) : 1'b1;
+    status.CHN = match ? (phy_val.CHN ==? phy_ref.CHN) : 1'b1;
 
     // reporting validation status
-    if (status.DLY)  $error("parameter mismatch PHY.DLY=%d != PHY.DLY=%d", phy_val.DLY, phy_ref.DLY);
-    if (status.UNT)  $error("parameter mismatch PHY.UNT=%d != PHY.UNT=%d", phy_val.UNT, phy_ref.UNT);
-    if (status.ADR)  $error("parameter mismatch PHY.ADR=%d != PHY.ADR=%d", phy_val.ADR, phy_ref.ADR);
-    if (status.DAT)  $error("parameter mismatch PHY.DAT=%d != PHY.DAT=%d", phy_val.DAT, phy_ref.DAT);
-    if (status.ALN)  $error("parameter mismatch PHY.ALN=%d != PHY.ALN=%d", phy_val.ALN, phy_ref.ALN);
-    if (status.ORD)  $error("parameter mismatch PHY.ORD=%d != PHY.ORD=%d", phy_val.ORD, phy_ref.ORD);
-    if (status.MOD)  $error("parameter mismatch PHY.MOD=%d != PHY.MOD=%d", phy_val.MOD, phy_ref.MOD);
-    if (status.CHN)  $error("parameter mismatch PHY.CHN=%d != PHY.CHN=%d", phy_val.CHN, phy_ref.CHN);
+    assert (status.DLY)  $error("TCB PHY parameter mismatch PHY.DLY=%d != PHY.DLY=%d at %m.", phy_val.DLY, phy_ref.DLY);
+    assert (status.UNT)  $error("TCB PHY parameter mismatch PHY.UNT=%d != PHY.UNT=%d at %m.", phy_val.UNT, phy_ref.UNT);
+    assert (status.ADR)  $error("TCB PHY parameter mismatch PHY.ADR=%d != PHY.ADR=%d at %m.", phy_val.ADR, phy_ref.ADR);
+    assert (status.DAT)  $error("TCB PHY parameter mismatch PHY.DAT=%d != PHY.DAT=%d at %m.", phy_val.DAT, phy_ref.DAT);
+    assert (status.ALN)  $error("TCB PHY parameter mismatch PHY.ALN=%d != PHY.ALN=%d at %m.", phy_val.ALN, phy_ref.ALN);
+    assert (status.ORD)  $error("TCB PHY parameter mismatch PHY.ORD=%d != PHY.ORD=%d at %m.", phy_val.ORD, phy_ref.ORD);
+    assert (status.MOD)  $error("TCB PHY parameter mismatch PHY.MOD=%d != PHY.MOD=%d at %m.", phy_val.MOD, phy_ref.MOD);
+    assert (status.CHN)  $error("TCB PHY parameter mismatch PHY.CHN=%d != PHY.CHN=%d at %m.", phy_val.CHN, phy_ref.CHN);
 
     // return simple status
-    return(|status);
-  endfunction: tcb_par_phy_match
+    return(&status);
+  endfunction: tcb_phy_match
 
 ////////////////////////////////////////////////////////////////////////////////
 // endianness (used for runtime signal values)

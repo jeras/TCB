@@ -33,7 +33,7 @@ module tcb_vip_tb
   // is not working well thus this workaround
 
   // physical interface parameter
-  localparam tcb_par_phy_t PHY1 = '{
+  localparam tcb_phy_t PHY1 = '{
     // protocol
     DLY: DLY,
     // signal bus widths
@@ -49,7 +49,7 @@ module tcb_vip_tb
     CHN: TCB_PAR_PHY_DEF.CHN
   };
 
-  localparam tcb_par_phy_t PHY = TCB_PAR_PHY_DEF;
+  localparam tcb_phy_t PHY = TCB_PAR_PHY_DEF;
 
 ////////////////////////////////////////////////////////////////////////////////
 // local signals

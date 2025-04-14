@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// TCB (Tightly Coupled Bus) library log. size to byte enable mode conversion
+// TCB (Tightly Coupled Bus) library: misaligned single cycle memory
 ////////////////////////////////////////////////////////////////////////////////
 // Copyright 2022 Iztok Jeras
 //
@@ -16,7 +16,7 @@
 // limitations under the License.
 ////////////////////////////////////////////////////////////////////////////////
 
-module tcb_lib_logsize2byteena
+module tcb_lib_misaligned_single_cycle_memory
   import tcb_pkg::*;
 (
   // interfaces
@@ -28,25 +28,16 @@ module tcb_lib_logsize2byteena
 // parameter validation
 ////////////////////////////////////////////////////////////////////////////////
 
-`ifndef ALTERA_RESERVED_QIS
+`ifdef ALTERA_RESERVED_QIS
 `else
   // comparing subordinate and manager interface parameters
-  initial
-  begin
-    tcb_phy_match_t match = '{MOD: 1'b0, default: 1'b1};
-    // validate TCB PHY.MOD parameter
-    assert (sub.PHY.MOD == TCB_LOG_SIZE)
-      $fatal("ERROR: %m parameter (sub.PHY.MOD = %s) != TCB_LOG_SIZE", sub.PHY.MOD.name());
-    assert (man.PHY.MOD == TCB_BYTE_ENA)
-      $fatal("ERROR: %m parameter (sub.PHY.MOD = %s) != TCB_LOG_SIZE", man.PHY.MOD.name());
-    // TCB PHY.ORD ASCENDING byte order is not supported
-    assert (sub.PHY.MOD != TCB_DESCENDING)
-      $fatal("ERROR: %m parameter (sub.PHY.ORD = %s) != TCB_DESCENDING", sub.PHY.ORD.name());    
-    // validate remaining TCB PHY parameters
-    assert tcb_phy_match(sub.PHY, man.PHY, match)
-      $fatal("ERROR: %m parameter (sub.PHY = %p) != (man.PHY = %p)", sub.PHY, man.PHY);
-  end
+  generate
+// TODO: this is a converter, parameters will not match
+//    if (sub.PHY != man.PHY)  $error("ERROR: %m parameter (sub.PHY = %p) != (man.PHY = %p)", sub.PHY, man.PHY);
+  endgenerate
 `endif
+
+// TODO: REFERENCE mode with ASCENDING byte order is not supported
 
 // TODO: this file need a proper testbench and a serious cleanup
 
@@ -160,4 +151,4 @@ module tcb_lib_logsize2byteena
   // handshake
   assign sub.rdy = man.rdy;
 
-endmodule: tcb_lib_logsize2byteena
+endmodule: tcb_lib_misaligned_single_cycle_memory
