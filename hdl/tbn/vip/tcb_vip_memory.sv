@@ -21,11 +21,11 @@ module tcb_vip_memory
 //  import tcb_vip_pkg::*;
 #(
   // memory file name
-  string       MFN = "",
+  parameter  string       MFN = "",
   // memory size
-  int unsigned SIZ = 2**8,
+  parameter  int unsigned SIZ = 2**8,
   // slave port number
-  int unsigned SPN = 1
+  parameter  int unsigned SPN = 1
 )(
   // TCB interface
   tcb_if.sub tcb [0:SPN-1]
@@ -100,6 +100,7 @@ module tcb_vip_memory
   generate
   for (genvar i=0; i<SPN; i++) begin: port
 
+    // local copies of TCB PHY parameters
     localparam DLY = tcb[i].PHY.DLY;
     localparam UNT = tcb[i].PHY.UNT;
     localparam BEN = tcb[i].PHY_BEN;
@@ -169,23 +170,24 @@ module tcb_vip_memory
       rdt[0] = 'x;
     end
 
+    // TODO: rethink handling of read data bus when there was no access to a byte
+
     // read data delay pipeline
     for (genvar d=1; d<=DLY; d++) begin: delay
       always @(posedge tcb[i].clk)
       begin
-
-        if (tcb[i].PHY.MOD == TCB_LOG_SIZE) begin: risc_v
-          rdt[d] <= rdt[d-1];
-        end: risc_v
-
-        else begin: memory
-          for (int unsigned b=0; b<BEN; b++) begin: byteenable
-            if (tcb[i].dly[d-1].ben[b]) begin
-              rdt[d][b] <= rdt[d-1][b];
-            end
-          end: byteenable
-        end: memory
-
+        case (tcb[i].PHY.MOD)
+          TCB_LOG_SIZE: begin: log_size
+            rdt[d] <= rdt[d-1];
+          end: log_size
+          TCB_BYTE_ENA: begin: byte_ena
+            for (int unsigned b=0; b<BEN; b++) begin: bytes
+              if (tcb[i].dly[d-1].ben[b]) begin
+                rdt[d][b] <= rdt[d-1][b];
+              end
+            end: bytes
+          end: byte_ena
+        endcase
       end
     end: delay
 
