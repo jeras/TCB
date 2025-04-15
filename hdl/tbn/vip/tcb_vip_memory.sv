@@ -21,14 +21,16 @@ module tcb_vip_memory
 //  import tcb_vip_pkg::*;
 #(
   // memory file name
-  parameter  string       MFN = "",
+  parameter  string        MFN = "",
   // memory size
-  parameter  int unsigned SIZ = 2**8,
-  // slave port number
-  parameter  int unsigned SPN = 1
+  parameter  int unsigned  SIZ,
+  // slave interface number
+  parameter  int unsigned  SPN = 1,
+  // write mask (which interfaces are allowed write access)
+  parameter  bit [SPN-1:0] WRM = '1
 )(
   // TCB interface
-  tcb_if.sub tcb [0:SPN-1]
+  tcb_if.sub tcb [SPN-1:0]
 );
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -120,24 +122,32 @@ module tcb_vip_memory
     // map write data to a packed array
     assign wdt = tcb[i].req.wdt;
 
-    // write access
-    always_ff @(posedge tcb[i].clk)
-    if (tcb[i].trn) begin
-      if (tcb[i].req.wen) begin: write
-        for (int unsigned b=0; b<BEN; b++) begin: bytes
-          case (tcb[i].PHY.MOD)
-            TCB_LOG_SIZE: begin: log_size
-              // write only transfer size bytes
-              if (b < siz)  mem[(adr+b)%SIZ] <= wdt[b];
-            end: log_size
-            TCB_BYTE_ENA: begin: byte_ena
-              // write only enabled bytes
-              if (tcb[i].req.ben[(adr+b)%BEN])  mem[(adr+b)%SIZ] <= wdt[(adr+b)%BEN];
-            end: byte_ena
-          endcase
-        end: bytes
-      end: write
-    end
+    // write mask (which interfaces are allowed write access)
+    // NOTE: `always_ff` provides better simulator performance than `always`,
+    //       but allows only one statement to be able to write into the `mem` array
+
+    if (WRM[i]) begin: write_mask
+
+      // write access
+      always_ff @(posedge tcb[i].clk)
+      if (tcb[i].trn) begin
+        if (tcb[i].req.wen) begin: write
+          for (int unsigned b=0; b<BEN; b++) begin: bytes
+            case (tcb[i].PHY.MOD)
+              TCB_LOG_SIZE: begin: log_size
+                // write only transfer size bytes
+                if (b < siz)  mem[(adr+b)%SIZ] <= wdt[b];
+              end: log_size
+              TCB_BYTE_ENA: begin: byte_ena
+                // write only enabled bytes
+                if (tcb[i].req.ben[(adr+b)%BEN])  mem[(adr+b)%SIZ] <= wdt[(adr+b)%BEN];
+              end: byte_ena
+            endcase
+          end: bytes
+        end: write
+      end
+
+    end: write_mask
 
     // combinational read data
     always_comb
