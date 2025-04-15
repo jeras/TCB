@@ -151,7 +151,7 @@ interface tcb_if
       end
     end: misalignment_mask
     else begin
-      assign aln = 1'b0;
+      assign req_aln = 1'b0;
     end
   endgenerate
 
