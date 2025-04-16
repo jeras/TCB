@@ -31,63 +31,40 @@ module tcb_vip_protocol_checker (
   tcb_if #(.PHY (tcb.PHY)) dly (.clk (tcb.clk), .rst (tcb.rst));
 
 ////////////////////////////////////////////////////////////////////////////////
-// delay TCB signals
-////////////////////////////////////////////////////////////////////////////////
-
-  // delayed signals
-  always_ff @(posedge tcb.clk, posedge tcb.rst)
-  if (tcb.rst) begin
-    // TCB
-    dly.vld <= '0;
-    dly.req <= '{default: 'x};
-    dly.rsp <= '{default: 'x};
-    dly.rdy <= '1;
-  end else begin
-    // TCB
-    dly.vld <= tcb.vld;
-    dly.req <= tcb.req;
-    dly.rsp <= tcb.rsp;
-    dly.rdy <= tcb.rdy;
-  end
-
-// TODO: add checking whether data is unchanging while valid
-
-////////////////////////////////////////////////////////////////////////////////
 // protocol monitor
 ////////////////////////////////////////////////////////////////////////////////
 
-
-  // used to skip first clock posedge at time 0
-  logic protocol_check = 1'b0;
-
   always_ff @(posedge tcb.clk)
-  begin
-    // skip first clock posedge at time 0
-    protocol_check <= 1'b1;
-    if (protocol_check) begin
-      // VALID must always be defined
-      assert ((tcb.vld !== 1'bx) && (tcb.vld !== 1'bz)) else $fatal(0, "TCB: tcb.vld is undefined.");
-      // if VALID is active other request signal must also be defined
+  if ($realtime > 0) begin
+    // valid/ready known
+    assert (!$isunknown(tcb.vld)) else $fatal(0, "TCB %m: tcb.vld is unknown.");
+    // TODO: reconsider whether ready must always be known
+    assert (!$isunknown(tcb.rdy)) else $fatal(0, "TCB %m: tcb.rdy is unknown.");
+    // reset state
+    if (tcb.rst) begin
+      assert(~tcb.vld) else $fatal(0, "TCB %m: valid must be low during reset.");
+    end
+    // reset sequence
+    if ($fell(tcb.rst)) begin
+      assert(~tcb.vld) else $fatal(0, "TCB %m: valid must be low during first cycle after reset release.");
+    end
+    // operation
+    if (~tcb.rst) begin
+      // while valid
       if (tcb.vld == 1'b1) begin
-        assert (( tcb.rdy     !== 1'bx) && ( tcb.rdy     !== 1'bz)) else $fatal(0, "TCB: tcb.rdy is undefined during a cycle.");
-        assert (( tcb.req.wen !== 1'bx) && ( tcb.req.wen !== 1'bz)) else $fatal(0, "TCB: tcb.req.wen is undefined during a cycle.");
+        // ready known
+        assert (!$isunknown(tcb.rdy)) else $fatal(0, "TCB %m: tcb.rdy is unknown during a valid cycle.");
+        // write enable defined/driven     
+        assert (!$isunknown(tcb.req.wen)) else $fatal(0, "TCB %m: tcb.req.wen is unknown during a cycle.");
         case (tcb.PHY.MOD)
-
-          TCB_LOG_SIZE:
-          begin
-            assert (^tcb.req.siz !== 1'bx) else $fatal(0, "TCB: tcb.req.siz is undefined during a cycle.");
-          end
-
-          TCB_BYTE_ENA:
-          begin
-            assert (^tcb.req.ben !== 1'bx) else $fatal(0, "TCB: tcb.req.ben is undefined during a cycle.");
-          end
-
-          default:
-          begin
-          end
+          TCB_LOG_SIZE: assert (!$isunknown(tcb.req.siz)) else $fatal(0, "TCB %m: tcb.req.siz is unknown during a cycle.");
+          TCB_BYTE_ENA: assert (!$isunknown(tcb.req.ben)) else $fatal(0, "TCB %m: tcb.req.ben is unknown during a cycle.");
         endcase
         // TODO: check other signals too
+      end
+      // while stalling
+      if (tcb.stl) begin
+        assert ($stable(tcb.req)) else $fatal(0, "TCB %m: tcb.req is unstable during a stall.");
       end
     end
   end
