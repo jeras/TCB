@@ -35,7 +35,7 @@ interface tcb_if
   // byte enable width (number of units inside data)
   localparam int unsigned PHY_BEN = PHY.DAT / PHY.UNT;
 
-  // offset width (number of address bits defining offset of unit inside data)
+  // offset width (number of address bits defining the offset of units inside data)
   localparam int unsigned PHY_OFF = $clog2(PHY_BEN);
 
   // logarithmic transfer size width

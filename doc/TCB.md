@@ -358,7 +358,7 @@ read enable `ren` is not accessible by the used,
 internally it is assigned the negated value of write enable `wen`.
 
 The transfer size signal `siz` is an alternative signal to byte enable `ben`.
-The choice between the two alternatives is described in the [data packing section]().
+The choice between the two alternatives is described in the [data packing section](TODO).
 
 (*) How exactly the width of the `siz` signal depends on the `SIZ` parameter
     is described in the [data packing section]().
@@ -419,7 +419,7 @@ ROM would be an example of a device which only requires the read data bus.
 When constructing subsets, please consider other protocols (AXI-Stream, ...)
 which might be more appropriate.
 
-To connect a managers and a subordinates with a differing set of optional signals,
+To connecting a manager and a subordinate with differing sets of optional signals,
 an adapter is needed which would provide:
 - a default for outputs and
 - a handler for inputs.
@@ -430,7 +430,7 @@ Default output values can always be ignored by an input handler, or simply no ha
 
 The following table defines some defaults and handlers.
 
-| usecase      | signal    | default  | handler |
+| use case     | signal    | default  | handler |
 |--------------|-----------|----------|---------|
 | interconnect | `req.cmd` |    `'b0` | Subordinates can ignore it. |
 | ROM          | `req.wen` |   `1'b0` | Respond with error on write access to subordinate without write support. |
@@ -448,7 +448,7 @@ The custom request command also has sensible defaults.
 
 ### Data packing
 
-A combination of parameters and runtime signals defines how
+A combination of parameters and runtime signals define how
 bytes (smallest data units) are organized inside the read/write data bus,
 and across transfers for multi transfer transactions.
 
@@ -461,11 +461,12 @@ and then provide examples of packing with some parameter configurations.
 
 The following parameters affect data packing.
 
-| parameter | default          | type (enumeration) | description |
-|-----------|------------------|--------------------|-------------|
-| `PHY.ALN` | `clog2(DAT/UNT)` | `int unsigned`     | Alignment width, number of least significant address bits which are zero. |
-| `PHY.MOD` | `LOG_SIZE`       | `tcb_phy_mode_t`   | Data position mode. |
-| `PHY.ORD` | `DESCENDING`     | `tcb_phy_order_t`  | Byte order, ascending or descending. |
+| parameter | default      | type (enumeration) | description |
+|-----------|--------------|--------------------|-------------|
+| `PHY.MIN` | `clog2(BEN)` | TODO
+| `PHY.ALN` | `clog2(BEN)` | `int unsigned`     | Alignment width, number of least significant address bits which are zero. |
+| `PHY.MOD` | `LOG_SIZE`   | `tcb_phy_mode_t`   | Data position mode. |
+| `PHY.ORD` | `DESCENDING` | `tcb_phy_order_t`  | Byte order, ascending or descending. |
 
 Only a subset of 4 configurations from all parameter combinations
 results in practical and useful data packing rule.
@@ -663,15 +664,13 @@ during a read access the write data enable decoder is not active.
 
 ### Data packing examples
 
-All provided examples are configured for:
-- logarithmic size `SIZ=LOGARITHMIC`,
-- descending order `ORD=DESCENDING`.
+All provided examples are configured for descending order `ORD=DESCENDING`.
 Examples are given for the next data packing configurations:
 - logarithmic size mode, fixed of variable size transfers with and without misaligned access support,
 - byte enable mode, with and without misaligned access support, for both little and big endianness.
 
 The examples list all supported read/write transfers in a table.
-Unsupported transfers can be handles by ignoring the request and responding with an error.
+Unsupported transfers can be handled by ignoring the request and responding with an error.
 Alternatively unsupported transfers can just cause undefined behavior.
 
 #### Logarithmic size mode
@@ -679,16 +678,17 @@ Alternatively unsupported transfers can just cause undefined behavior.
 Examples for the following logarithmic size mode configurations are provided:
 - data bus width sized transfers with size aligned address,
 - any size transfers with size aligned address,
-- any size transfers with no alignment restrictions address,
+- any size transfers with no address alignment restrictions,
 - instruction fetch for RISC-V with C extension.
 
-##### Fixed data width
+##### Full data width, aligned address
 
 It is common to only allow full data bus width and aligned transfers when accessing peripherals.
 This case would specify the following parameter values and signal restrictions:
 - logarithmic size mode `MOD=LOG_SIZE`,
-- full alignment required `ALN=$clog2(DAT/UNT)=clog2(BEN)`
-- transfer size equal to data bus width `siz==$clog2(ALN)`,
+- 
+- full alignment required `ALN=clog2(BEN)`
+- transfer size equal to data bus width `siz==$clog2(ALN)`,  TODO
 - aligned address to data bus width `adr[ALN-1:0]=='0`,
 - the transfer endianness `ndn` is ignored.
 
@@ -712,15 +712,37 @@ This case would specify the following parameter values and signal restrictions:
 
 The following table lists such transfers for a 32-bit data bus.
 
-| size | `adr[1:0]` | `siz[1:0]` | `wdt[31:00]`/`rdt[31:00]` |
-|------|------------|------------|---------------------------|
-| byte | `2'd0`     | `2'd0`     | `{  8'bXX,   8'bXX,   8'bXX, [07:00]}` |
-| byte | `2'd1`     | `2'd0`     | `{  8'bXX,   8'bXX,   8'bXX, [07:00]}` |
-| byte | `2'd2`     | `2'd0`     | `{  8'bXX,   8'bXX,   8'bXX, [07:00]}` |
-| byte | `2'd3`     | `2'd0`     | `{  8'bXX,   8'bXX,   8'bXX, [07:00]}` |
-| half | `2'd0`     | `2'd1`     | `{  8'bXX,   8'bXX, [15:08], [07:00]}` |
-| half | `2'd2`     | `2'd1`     | `{  8'bXX,   8'bXX, [15:08], [07:00]}` |
-| word | `2'd0`     | `2'd2`     | `{[31:24], [23:16], [15:08], [07:00]}` |
+| `siz`  | `off`  | `wdt[31:00]`/`rdt[31:00]` |
+|--------|--------|---------------------------|
+| `2'd0` | `3'd0` | `{       ,        ,        , [07:00]}` |
+| `2'd0` | `3'd1` | `{       ,        ,        , [07:00]}` |
+| `2'd0` | `3'd2` | `{       ,        ,        , [07:00]}` |
+| `2'd0` | `3'd3` | `{       ,        ,        , [07:00]}` |
+| `2'd0` | `3'd4` | `{       ,        ,        , [07:00]}` |
+| `2'd0` | `3'd5` | `{       ,        ,        , [07:00]}` |
+| `2'd0` | `3'd6` | `{       ,        ,        , [07:00]}` |
+| `2'd0` | `3'd7` | `{       ,        ,        , [07:00]}` |
+| `2'd1` | `3'd0` | `{       ,        , [15:08], [07:00]}` |
+| `2'd1` | `3'd2` | `{       ,        , [15:08], [07:00]}` |
+| `2'd1` | `3'd4` | `{       ,        , [15:08], [07:00]}` |
+| `2'd1` | `3'd6` | `{       ,        , [15:08], [07:00]}` |
+| `2'd2` | `3'd0` | `{       , [31:16], [15:08], [07:00]}` |
+| `2'd2` | `3'd4` | `{       , [31:16], [15:08], [07:00]}` |
+| `2'd3` | `3'd0` | `{[63:32], [31:16], [15:08], [07:00]}` |
+
+TODO: define the offset somewhere.
+The offset is `off = adr[PHY_OFF-1:0]`.
+
+| size | `off`  | `siz`  | mapping |
+|------|--------|--------|----------------------------|
+| byte | `3'd0` | `2'd0` | `{    ,     ,     , 3'd0}` |
+| byte | `3'd1` | `2'd0` | `{    ,     ,     , 3'd0}` |
+| byte | `3'd2` | `2'd0` | `{    ,     ,     , 3'd0}` |
+| byte | `3'd3` | `2'd0` | `{    ,     ,     , 3'd0}` |
+| half | `3'd0` | `2'd1` | `{    ,     , 3'd1, 3'd0}` |
+| half | `3'd2` | `2'd1` | `{    ,     , 3'd1, 3'd0}` |
+| word | `3'd0` | `2'd2` | `{3'd3, 3'd2, 3'd1, 3'd0}` |
+
 
 Such a configuration is also appropriate for a load/store CPU interface,
 since it covers all aligned memory accesses.
@@ -744,14 +766,14 @@ The following table lists such transfers for a 32-bit data bus.
 
 | size | alignment  | `adr[1:0]` | `siz[1:0]` | `wdt[31:00]`/`rdt[31:00]` |
 |------|------------|------------|------------|---------------------------|
-| byte |    aligned | `2'd0`     | `2'd0`     | `{  8'bXX,   8'bXX,   8'bXX, [07:00]}` |
-| byte |    aligned | `2'd1`     | `2'd0`     | `{  8'bXX,   8'bXX,   8'bXX, [07:00]}` |
-| byte |    aligned | `2'd2`     | `2'd0`     | `{  8'bXX,   8'bXX,   8'bXX, [07:00]}` |
-| byte |    aligned | `2'd3`     | `2'd0`     | `{  8'bXX,   8'bXX,   8'bXX, [07:00]}` |
-| half |    aligned | `2'd0`     | `2'd1`     | `{  8'bXX,   8'bXX, [15:08], [07:00]}` |
-| half | misaligned | `2'd1`     | `2'd1`     | `{  8'bXX,   8'bXX, [15:08], [07:00]}` |
-| half |    aligned | `2'd2`     | `2'd1`     | `{  8'bXX,   8'bXX, [15:08], [07:00]}` |
-| half | misaligned | `2'd3`     | `2'd1`     | `{  8'bXX,   8'bXX, [15:08], [07:00]}` |
+| byte |    aligned | `2'd0`     | `2'd0`     | `{       ,        ,        , [07:00]}` |
+| byte |    aligned | `2'd1`     | `2'd0`     | `{       ,        ,        , [07:00]}` |
+| byte |    aligned | `2'd2`     | `2'd0`     | `{       ,        ,        , [07:00]}` |
+| byte |    aligned | `2'd3`     | `2'd0`     | `{       ,        ,        , [07:00]}` |
+| half |    aligned | `2'd0`     | `2'd1`     | `{       ,        , [15:08], [07:00]}` |
+| half | misaligned | `2'd1`     | `2'd1`     | `{       ,        , [15:08], [07:00]}` |
+| half |    aligned | `2'd2`     | `2'd1`     | `{       ,        , [15:08], [07:00]}` |
+| half | misaligned | `2'd3`     | `2'd1`     | `{       ,        , [15:08], [07:00]}` |
 | word |    aligned | `2'd0`     | `2'd2`     | `{[31:24], [23:16], [15:08], [07:00]}` |
 | word | misaligned | `2'd1`     | `2'd2`     | `{[31:24], [23:16], [15:08], [07:00]}` |
 | word | misaligned | `2'd2`     | `2'd2`     | `{[31:24], [23:16], [15:08], [07:00]}` |
@@ -820,35 +842,64 @@ is shown in the following chapters.
 
 | size | alignment  | `adr[1:0]` | `ben[3:0]` | `wdt[31:00]`/`rdt[31:00]` |
 |------|------------|------------|------------|---------------------------|
-| byte |    aligned | `2'd0`     | `4'b0001`  | `{  8'bXX,   8'bXX,   8'bXX, [07:00]}` |
-| byte |    aligned | `2'd1`     | `4'b0010`  | `{  8'bXX,   8'bXX, [07:00],   8'bXX}` |
-| byte |    aligned | `2'd2`     | `4'b0100`  | `{  8'bXX, [07:00],   8'bXX,   8'bXX}` |
-| byte |    aligned | `2'd3`     | `4'b1000`  | `{[07:00],   8'bXX,   8'bXX,   8'bXX}` |
-| half |    aligned | `2'd0`     | `4'b0011`  | `{  8'bXX,   8'bXX, [15:08], [07:00]}` |
-| half | misaligned | `2'd1`     | `4'b0110`  | `{  8'bXX, [15:08], [07:00],   8'bXX}` |
-| half |    aligned | `2'd2`     | `4'b1100`  | `{[15:08], [07:00],   8'bXX,   8'bXX}` |
-| half | misaligned | `2'd3`     | `4'b1001`  | `{[07:00],   8'bXX,   8'bXX, [15:08]}` |
-| word |    aligned | `2'd0`     | `4'b1111`  | `{[31:24], [23:16], [15:08], [07:00]}` |
-| word | misaligned | `2'd1`     | `4'b1111`  | `{[23:16], [15:08], [07:00], [31:24]}` |
-| word | misaligned | `2'd2`     | `4'b1111`  | `{[15:08], [07:00], [31:24], [23:16]}` |
-| word | misaligned | `2'd3`     | `4'b1111`  | `{[07:00], [31:24], [23:16], [15:08]}` |
+| byte |    aligned | `2'd0`     | `4'b0001`  | `{       ,       ,       ,[07:00]}` |
+| byte |    aligned | `2'd1`     | `4'b0010`  | `{       ,       ,[07:00],       }` |
+| byte |    aligned | `2'd2`     | `4'b0100`  | `{       ,[07:00],       ,       }` |
+| byte |    aligned | `2'd3`     | `4'b1000`  | `{[07:00],       ,       ,       }` |
+| half |    aligned | `2'd0`     | `4'b0011`  | `{       ,       ,[15:08],[07:00]}` |
+| half | misaligned | `2'd1`     | `4'b0110`  | `{       ,[15:08],[07:00],       }` |
+| half |    aligned | `2'd2`     | `4'b1100`  | `{[15:08],[07:00],       ,       }` |
+| half | misaligned | `2'd3`     | `4'b1001`  | `{[07:00],       ,       ,[15:08]}` |
+| word |    aligned | `2'd0`     | `4'b1111`  | `{[31:24],[23:16],[15:08],[07:00]}` |
+| word | misaligned | `2'd1`     | `4'b1111`  | `{[23:16],[15:08],[07:00],[31:24]}` |
+| word | misaligned | `2'd2`     | `4'b1111`  | `{[15:08],[07:00],[31:24],[23:16]}` |
+| word | misaligned | `2'd3`     | `4'b1111`  | `{[07:00],[31:24],[23:16],[15:08]}` |
+
+| size | alignment  | `adr[2:0]` | `ben[3:0]` | `wdt[31:00]`/`rdt[31:00]` |
+|------|------------|------------|------------|---------------------------|
+| byte |    aligned | `3'd0`     | `8'b00000001`  | `{       ,       ,       ,       ,       ,       ,       ,[07:00]}` |
+| byte |    aligned | `3'd1`     | `8'b00000010`  | `{       ,       ,       ,       ,       ,       ,[07:00],       }` |
+| byte |    aligned | `3'd2`     | `8'b00000100`  | `{       ,       ,       ,       ,       ,[07:00],       ,       }` |
+| byte |    aligned | `3'd3`     | `8'b00001000`  | `{       ,       ,       ,       ,[07:00],       ,       ,       }` |
+| byte |    aligned | `3'd4`     | `8'b00010000`  | `{       ,       ,       ,[07:00],       ,       ,       ,       }` |
+| byte |    aligned | `3'd5`     | `8'b00100000`  | `{       ,       ,[07:00],       ,       ,       ,       ,       }` |
+| byte |    aligned | `3'd6`     | `8'b01000000`  | `{       ,[07:00],       ,       ,       ,       ,       ,       }` |
+| byte |    aligned | `3'd7`     | `8'b10000000`  | `{[07:00],       ,       ,       ,       ,       ,       ,       }` |
+| half |    aligned | `2'd0`     | `4'b00000011`  | `{       ,       ,       ,       ,       ,       ,[15:08],[07:00]}` |
+| half | misaligned | `2'd1`     | `4'b00000110`  | `{       ,       ,       ,       ,       ,[15:08],[07:00],       }` |
+| half |    aligned | `2'd2`     | `4'b00001100`  | `{       ,       ,       ,       ,[15:08],[07:00],       ,       }` |
+| half | misaligned | `2'd3`     | `4'b00011000`  | `{       ,       ,       ,[15:08],[07:00],       ,       ,       }` |
+| half |    aligned | `2'd4`     | `4'b00110000`  | `{       ,       ,[15:08],[07:00],       ,       ,       ,       }` |
+| half | misaligned | `2'd5`     | `4'b01100000`  | `{       ,[15:08],[07:00],       ,       ,       ,       ,       }` |
+| half |    aligned | `2'd6`     | `4'b11000000`  | `{[15:08],[07:00],       ,       ,       ,       ,       ,       }` |
+| half | misaligned | `2'd7`     | `4'b10000001`  | `{[07:00],       ,       ,       ,       ,       ,       ,[15:08]}` |
+| word |    aligned | `2'd0`     | `4'b00001111`  | `{       ,       ,       ,       ,[31:24],[23:16],[15:08],[07:00]}` |
+| word | misaligned | `2'd1`     | `4'b00011110`  | `{       ,       ,       ,[31:24],[23:16],[15:08],[07:00],       }` |
+| word | misaligned | `2'd2`     | `4'b00111100`  | `{       ,       ,[31:24],[23:16],[15:08],[07:00],       ,       }` |
+| word | misaligned | `2'd3`     | `4'b01111000`  | `{       ,[31:24],[23:16],[15:08],[07:00],       ,       ,       }` |
+| word |    aligned | `2'd4`     | `4'b11110000`  | `{[31:24],[23:16],[15:08],[07:00],       ,       ,       ,       }` |
+| word | misaligned | `2'd5`     | `4'b11100001`  | `{[23:16],[15:08],[07:00],       ,       ,       ,       ,[31:24]}` |
+| word | misaligned | `2'd6`     | `4'b11000011`  | `{[15:08],[07:00],       ,       ,       ,       ,[31:24],[23:16]}` |
+| word | misaligned | `2'd7`     | `4'b10000111`  | `{[07:00],       ,       ,       ,       ,[31:24],[23:16],[15:08]}` |
+
+TODO
 
 #### Big endian (any alignment)
 
 | size | alignment  | `adr[1:0]` | `ben[0:3]` | `wdt[00:31]`/`rdt[00:31]` |
 |------|------------|------------|------------|---------------------------|
-| byte |    aligned | `2'd0`     | `4'b1000`  | `{[00:07],   8'bXX,   8'bXX,   8'bXX}` |
-| byte |    aligned | `2'd1`     | `4'b0100`  | `{  8'bXX, [00:07],   8'bXX,   8'bXX}` |
-| byte |    aligned | `2'd2`     | `4'b0010`  | `{  8'bXX,   8'bXX, [00:07],   8'bXX}` |
-| byte |    aligned | `2'd3`     | `4'b0001`  | `{  8'bXX,   8'bXX,   8'bXX, [00:07]}` |
-| half |    aligned | `2'd0`     | `4'b1100`  | `{[00:07], [08:15],   8'bXX,   8'bXX}` |
-| half | misaligned | `2'd1`     | `4'b0110`  | `{  8'bXX, [00:07], [08:15],   8'bXX}` |
-| half |    aligned | `2'd2`     | `4'b0011`  | `{  8'bXX,   8'bXX, [00:07], [08:15]}` |
-| half | misaligned | `2'd3`     | `4'b1001`  | `{[08:15],   8'bXX,   8'bXX, [00:07]}` |
-| word |    aligned | `2'd0`     | `4'b1111`  | `{[00:07], [08:15], [16:23], [24:31]}` |
-| word | misaligned | `2'd1`     | `4'b1111`  | `{[24:31], [00:07], [08:15], [16:23]}` |
-| word | misaligned | `2'd2`     | `4'b1111`  | `{[16:23], [24:31], [00:07], [08:15]}` |
-| word | misaligned | `2'd3`     | `4'b1111`  | `{[08:15], [16:23], [24:31], [00:07]}` |
+| byte |    aligned | `2'd0`     | `4'b1000`  | `{[00:07],       ,       ,       }` |
+| byte |    aligned | `2'd1`     | `4'b0100`  | `{       ,[00:07],       ,       }` |
+| byte |    aligned | `2'd2`     | `4'b0010`  | `{       ,       ,[00:07],       }` |
+| byte |    aligned | `2'd3`     | `4'b0001`  | `{       ,       ,       ,[00:07]}` |
+| half |    aligned | `2'd0`     | `4'b1100`  | `{[00:07],[08:15],       ,       }` |
+| half | misaligned | `2'd1`     | `4'b0110`  | `{       ,[00:07],[08:15],       }` |
+| half |    aligned | `2'd2`     | `4'b0011`  | `{       ,       ,[00:07],[08:15]}` |
+| half | misaligned | `2'd3`     | `4'b1001`  | `{[08:15],       ,       ,[00:07]}` |
+| word |    aligned | `2'd0`     | `4'b1111`  | `{[00:07],[08:15],[16:23],[24:31]}` |
+| word | misaligned | `2'd1`     | `4'b1111`  | `{[24:31],[00:07],[08:15],[16:23]}` |
+| word | misaligned | `2'd2`     | `4'b1111`  | `{[16:23],[24:31],[00:07],[08:15]}` |
+| word | misaligned | `2'd3`     | `4'b1111`  | `{[08:15],[16:23],[24:31],[00:07]}` |
 
 #### Misalignment handler
 

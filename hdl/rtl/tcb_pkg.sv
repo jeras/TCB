@@ -70,8 +70,9 @@ package tcb_pkg;
     int unsigned      UNT;  // data unit width (byte width is 8 by default)
     int unsigned      ADR;  // address   width
     int unsigned      DAT;  // data      width
-    int unsigned      ALN;  // alignment width
     // data packing parameters
+    int unsigned      ALN;  // alignment (number of aligned address bits)
+    int unsigned      MIN;  // minimum transfer logarithmic size
     tcb_phy_order_t   ORD;  // byte order
     tcb_phy_mode_t    MOD;  // data position mode
     // channel configuration
@@ -86,8 +87,9 @@ package tcb_pkg;
     UNT: 8,
     ADR: 32,
     DAT: 32,
-    ALN: 2,   // $clog2(DAT/UNT)
     // data packing parameters
+    ALN: 0,   // maximum $clog2(DAT/UNT)
+    MIN: 0,   // maximum $clog2(DAT/UNT)
     ORD: TCB_DESCENDING,
     MOD: TCB_BYTE_ENA,
     // channel configuration
@@ -105,6 +107,7 @@ package tcb_pkg;
     bit ADR;
     bit DAT;
     bit ALN;
+    bit MIN;
     bit SIZ;
     bit ORD;
     bit MOD;
@@ -126,6 +129,7 @@ package tcb_pkg;
     status.ADR = match ? (phy_val.ADR ==? phy_ref.ADR) : 1'b1;
     status.DAT = match ? (phy_val.DAT ==? phy_ref.DAT) : 1'b1;
     status.ALN = match ? (phy_val.ALN ==? phy_ref.ALN) : 1'b1;
+    status.MIN = match ? (phy_val.MIN ==? phy_ref.MIN) : 1'b1;
     status.ORD = match ? (phy_val.ORD ==? phy_ref.ORD) : 1'b1;
     status.MOD = match ? (phy_val.MOD ==? phy_ref.MOD) : 1'b1;
     status.CHN = match ? (phy_val.CHN ==? phy_ref.CHN) : 1'b1;
@@ -136,6 +140,7 @@ package tcb_pkg;
     assert (status.ADR)  $error("TCB PHY parameter mismatch PHY.ADR=%d != PHY.ADR=%d at %m.", phy_val.ADR, phy_ref.ADR);
     assert (status.DAT)  $error("TCB PHY parameter mismatch PHY.DAT=%d != PHY.DAT=%d at %m.", phy_val.DAT, phy_ref.DAT);
     assert (status.ALN)  $error("TCB PHY parameter mismatch PHY.ALN=%d != PHY.ALN=%d at %m.", phy_val.ALN, phy_ref.ALN);
+    assert (status.MIN)  $error("TCB PHY parameter mismatch PHY.MIN=%d != PHY.MIN=%d at %m.", phy_val.MIN, phy_ref.MIN);
     assert (status.ORD)  $error("TCB PHY parameter mismatch PHY.ORD=%d != PHY.ORD=%d at %m.", phy_val.ORD, phy_ref.ORD);
     assert (status.MOD)  $error("TCB PHY parameter mismatch PHY.MOD=%d != PHY.MOD=%d at %m.", phy_val.MOD, phy_ref.MOD);
     assert (status.CHN)  $error("TCB PHY parameter mismatch PHY.CHN=%d != PHY.CHN=%d at %m.", phy_val.CHN, phy_ref.CHN);
