@@ -120,54 +120,89 @@ module tcb_lib_logsize2byteena
   generate
   if (ALLIGNED) begin
 
-  // write access
-  always_comb
-  begin
-    case (sub.req.siz)
-      0 : case (req_off)
-        2'b00: begin man_req_wdt = '{0: sub_req_wdt[0], default: 'x}; man.req.ben = 4'b0001; end
-        2'b01: begin man_req_wdt = '{1: sub_req_wdt[0], default: 'x}; man.req.ben = 4'b0010; end
-        2'b10: begin man_req_wdt = '{2: sub_req_wdt[0], default: 'x}; man.req.ben = 4'b0100; end
-        2'b11: begin man_req_wdt = '{3: sub_req_wdt[0], default: 'x}; man.req.ben = 4'b1000; end
+    // write access
+    always_comb
+    begin
+      case (sub.req.siz)
+        0 : case (req_off)
+          2'b00: begin man_req_wdt = '{0: sub_req_wdt[0], default: 'x}; man.req.ben = 4'b0001; end
+          2'b01: begin man_req_wdt = '{1: sub_req_wdt[0], default: 'x}; man.req.ben = 4'b0010; end
+          2'b10: begin man_req_wdt = '{2: sub_req_wdt[0], default: 'x}; man.req.ben = 4'b0100; end
+          2'b11: begin man_req_wdt = '{3: sub_req_wdt[0], default: 'x}; man.req.ben = 4'b1000; end
+        endcase
+        1 : case (req_off[1])
+          1'b0 : begin man_req_wdt = '{1: sub_req_wdt[1], 0: sub_req_wdt[0], default: 'x}; man.req.ben = 4'b0011; end
+          1'b1 : begin man_req_wdt = '{3: sub_req_wdt[1], 2: sub_req_wdt[0], default: 'x}; man.req.ben = 4'b1100; end
+        endcase
+        2      : begin man_req_wdt = sub_req_wdt   ; man.req.ben = 4'b1111; end
+        default: begin man_req_wdt = '{default: 'x}; man.req.ben = 4'bxxxx; end
       endcase
-      1 : case (req_off[1])
-        1'b0 : begin man_req_wdt = '{1: sub_req_wdt[1], 0: sub_req_wdt[0], default: 'x}; man.req.ben = 4'b0011; end
-        1'b1 : begin man_req_wdt = '{3: sub_req_wdt[1], 2: sub_req_wdt[0], default: 'x}; man.req.ben = 4'b1100; end
-      endcase
-      2      : begin man_req_wdt = sub_req_wdt   ; man.req.ben = 4'b1111; end
-      default: begin man_req_wdt = '{default: 'x}; man.req.ben = 4'bxxxx; end
-    endcase
-  end
+    end
 
-  // read access
-  always_comb
-  begin
-    case (sub.dly[sub.PHY.DLY].siz)
-      TCB_BYTE: case (rsp_off)
-        2'b00:  sub_rsp_rdt = '{0: man_rsp_rdt[0], default: 'x};
-        2'b01:  sub_rsp_rdt = '{0: man_rsp_rdt[1], default: 'x};
-        2'b10:  sub_rsp_rdt = '{0: man_rsp_rdt[2], default: 'x};
-        2'b11:  sub_rsp_rdt = '{0: man_rsp_rdt[3], default: 'x};
-      endcase
-      TCB_HALF: case (rsp_off[1])
-        1'b0 :  sub_rsp_rdt = '{1: man_rsp_rdt[1], 0: man_rsp_rdt[0], default: 'x};
-        1'b1 :  sub_rsp_rdt = '{1: man_rsp_rdt[3], 0: man_rsp_rdt[2], default: 'x};
-      endcase
-      TCB_WORD: sub_rsp_rdt = man_rsp_rdt   ;
-      default:  sub_rsp_rdt = '{default: 'x};
-    endcase
-  end
+//  // read access
+//  always_comb
+//  begin
+//    case (sub.dly[sub.PHY.DLY].siz)
+//      TCB_BYTE: case (rsp_off)
+//        2'b00:  sub_rsp_rdt = '{0: man_rsp_rdt[0], default: 'x};
+//        2'b01:  sub_rsp_rdt = '{0: man_rsp_rdt[1], default: 'x};
+//        2'b10:  sub_rsp_rdt = '{0: man_rsp_rdt[2], default: 'x};
+//        2'b11:  sub_rsp_rdt = '{0: man_rsp_rdt[3], default: 'x};
+//      endcase
+//      TCB_HALF: case (rsp_off[1])
+//        1'b0 :  sub_rsp_rdt = '{1: man_rsp_rdt[1], 0: man_rsp_rdt[0], default: 'x};
+//        1'b1 :  sub_rsp_rdt = '{1: man_rsp_rdt[3], 0: man_rsp_rdt[2], default: 'x};
+//      endcase
+//      TCB_WORD: sub_rsp_rdt = man_rsp_rdt   ;
+//      default:  sub_rsp_rdt = '{default: 'x};
+//    endcase
+//  end
 
-//    logic [4-1:0][sub.PHY.UNT-1:0] tmp_dtw;  // data word
-//    logic [2-1:0][sub.PHY.UNT-1:0] tmp_dth;  // data half
-//    logic [1-1:0][sub.PHY.UNT-1:0] tmp_dtb;  // data byte
+    logic [4-1:0][sub.PHY.UNT-1:0] tmp_dtw;  // data word
+    logic [2-1:0][sub.PHY.UNT-1:0] tmp_dth;  // data half
+    logic [1-1:0][sub.PHY.UNT-1:0] tmp_dtb;  // data byte
+
+    // read data multiplexer
+    assign tmp_dtw = man_rsp_rdt[3:0];
+    assign tmp_dth = rsp_off[1] ? tmp_dtw[3:2] : tmp_dtw[1:0];
+    assign tmp_dtb = rsp_off[0] ? tmp_dth[1:1] : tmp_dth[0:0];
+    // read data multiplexer
+    assign sub_rsp_rdt = {tmp_dtw[3:2], tmp_dth[1], tmp_dtb[0]};
+
+//    // byte enable
+//    always_comb
+//    begin
+//      case (sub.req.siz)
+//        0 : case (req_off)
+//          2'b00: man.req.ben = 4'b0001;
+//          2'b01: man.req.ben = 4'b0010;
+//          2'b10: man.req.ben = 4'b0100;
+//          2'b11: man.req.ben = 4'b1000;
+//        endcase
+//        1 : case (req_off[1])
+//          1'b0 : man.req.ben = 4'b0011;
+//          1'b1 : man.req.ben = 4'b1100;
+//        endcase
+//        2      : man.req.ben = 4'b1111;
+//        default: man.req.ben = 4'bxxxx;
+//      endcase
+//    end
+
+//    // write access
+//    assign man_req_wdt = {
+//      sub_req_wdt[~req_off & 2'b11],
+//      sub_req_wdt[~req_off & 2'b10],
+//      sub_req_wdt[~req_off & 2'b01],
+//      sub_req_wdt[~req_off & 2'b00]
+//    };
 //
-//    // read data multiplexer
-//    tmp_dtw = man_rsp_rdt[3:0];
-//    tmp_dth = rsp_off[1] ? tmp_dtw[2:2] : tmp_dtw[1:0];
-//    tmp_dtb = rsp_off[0] ? tmp_dth[1:1] : tmp_dth[0:0];
-//    // read data multiplexer
-//    sub_rsp_rdt = '{tmp_dtw[3:2], tmp_dth[1], tmp_dtb[0]};
+//    // read access
+//    assign sub_rsp_rdt = {
+//      man_rsp_rdt[          2'b11],
+//      man_rsp_rdt[          2'b10],
+//      man_rsp_rdt[rsp_off | 2'b01],
+//      man_rsp_rdt[rsp_off | 2'b00]
+//    };
 
   end else begin
   // TODO: do not implement rotations if misaligned accesses are not implemented.
