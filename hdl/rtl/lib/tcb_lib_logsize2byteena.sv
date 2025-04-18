@@ -41,7 +41,7 @@ module tcb_lib_logsize2byteena
       $fatal("ERROR: %m parameter (sub.PHY.MOD = %s) != TCB_LOG_SIZE", man.PHY.MOD.name());
     // TCB PHY.ORD ASCENDING byte order is not supported
     assert (sub.PHY.MOD != TCB_DESCENDING)
-      $fatal("ERROR: %m parameter (sub.PHY.ORD = %s) != TCB_DESCENDING", sub.PHY.ORD.name());    
+      $fatal("ERROR: %m parameter (sub.PHY.ORD = %s) != TCB_DESCENDING", sub.PHY.ORD.name());
     // validate remaining TCB PHY parameters
     assert tcb_phy_match(sub.PHY, man.PHY, match)
       $fatal("ERROR: %m parameter (sub.PHY = %p) != (man.PHY = %p)", sub.PHY, man.PHY);
@@ -118,7 +118,7 @@ module tcb_lib_logsize2byteena
   // TODO: do not implement rotations if misaligned accesses are not implemented.
   // request path multiplexer (little/big endian)
   always_comb
-  for (int unsigned i=0; i<sub.PHY_BEN; i++) begin: req_logsize2byteena
+  for (int unsigned i=0; i<sub.PHY_BEN; i++) begin: req
     unique case (sub.req.ndn)
       TCB_LITTLE: begin
         man.req.ben[i] = sub_req_ben[(            (i-req_off)) % sub.PHY_BEN];
@@ -129,13 +129,11 @@ module tcb_lib_logsize2byteena
         man_req_wdt[i] = sub_req_wdt[(sub.PHY_BEN-(i-req_off)) % sub.PHY_BEN];
       end
     endcase
-  end: req_logsize2byteena
+  end: req
 
-  // response path multiplexer
-  // TODO: do not implement rotations if misaligned accesses are not implemented.
-  // request path multiplexer (little/big endian)
+  // response path multiplexer (little/big endian)
   always_comb
-  for (int unsigned i=0; i<sub.PHY_BEN; i++) begin: rsp_logsize2byteena
+  for (int unsigned i=0; i<sub.PHY_BEN; i++) begin: rsp
     unique case (sub.req.ndn)
       TCB_LITTLE: begin
         sub_rsp_rdt[i] = man_rsp_rdt[(            (i+rsp_off)) % sub.PHY_BEN];
@@ -144,7 +142,10 @@ module tcb_lib_logsize2byteena
         sub_rsp_rdt[i] = man_rsp_rdt[(sub.PHY_BEN-(i+rsp_off)) % sub.PHY_BEN];
       end
     endcase
-  end: rsp_logsize2byteena
+  end: rsp
+
+  end
+  endgenerate
 
   // write/read data packed array to/from vector
   assign man.req.wdt = man_req_wdt;
