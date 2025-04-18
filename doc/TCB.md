@@ -334,12 +334,12 @@ Most signals are designed to directly interface with ASIC/FPGA SRAM memories:
 | signal    | width  | description |
 |-----------|--------|-------------|
 | `req.cmd` | custom | Custom request command protocol extensions. |
-| `req.ndn` | `1`    | Read/write data endianness. Only used in reference mode. |
+| `req.ndn` | `1`    | Read/write data endianness. Only used in logarithmic size mode. |
 | `req.wen` | `1`    | Write enable. |
 | `req.ren` | `1`    | Read enable (only used in full-duplex channel configuration). |
 | `req.adr` | `ADR`  | Address. |
-| `req.siz` | `SIZ`* | Transfer size. Only used in reference mode. |
-| `req.ben` | `BEN`  | Byte enable/select. Only used in memory mode. |
+| `req.siz` | `SIZ`* | Transfer size. Only used in logarithmic size mode. |
+| `req.ben` | `BEN`  | Byte enable/select. Only used in byte enable mode. |
 | `req.wdt` | `DAT`  | Write data. |
 | `rsp.rdt` | `DAT`  | Read data. |
 | `rsp.sts` | custom | Custom response status protocol extensions. |
@@ -464,23 +464,23 @@ The following parameters affect data packing.
 | parameter | default          | type (enumeration) | description |
 |-----------|------------------|--------------------|-------------|
 | `PHY.ALN` | `clog2(DAT/UNT)` | `int unsigned`     | Alignment width, number of least significant address bits which are zero. |
-| `PHY.MOD` | `REFERENCE`      | `tcb_phy_mode_t`   | Data position mode. |
+| `PHY.MOD` | `LOG_SIZE`       | `tcb_phy_mode_t`   | Data position mode. |
 | `PHY.ORD` | `DESCENDING`     | `tcb_phy_order_t`  | Byte order, ascending or descending. |
 
 Only a subset of 4 configurations from all parameter combinations
 results in practical and useful data packing rule.
 The rest are reserved with no intention to be documented and implemented.
 
-| `MOD`       | `ORD`        | `ALN`        | `ndn`   | description |
-|-------------|--------------|--------------|---------|-------------|
-| `REFERENCE` | `DESCENDING` | any          | ignored | Packing used by CPU registers. |
-| `REFERENCE` | `ASCENDING`  | any          | ignored | Reserved, not used. |
-| `MEMORY`    | `DESCENDING` | 0            | both    | RISC-V memory model with misaligned access support. |
-| `MEMORY`    | `DESCENDING` | `clog2(BEN)` | both    | RISC-V memory model with only aligned accesses supported. |
-| `MEMORY`    | `ASCENDING`  | 0            | both    | Reserved, not used. |
-| `MEMORY`    | `ASCENDING`  | `clog2(BEN)` | both    | OpenPOWER storage operands. |
+| `MOD`      | `ORD`        | `ALN`        | `ndn`   | description |
+|------------|--------------|--------------|---------|-------------|
+| `LOG_SIZE` | `DESCENDING` | any          | ignored | Packing used by CPU registers. |
+| `LOG_SIZE` | `ASCENDING`  | any          | ignored | Reserved, not used. |
+| `BYTE_ENA` | `DESCENDING` | 0            | both    | RISC-V memory model with misaligned access support. |
+| `BYTE_ENA` | `DESCENDING` | `clog2(BEN)` | both    | RISC-V memory model with only aligned accesses supported. |
+| `BYTE_ENA` | `ASCENDING`  | 0            | both    | Reserved, not used. |
+| `BYTE_ENA` | `ASCENDING`  | `clog2(BEN)` | both    | OpenPOWER storage operands. |
 
-The reference mode is a new concept added to TCB.
+The logarithmic size mode is a new concept added to TCB.
 
 For contemporary useful configurations the RISC-V ISA is used as a reference.
 
@@ -535,25 +535,25 @@ other parameters `ALN`/`MOD`/`ORD`, the address `adr` and the endianness signal 
 ##### Data position mode
 
 The `MOD` parameter encoding defines the following options.
-- `MEMORY`,
-- `REFERENCE`.
+- `LOG_SIZE`,
+- `BYTE_ENA`.
 The name _reference_ is based on the idea,
 that if a monitor was placed on multiple points of a mixed configuration interconnect,
 all data would be translated to a common reference before being compared.
 
-The `MEMORY` mode defines the same data packing scheme as memories.
+The `BYTE_ENA` mode defines the same data packing scheme as memories.
 
-In memory mode the the byte enable signal `ben`
+In byte enable mode the the byte enable signal `ben`
 provides the information about the transfer size,
 which is the number of active bits in the `ben` vector.
 
-The `REFERENCE` mode is based on how ISAs define the placement of
+The `LOG_SIZE` mode is based on how ISAs define the placement of
 byte/half/word/double into its general purpose registers.
 In registers data of any size is always stored aligned to the right.
-In reference mode data is always aligned to the right,
+In logarithmic size mode data is always aligned to the right,
 regardless of the address, address alignment, endianness, ...
 
-In reference mode the transfer size signal `siz`
+In logarithmic size mode the transfer size signal `siz`
 provides the information about the transfer size.
 
 The main purpose of this mode is to connect peripherals to the CPU or DMA.
@@ -667,16 +667,16 @@ All provided examples are configured for:
 - logarithmic size `SIZ=LOGARITHMIC`,
 - descending order `ORD=DESCENDING`.
 Examples are given for the next data packing configurations:
-- reference mode, fixed of variable size transfers with and without misaligned access support,
-- memory mode, with and without misaligned access support, for both little and big endianness.
+- logarithmic size mode, fixed of variable size transfers with and without misaligned access support,
+- byte enable mode, with and without misaligned access support, for both little and big endianness.
 
 The examples list all supported read/write transfers in a table.
 Unsupported transfers can be handles by ignoring the request and responding with an error.
 Alternatively unsupported transfers can just cause undefined behavior.
 
-#### Reference mode
+#### Logarithmic size mode
 
-Examples for the following reference mode configurations are provided:
+Examples for the following logarithmic size mode configurations are provided:
 - data bus width sized transfers with size aligned address,
 - any size transfers with size aligned address,
 - any size transfers with no alignment restrictions address,
@@ -686,7 +686,7 @@ Examples for the following reference mode configurations are provided:
 
 It is common to only allow full data bus width and aligned transfers when accessing peripherals.
 This case would specify the following parameter values and signal restrictions:
-- reference mode `MOD=REFERENCE`,
+- logarithmic size mode `MOD=LOG_SIZE`,
 - full alignment required `ALN=$clog2(DAT/UNT)=clog2(BEN)`
 - transfer size equal to data bus width `siz==$clog2(ALN)`,
 - aligned address to data bus width `adr[ALN-1:0]=='0`,
@@ -704,7 +704,7 @@ If transfer size restrictions are relaxed down to a single byte,
 small registers can be arranged into a more compact structure,
 thus reducing the address space.
 This case would specify the following parameter values and signal restrictions:
-- reference mode `MOD=REFERENCE`,
+- logarithmic size mode `MOD=LOG_SIZE`,
 - full alignment required `ALN=$clog2(DAT/UNT)=clog2(BEN)`
 - transfer size from byte to data bus width `0<=siz<=$clog2(ALN)`,
 - address aligned to transfer size `adr[siz-1:0]=='0`,
@@ -725,7 +725,7 @@ The following table lists such transfers for a 32-bit data bus.
 Such a configuration is also appropriate for a load/store CPU interface,
 since it covers all aligned memory accesses.
 An actual connection to a memory would require a conversion module
-from `REFERENCE` to `MEMORY` mode,
+from `LOG_SIZE` to `BYTE_ENA` mode,
 such a conversion module would have to also handle the endianness signal `ndn`.
 
 A further generalization would entirely remove the alignment restriction to
@@ -734,7 +734,7 @@ enable access to memories which support unaligned accesses.
 ##### Variable data width, misalignment support
 
 This case would specify the following parameter values and signal restrictions:
-- reference mode `MOD=REFERENCE`,
+- logarithmic size mode `MOD=LOG_SIZE`,
 - relaxed alignment `ALN=0`
 - transfer size from byte to data bus width `0<=siz<=$clog2(ALN)`,
 - address aligned to transfer size `adr[siz-1:0]=='0`,
@@ -760,7 +760,7 @@ The following table lists such transfers for a 32-bit data bus.
 ##### RISC-V with C extension instruction fetch
 
 This case would specify the following parameter values and signal restrictions:
-- reference mode `MOD=REFERENCE`,
+- logarithmic size mode `MOD=LOG_SIZE`,
 - relaxed alignment `ALN=1`
 - always attempt to fetch a 32-bit instruction `siz=2'd2`,
 - address aligned to transfer size `adr[0]==1'b0`,
@@ -773,15 +773,15 @@ The following table lists such transfers.
 | word |    aligned | `2'd0`     | `2'd2`     | `{[31:24], [23:16], [15:08], [07:00]}` |
 | word | misaligned | `2'd2`     | `2'd2`     | `{[31:24], [23:16], [15:08], [07:00]}` |
 
-#### Memory mode
+#### Byte enable mode
 
-Examples for the following memory mode configurations are provided:
+Examples for the following byte enable mode configurations are provided:
 - any size transfers with size aligned address,
 - any size transfers with no alignment restrictions address.
 Both configurations are documented for big and little endianness.
 
 The configuration with data bus width sized transfers with size aligned address,
-is functionally identical to the reference mode with the same configuration.
+is functionally identical to the logarithmic size mode with the same configuration.
 
 ##### Endianness and data alignment
 
