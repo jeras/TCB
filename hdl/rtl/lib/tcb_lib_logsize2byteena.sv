@@ -18,7 +18,9 @@
 
 module tcb_lib_logsize2byteena
   import tcb_pkg::*;
-(
+#(
+  parameter bit ALLIGNED = 1'b1
+)(
   // interfaces
   tcb_if.sub sub,    // TCB subordinate port (manager     device connects here)
   tcb_if.man man     // TCB manager     port (subordinate device connects here)
@@ -115,7 +117,152 @@ module tcb_lib_logsize2byteena
   assign sub_req_wdt = sub.req.wdt;
   assign sub.rsp.rdt = sub_rsp_rdt;
 
-  // TODO: do not implement rotations if misaligned accesses are not implemented.
+generate
+if (ALLIGNED) begin
+
+//  // request path multiplexer (little/big endian)
+//  always_comb
+//  for (int unsigned i=0; i<sub.PHY_BEN; i++) begin: req
+//    unique case (sub.req.ndn)
+//      TCB_LITTLE: begin
+//        man.req.ben[i] = sub_req_ben[(            (i-req_off)) % sub.PHY_BEN];
+//      end
+//      TCB_BIG   : begin
+//        man.req.ben[i] = sub_req_ben[(sub.PHY_BEN-(i-req_off)) % sub.PHY_BEN];
+//      end
+//    endcase
+//  end: req
+
+//  // request path multiplexer (little/big endian)
+//  always_comb
+//  for (int unsigned i=0; i<sub.PHY_BEN; i++) begin: req
+//    unique case (sub.req.ndn)
+//      TCB_LITTLE: begin
+//        man_req_wdt[i] = sub_req_wdt[(            (i-req_off)) % sub.PHY_BEN];
+//      end
+//      TCB_BIG   : begin
+//        man_req_wdt[i] = sub_req_wdt[(sub.PHY_BEN-(i-req_off)) % sub.PHY_BEN];
+//      end
+//    endcase
+//  end: req
+
+//  // response path multiplexer (little/big endian)
+//  always_comb
+//  for (int unsigned i=0; i<sub.PHY_BEN; i++) begin: rsp
+//    unique case (sub.req.ndn)
+//      TCB_LITTLE: begin
+//        sub_rsp_rdt[i] = man_rsp_rdt[(            (i+rsp_off)) % sub.PHY_BEN];
+//      end
+//      TCB_BIG   : begin
+//        sub_rsp_rdt[i] = man_rsp_rdt[(sub.PHY_BEN-(i+rsp_off)) % sub.PHY_BEN];
+//      end
+//    endcase
+//  end: rsp
+
+//    // byte enable
+//    always_comb
+//    begin
+//      case (sub.req.siz)
+//        0 : case (req_off)
+//          2'b00: man.req.ben = 4'b0001;
+//          2'b01: man.req.ben = 4'b0010;
+//          2'b10: man.req.ben = 4'b0100;
+//          2'b11: man.req.ben = 4'b1000;
+//        endcase
+//        1 : case (req_off[1])
+//          1'b0 : man.req.ben = 4'b0011;
+//          1'b1 : man.req.ben = 4'b1100;
+//        endcase
+//        2      : man.req.ben = 4'b1111;
+//        default: man.req.ben = 4'bxxxx;
+//      endcase
+//    end
+
+//  // write access
+//  always_comb
+//  begin
+//    case (sub.req.siz)
+//      0 : case (req_off)
+//        2'b00: man_req_wdt = '{0: sub_req_wdt[0], default: 'x};
+//        2'b01: man_req_wdt = '{1: sub_req_wdt[0], default: 'x};
+//        2'b10: man_req_wdt = '{2: sub_req_wdt[0], default: 'x};
+//        2'b11: man_req_wdt = '{3: sub_req_wdt[0], default: 'x};
+//      endcase
+//      1 : case (req_off[1])
+//        1'b0 : man_req_wdt = '{1: sub_req_wdt[1], 0: sub_req_wdt[0], default: 'x};
+//        1'b1 : man_req_wdt = '{3: sub_req_wdt[1], 2: sub_req_wdt[0], default: 'x};
+//      endcase
+//      2      : man_req_wdt = sub_req_wdt   ;
+//      default: man_req_wdt = '{default: 'x};
+//    endcase
+//  end
+
+//  // read access
+//  always_comb
+//  begin
+//    case (sub.dly[sub.PHY.DLY].siz)
+//      TCB_BYTE: case (rsp_off)
+//        2'b00:  sub_rsp_rdt = '{0: man_rsp_rdt[0], default: 'x};
+//        2'b01:  sub_rsp_rdt = '{0: man_rsp_rdt[1], default: 'x};
+//        2'b10:  sub_rsp_rdt = '{0: man_rsp_rdt[2], default: 'x};
+//        2'b11:  sub_rsp_rdt = '{0: man_rsp_rdt[3], default: 'x};
+//      endcase
+//      TCB_HALF: case (rsp_off[1])
+//        1'b0 :  sub_rsp_rdt = '{1: man_rsp_rdt[1], 0: man_rsp_rdt[0], default: 'x};
+//        1'b1 :  sub_rsp_rdt = '{1: man_rsp_rdt[3], 0: man_rsp_rdt[2], default: 'x};
+//      endcase
+//      TCB_WORD: sub_rsp_rdt = man_rsp_rdt   ;
+//      default:  sub_rsp_rdt = '{default: 'x};
+//    endcase
+//  end
+
+    // byte enable
+    assign man.req.ben = {
+      sub_req_ben[~req_off & 2'b11],
+      sub_req_ben[~req_off & 2'b10],
+      sub_req_ben[~req_off & 2'b01],
+      sub_req_ben[~req_off & 2'b00]
+    };
+
+    // write access
+    always_comb
+    case (sub.req.siz)
+      2'b00  : man_req_wdt = {4{sub_req_wdt[0:0]}};
+      2'b01  : man_req_wdt = {2{sub_req_wdt[1:0]}};
+      2'b10  : man_req_wdt = {1{sub_req_wdt[3:0]}};
+      default: man_req_wdt = 'x;
+    endcase
+
+
+//    // write access
+//    assign man_req_wdt = {
+//      sub_req_wdt[~req_off & 2'b11],
+//      sub_req_wdt[~req_off & 2'b10],
+//      sub_req_wdt[~req_off & 2'b01],
+//      sub_req_wdt[~req_off & 2'b00]
+//    };
+
+//    // read access
+//    assign sub_rsp_rdt = {
+//      man_rsp_rdt[          2'b11],
+//      man_rsp_rdt[          2'b10],
+//      man_rsp_rdt[rsp_off | 2'b01],
+//      man_rsp_rdt[rsp_off | 2'b00]
+//    };
+
+    logic [4-1:0][sub.PHY.UNT-1:0] tmp_dtw;  // data word
+    logic [2-1:0][sub.PHY.UNT-1:0] tmp_dth;  // data half
+    logic [1-1:0][sub.PHY.UNT-1:0] tmp_dtb;  // data byte
+
+    // read data multiplexer
+    assign tmp_dtw = man_rsp_rdt[3:0];
+    assign tmp_dth = rsp_off[1] ? tmp_dtw[3:2] : tmp_dtw[1:0];
+    assign tmp_dtb = rsp_off[0] ? tmp_dth[1:1] : tmp_dth[0:0];
+    // read data multiplexer
+    assign sub_rsp_rdt = {tmp_dtw[3:2], tmp_dth[1], tmp_dtb[0]};
+
+  end else begin
+
   // request path multiplexer (little/big endian)
   always_comb
   for (int unsigned i=0; i<sub.PHY_BEN; i++) begin: req
@@ -144,8 +291,8 @@ module tcb_lib_logsize2byteena
     endcase
   end: rsp
 
-  end
-  endgenerate
+end
+endgenerate
 
   // write/read data packed array to/from vector
   assign man.req.wdt = man_req_wdt;
