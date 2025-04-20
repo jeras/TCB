@@ -2,10 +2,6 @@
 # TCB package
 ################################################################################
 
-# transfer size encoding
-TCB_LOGARITHMIC = 0
-TCB_LINEAR      = 1
-
 # data position mode
 TCB_LOG_SIZE = 0
 TCB_BYTE_ENA = 1

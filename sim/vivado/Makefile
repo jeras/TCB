@@ -2,7 +2,9 @@
 # documentation
 ################################################################################
 
-# https://veripool.org/guide/latest/exe_verilator.html
+# https://docs.amd.com/r/en-US/ug900-vivado-logic-simulation/Vivado-Simulator-Quick-Reference-generic_topuide
+# https://docs.amd.com/r/en-US/ug900-vivado-logic-simulation/Elaborating-and-generic_topenerating-a-Design-Snapshot-xelab
+# https://docs.amd.com/r/en-US/ug900-vivado-logic-simulation/Simulating-the-Design-Snapshot-xsim
 
 ################################################################################
 # DUT, TOP and source files
@@ -19,86 +21,53 @@ TOP ?= tcb_lib_converter_tb
 # tool specific flags
 ################################################################################
 
-# specify SystemVerilog LRM version
-#VFLAGS += +1800-2012ext+sv
-# Generate binary executable
-VFLAGS += --binary
-# Optimize
-VFLAGS += -O3
-# Number of CPU threads
-VFLAGS += -j 0
-# optimize for speed or maximize finding X assign issues
-VFLAGS += --x-assign fast
-#VFLAGS += --x-assign 0
-#VFLAGS += --x-assign 1
-#VFLAGS += --x-assign unique
-# Warn about lint issues; may not want this on less solid designs
-#VFLAGS += -Wall
-# Check SystemVerilog assertions
-VFLAGS += --assert
-# Generate coverage analysis
-#VFLAGS += --coverage
-
-# Run Verilator in debug mode
-#VFLAGS += --debug
-# Add this trace to get a backtrace in gdb
-#VFLAGS += --gdbbt
-
-# Make waveforms
-#ifdef TRACE_DEBUG
-VFLAGS += --trace-fst
-VFLAGS += --trace-structs
-#endif
-
 ################################################################################
 # Verilog define macros
 ################################################################################
 
 # example
-# DEF += -Dmacro
-# DEF += -Dmacro=value
+# DEF += -d macro
+# DEF += -d macro=value
 
 # define TOOL_* macro (used to handle tool quirks)
-DEF = -DTOOL_VERILATOR
-
-# define macro VERILATOR is already predefined in Verilator
+DEF = -d TOOL_VIVADO_SIMULATOR
 
 ################################################################################
 # Verilog toplevel parameter override
 ################################################################################
 
 # example
-# PAR += -Gparameter=value
+# PAR += -generic_top generic/parameter=value
 
 # list of parameter overrides
 
 # protocol
-MAN_PAR += -GMAN_DLY=${MAN_DLY}
+MAN_PAR += -generic_topMAN_DLY=${MAN_DLY}
 # signal widths
-MAN_PAR += -GMAN_UNT=${MAN_UNT}
-MAN_PAR += -GMAN_ADR=${MAN_ADR}
-MAN_PAR += -GMAN_DAT=${MAN_DAT}
+MAN_PAR += -generic_topMAN_UNT=${MAN_UNT}
+MAN_PAR += -generic_topMAN_ADR=${MAN_ADR}
+MAN_PAR += -generic_topMAN_DAT=${MAN_DAT}
 # data packing parameters
-MAN_PAR += -GMAN_ALN=${MAN_ALN}
-MAN_PAR += -GMAN_MIN=${MAN_MIN}
-MAN_PAR ?= -GMAN_MOD=${MAN_MOD}
-MAN_PAR ?= -GMAN_ORD=${MAN_ORD}
+MAN_PAR += -generic_topMAN_ALN=${MAN_ALN}
+MAN_PAR += -generic_topMAN_MIN=${MAN_MIN}
+MAN_PAR ?= -generic_topMAN_MOD=${MAN_MOD}
+MAN_PAR ?= -generic_topMAN_ORD=${MAN_ORD}
 # channel configuration
-MAN_PAR ?= -GCHN_CHN=${MAN_CHN}
+MAN_PAR ?= -generic_topCHN_CHN=${MAN_CHN}
 
 # protocol
-SUB_PAR += -GSUB_DLY=${SUB_DLY}
+SUB_PAR += -generic_topSUB_DLY=${SUB_DLY}
 # signal widths
-SUB_PAR += -GSUB_UNT=${SUB_UNT}
-SUB_PAR += -GSUB_ADR=${SUB_ADR}
-SUB_PAR += -GSUB_DAT=${SUB_DAT}
+SUB_PAR += -generic_topSUB_UNT=${SUB_UNT}
+SUB_PAR += -generic_topSUB_ADR=${SUB_ADR}
+SUB_PAR += -generic_topSUB_DAT=${SUB_DAT}
 # data packing parameters
-SUB_PAR += -GSUB_ALN=${SUB_ALN}
-SUB_PAR += -GSUB_MIN=${SUB_MIN}
-SUB_PAR ?= -GSUB_MOD=${SUB_MOD}
-SUB_PAR ?= -GSUB_ORD=${SUB_ORD}
+SUB_PAR += -generic_topSUB_ALN=${SUB_ALN}
+SUB_PAR += -generic_topSUB_MIN=${SUB_MIN}
+SUB_PAR ?= -generic_topSUB_MOD=${SUB_MOD}
+SUB_PAR ?= -generic_topSUB_ORD=${SUB_ORD}
 # channel configuration
-SUB_PAR ?= -GCHN_CHN=${SUB_CHN}
+SUB_PAR ?= -generic_topCHN_CHN=${SUB_CHN}
 
 # combined manager/subordinate parameters
 PAR = ${MAN_PAR} ${SUB_PAR}
@@ -108,21 +77,26 @@ PAR = ${MAN_PAR} ${SUB_PAR}
 ################################################################################
 
 # example
-# ARG += +key
-# ARG += +key=value
+# ARG += -testplusarg key
+# ARG += -testplusarg key=value
+
 
 ################################################################################
 # targets
 ################################################################################
 
+# uncomment the GUI target for debugging purposes
+#all: gui
 all: simulate
 
-lint: ${HDL}
-	verilator --lint-only ${DEF} ${PAR} --top ${TOP} ${HDL}
-
 compile: ${HDL}
-	verilator ${VFLAGS} ${DEF} ${PAR} --top ${TOP} ${HDL}
+	xvlog ${FLAGS} ${DEF} -sv ${HDL}
 
-simulate: compile
-	obj_dir/V${TOP} ${ARG}
-#	verilator_coverage --annotate logs/annotated logs/coverage.dat
+elaborate: compile
+	xelab ${PAR} work.${TOP} -s ${TOP}
+
+simulate: elaborate
+	xsim ${ARG} ${TOP} -R
+
+gui: elaborate
+	xsim ${ARG} ${TOP} -gui
