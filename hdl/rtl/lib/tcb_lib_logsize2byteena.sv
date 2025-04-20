@@ -120,45 +120,6 @@ module tcb_lib_logsize2byteena
 generate
 if (ALLIGNED) begin
 
-//  // request path multiplexer (little/big endian)
-//  always_comb
-//  for (int unsigned i=0; i<sub.PHY_BEN; i++) begin: req
-//    unique case (sub.req.ndn)
-//      TCB_LITTLE: begin
-//        man.req.ben[i] = sub_req_ben[(            (i-req_off)) % sub.PHY_BEN];
-//      end
-//      TCB_BIG   : begin
-//        man.req.ben[i] = sub_req_ben[(sub.PHY_BEN-(i-req_off)) % sub.PHY_BEN];
-//      end
-//    endcase
-//  end: req
-
-//  // request path multiplexer (little/big endian)
-//  always_comb
-//  for (int unsigned i=0; i<sub.PHY_BEN; i++) begin: req
-//    unique case (sub.req.ndn)
-//      TCB_LITTLE: begin
-//        man_req_wdt[i] = sub_req_wdt[(            (i-req_off)) % sub.PHY_BEN];
-//      end
-//      TCB_BIG   : begin
-//        man_req_wdt[i] = sub_req_wdt[(sub.PHY_BEN-(i-req_off)) % sub.PHY_BEN];
-//      end
-//    endcase
-//  end: req
-
-//  // response path multiplexer (little/big endian)
-//  always_comb
-//  for (int unsigned i=0; i<sub.PHY_BEN; i++) begin: rsp
-//    unique case (sub.req.ndn)
-//      TCB_LITTLE: begin
-//        sub_rsp_rdt[i] = man_rsp_rdt[(            (i+rsp_off)) % sub.PHY_BEN];
-//      end
-//      TCB_BIG   : begin
-//        sub_rsp_rdt[i] = man_rsp_rdt[(sub.PHY_BEN-(i+rsp_off)) % sub.PHY_BEN];
-//      end
-//    endcase
-//  end: rsp
-
 //    // byte enable
 //    always_comb
 //    begin
@@ -233,14 +194,6 @@ if (ALLIGNED) begin
       default: man_req_wdt = 'x;
     endcase
 
-
-//    // write access
-//    assign man_req_wdt = {
-//      sub_req_wdt[~req_off & 2'b11],
-//      sub_req_wdt[~req_off & 2'b10],
-//      sub_req_wdt[~req_off & 2'b01],
-//      sub_req_wdt[~req_off & 2'b00]
-//    };
 
 //    // read access
 //    assign sub_rsp_rdt = {
