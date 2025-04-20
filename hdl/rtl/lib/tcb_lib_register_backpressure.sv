@@ -16,7 +16,9 @@
 // limitations under the License.
 ////////////////////////////////////////////////////////////////////////////////
 
-module tcb_lib_register_backpressure #(
+module tcb_lib_register_backpressure
+  import tcb_pkg::*;
+#(
   int unsigned GRN = 1  // bus hold granularity (byte granularity by default)
 )(
   tcb_if.sub sub,  // TCB subordinate port (manager     device connects here)
@@ -32,12 +34,11 @@ module tcb_lib_register_backpressure #(
   // camparing subordinate and manager interface parameters
   generate
     // bus widths
-    if (sub.ADR != man.ADR)  $error("ERROR: %m parameter (sub.ADR = %d) != (man.ADR = %d)", sub.ADR, man.ADR);
-    if (sub.DAT != man.DAT)  $error("ERROR: %m parameter (sub.DAT = %d) != (man.DAT = %d)", sub.DAT, man.DAT);
-    if (sub.UNT != man.UNT)  $error("ERROR: %m parameter (sub.UNT = %d) != (man.UNT = %d)", sub.UNT, man.UNT);
-    if (sub.BEN != man.BEN)  $error("ERROR: %m parameter (sub.BEN = %d) != (man.BEN = %d)", sub.BEN, man.BEN);
+    if (sub.PHY.ADR != man.PHY.ADR)  $error("ERROR: %m parameter (sub.ADR = %d) != (man.ADR = %d)", sub.PHY.ADR, man.PHY.ADR);
+    if (sub.PHY.DAT != man.PHY.DAT)  $error("ERROR: %m parameter (sub.DAT = %d) != (man.DAT = %d)", sub.PHY.DAT, man.PHY.DAT);
+    if (sub.PHY.UNT != man.PHY.UNT)  $error("ERROR: %m parameter (sub.UNT = %d) != (man.UNT = %d)", sub.PHY.UNT, man.PHY.UNT);
     // response delay
-    if (sub.DLY != man.DLY)  $error("ERROR: %m parameter (sub.DLY = %d) != (man.DLY = %d)", sub.DLY, man.DLY);
+    if (sub.PHY.DLY != man.PHY.DLY)  $error("ERROR: %m parameter (sub.DLY = %d) != (man.DLY = %d)", sub.PHY.DLY, man.PHY.DLY);
   endgenerate
 `endif
 
@@ -46,32 +47,32 @@ module tcb_lib_register_backpressure #(
 ////////////////////////////////////////////////////////////////////////////////
 
   // request optional
-  logic               tmp_inc;  // incremented address
-  logic               tmp_rpt;  // repeated address
-  logic               tmp_lck;  // arbitration lock
+  logic                   tmp_inc;  // incremented address
+  logic                   tmp_rpt;  // repeated address
+  logic                   tmp_lck;  // arbitration lock
   // request
-  logic               tmp_wen;  // write enable
-  logic [sub.ADR-1:0] tmp_adr;  // address
-  logic [sub.SIZ-1:0] tmp_siz;  // logarithmic size
-  logic [sub.BEN-1:0] tmp_ben;  // byte enable
-  logic [sub.DAT-1:0] tmp_wdt;  // write data
+  logic                   tmp_wen;  // write enable
+  logic [sub.PHY.ADR-1:0] tmp_adr;  // address
+  logic [sub.PHY_SIZ-1:0] tmp_siz;  // logarithmic size
+  logic [sub.PHY_BEN-1:0] tmp_ben;  // byte enable
+  logic [sub.PHY.DAT-1:0] tmp_wdt;  // write data
 
   always_ff @(posedge sub.clk)
   begin
     if (sub.vld & sub.rdy & ~man.rdy) begin
       // request optional
-      tmp_inc <= sub.inc;
-      tmp_rpt <= sub.rpt;
-      tmp_lck <= sub.lck;
+      tmp_inc <= sub.req.cmd.inc;
+      tmp_rpt <= sub.req.cmd.rpt;
+      tmp_lck <= sub.req.cmd.lck;
       // request
-      tmp_wen <= sub.wen;
-      tmp_siz <= sub.siz;
-      tmp_ben <= sub.ben;
-      tmp_adr <= sub.adr;
-      for (int unsigned i=0; i<sub.BEN; i+=sub.UNT*GRN) begin
+      tmp_wen <= sub.req.wen;
+      tmp_siz <= sub.req.siz;
+      tmp_ben <= sub.req.ben;
+      tmp_adr <= sub.req.adr;
+      for (int unsigned i=0; i<sub.PHY_BEN; i+=sub.PHY.UNT*GRN) begin
         // data granularity
-        if (sub.wen & sub.ben[i]) begin
-          tmp_wdt[i+:sub.UNT*GRN] <= sub.wdt[i+:sub.UNT*GRN];
+        if (sub.req.wen & sub.req.ben[i]) begin
+          tmp_wdt[i+:sub.PHY.UNT*GRN] <= sub.req.wdt[i+:sub.PHY.UNT*GRN];
         end
       end
     end
@@ -80,19 +81,19 @@ module tcb_lib_register_backpressure #(
   // handshake
   assign man.vld = sub.rdy ? sub.vld : 1'b1   ;
   // request optional
-  assign man.inc = sub.rdy ? sub.inc : tmp_inc;
-  assign man.rpt = sub.rdy ? sub.rpt : tmp_rpt;
-  assign man.lck = sub.rdy ? sub.lck : tmp_lck;
+  assign man.req.cmd.inc = sub.rdy ? sub.req.cmd.inc : tmp_inc;
+  assign man.req.cmd.rpt = sub.rdy ? sub.req.cmd.rpt : tmp_rpt;
+  assign man.req.cmd.lck = sub.rdy ? sub.req.cmd.lck : tmp_lck;
   // request
-  assign man.wen = sub.rdy ? sub.wen : tmp_wen;
-  assign man.siz = sub.rdy ? sub.siz : tmp_siz;
-  assign man.ben = sub.rdy ? sub.ben : tmp_ben;
-  assign man.adr = sub.rdy ? sub.adr : tmp_adr;
-  assign man.wdt = sub.rdy ? sub.wdt : tmp_wdt;
+  assign man.req.wen = sub.rdy ? sub.req.wen : tmp_wen;
+  assign man.req.siz = sub.rdy ? sub.req.siz : tmp_siz;
+  assign man.req.ben = sub.rdy ? sub.req.ben : tmp_ben;
+  assign man.req.adr = sub.rdy ? sub.req.adr : tmp_adr;
+  assign man.req.wdt = sub.rdy ? sub.req.wdt : tmp_wdt;
 
   // response
-  assign sub.rdt = man.rdt;
-  assign sub.err = man.err;
+  assign sub.rsp.rdt     = man.rsp.rdt    ;
+  assign sub.rsp.sts.err = man.rsp.sts.err;
 
   // handshake
   always_ff @(posedge sub.clk, posedge sub.rst)
