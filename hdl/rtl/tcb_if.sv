@@ -20,8 +20,25 @@ interface tcb_if
   import tcb_pkg::*;
 #(
   parameter  tcb_phy_t  PHY = TCB_PAR_PHY_DEF,
-  parameter  type tcb_req_cmd_t = tcb_req_cmd_def_t,
-  parameter  type tcb_rsp_sts_t = tcb_rsp_sts_def_t
+  parameter  type req_cmd_t = tcb_req_cmd_def_t,
+  parameter  type rsp_sts_t = tcb_rsp_sts_def_t,
+
+  // byte enable width (number of units inside data)
+  localparam int unsigned PHY_BEN = PHY.DAT / PHY.UNT,
+  // offset width (number of address bits defining the offset of units inside data)
+  localparam int unsigned PHY_OFF = $clog2(PHY_BEN),
+  // logarithmic transfer size width
+  localparam int unsigned PHY_SIZ = $clog2(PHY_OFF+1),
+  parameter type req_t = struct packed {
+    req_cmd_t           cmd;  // command (optional)
+    logic               wen;  // write enable
+    logic               ren;  // read enable
+    logic               ndn;  // endianness
+    logic [PHY.ADR-1:0] adr;  // address
+    logic [PHY_SIZ-1:0] siz;  // logarithmic transfer size
+    logic [PHY_BEN-1:0] ben;  // byte enable
+    logic [PHY.DAT-1:0] wdt;  // write data
+  }
 )(
   // system signals
   input  logic clk,  // clock
@@ -32,14 +49,6 @@ interface tcb_if
 // local parameters
 ////////////////////////////////////////////////////////////////////////////////
 
-  // byte enable width (number of units inside data)
-  localparam int unsigned PHY_BEN = PHY.DAT / PHY.UNT;
-
-  // offset width (number of address bits defining the offset of units inside data)
-  localparam int unsigned PHY_OFF = $clog2(PHY_BEN);
-
-  // logarithmic transfer size width
-  localparam int unsigned PHY_SIZ = $clog2(PHY_OFF+1);
 
 ////////////////////////////////////////////////////////////////////////////////
 // I/O ports
@@ -49,22 +58,22 @@ interface tcb_if
   logic vld;  // valid
   logic rdy;  // ready
 
-  // request
-  typedef struct packed {
-    tcb_req_cmd_t       cmd;  // command (optional)
-    logic               wen;  // write enable
-    logic               ren;  // read enable
-    logic               ndn;  // endianness
-    logic [PHY.ADR-1:0] adr;  // address
-    logic [PHY_SIZ-1:0] siz;  // logarithmic transfer size
-    logic [PHY_BEN-1:0] ben;  // byte enable
-    logic [PHY.DAT-1:0] wdt;  // write data
-  } req_t;
+//  // request
+//  typedef struct packed {
+//    tcb_req_cmd_t       cmd;  // command (optional)
+//    logic               wen;  // write enable
+//    logic               ren;  // read enable
+//    logic               ndn;  // endianness
+//    logic [PHY.ADR-1:0] adr;  // address
+//    logic [PHY_SIZ-1:0] siz;  // logarithmic transfer size
+//    logic [PHY_BEN-1:0] ben;  // byte enable
+//    logic [PHY.DAT-1:0] wdt;  // write data
+//  } req_t;
 
   // response
   typedef struct packed {
     logic [PHY.DAT-1:0] rdt;  // read data
-    tcb_rsp_sts_t       sts;  // status (optional)
+    rsp_sts_t           sts;  // status (optional)
   } rsp_t;
 
   // request/response

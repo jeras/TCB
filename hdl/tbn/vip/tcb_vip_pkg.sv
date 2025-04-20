@@ -43,6 +43,17 @@ package tcb_vip_pkg;
     // logarithmic transfer size width
     localparam int unsigned PHY_SIZ = $clog2(PHY_OFF+1);
 
+    // TCB transfer request structure
+    typedef struct {
+      tcb_req_cmd_t                    cmd;  // command (optional)
+      logic                            wen;  // write enable
+      logic                            ndn;  // endianness
+      logic [PHY.ADR-1:0]              adr;  // address
+      logic [PHY_SIZ-1:0]              siz;  // logarithmic size
+      logic [PHY_BEN-1:0]              ben;  // byte enable
+      logic [PHY_BEN-1:0][PHY.UNT-1:0] wdt;  // write data
+    } transfer_request_t;
+
   //////////////////////////////////////////////////////////////////////////////
   // virtual interface
   //////////////////////////////////////////////////////////////////////////////
@@ -50,8 +61,9 @@ package tcb_vip_pkg;
     // virtual interface type definition
     typedef virtual tcb_if #(
       .PHY           (PHY),
-      .tcb_req_cmd_t (tcb_req_cmd_t),
-      .tcb_rsp_sts_t (tcb_rsp_sts_t)
+      .req_cmd_t (tcb_req_cmd_t),
+      .rsp_sts_t (tcb_rsp_sts_t),
+      .req_t     (transfer_request_t)
     ) tcb_vif_t;
 
     // virtual interface instance
@@ -104,17 +116,6 @@ package tcb_vip_pkg;
 ////////////////////////////////////////////////////////////////////////////////
 // transfer
 ////////////////////////////////////////////////////////////////////////////////
-
-    // TCB transfer request structure
-    typedef struct {
-      tcb_req_cmd_t                    cmd;  // command (optional)
-      logic                            wen;  // write enable
-      logic                            ndn;  // endianness
-      logic [PHY.ADR-1:0]              adr;  // address
-      logic [PHY_SIZ-1:0]              siz;  // logarithmic size
-      logic [PHY_BEN-1:0]              ben;  // byte enable
-      logic [PHY_BEN-1:0][PHY.UNT-1:0] wdt;  // write data
-    } transfer_request_t;
 
     // TCB transfer response structure
     typedef struct {
@@ -183,13 +184,14 @@ package tcb_vip_pkg;
       // handshake
       tcb.vld <= 1'b1;
       // request
-      tcb.req.cmd <= req.cmd;
-      tcb.req.wen <= req.wen;
-      tcb.req.ndn <= req.ndn;
-      tcb.req.adr <= req.adr;
-      tcb.req.siz <= req.siz;
-      tcb.req.ben <= req.ben;
-      tcb.req.wdt <= req.wdt;
+      tcb.req <= req;
+//      tcb.req.cmd <= req.cmd;
+//      tcb.req.wen <= req.wen;
+//      tcb.req.ndn <= req.ndn;
+//      tcb.req.adr <= req.adr;
+//      tcb.req.siz <= req.siz;
+//      tcb.req.ben <= req.ben;
+//      tcb.req.wdt <= req.wdt;
       // backpressure
       bpr = 0;
       do begin
