@@ -1,0 +1,65 @@
+# Mode conversion from LOG_SIZE to BYTE_ENA
+
+There is 
+
+## Offset based mapping
+
+```SystemVerilog
+    // write access
+    assign man_req_wdt = {
+      sub_req_wdt[~req_off & 2'b11],
+      sub_req_wdt[~req_off & 2'b10],
+      sub_req_wdt[~req_off & 2'b01],
+      sub_req_wdt[~req_off & 2'b00]
+    };
+```
+
+[cols="1,2,3", options="header"]
+|===
+| `off` | `11` | `10` | `01` | `00`
+
+| `00`  | `11` | `10` | `01` | `00`  
+| `01`  | `10` | `10` | `00` | `00`
+| `10`  | `01` | `00` | `01` | `00`
+| `11`  | `00` | `00` | `00` | `00`
+|===
+
+[cols="1,2,3", options="header"]
+|===
+| `off` | `11` | `10` | `01` | `00`
+
+| `00`  | `11` | `10` | `01` | `00`  
+| `01`  | `xx` | `xx` | `00` | `xx`
+| `10`  | `01` | `00` | `xx` | `xx`
+| `11`  | `00` | `xx` | `xx` | `xx`
+|===
+
+[cols="1,2,3", options="header"]
+|===
+| `off` | `111` | `110` | `101` | `100` | `011` | `010` | `001` | `000`
+
+| `000` | 
+
+|===
+
+## Size based mapping
+
+```SystemVerilog
+    // write access
+    case siz
+      2'b00  : man_req_wdt = {4{sub_req_wdt[0:0]}},
+      2'b01  : man_req_wdt = {2{sub_req_wdt[1:0]}},
+      2'b10  : man_req_wdt = {1{sub_req_wdt[3:0]}},
+      default: man_req_wdt = 'x;
+    };
+```
+
+[cols="1,2,3", options="header"]
+|===
+| `siz` | `11` | `10` | `01` | `00`
+
+| `00`  | `00` | `00` | `00` | `00`  
+| `01`  | `01` | `00` | `01` | `00`
+| `10`  | `11` | `10` | `01` | `00`
+| `11`  | `xx` | `xx` | `xx` | `xx`
+|===
