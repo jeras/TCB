@@ -216,33 +216,32 @@ if (ALLIGNED) begin
 
   end else begin
 
-  // request path multiplexer (little/big endian)
-  always_comb
-  for (int unsigned i=0; i<sub.PHY_BEN; i++) begin: req
-    unique case (sub.req.ndn)
-      TCB_LITTLE: begin
-        man.req.ben[i] = sub_req_ben[(            (i-req_off)) % sub.PHY_BEN];
-        man_req_wdt[i] = sub_req_wdt[(            (i-req_off)) % sub.PHY_BEN];
-      end
-      TCB_BIG   : begin
-        man.req.ben[i] = sub_req_ben[(sub.PHY_BEN-(i-req_off)) % sub.PHY_BEN];
-        man_req_wdt[i] = sub_req_wdt[(sub.PHY_BEN-(i-req_off)) % sub.PHY_BEN];
-      end
-    endcase
-  end: req
+    // byte enable
+    always_comb
+    for (int unsigned i=0; i<sub.PHY_BEN; i++) begin: ben
+      unique case (sub.req.ndn)
+        TCB_LITTLE:  man.req.ben[i] = sub_req_ben[(            (i-req_off)) % sub.PHY_BEN];
+        TCB_BIG   :  man.req.ben[i] = sub_req_ben[(sub.PHY_BEN-(i-req_off)) % sub.PHY_BEN];
+      endcase
+    end: ben
+    
+    // write data
+    always_comb
+    for (int unsigned i=0; i<sub.PHY_BEN; i++) begin: wdt
+      unique case (sub.req.ndn)
+        TCB_LITTLE:  man_req_wdt[i] = sub_req_wdt[(            (i-req_off)) % sub.PHY_BEN];
+        TCB_BIG   :  man_req_wdt[i] = sub_req_wdt[(sub.PHY_BEN-(i-req_off)) % sub.PHY_BEN];
+      endcase
+    end: wdt
 
-  // response path multiplexer (little/big endian)
-  always_comb
-  for (int unsigned i=0; i<sub.PHY_BEN; i++) begin: rsp
-    unique case (sub.req.ndn)
-      TCB_LITTLE: begin
-        sub_rsp_rdt[i] = man_rsp_rdt[(            (i+rsp_off)) % sub.PHY_BEN];
-      end
-      TCB_BIG   : begin
-        sub_rsp_rdt[i] = man_rsp_rdt[(sub.PHY_BEN-(i+rsp_off)) % sub.PHY_BEN];
-      end
-    endcase
-  end: rsp
+    // read data
+    always_comb
+    for (int unsigned i=0; i<sub.PHY_BEN; i++) begin: rdt
+      unique case (sub.req.ndn)
+        TCB_LITTLE:  sub_rsp_rdt[i] = man_rsp_rdt[(            (i+rsp_off)) % sub.PHY_BEN];
+        TCB_BIG   :  sub_rsp_rdt[i] = man_rsp_rdt[(sub.PHY_BEN-(i+rsp_off)) % sub.PHY_BEN];
+      endcase
+    end: rdt
 
 end
 endgenerate
