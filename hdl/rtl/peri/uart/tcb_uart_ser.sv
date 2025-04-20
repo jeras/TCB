@@ -67,7 +67,7 @@ assign str_rdy = ~shf_run | (shf_end & bdr_end);
 ////////////////////////////////////////////////////////////////////////////////
 
 // baudrate generator from clock
-always @ (posedge clk, posedge rst)
+always_ff @(posedge clk, posedge rst)
 if (rst)              bdr_cnt <= '0;
 else begin
   if      (str_trn)  bdr_cnt <= '0;
@@ -78,7 +78,7 @@ end
 assign bdr_end = bdr_cnt == cfg_bdr;
 
 // bit counter
-always @ (posedge clk, posedge rst)
+always_ff @(posedge clk, posedge rst)
 if (rst) begin
   shf_cnt <= 4'd0;
   shf_run <= 1'b0;
@@ -103,7 +103,7 @@ assign shf_end = shf_cnt == 4'(SL-1);
 
 // data shift register
 // without reset, to reduce ASIC area
-always @(posedge clk, posedge rst)
+always_ff @(posedge clk, posedge rst)
 if (rst)              shf_dat <= '1;
 else begin
   if       (str_trn)  shf_dat <= {      str_dat        , 1'b0};

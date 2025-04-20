@@ -182,7 +182,7 @@ interface tcb_if
   // TODO: avoid toggling if there is not transfer
   generate
   if (PHY.DLY > 0) begin: delay
-    always @(posedge clk)
+    always_ff @(posedge clk)
     dly[1:PHY.DLY] <= dly[0:PHY.DLY-1];
   end: delay
   endgenerate

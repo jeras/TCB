@@ -67,12 +67,12 @@ module tcb_uart_fifo #(
   assign sti_trn = sti_vld & sti_rdy;
 
   // address
-  always @ (posedge clk, posedge rst)
+  always_ff @(posedge clk, posedge rst)
   if (rst)           sti_adr <= 'd0;
   else if (sti_trn)  sti_adr <= (sti_adr == AW'(SZ-1)) ? 'd0 : sti_adr + 'd1;
 
   // memory write
-  always @ (posedge clk)
+  always_ff @ (posedge clk)
   if (sti_trn) mem [sti_adr[AW-1:0]] <= sti_dat;
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -83,7 +83,7 @@ module tcb_uart_fifo #(
   assign sto_trn = sto_vld & sto_rdy;
 
   // address
-  always @ (posedge clk, posedge rst)
+  always_ff @(posedge clk, posedge rst)
   if (rst)           sto_adr <= 'd0;
   else if (sto_trn)  sto_adr <= (sto_adr == AW'(SZ-1)) ? 'd0 : sto_adr + 'd1;
 
@@ -95,7 +95,7 @@ module tcb_uart_fifo #(
 ////////////////////////////////////////////////////////////////////////////////
 
   // counter binary
-  always @ (posedge clk, posedge rst)
+  always_ff @(posedge clk, posedge rst)
   if (rst)  cnt <= 'd0;
   else      cnt <= cnt + CW'(sti_trn) - CW'(sto_trn);
 

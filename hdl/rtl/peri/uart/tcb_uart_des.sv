@@ -59,7 +59,7 @@ logic [DW+SW-1:0] shf_dat;
 ////////////////////////////////////////////////////////////////////////////////
 
 // parallel stream valid
-always @ (posedge clk, posedge rst)
+always_ff @(posedge clk, posedge rst)
 if (rst)  str_vld <= 1'b0;
 else      str_vld <= shf_end & bdr_smp;
 
@@ -68,7 +68,7 @@ else      str_vld <= shf_end & bdr_smp;
 ////////////////////////////////////////////////////////////////////////////////
 
 // delay uart_rxd and detect a start negative edge
-always @ (posedge clk, posedge rst)
+always_ff @(posedge clk, posedge rst)
 if (rst)  rxd_dly <= 1'b1;  // UART IDLE value
 else      rxd_dly <= rxd;
 
@@ -80,7 +80,7 @@ assign rxd_edg = rxd_dly & ~rxd;
 ////////////////////////////////////////////////////////////////////////////////
 
 // baudrate generator from clock
-always @ (posedge clk, posedge rst)
+always_ff @(posedge clk, posedge rst)
 if (rst)        bdr_cnt <= '0;
 else begin
   if (shf_run)  bdr_cnt <= bdr_end ? '0 : bdr_cnt + 1;
@@ -92,7 +92,7 @@ assign bdr_end = bdr_cnt == cfg_bdr;
 assign bdr_smp = bdr_cnt == cfg_smp;
 
 // bit counter
-always @ (posedge clk, posedge rst)
+always_ff @(posedge clk, posedge rst)
 if (rst) begin
   shf_cnt <= 4'd0;
   shf_run <= 1'b0;
@@ -120,7 +120,7 @@ end
 assign shf_end = shf_cnt == 4'(SL-1);
 
 // data shift register
-always @ (posedge clk)
+always_ff @(posedge clk)
 if (shf_run) begin
   if (bdr_smp)  shf_dat <= {rxd, shf_dat[DW+SW-1:1]};
 end
