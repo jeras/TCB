@@ -21,32 +21,32 @@ module tcb_lib_converter_tb
   import tcb_vip_pkg::*;
 #(
   // protocol
-  int unsigned      MAN_DLY = TCB_PAR_PHY_DEF.DLY,  // response delay
+  parameter  int unsigned      MAN_DLY = TCB_PAR_PHY_DEF.DLY,  // response delay
   // signal widths
-  int unsigned      MAN_UNT = TCB_PAR_PHY_DEF.UNT,  // data unit   width (byte width is 8 by default)
-  int unsigned      MAN_ADR = TCB_PAR_PHY_DEF.ADR,  // address bus width
-  int unsigned      MAN_DAT = TCB_PAR_PHY_DEF.DAT,  // data    bus width
-  int unsigned      MAN_ALN = TCB_PAR_PHY_DEF.ALN,  // alignment width
+  parameter  int unsigned      MAN_UNT = TCB_PAR_PHY_DEF.UNT,  // data unit   width (byte width is 8 by default)
+  parameter  int unsigned      MAN_ADR = TCB_PAR_PHY_DEF.ADR,  // address bus width
+  parameter  int unsigned      MAN_DAT = TCB_PAR_PHY_DEF.DAT,  // data    bus width
   // data packing parameters for manager/subordinate
-  tcb_phy_size_t    MAN_SIZ = TCB_PAR_PHY_DEF.SIZ,  // manager     transfer size encoding
-  tcb_phy_mode_t    MAN_MOD = TCB_PAR_PHY_DEF.MOD,  // manager     data position mode
-  tcb_phy_order_t   MAN_ORD = TCB_PAR_PHY_DEF.ORD,  // manager     byte order
+  parameter  int unsigned      MAN_ALN = TCB_PAR_PHY_DEF.ALN,  // TODO
+  parameter  int unsigned      MAN_MIN = TCB_PAR_PHY_DEF.MIN,  // TODO
+  parameter  tcb_phy_mode_t    MAN_MOD = TCB_PAR_PHY_DEF.MOD,  // manager     data position mode
+  parameter  tcb_phy_order_t   MAN_ORD = TCB_PAR_PHY_DEF.ORD,  // manager     byte order
   // channel configuration
-  tcb_phy_channel_t MAN_CHN = TCB_PAR_PHY_DEF.CHN,  // channel configuration
+  parameter  tcb_phy_channel_t MAN_CHN = TCB_PAR_PHY_DEF.CHN,  // channel configuration
 
   // protocol
-  int unsigned      SUB_DLY = TCB_PAR_PHY_DEF.DLY,  // response delay
+  parameter  int unsigned      SUB_DLY = TCB_PAR_PHY_DEF.DLY,  // response delay
   // signal widths
-  int unsigned      SUB_UNT = TCB_PAR_PHY_DEF.UNT,  // data unit   width (byte width is 8 by default)
-  int unsigned      SUB_ADR = TCB_PAR_PHY_DEF.ADR,  // address bus width
-  int unsigned      SUB_DAT = TCB_PAR_PHY_DEF.DAT,  // data    bus width
-  int unsigned      SUB_ALN = TCB_PAR_PHY_DEF.ALN,  // alignment width
+  parameter  int unsigned      SUB_UNT = TCB_PAR_PHY_DEF.UNT,  // data unit   width (byte width is 8 by default)
+  parameter  int unsigned      SUB_ADR = TCB_PAR_PHY_DEF.ADR,  // address bus width
+  parameter  int unsigned      SUB_DAT = TCB_PAR_PHY_DEF.DAT,  // data    bus width
   // data packing parameters for manager/subordinate
-  tcb_phy_size_t    SUB_SIZ = TCB_PAR_PHY_DEF.SIZ,  // subordinate transfer size encoding
-  tcb_phy_mode_t    SUB_MOD = TCB_PAR_PHY_DEF.MOD,  // subordinate data position mode
-  tcb_phy_order_t   SUB_ORD = TCB_PAR_PHY_DEF.ORD,  // subordinate byte order
+  parameter  int unsigned      SUB_ALN = TCB_PAR_PHY_DEF.ALN,  // TODO
+  parameter  int unsigned      SUB_MIN = TCB_PAR_PHY_DEF.MIN,  // TODO
+  parameter  tcb_phy_mode_t    SUB_MOD = TCB_PAR_PHY_DEF.MOD,  // subordinate data position mode
+  parameter  tcb_phy_order_t   SUB_ORD = TCB_PAR_PHY_DEF.ORD,  // subordinate byte order
   // channel configuration
-  tcb_phy_channel_t SUB_CHN = TCB_PAR_PHY_DEF.CHN   // channel configuration
+  parameter  tcb_phy_channel_t SUB_CHN = TCB_PAR_PHY_DEF.CHN   // channel configuration
 );
 
   // manager physical interface parameter
@@ -57,9 +57,9 @@ module tcb_lib_converter_tb
     UNT: MAN_UNT,
     ADR: MAN_ADR,
     DAT: MAN_DAT,
-    ALN: MAN_ALN,
     // size/mode/order parameters
-    SIZ: MAN_SIZ,
+    ALN: MAN_ALN,
+    MIN: MAN_MIN,
     MOD: MAN_MOD,
     ORD: MAN_ORD,
     // channel configuration
@@ -74,9 +74,9 @@ module tcb_lib_converter_tb
     UNT: SUB_UNT,
     ADR: SUB_ADR,
     DAT: SUB_DAT,
-    ALN: SUB_ALN,
     // size/mode/order parameters
-    SIZ: SUB_SIZ,
+    ALN: SUB_ALN,
+    MIN: SUB_MIN,
     MOD: SUB_MOD,
     ORD: SUB_ORD,
     // channel configuration
@@ -165,7 +165,11 @@ module tcb_lib_converter_tb
 ////////////////////////////////////////////////////////////////////////////////
 
   // memory model subordinate
-  tcb_vip_memory      mem       (.tcb (tcb_mem));
+  tcb_vip_memory #(
+    .SIZ (2**8)
+  ) mem (
+    .tcb (tcb_mem)
+  );
 
   // connect interfaces to interface array
   tcb_lib_passthrough pas [0:0] (.sub (tcb_sub), .man (tcb_mem));

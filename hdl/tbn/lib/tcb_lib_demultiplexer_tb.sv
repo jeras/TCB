@@ -17,21 +17,42 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 module tcb_lib_demultiplexer_tb
+  import tcb_pkg::*;
   import tcb_vip_pkg::*;
 #(
-  // TCB widths
-  int unsigned ADR = 32,       // address bus width
-  int unsigned DAT = 32,       // data    bus width
-  int unsigned UNT =       8,  // data unit   width
-  int unsigned BEN = DAT/UNT,  // byte enable width
   // response delay
-  int unsigned DLY = 1,
+  parameter  int unsigned DLY = TCB_PAR_PHY_DEF.DLY,
+  // TCB widths
+  parameter  int unsigned UNT = TCB_PAR_PHY_DEF.UNT,       // data unit   width
+  parameter  int unsigned ADR = TCB_PAR_PHY_DEF.ADR,       // address bus width
+  parameter  int unsigned DAT = TCB_PAR_PHY_DEF.DAT,       // data    bus width
   // interconnect parameters
-  int unsigned MPN = 3,      // port number
-  int unsigned MPL = $clog2(MPN),
+  parameter  int unsigned MPN = 3,        // port number
+  parameter  int unsigned MPL = $clog2(MPN),
   // decoder address and mask array
   parameter  logic [ADR-1:0] DAM [MPN-1:0] = '{MPN{ADR'('x)}}
 );
+
+  // TCB physical interface parameters
+  localparam tcb_phy_t PHY = '{
+    // protocol
+    DLY: DLY,
+    // signal bus widths
+    UNT: UNT,
+    ADR: ADR,
+    DAT: DAT,
+    // size/mode/order parameters
+    ALN: TCB_PAR_PHY_DEF.ALN,
+    MIN: TCB_PAR_PHY_DEF.MIN,
+    MOD: TCB_PAR_PHY_DEF.MOD,
+    ORD: TCB_PAR_PHY_DEF.ORD,
+    // channel configuration
+    CHN: TCB_PAR_PHY_DEF.CHN
+  };
+
+////////////////////////////////////////////////////////////////////////////////
+// local signals
+////////////////////////////////////////////////////////////////////////////////
 
   // system signals
   logic clk;  // clock
@@ -42,14 +63,14 @@ module tcb_lib_demultiplexer_tb
   logic           err;  // error response
 
   // control
-  logic  [MPL-1:0] sel;  // select
+  logic [MPL-1:0] sel;  // select
 
 ////////////////////////////////////////////////////////////////////////////////
 // local signals
 ////////////////////////////////////////////////////////////////////////////////
 
-  tcb_if #(.ADR (ADR), .DAT (DAT)) tcb_man            (.clk (clk), .rst (rst));
-  tcb_if #(.ADR (ADR), .DAT (DAT)) tcb_sub  [MPN-1:0] (.clk (clk), .rst (rst));
+  tcb_if #(.PHY (PHY)) tcb_man            (.clk (clk), .rst (rst));
+  tcb_if #(.PHY (PHY)) tcb_sub  [MPN-1:0] (.clk (clk), .rst (rst));
 
 ////////////////////////////////////////////////////////////////////////////////
 // test sequence

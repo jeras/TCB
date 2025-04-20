@@ -17,21 +17,42 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 module tcb_lib_multiplexer_tb
+  import tcb_pkg::*;
   import tcb_vip_pkg::*;
 #(
-  // TCB widths
-  int unsigned ADR = 32,       // address bus width
-  int unsigned DAT = 32,       // data    bus width
-  int unsigned UNT =       8,  // data unit   width
-  int unsigned BEN = DAT/UNT,  // byte enable width
   // response delay
-  int unsigned DLY = 1,
+  parameter  int unsigned DLY = TCB_PAR_PHY_DEF.DLY,
+  // TCB widths
+  parameter  int unsigned UNT = TCB_PAR_PHY_DEF.UNT,       // data unit   width
+  parameter  int unsigned ADR = TCB_PAR_PHY_DEF.ADR,       // address bus width
+  parameter  int unsigned DAT = TCB_PAR_PHY_DEF.DAT,       // data    bus width
   // interconnect parameters
-  int unsigned SPN = 3,      // port number
-  int unsigned SPL = $clog2(SPN),
+  parameter  int unsigned SPN = 3,      // port number
+  parameter  int unsigned SPL = $clog2(SPN),
   // port priorities (lower number is higher priority)
-  int unsigned PRI [SPN-1:0] = '{2, 1, 0}
+  parameter  int unsigned PRI [SPN-1:0] = '{2, 1, 0}
 );
+
+  // TCB physical interface parameters
+  localparam tcb_phy_t PHY = '{
+    // protocol
+    DLY: DLY,
+    // signal bus widths
+    UNT: UNT,
+    ADR: ADR,
+    DAT: DAT,
+    // size/mode/order parameters
+    ALN: TCB_PAR_PHY_DEF.ALN,
+    MIN: TCB_PAR_PHY_DEF.MIN,
+    MOD: TCB_PAR_PHY_DEF.MOD,
+    ORD: TCB_PAR_PHY_DEF.ORD,
+    // channel configuration
+    CHN: TCB_PAR_PHY_DEF.CHN
+  };
+
+////////////////////////////////////////////////////////////////////////////////
+// local signals
+////////////////////////////////////////////////////////////////////////////////
 
   // system signals
   logic clk;  // clock
@@ -50,8 +71,8 @@ module tcb_lib_multiplexer_tb
 // local signals
 ////////////////////////////////////////////////////////////////////////////////
 
-  tcb_if #(.ADR (ADR), .DAT (DAT)) tcb_man  [SPN-1:0] (.clk (clk), .rst (rst));
-  tcb_if #(.ADR (ADR), .DAT (DAT)) tcb_sub            (.clk (clk), .rst (rst));
+  tcb_if #(.PHY (PHY)) tcb_man  [SPN-1:0] (.clk (clk), .rst (rst));
+  tcb_if #(.PHY (PHY)) tcb_sub            (.clk (clk), .rst (rst));
 
 ////////////////////////////////////////////////////////////////////////////////
 // test sequence

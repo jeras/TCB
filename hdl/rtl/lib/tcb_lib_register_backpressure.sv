@@ -18,9 +18,7 @@
 
 module tcb_lib_register_backpressure
   import tcb_pkg::*;
-#(
-  int unsigned GRN = 1  // bus hold granularity (byte granularity by default)
-)(
+(
   tcb_if.sub sub,  // TCB subordinate port (manager     device connects here)
   tcb_if.man man   // TCB manager     port (subordinate device connects here)
 );
@@ -69,10 +67,10 @@ module tcb_lib_register_backpressure
       tmp_siz <= sub.req.siz;
       tmp_ben <= sub.req.ben;
       tmp_adr <= sub.req.adr;
-      for (int unsigned i=0; i<sub.PHY_BEN; i+=sub.PHY.UNT*GRN) begin
+      for (int unsigned i=0; i<sub.PHY_BEN; i++) begin
         // data granularity
         if (sub.req.wen & sub.req.ben[i]) begin
-          tmp_wdt[i+:sub.PHY.UNT*GRN] <= sub.req.wdt[i+:sub.PHY.UNT*GRN];
+          tmp_wdt[sub.PHY.UNT*i+:sub.PHY.UNT] <= sub.req.wdt[sub.PHY.UNT*i+:sub.PHY.UNT];
         end
       end
     end

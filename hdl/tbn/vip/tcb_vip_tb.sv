@@ -20,13 +20,13 @@ module tcb_vip_tb
   import tcb_pkg::*;
   import tcb_vip_pkg::*;
 #(
-  // TCB widths
-  int unsigned ADR = 32,
-  int unsigned DAT = 32,
   // response delay
-  int unsigned DLY = 0,
+  parameter  int unsigned DLY = 0,
+  // TCB widths
+  parameter  int unsigned ADR = 32,
+  parameter  int unsigned DAT = 32,
   // memory port number
-  int unsigned PN = 1
+  parameter  int unsigned PN = 1
 );
 
   // TODO: parameter propagation through virtual interfaces in classes
@@ -40,9 +40,9 @@ module tcb_vip_tb
     UNT: TCB_PAR_PHY_DEF.UNT,
     ADR: ADR,
     DAT: DAT,
-    ALN: $clog2(DAT/TCB_PAR_PHY_DEF.UNT),
     // size/mode/order parameters
-    SIZ: TCB_PAR_PHY_DEF.SIZ,
+    ALN: $clog2(DAT/TCB_PAR_PHY_DEF.UNT),
+    MIN: TCB_PAR_PHY_DEF.MIN,
     MOD: TCB_PAR_PHY_DEF.MOD,
     ORD: TCB_PAR_PHY_DEF.ORD,
     // channel configuration
@@ -246,7 +246,11 @@ module tcb_vip_tb
 ////////////////////////////////////////////////////////////////////////////////
 
   // memory model subordinate
-  tcb_vip_memory         mem       (.tcb (tcb_mem));
+  tcb_vip_memory #(
+    .SIZ (2**8)
+  ) mem (
+    .tcb (tcb_mem)
+  );
 
 ////////////////////////////////////////////////////////////////////////////////
 // DUT instance

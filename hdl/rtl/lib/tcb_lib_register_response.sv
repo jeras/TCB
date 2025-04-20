@@ -16,9 +16,7 @@
 // limitations under the License.
 ////////////////////////////////////////////////////////////////////////////////
 
-module tcb_lib_register_response #(
-  int unsigned GRN = 1  // bus hold granularity (byte granularity by default)
-)(
+module tcb_lib_register_response (
   tcb_if.sub sub,  // TCB subordinate port (manager     device connects here)
   tcb_if.man man   // TCB manager     port (subordinate device connects here)
 );
@@ -46,9 +44,9 @@ module tcb_lib_register_response #(
   begin
     // TODO: only on read enable
     // data granularity
-    for (int unsigned i=0; i<man.PHY_BEN; i+=man.PHY.UNT*GRN) begin
-      if (man.rbe[man.PHY.DLY][i]) begin
-        sub.rsp.rdt[i+:man.PHY.UNT*GRN] <= man.rsp.rdt[i+:man.PHY.UNT*GRN];
+    for (int unsigned i=0; i<man.PHY_BEN; i++) begin
+      if (man.dly[man.PHY.DLY].ben[i]) begin
+        sub.rsp.rdt[man.PHY.UNT*i+:man.PHY.UNT] <= man.rsp.rdt[man.PHY.UNT*i+:man.PHY.UNT];
       end
     end
     // response status

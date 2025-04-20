@@ -38,7 +38,6 @@ package tcb_vip_pkg;
     localparam int unsigned PHY_BEN = PHY.DAT / PHY.UNT;
 
     // transfer size width calculation
-    localparam int unsigned PHY_SIZ_LIN = $clog2(       PHY_BEN   );  // linear
     localparam int unsigned PHY_SIZ_LOG = $clog2($clog2(PHY_BEN)+1);  // logarithmic (default)
     // transfer size width selection
     localparam int unsigned PHY_SIZ = PHY_SIZ_LOG;
@@ -183,7 +182,6 @@ package tcb_vip_pkg;
       tcb.req.ndn = req.ndn;
       tcb.req.adr = req.adr;
       tcb.req.siz = req.siz;
-      tcb.req.uns = req.uns;
       tcb.req.ben = req.ben;
       tcb.req.wdt = req.wdt;
       // backpressure
@@ -202,7 +200,6 @@ package tcb_vip_pkg;
       tcb.req.ndn = 'x;
       tcb.req.adr = 'x;
       tcb.req.siz = 'x;
-      tcb.req.uns = 'x;
       tcb.req.ben = 'x;
       tcb.req.wdt = 'x;
     endtask: transfer_req_drv
@@ -258,7 +255,6 @@ package tcb_vip_pkg;
       req.ndn = tcb.req.ndn;
       req.adr = tcb.req.adr;
       req.siz = tcb.req.siz;
-      req.uns = tcb.req.uns;
       req.ben = tcb.req.ben;
       req.wdt = tcb.req.wdt;
     endtask: transfer_req_lsn

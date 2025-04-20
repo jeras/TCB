@@ -19,7 +19,7 @@
 module tcb_lib_multiplexer
   import tcb_pkg::*;
 #(
-  // interconnect parameters (subordinate port number and logirthm)
+  // interconnect parameters (subordinate port number and logarithm)
   parameter  int unsigned SPN = 2,
   localparam int unsigned SPL = $clog2(SPN)
 )(

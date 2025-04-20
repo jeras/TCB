@@ -20,11 +20,11 @@ module tcb_lib_passthrough_tb
   import tcb_pkg::*;
   import tcb_vip_pkg::*;
 #(
-  // TCB widths
-  int unsigned ADR = 32,
-  int unsigned DAT = 32,
   // response delay
-  int unsigned DLY = 1
+  parameter  int unsigned DLY = 1,
+  // TCB widths
+  parameter  int unsigned ADR = 32,
+  parameter  int unsigned DAT = 32
 );
 
   // TODO: parameter propagation through virtual interfaces in classes
@@ -38,9 +38,9 @@ module tcb_lib_passthrough_tb
     UNT: TCB_PAR_PHY_DEF.UNT,
     ADR: ADR,
     DAT: DAT,
-    ALN: $clog2(DAT/TCB_PAR_PHY_DEF.UNT),
     // size/mode/order parameters
-    SIZ: TCB_PAR_PHY_DEF.SIZ,
+    ALN: $clog2(DAT/TCB_PAR_PHY_DEF.UNT),
+    MIN: TCB_PAR_PHY_DEF.MIN,
     MOD: TCB_PAR_PHY_DEF.MOD,
     ORD: TCB_PAR_PHY_DEF.ORD,
     // channel configuration

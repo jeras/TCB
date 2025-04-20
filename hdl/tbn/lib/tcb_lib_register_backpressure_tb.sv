@@ -19,19 +19,51 @@
 module tcb_lib_register_backpressure_tb
   import tcb_vip_pkg::*;
 #(
-  // TCB widths
-  int unsigned ADR = 32,       // address bus width
-  int unsigned DAT = 32,       // data    bus width
-  int unsigned UNT =       8,  // data unit   width
-  int unsigned BEN = DAT/UNT,  // byte enable width
   // response delay
-  int unsigned DLY = 1,
-  // bus hold granularity (byte granularity by default)
-  int unsigned GRN = 1
+  parameter  int unsigned DLY = TCB_PAR_PHY_DEF.DLY,
+  // TCB widths
+  parameter  int unsigned UNT = TCB_PAR_PHY_DEF.UNT,       // data unit   width
+  parameter  int unsigned ADR = TCB_PAR_PHY_DEF.ADR,       // address bus width
+  parameter  int unsigned DAT = TCB_PAR_PHY_DEF.DAT        // data    bus width
 );
 
-  localparam DLY_MAN = DLY+0;
-  localparam DLY_SUB = DLY;
+  // TCB physical interface parameters for manager
+  localparam tcb_phy_t PHY_MAN = '{
+    // protocol
+    DLY: DLY,
+    // signal bus widths
+    UNT: UNT,
+    ADR: ADR,
+    DAT: DAT,
+    // size/mode/order parameters
+    ALN: TCB_PAR_PHY_DEF.ALN,
+    MIN: TCB_PAR_PHY_DEF.MIN,
+    MOD: TCB_PAR_PHY_DEF.MOD,
+    ORD: TCB_PAR_PHY_DEF.ORD,
+    // channel configuration
+    CHN: TCB_PAR_PHY_DEF.CHN
+  };
+
+  // TCB physical interface parameters for subordinate
+  localparam tcb_phy_t PHY_SUB = '{
+    // protocol
+    DLY: DLY,
+    // signal bus widths
+    UNT: UNT,
+    ADR: ADR,
+    DAT: DAT,
+    // size/mode/order parameters
+    ALN: TCB_PAR_PHY_DEF.ALN,
+    MIN: TCB_PAR_PHY_DEF.MIN,
+    MOD: TCB_PAR_PHY_DEF.MOD,
+    ORD: TCB_PAR_PHY_DEF.ORD,
+    // channel configuration
+    CHN: TCB_PAR_PHY_DEF.CHN
+  };
+
+////////////////////////////////////////////////////////////////////////////////
+// local signals
+////////////////////////////////////////////////////////////////////////////////
 
   // system signals
   logic clk;  // clock
@@ -45,9 +77,9 @@ module tcb_lib_register_backpressure_tb
 // local signals
 ////////////////////////////////////////////////////////////////////////////////
 
-  tcb_if #(.ADR (ADR), .DAT (DAT), .DLY (DLY_MAN)) tcb_man       (.clk (clk), .rst (rst));
-  tcb_if #(.ADR (ADR), .DAT (DAT), .DLY (DLY_SUB)) tcb_sub       (.clk (clk), .rst (rst));
-  tcb_if #(.ADR (ADR), .DAT (DAT), .DLY (DLY_SUB)) tcb_mem [0:0] (.clk (clk), .rst (rst));
+  tcb_if #(.PHY (PHY_MAN)) tcb_man       (.clk (clk), .rst (rst));
+  tcb_if #(.PHY (PHY_SUB)) tcb_sub       (.clk (clk), .rst (rst));
+  tcb_if #(.PHY (PHY_SUB)) tcb_mem [0:0] (.clk (clk), .rst (rst));
 
 ////////////////////////////////////////////////////////////////////////////////
 // test sequence
@@ -87,9 +119,7 @@ module tcb_lib_register_backpressure_tb
 // DUT instance
 ////////////////////////////////////////////////////////////////////////////////
 
-  tcb_lib_register_backpressure #(
-    .GRN  (GRN)
-  ) dut (
+  tcb_lib_register_backpressure dut (
     .sub  (tcb_man),
     .man  (tcb_sub)
   );

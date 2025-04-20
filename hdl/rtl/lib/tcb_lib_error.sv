@@ -31,7 +31,7 @@ assign sub.rdy = 1'b1;
 // data is don't care
 assign sub.rsp.rdt = 'x;
 
-// the response is always an error
+// the response status is always an error
 assign sub.rsp.sts.err = 1'b1;
 
 endmodule: tcb_lib_error
