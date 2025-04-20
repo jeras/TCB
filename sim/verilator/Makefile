@@ -13,7 +13,7 @@ include ../filelist.mk
 include ../tcb_pkg.mk
 include ../tcb_phy_parameters.mk
 
-TOP ?= tcb_lib_converter_tb
+TOP ?= tcb_vip_tb
 
 ################################################################################
 # tool specific flags
