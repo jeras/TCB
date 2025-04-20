@@ -25,41 +25,50 @@ package tcb_vip_pkg;
 ////////////////////////////////////////////////////////////////////////////////
 
   class tcb_transfer_c #(
-    tcb_phy_t  PHY = TCB_PAR_PHY_DEF,
-    type tcb_req_cmd_t = tcb_req_cmd_def_t,
-    type tcb_rsp_sts_t = tcb_rsp_sts_def_t
+    parameter       tcb_phy_t PHY = TCB_PAR_PHY_DEF,
+    parameter  type tcb_req_cmd_t = tcb_req_cmd_def_t,
+    parameter  type tcb_rsp_sts_t = tcb_rsp_sts_def_t
   );
 
-////////////////////////////////////////////////////////////////////////////////
-// local parameters
-////////////////////////////////////////////////////////////////////////////////
+  //////////////////////////////////////////////////////////////////////////////
+  // local parameters
+  //////////////////////////////////////////////////////////////////////////////
 
-    // byte enable width
+    // byte enable width (number of units inside data)
     localparam int unsigned PHY_BEN = PHY.DAT / PHY.UNT;
 
-    // transfer size width calculation
-    localparam int unsigned PHY_SIZ_LOG = $clog2($clog2(PHY_BEN)+1);  // logarithmic (default)
-    // transfer size width selection
-    localparam int unsigned PHY_SIZ = PHY_SIZ_LOG;
+    // offset width (number of address bits defining the offset of units inside data)
+    localparam int unsigned PHY_OFF = $clog2(PHY_BEN);
 
-////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
+    // logarithmic transfer size width
+    localparam int unsigned PHY_SIZ = $clog2(PHY_OFF+1);
 
+  //////////////////////////////////////////////////////////////////////////////
+  // virtual interface
+  //////////////////////////////////////////////////////////////////////////////
+
+    // virtual interface type definition
     typedef virtual tcb_if #(
       .PHY           (PHY),
       .tcb_req_cmd_t (tcb_req_cmd_t),
       .tcb_rsp_sts_t (tcb_rsp_sts_t)
     ) tcb_vif_t;
 
-    string MODE = "MON";
+    // virtual interface instance
     tcb_vif_t tcb;
 
+    // direction
+    string DIR = "";
+
     //constructor
-    function new(string MODE = "MON", tcb_vif_t tcb);
-      this.MODE = MODE;
+    function new(
+      string DIR = "MON",
+      tcb_vif_t tcb
+    );
+      this.DIR = DIR;
       this.tcb = tcb;
       // initialization
-      case (MODE)
+      case (DIR)
         // manager
         "MAN": begin
           // initialize to idle state
@@ -103,7 +112,6 @@ package tcb_vip_pkg;
       logic                            ndn;  // endianness
       logic [PHY.ADR-1:0]              adr;  // address
       logic [PHY_SIZ-1:0]              siz;  // logarithmic size
-      logic                            uns;  // unsigned
       logic [PHY_BEN-1:0]              ben;  // byte enable
       logic [PHY_BEN-1:0][PHY.UNT-1:0] wdt;  // write data
     } transfer_request_t;
@@ -135,7 +143,6 @@ package tcb_vip_pkg;
         ndn: 1'bx,
         adr: 'x,
         siz: 'x,
-        uns: 'x,
         ben: 'x,
         wdt: 'x
       },
@@ -173,17 +180,16 @@ package tcb_vip_pkg;
       // request timing
       repeat (idl) @(posedge tcb.clk);
       // drive transfer
-      #1;
       // handshake
-      tcb.vld = 1'b1;
+      tcb.vld <= 1'b1;
       // request
-      tcb.req.cmd = req.cmd;
-      tcb.req.wen = req.wen;
-      tcb.req.ndn = req.ndn;
-      tcb.req.adr = req.adr;
-      tcb.req.siz = req.siz;
-      tcb.req.ben = req.ben;
-      tcb.req.wdt = req.wdt;
+      tcb.req.cmd <= req.cmd;
+      tcb.req.wen <= req.wen;
+      tcb.req.ndn <= req.ndn;
+      tcb.req.adr <= req.adr;
+      tcb.req.siz <= req.siz;
+      tcb.req.ben <= req.ben;
+      tcb.req.wdt <= req.wdt;
       // backpressure
       bpr = 0;
       do begin
@@ -191,17 +197,16 @@ package tcb_vip_pkg;
         if (~tcb.rdy) bpr++;
       end while (~tcb.trn);
       // drive idle/undefined
-      #1;
       // handshake
-      tcb.vld = 1'b0;
+      tcb.vld <= 1'b0;
       // request
-      tcb.req.cmd = 'x;
-      tcb.req.wen = 'x;
-      tcb.req.ndn = 'x;
-      tcb.req.adr = 'x;
-      tcb.req.siz = 'x;
-      tcb.req.ben = 'x;
-      tcb.req.wdt = 'x;
+      tcb.req.cmd <= 'x;
+      tcb.req.wen <= 'x;
+      tcb.req.ndn <= 'x;
+      tcb.req.adr <= 'x;
+      tcb.req.siz <= 'x;
+      tcb.req.ben <= 'x;
+      tcb.req.wdt <= 'x;
     endtask: transfer_req_drv
 
     // transfer response listener
@@ -213,8 +218,8 @@ package tcb_vip_pkg;
         @(posedge tcb.clk);
       end while (~tcb.dly[tcb.PHY.DLY].ena);
       // response
-      rsp.rdt = tcb.rsp.rdt;
-      rsp.sts = tcb.rsp.sts;
+      rsp.rdt <= tcb.rsp.rdt;
+      rsp.sts <= tcb.rsp.sts;
     endtask: transfer_rsp_lsn
 
     // transfer request listener
@@ -223,14 +228,13 @@ package tcb_vip_pkg;
       output int unsigned       idl,
       input  int unsigned       bpr
     );
-      #1;
-      tcb.rdy = 1'b0;
+      tcb.rdy <= 1'b0;
       // TODO: measure idle time
       idl = 0;
       // request
       if (bpr == 0) begin
         // ready
-        tcb.rdy = 1'b1;
+        tcb.rdy <= 1'b1;
         // wait for transfer
         do begin
           @(posedge tcb.clk);
@@ -243,20 +247,19 @@ package tcb_vip_pkg;
           idl += tcb.vld ? 0 : 1;
         end
         // ready
-        #1;
-        tcb.rdy = 1'b1;
+        tcb.rdy <= 1'b1;
         // wait for transfer
         do begin
           @(posedge tcb.clk);
         end while (~tcb.trn);
       end
-      req.cmd = tcb.req.cmd;
-      req.wen = tcb.req.wen;
-      req.ndn = tcb.req.ndn;
-      req.adr = tcb.req.adr;
-      req.siz = tcb.req.siz;
-      req.ben = tcb.req.ben;
-      req.wdt = tcb.req.wdt;
+      req.cmd <= tcb.req.cmd;
+      req.wen <= tcb.req.wen;
+      req.ndn <= tcb.req.ndn;
+      req.adr <= tcb.req.adr;
+      req.siz <= tcb.req.siz;
+      req.ben <= tcb.req.ben;
+      req.wdt <= tcb.req.wdt;
     endtask: transfer_req_lsn
 
     // transfer response driver
@@ -264,8 +267,8 @@ package tcb_vip_pkg;
       input  transfer_response_t rsp
     );
       // response
-      tcb.rsp.rdt = rsp.rdt;
-      tcb.rsp.sts = rsp.sts;
+      tcb.rsp.rdt <= rsp.rdt;
+      tcb.rsp.sts <= rsp.sts;
       // wait for response
       do begin
         @(posedge tcb.clk);
@@ -280,12 +283,12 @@ package tcb_vip_pkg;
 
     // request/response
     task automatic transfer_sequencer (
-      inout  transfer_array_t transfer_array
+      ref transfer_array_t transfer_array
     );
       fork
         begin: fork_req
           foreach (transfer_array[i]) begin
-            case (MODE)
+            case (DIR)
               "MAN": transfer_req_drv(transfer_array[i].req, transfer_array[i].idl, transfer_array[i].bpr);
               "MON": transfer_req_lsn(transfer_array[i].req, transfer_array[i].idl, transfer_array[i].bpr);
               "SUB": transfer_req_lsn(transfer_array[i].req, transfer_array[i].idl, transfer_array[i].bpr);
@@ -294,7 +297,7 @@ package tcb_vip_pkg;
         end: fork_req
         begin: fork_rsp
           foreach (transfer_array[i]) begin
-            case (MODE)
+            case (DIR)
               "MAN": transfer_rsp_lsn(transfer_array[i].rsp);
               "MON": transfer_rsp_lsn(transfer_array[i].rsp);
               "SUB": transfer_rsp_drv(transfer_array[i].rsp);
@@ -357,7 +360,7 @@ package tcb_vip_pkg;
           logic [PHY.ALN-1:0] adr_alw;
           adr_alw = transaction_req.adr[(PHY.ALN>0?(PHY.ALN-1):0):0];
           if (|adr_alw) begin
-            $error("ERROR: Transaction address is not aligned to supported size. adr[%d:0]=%0b", PHY.ALN-1, adr_alw);
+            $error("ERROR: Transaction address is not aligned to supported size. adr[%0d:0]=%0d'b%b", PHY.ALN-1, PHY.ALN, adr_alw);
           end
         end
         // control and address signals
@@ -369,7 +372,6 @@ package tcb_vip_pkg;
           transfer_array[i].req.adr = transaction_req.adr;
           transfer_array[i].req.ben = '0;
           transfer_array[i].req.siz = $clog2(PHY_BEN);
-          transfer_array[i].req.uns = transaction_req.uns;
         end
         if (siz <= PHY_BEN) begin
           transfer_array[0].req.siz = $clog2(    siz);

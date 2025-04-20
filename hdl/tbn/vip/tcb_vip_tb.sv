@@ -25,15 +25,15 @@ module tcb_vip_tb
   // TCB widths
   parameter  int unsigned ADR = 32,
   parameter  int unsigned DAT = 32,
-  // memory port number
-  parameter  int unsigned PN = 1
+  // memory interface number
+  parameter  int unsigned IFN = 1
 );
 
   // TODO: parameter propagation through virtual interfaces in classes
   // is not working well thus this workaround
 
   // physical interface parameter
-  localparam tcb_phy_t PHY1 = '{
+  localparam tcb_phy_t PHY = '{
     // protocol
     DLY: DLY,
     // signal bus widths
@@ -49,7 +49,7 @@ module tcb_vip_tb
     CHN: TCB_PAR_PHY_DEF.CHN
   };
 
-  localparam tcb_phy_t PHY = TCB_PAR_PHY_DEF;
+//  localparam tcb_phy_t PHY = TCB_PAR_PHY_DEF;
 
 ////////////////////////////////////////////////////////////////////////////////
 // local signals
@@ -58,14 +58,11 @@ module tcb_vip_tb
   // system signals
   logic clk;  // clock
   logic rst;  // reset
-/*
+
   // TCB interfaces
-  tcb_if #(.PHY (PHY)) tcb              (.clk (clk), .rst (rst));
-  tcb_if #(.PHY (PHY)) tcb_mem [0:PN-1] (.clk (clk), .rst (rst));
-*/
-  // TCB interfaces
-  tcb_if tcb              (.clk (clk), .rst (rst));
-  tcb_if tcb_mem [0:PN-1] (.clk (clk), .rst (rst));
+  tcb_if #(.PHY (PHY)) tcb (.clk (clk), .rst (rst));
+  // tcb_if tcb              (.clk (clk), .rst (rst));
+  // tcb_if tcb_mem [0:IFN-1] (.clk (clk), .rst (rst));
 
   // parameterized class specialization
   typedef tcb_transfer_c #(.PHY (PHY)) tcb_s;
@@ -74,7 +71,6 @@ module tcb_vip_tb
   tcb_s obj_man;
   tcb_s obj_mon;
   tcb_s obj_sub;
-  tcb_s obj_mem [0:PN-1];
 
   // testbench status signals
   string       testname;  // test name
@@ -150,6 +146,7 @@ module tcb_vip_tb
     $display("INFO: non blocking API test end.");
 
     // check transactions
+    $display("INFO: non blocking API checks begin.");
     for (int unsigned i=0; i<tst_num; i++) begin
       // manager
       if (tst_man[i] != tst_ref[i]) begin
@@ -170,12 +167,19 @@ module tcb_vip_tb
         $display("i=%d, SUB: %p", i, tst_sub[i]);
       end
     end
+    $display("INFO: non blocking API checks begin.");
 
   endtask: test_nonblocking
 
 ////////////////////////////////////////////////////////////////////////////////
 // test blocking API
 ////////////////////////////////////////////////////////////////////////////////
+
+  // TCB interfaces
+  tcb_if #(.PHY (PHY)) tcb_mem [0:IFN-1] (.clk (clk), .rst (rst));
+
+  // TCB class objects
+  tcb_s obj_mem [0:IFN-1];
 
   // response
   logic [PHY.DAT-1:0] rdt;  // read data
@@ -195,9 +199,17 @@ module tcb_vip_tb
     //                adr,          dat, sts
     obj_mem[0].write32('h11, 32'h01234567, sts);
     obj_mem[0].read32 ('h11, rdt32       , sts);
-    $display("INFO: blocking API test begin.");
+    $display("INFO: blocking API test end.");
   endtask: test_blocking
 
+  generate
+    for (genvar i=0; i<IFN; i++) begin
+      initial begin
+        obj_mem[i] = new("MAN", tcb_mem[i]);
+      end
+    end
+  endgenerate
+  
 ////////////////////////////////////////////////////////////////////////////////
 // test sequence
 ////////////////////////////////////////////////////////////////////////////////
@@ -205,14 +217,6 @@ module tcb_vip_tb
   // clock
   initial          clk = 1'b1;
   always #(20ns/2) clk = ~clk;
-
-  generate
-  for (genvar i=0; i<PN; i++) begin
-    initial begin
-      obj_mem[i] = new("MAN", tcb_mem[i]);
-    end
-  end
-  endgenerate
 
   // test sequence
   initial
