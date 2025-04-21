@@ -42,32 +42,32 @@ DEF = -d TOOL_VIVADO_SIMULATOR
 # list of parameter overrides
 
 # protocol
-MAN_PAR += -generic_topMAN_DLY=${MAN_DLY}
+MAN_PAR += -generic_top MAN_DLY=${MAN_DLY}
 # signal widths
-MAN_PAR += -generic_topMAN_UNT=${MAN_UNT}
-MAN_PAR += -generic_topMAN_ADR=${MAN_ADR}
-MAN_PAR += -generic_topMAN_DAT=${MAN_DAT}
+MAN_PAR += -generic_top MAN_UNT=${MAN_UNT}
+MAN_PAR += -generic_top MAN_ADR=${MAN_ADR}
+MAN_PAR += -generic_top MAN_DAT=${MAN_DAT}
 # data packing parameters
-MAN_PAR += -generic_topMAN_ALN=${MAN_ALN}
-MAN_PAR += -generic_topMAN_MIN=${MAN_MIN}
-MAN_PAR ?= -generic_topMAN_MOD=${MAN_MOD}
-MAN_PAR ?= -generic_topMAN_ORD=${MAN_ORD}
+MAN_PAR += -generic_top MAN_ALN=${MAN_ALN}
+MAN_PAR += -generic_top MAN_MIN=${MAN_MIN}
+MAN_PAR ?= -generic_top MAN_MOD=${MAN_MOD}
+MAN_PAR ?= -generic_top MAN_ORD=${MAN_ORD}
 # channel configuration
-MAN_PAR ?= -generic_topCHN_CHN=${MAN_CHN}
+MAN_PAR ?= -generic_top CHN_CHN=${MAN_CHN}
 
 # protocol
-SUB_PAR += -generic_topSUB_DLY=${SUB_DLY}
+SUB_PAR += -generic_top SUB_DLY=${SUB_DLY}
 # signal widths
-SUB_PAR += -generic_topSUB_UNT=${SUB_UNT}
-SUB_PAR += -generic_topSUB_ADR=${SUB_ADR}
-SUB_PAR += -generic_topSUB_DAT=${SUB_DAT}
+SUB_PAR += -generic_top SUB_UNT=${SUB_UNT}
+SUB_PAR += -generic_top SUB_ADR=${SUB_ADR}
+SUB_PAR += -generic_top SUB_DAT=${SUB_DAT}
 # data packing parameters
-SUB_PAR += -generic_topSUB_ALN=${SUB_ALN}
-SUB_PAR += -generic_topSUB_MIN=${SUB_MIN}
-SUB_PAR ?= -generic_topSUB_MOD=${SUB_MOD}
-SUB_PAR ?= -generic_topSUB_ORD=${SUB_ORD}
+SUB_PAR += -generic_top SUB_ALN=${SUB_ALN}
+SUB_PAR += -generic_top SUB_MIN=${SUB_MIN}
+SUB_PAR ?= -generic_top SUB_MOD=${SUB_MOD}
+SUB_PAR ?= -generic_top SUB_ORD=${SUB_ORD}
 # channel configuration
-SUB_PAR ?= -generic_topCHN_CHN=${SUB_CHN}
+SUB_PAR ?= -generic_top CHN_CHN=${SUB_CHN}
 
 # combined manager/subordinate parameters
 PAR = ${MAN_PAR} ${SUB_PAR}
