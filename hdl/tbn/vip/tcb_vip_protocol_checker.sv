@@ -66,6 +66,8 @@ module tcb_vip_protocol_checker (
       if (tcb.stl) begin
         assert ($stable(tcb.req)) else $fatal(0, "TCB %m: tcb.req is unstable during a stall.");
       end
+      // read data hold (DLY>1)
+      // TODO
     end
   end
 
