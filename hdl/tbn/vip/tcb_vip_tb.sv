@@ -18,7 +18,7 @@
 
 module tcb_vip_tb
   import tcb_pkg::*;
-  import tcb_vip_pkg::*;
+  import tcb_vip_transfer_pkg::*;
 #(
   // response delay
   parameter  int unsigned DLY = 0,
@@ -65,7 +65,7 @@ module tcb_vip_tb
   // tcb_if tcb_mem [0:IFN-1] (.clk (clk), .rst (rst));
 
   // parameterized class specialization
-  typedef tcb_transfer_c #(.PHY (PHY)) tcb_s;
+  typedef tcb_vip_transfer_c #(.PHY (PHY)) tcb_s;
 
   // TCB class objects
   tcb_s obj_man;

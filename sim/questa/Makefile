@@ -42,35 +42,21 @@ DEF = -defineall TOOL_QUESTA
 # list of parameter overrides
 
 # protocol
-MAN_PAR += -GMAN_DLY=${MAN_DLY}
+PHY_PAR += -GPHY_DLY=${PHY_DLY}
 # signal widths
-MAN_PAR += -GMAN_UNT=${MAN_UNT}
-MAN_PAR += -GMAN_ADR=${MAN_ADR}
-MAN_PAR += -GMAN_DAT=${MAN_DAT}
+PHY_PAR += -GPHY_UNT=${PHY_UNT}
+PHY_PAR += -GPHY_ADR=${PHY_ADR}
+PHY_PAR += -GPHY_DAT=${PHY_DAT}
 # data packing parameters
-MAN_PAR += -GMAN_ALN=${MAN_ALN}
-MAN_PAR += -GMAN_MIN=${MAN_MIN}
-MAN_PAR ?= -GMAN_MOD=${MAN_MOD}
-MAN_PAR ?= -GMAN_ORD=${MAN_ORD}
+PHY_PAR += -GPHY_ALN=${PHY_ALN}
+PHY_PAR += -GPHY_MIN=${PHY_MIN}
+PHY_PAR ?= -GPHY_MOD=${PHY_MOD}
+PHY_PAR ?= -GPHY_ORD=${PHY_ORD}
 # channel configuration
-MAN_PAR ?= -GCHN_CHN=${MAN_CHN}
-
-# protocol
-SUB_PAR += -GSUB_DLY=${SUB_DLY}
-# signal widths
-SUB_PAR += -GSUB_UNT=${SUB_UNT}
-SUB_PAR += -GSUB_ADR=${SUB_ADR}
-SUB_PAR += -GSUB_DAT=${SUB_DAT}
-# data packing parameters
-SUB_PAR += -GSUB_ALN=${SUB_ALN}
-SUB_PAR += -GSUB_MIN=${SUB_MIN}
-SUB_PAR ?= -GSUB_MOD=${SUB_MOD}
-SUB_PAR ?= -GSUB_ORD=${SUB_ORD}
-# channel configuration
-SUB_PAR ?= -GCHN_CHN=${SUB_CHN}
+PHY_PAR ?= -GCHN_CHN=${PHY_CHN}
 
 # combined manager/subordinate parameters
-PAR = ${MAN_PAR} ${SUB_PAR}
+PAR = ${PHY_PAR}
 
 ################################################################################
 # Verilog plusargs
