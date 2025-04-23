@@ -107,8 +107,6 @@ package tcb_vip_pkg;
       logic [PHY.UNT-1:0] tmp_rdt [] = new[2];
       transaction(1'b0, adr, tmp_wdt, tmp_rdt, sts);
       rdt = type(rdt)'({<<PHY.UNT{tmp_rdt[0:2-1]}});  // crop and reverse byte order
-      $display("DEBUG: tmp_rdt = %p", tmp_rdt);
-      $display("DEBUG:     rdt = %h",     rdt);
     endtask: read16
 
     task check16 (

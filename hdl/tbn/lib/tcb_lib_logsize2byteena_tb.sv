@@ -100,6 +100,8 @@ module tcb_lib_logsize2byteena_tb
 // test sequence
 ////////////////////////////////////////////////////////////////////////////////
 
+  string test = "none";
+
   // clock
   always #(20ns/2) clk = ~clk;
 
@@ -134,6 +136,7 @@ module tcb_lib_logsize2byteena_tb
     obj_man.read32 (32'h00000030, rdt[4-1:0]  , sts);
     // check sequence
     $display("check sequence");
+    test = "check";
     obj_man.check8 (32'h00000010,        8'h10, 1'b0);
     obj_man.check8 (32'h00000011,      8'h32  , 1'b0);
     obj_man.check8 (32'h00000012,    8'h54    , 1'b0);

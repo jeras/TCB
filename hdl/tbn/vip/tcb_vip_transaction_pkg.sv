@@ -192,7 +192,7 @@ package tcb_vip_transaction_pkg;
       transaction_rsp.rdt = new[2**siz]('{default: 'x});
       transaction_rsp.sts = '0;
       // data signals
-      for (int unsigned i=0; i<siz; i++) begin
+      for (int unsigned i=0; i<2**siz; i++) begin
         // temporary variables
         int unsigned byt;  // byte index
         int unsigned cnt;  // transfer counter
@@ -216,7 +216,7 @@ package tcb_vip_transaction_pkg;
         // response status
         transaction_rsp.sts |= transfer_array[cnt].rsp.sts;
       end
-      $display("DEBUG: transaction_rsp.rdt = %p", transaction_rsp.rdt);
+//      $display("DEBUG: transaction_rsp.rdt = %p", transaction_rsp.rdt);
       return(transaction_rsp);
     endfunction: transaction_response
 
@@ -241,9 +241,9 @@ package tcb_vip_transaction_pkg;
       transaction.req = '{ndn: ndn, wen: wen, adr: adr, wdt: wdt};
       transfer_array = transaction_request(transaction.req);
       // transaction
-      $display("DEBUG: swq-: transfer_array = %p", transfer_array);
+//      $display("DEBUG: swq-: transfer_array = %p", transfer_array);
       transfer_sequencer(transfer_array);
-      $display("DEBUG: swq+: transfer_array = %p", transfer_array);
+//      $display("DEBUG: swq+: transfer_array = %p", transfer_array);
       // response
       transaction.rsp = transaction_response(transfer_array);
       // cleanup
