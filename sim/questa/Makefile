@@ -2,11 +2,13 @@
 # DUT, TOP and source files
 ################################################################################
 
+# source files
 include ../filelist.mk
 
 include ../tcb_pkg.mk
 include ../tcb_phy_parameters.mk
 
+# top level module
 TOP ?= tcb_vip_tb
 
 ################################################################################

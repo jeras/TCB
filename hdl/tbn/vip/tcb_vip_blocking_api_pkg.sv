@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// TCB (Tightly Coupled Bus) VIP (Verification IP) transaction PacKaGe
+// TCB (Tightly Coupled Bus) VIP (Verification IP) blocking API PacKaGe
 ////////////////////////////////////////////////////////////////////////////////
 // Copyright 2022 Iztok Jeras
 //
@@ -16,7 +16,7 @@
 // limitations under the License.
 ////////////////////////////////////////////////////////////////////////////////
 
-package tcb_vip_pkg;
+package tcb_vip_blocking_api_pkg;
 
   import tcb_pkg::*;
   import tcb_vip_transfer_pkg::*;
@@ -225,4 +225,4 @@ package tcb_vip_pkg;
 
   endclass: tcb_vip_c
 
-endpackage: tcb_vip_pkg
+endpackage: tcb_vip_blocking_api_pkg

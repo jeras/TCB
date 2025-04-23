@@ -18,7 +18,7 @@
 
 module tcb_vip_tb
   import tcb_pkg::*;
-  import tcb_vip_pkg::*;
+  import tcb_vip_blocking_api_pkg::*;
 #(
   // response delay
   parameter  int unsigned DLY = 0,

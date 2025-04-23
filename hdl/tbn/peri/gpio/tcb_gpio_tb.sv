@@ -18,7 +18,7 @@
 
 module tcb_gpio_tb
   import tcb_pkg::*;
-  import tcb_vip_pkg::*;
+  import tcb_vip_blocking_api_pkg::*;
 #(
   // TCB widths
   int unsigned ADR = 32,

@@ -18,7 +18,7 @@
 
 module tcb_vip_memory
   import tcb_pkg::*;
-//  import tcb_vip_pkg::*;
+//  import tcb_vip_blocking_api_pkg::*;
 #(
   // memory file name
   parameter  string        MFN = "",
