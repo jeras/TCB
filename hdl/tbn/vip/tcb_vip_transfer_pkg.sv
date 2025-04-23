@@ -37,11 +37,15 @@ package tcb_vip_transfer_pkg;
     // byte enable width (number of units inside data)
     localparam int unsigned PHY_BEN = PHY.DAT / PHY.UNT;
 
-    // offset width (number of address bits defining the offset of units inside data)
-    localparam int unsigned PHY_OFF = $clog2(PHY_BEN);
+    // maximum transfer size
+    localparam int unsigned PHY_MAX = $clog2(PHY_BEN);
 
     // logarithmic transfer size width
-    localparam int unsigned PHY_SIZ = $clog2(PHY_OFF+1);
+    localparam int unsigned PHY_SIZ = $clog2(PHY_MAX+1);
+
+    // TODO: ???
+    // offset width (number of address bits defining the offset of units inside data)
+    localparam int unsigned PHY_OFF = $clog2(PHY_BEN);
 
   //////////////////////////////////////////////////////////////////////////////
   // virtual interface
@@ -102,7 +106,7 @@ package tcb_vip_transfer_pkg;
     endfunction: data_test_f
 
   //////////////////////////////////////////////////////////////////////////////
-  // transfer
+  // local types, constants, functions
   //////////////////////////////////////////////////////////////////////////////
 
     // TCB transfer request structure
@@ -276,7 +280,7 @@ package tcb_vip_transfer_pkg;
     endtask: transfer_rsp_drv
 
   //////////////////////////////////////////////////////////////////////////////
-  // transaction sequence non-blocking API
+  // transfer sequence non-blocking API
   //////////////////////////////////////////////////////////////////////////////
 
     // BUG: at DLY=0, there is a race condition between
