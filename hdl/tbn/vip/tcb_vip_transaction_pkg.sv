@@ -101,7 +101,7 @@ package tcb_vip_transaction_pkg;
 
     // read/write request transaction of power of 2 size
     static function automatic transfer_array_t transaction_request (
-      transaction_request_t transaction_req
+      ref transaction_request_t transaction_req
     );
       // the requested transaction is organized into transfer_array
       int unsigned siz;  // transaction side (units/bytes)
@@ -112,7 +112,9 @@ package tcb_vip_transaction_pkg;
       siz = $clog2(transaction_req.wdt.size());
       assert (transaction_req.wdt.size() == 2**siz) else $error("Data array size is not a power of 2.");
       // transaction length (number of transfer items)
-      len = 2**siz / PHY_BEN;
+      if (2**siz < PHY_BEN)  len = 1;
+      else                   len = 2**siz / PHY_BEN;
+      // allocate transaction array
       transfer_array = new[len]('{default: TRANSFER_INIT});
       // alignment check
       // TODO: implement this later
@@ -167,12 +169,13 @@ package tcb_vip_transaction_pkg;
           TCB_BIG   :  transfer_array[off].req.wdt[byt] = transaction_req.wdt[2**siz - 1 - i];
         endcase
       end
+//      $display("DEBUG: inside: transfer_array.size() = %d", transfer_array.size());
       return(transfer_array);
     endfunction: transaction_request
 
     // read/write response transaction of power of 2 size
     static function automatic transaction_response_t transaction_response (
-      transfer_array_t transfer_array
+      ref transfer_array_t transfer_array
     );
       // transaction response
       int unsigned siz;  // transaction side (units/bytes)
@@ -220,9 +223,9 @@ package tcb_vip_transaction_pkg;
       // request
       input  logic               wen,
       input  logic [PHY.ADR-1:0] adr,
-      input  logic [PHY.UNT-1:0] wdt [],
+      ref    logic [PHY.UNT-1:0] wdt [],
       // response
-      output logic [PHY.UNT-1:0] rdt [],
+      ref    logic [PHY.UNT-1:0] rdt [],
       output tcb_rsp_sts_t       sts,
       // endianness
       input  tcb_cfg_endian_t    ndn = TCB_LITTLE

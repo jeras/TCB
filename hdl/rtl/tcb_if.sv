@@ -122,7 +122,7 @@ interface tcb_if
     logic               ena;  // enable
     logic               ren;  // read enable
     logic               ndn;  // endianness
-    logic [PHY_OFF-1:0] off;  // offset
+    logic [PHY_MAX-1:0] off;  // offset
     logic [PHY.ALN-1:0] aln;  // alignment
     logic [PHY_SIZ-1:0] siz;  // logarithmic transfer size
     logic [PHY_BEN-1:0] ben;  // byte enable
@@ -132,7 +132,7 @@ interface tcb_if
   dly_t dly [0:PHY.DLY];
 
   // local offset
-  logic [PHY_OFF-1:0] req_off;
+  logic [PHY_MAX-1:0] req_off;
 
   // local alignment
   logic [PHY.ALN-1:0] req_aln;
@@ -141,7 +141,7 @@ interface tcb_if
   logic [PHY_BEN-1:0] req_ben;
 
   // local offset
-  assign req_off = req.adr[PHY_OFF-1:0];
+  assign req_off = req.adr[PHY_MAX-1:0];
 
   // TODO: this check only works in TCB_LOG_SIZE mode, add check for TCB_BYTE_ENA mode
   // misalignment

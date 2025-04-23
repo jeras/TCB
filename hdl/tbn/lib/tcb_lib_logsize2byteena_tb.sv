@@ -29,6 +29,7 @@ module tcb_lib_logsize2byteena_tb
   // data packing parameters for manager/subordinate
   parameter  int unsigned      PHY_ALN = TCB_PAR_PHY_DEF.ALN,  // TODO
   parameter  int unsigned      PHY_MIN = TCB_PAR_PHY_DEF.MIN,  // TODO
+  parameter  int unsigned      PHY_OFF = TCB_PAR_PHY_DEF.OFF,  // TODO
   parameter  tcb_phy_mode_t    PHY_MOD = TCB_PAR_PHY_DEF.MOD,  // manager     data position mode
   parameter  tcb_phy_order_t   PHY_ORD = TCB_PAR_PHY_DEF.ORD,  // manager     byte order
   // channel configuration
@@ -45,6 +46,7 @@ module tcb_lib_logsize2byteena_tb
     // data packing parameters
     ALN: 2,
     MIN: 0,
+    OFF: 0,
     MOD: TCB_LOG_SIZE,
     ORD: PHY_ORD,
     // channel configuration
@@ -61,6 +63,7 @@ module tcb_lib_logsize2byteena_tb
     // data packing parameters
     ALN: 2,
     MIN: 0,
+    OFF: 0,
     MOD: TCB_BYTE_ENA,
     ORD: PHY_ORD,
     // channel configuration
