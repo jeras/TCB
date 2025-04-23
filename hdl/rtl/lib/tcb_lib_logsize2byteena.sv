@@ -19,7 +19,7 @@
 module tcb_lib_logsize2byteena
   import tcb_pkg::*;
 #(
-  parameter bit ALLIGNED = 1'b1
+  parameter bit ALIGNED = 1'b1
 )(
   // interfaces
   tcb_if.sub sub,    // TCB subordinate port (manager     device connects here)
@@ -76,7 +76,7 @@ module tcb_lib_logsize2byteena
   logic [sub.PHY_BEN-1:0]                  sub_req_ben             ;
 
   // request/response address segment
-  logic [sub.PHY_OFF-1:0]                      req_off,     rsp_off;
+  logic [sub.PHY_MAX-1:0]                      req_off,     rsp_off;
 
   // request/response endianness
   logic                                        req_ndn,     rsp_ndn;
@@ -118,26 +118,26 @@ module tcb_lib_logsize2byteena
   assign sub.rsp.rdt = sub_rsp_rdt;
 
 generate
-if (ALLIGNED) begin
+if (ALIGNED) begin
 
-//    // byte enable
-//    always_comb
-//    begin
-//      case (sub.req.siz)
-//        0 : case (req_off)
-//          2'b00: man.req.ben = 4'b0001;
-//          2'b01: man.req.ben = 4'b0010;
-//          2'b10: man.req.ben = 4'b0100;
-//          2'b11: man.req.ben = 4'b1000;
-//        endcase
-//        1 : case (req_off[1])
-//          1'b0 : man.req.ben = 4'b0011;
-//          1'b1 : man.req.ben = 4'b1100;
-//        endcase
-//        2      : man.req.ben = 4'b1111;
-//        default: man.req.ben = 4'bxxxx;
-//      endcase
-//    end
+    // byte enable
+    always_comb
+    begin
+      case (sub.req.siz)
+        0 : case (req_off)
+          2'b00: man.req.ben = 4'b0001;
+          2'b01: man.req.ben = 4'b0010;
+          2'b10: man.req.ben = 4'b0100;
+          2'b11: man.req.ben = 4'b1000;
+        endcase
+        1 : case (req_off[1])
+          1'b0 : man.req.ben = 4'b0011;
+          1'b1 : man.req.ben = 4'b1100;
+        endcase
+        2      : man.req.ben = 4'b1111;
+        default: man.req.ben = 4'bxxxx;
+      endcase
+    end
 
 //  // write access
 //  always_comb
@@ -177,13 +177,13 @@ if (ALLIGNED) begin
 //    endcase
 //  end
 
-    // byte enable
-    assign man.req.ben = {
-      sub_req_ben[~req_off & 2'b11],
-      sub_req_ben[~req_off & 2'b10],
-      sub_req_ben[~req_off & 2'b01],
-      sub_req_ben[~req_off & 2'b00]
-    };
+//    // byte enable
+//    assign man.req.ben = {
+//      sub_req_ben[~req_off & 2'b11],
+//      sub_req_ben[~req_off & 2'b10],
+//      sub_req_ben[~req_off & 2'b01],
+//      sub_req_ben[~req_off & 2'b00]
+//    };
 
     // write access
     always_comb
@@ -224,7 +224,7 @@ if (ALLIGNED) begin
         TCB_BIG   :  man.req.ben[i] = sub_req_ben[(sub.PHY_BEN-(i-req_off)) % sub.PHY_BEN];
       endcase
     end: ben
-    
+
     // write data
     always_comb
     for (int unsigned i=0; i<sub.PHY_BEN; i++) begin: wdt

@@ -115,6 +115,7 @@ module tcb_lib_logsize2byteena_tb
     rst <= 1'b0;
     repeat (1) @(posedge clk);
     // write sequence
+    $display("write sequence");
     obj_man.write8 (32'h00000010,        8'h10, sts);
     obj_man.write8 (32'h00000011,      8'h32  , sts);
     obj_man.write8 (32'h00000012,    8'h54    , sts);
@@ -123,6 +124,7 @@ module tcb_lib_logsize2byteena_tb
     obj_man.write16(32'h00000022, 16'h7654    , sts);
     obj_man.write32(32'h00000030, 32'h76543210, sts);
     // read sequence
+    $display("read sequence");
     obj_man.read8  (32'h00000010, rdt[1-1:0]  , sts);
     obj_man.read8  (32'h00000011, rdt[1-1:0]  , sts);
     obj_man.read8  (32'h00000012, rdt[1-1:0]  , sts);
@@ -131,6 +133,7 @@ module tcb_lib_logsize2byteena_tb
     obj_man.read16 (32'h00000022, rdt[2-1:0]  , sts);
     obj_man.read32 (32'h00000030, rdt[4-1:0]  , sts);
     // check sequence
+    $display("check sequence");
     obj_man.check8 (32'h00000010,        8'h10, 1'b0);
     obj_man.check8 (32'h00000011,      8'h32  , 1'b0);
     obj_man.check8 (32'h00000012,    8'h54    , 1'b0);

@@ -138,19 +138,21 @@ package tcb_vip_transaction_pkg;
           TCB_BYTE_ENA:  transfer_array[i].req.ben = '1;
         endcase
       end
-      if (siz == PHY_MAX) begin
+      if (siz < PHY_MAX) begin
         case (PHY.MOD)
           TCB_LOG_SIZE:  transfer_array[0].req.siz = siz;
           TCB_BYTE_ENA:  transfer_array[0].req.ben = siz2ben(siz, transaction_req.adr[PHY_MAX-1:0]);  // TODO: this will not work for PHY_MAX = 0
         endcase
       end
+//      $display("DEBUG: transaction_request: siz = %d, len = %d", siz, len);
+//      $display("DEBUG: transaction_request: transfer_array = %p", transfer_array);
       // data signals
       for (int unsigned i=0; i<2**siz; i++) begin
         // temporary variables
-        int unsigned off;  // address offset
+        int unsigned cnt;  // transfer counter
         int unsigned byt;  // byte index
-        // address offset
-        off = i / PHY_BEN;
+        // transfer counter
+        cnt = i / PHY_BEN;
         // mode logarithmic size vs. byte enable
         case (PHY.MOD)
           TCB_LOG_SIZE:  byt = i;  // all data bytes are LSB aligned
@@ -162,11 +164,11 @@ package tcb_vip_transaction_pkg;
           TCB_ASCENDING :  byt = PHY_BEN - 1 - byt;  // reverse byte order
         endcase
         // request
-        transfer_array[off].req.ben[byt] = 1'b1;
+        transfer_array[cnt].req.ben[byt] = 1'b1;
         // endianness
         case (transaction_req.ndn)
-          TCB_LITTLE:  transfer_array[off].req.wdt[byt] = transaction_req.wdt[             i];
-          TCB_BIG   :  transfer_array[off].req.wdt[byt] = transaction_req.wdt[2**siz - 1 - i];
+          TCB_LITTLE:  transfer_array[cnt].req.wdt[byt] = transaction_req.wdt[             i];
+          TCB_BIG   :  transfer_array[cnt].req.wdt[byt] = transaction_req.wdt[2**siz - 1 - i];
         endcase
       end
 //      $display("DEBUG: inside: transfer_array.size() = %d", transfer_array.size());
@@ -186,18 +188,20 @@ package tcb_vip_transaction_pkg;
       len = transfer_array.size();
       // data size
       siz = $clog2(len*PHY_BEN);
+      // initialize response
       transaction_rsp.rdt = new[2**siz]('{default: 'x});
+      transaction_rsp.sts = '0;
       // data signals
       for (int unsigned i=0; i<siz; i++) begin
         // temporary variables
         int unsigned byt;  // byte index
-        int unsigned off;  // address offset
-        // address offset
-        off = i / PHY_BEN;
+        int unsigned cnt;  // transfer counter
+        // transfer counter
+        cnt = i / PHY_BEN;
         // mode logarithmic size vs. byte enable
         case (PHY.MOD)
-          TCB_LOG_SIZE:  byt = i;  // all data bytes are LSB aligned
-          TCB_BYTE_ENA:  byt = (i + transfer_array[off].req.adr) % PHY_BEN;
+          TCB_LOG_SIZE:  byt =  i                                % PHY_BEN;  // all data bytes are LSB aligned
+          TCB_BYTE_ENA:  byt = (i + transfer_array[cnt].req.adr) % PHY_BEN;
         endcase
         // order descending/ascending
         case (PHY.ORD)
@@ -205,13 +209,14 @@ package tcb_vip_transaction_pkg;
           TCB_ASCENDING :  byt = PHY_BEN - 1 - byt;  // reverse byte order
         endcase
         // endianness
-        case (transfer_array[off].req.ndn)
-          TCB_LITTLE:  transaction_rsp.rdt[          i] = transfer_array[off].rsp.rdt[byt];
-          TCB_BIG   :  transaction_rsp.rdt[siz - 1 - i] = transfer_array[off].rsp.rdt[byt];
+        case (transfer_array[cnt].req.ndn)
+          TCB_LITTLE:  transaction_rsp.rdt[          i] = transfer_array[cnt].rsp.rdt[byt];
+          TCB_BIG   :  transaction_rsp.rdt[siz - 1 - i] = transfer_array[cnt].rsp.rdt[byt];
         endcase
         // response status
-        transaction_rsp.sts |= transfer_array[off].rsp.sts;
+        transaction_rsp.sts |= transfer_array[cnt].rsp.sts;
       end
+      $display("DEBUG: transaction_rsp.rdt = %p", transaction_rsp.rdt);
       return(transaction_rsp);
     endfunction: transaction_response
 
@@ -236,7 +241,9 @@ package tcb_vip_transaction_pkg;
       transaction.req = '{ndn: ndn, wen: wen, adr: adr, wdt: wdt};
       transfer_array = transaction_request(transaction.req);
       // transaction
+      $display("DEBUG: swq-: transfer_array = %p", transfer_array);
       transfer_sequencer(transfer_array);
+      $display("DEBUG: swq+: transfer_array = %p", transfer_array);
       // response
       transaction.rsp = transaction_response(transfer_array);
       // cleanup

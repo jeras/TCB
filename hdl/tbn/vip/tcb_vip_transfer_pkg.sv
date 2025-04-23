@@ -222,8 +222,10 @@ package tcb_vip_transfer_pkg;
         @(posedge tcb.clk);
       end while (~tcb.dly[tcb.PHY.DLY].ena);
       // response
-      rsp.rdt <= tcb.rsp.rdt;
-      rsp.sts <= tcb.rsp.sts;
+//      $display("DEBUG: tcb.rsp.rdt = %h", tcb.rsp.rdt);
+      rsp.rdt = tcb.rsp.rdt;
+      rsp.sts = tcb.rsp.sts;
+//      $display("DEBUG: tcb.rsp.rdt = %h", rsp.rdt);
     endtask: transfer_rsp_lsn
 
     // transfer request listener
