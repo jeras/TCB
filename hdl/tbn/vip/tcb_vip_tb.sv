@@ -21,10 +21,10 @@ module tcb_vip_tb
   import tcb_vip_blocking_api_pkg::*;
 #(
   // response delay
-  parameter  int unsigned DLY = 0,
+  parameter  int unsigned PHY_DLY = 0,
   // TCB widths
-  parameter  int unsigned ADR = 32,
-  parameter  int unsigned DAT = 32,
+  parameter  int unsigned PHY_ADR = 32,
+  parameter  int unsigned PHY_DAT = 32,
   // memory interface number
   parameter  int unsigned IFN = 1
 );
@@ -35,13 +35,13 @@ module tcb_vip_tb
   // physical interface parameter
   localparam tcb_phy_t PHY = '{
     // protocol
-    DLY: DLY,
+    DLY: PHY_DLY,
     // signal bus widths
     UNT: TCB_PAR_PHY_DEF.UNT,
-    ADR: ADR,
-    DAT: DAT,
+    ADR: PHY_ADR,
+    DAT: PHY_DAT,
     // size/mode/order parameters
-    ALN: $clog2(DAT/TCB_PAR_PHY_DEF.UNT),
+    ALN: $clog2(PHY_DAT/TCB_PAR_PHY_DEF.UNT),
     MIN: TCB_PAR_PHY_DEF.MIN,
     OFF: TCB_PAR_PHY_DEF.OFF,
     MOD: TCB_PAR_PHY_DEF.MOD,
@@ -87,9 +87,7 @@ module tcb_vip_tb
     int lst_idl [3] = '{0, 1, 2};
     int lst_bpr [3] = '{0, 1, 2};
 
-    int unsigned tst_num = $size(lst_wen) * $size(lst_idl) * $size(lst_bpr);
-
-    tcb_s::transfer_array_t tst_ref = new[tst_num];
+    tcb_s::transfer_t       tst_ref [$];
     tcb_s::transfer_array_t tst_man;
     tcb_s::transfer_array_t tst_mon;
     tcb_s::transfer_array_t tst_sub;
@@ -99,7 +97,7 @@ module tcb_vip_tb
     foreach (lst_wen[idx_wen]) begin
       foreach (lst_idl[idx_idl]) begin
         foreach (lst_bpr[idx_bpr]) begin
-          tst_ref[i] = '{
+          tcb_s::transfer_t tst_tmp = '{
             // request
             req: '{
               cmd: '0,
@@ -119,6 +117,7 @@ module tcb_vip_tb
             idl: lst_idl[idx_idl],
             bpr: lst_bpr[idx_bpr]
           };
+          tst_ref.push_back(tst_tmp);
           i++;
         end
       end
@@ -148,7 +147,7 @@ module tcb_vip_tb
 
     // check transactions
     $display("INFO: non blocking API checks begin.");
-    for (int unsigned i=0; i<tst_num; i++) begin
+    for (int unsigned i=0; i<tst_ref.size(); i++) begin
       // manager
       if (tst_man[i] != tst_ref[i]) begin
         errorcnt++;
