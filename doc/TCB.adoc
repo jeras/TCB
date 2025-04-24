@@ -1,19 +1,20 @@
-# Tightly Coupled Bus
+= Tightly Coupled Bus
 
 Tightly Coupled Bus is a simple general purpose system bus based on FPGA/ASIC SRAM memory interfaces.
 
-## Introduction
+== Introduction
 
 The idea and name comes from tightly coupled memories,
 which require a simple interface to avoid complexity impact on timing and area,
 and at the same time the full memory interface throughput must be achievable.
 
 This are few alternative naming for tightly coupled memories:
-- Tightly Coupled Memory (TCM) used by [ARM](https://www.kernel.org/doc/Documentation/arm/tcm.txt),
-  [Codasip](https://codasip.com/), and [Syntacore](https://syntacore.com/),
-- [Closely Coupled Memory (CCM)](https://github.com/chipsalliance/Cores-VeeR-EL2/blob/main/docs/RISC-V_VeeR_EL2_PRM.pdf) used by [CHIPS Alliance](https://www.chipsalliance.org/)
-- Tightly Integrated Memory (TIM) used by [SiFive](https://www.sifive.com/),
-- Local Memory (LM) used by [Andes](http://www.andestech.com/en/risc-v-andes/)
+
+* Tightly Coupled Memory (TCM) used by https://www.kernel.org/doc/Documentation/arm/tcm.txt[ARM],
+  https://codasip.com/[Codasip], and https://syntacore.com/[Syntacore],
+* https://github.com/chipsalliance/Cores-VeeR-EL2/blob/main/docs/RISC-V_VeeR_EL2_PRM.pdf[Closely Coupled Memory (CCM)] used by https://www.chipsalliance.org/[CHIPS Alliance]
+* Tightly Integrated Memory (TIM) used by https://www.sifive.com/[SiFive],
+* Local Memory (LM) used by http://www.andestech.com/en/risc-v-andes/[Andes]
 
 A processor native system bus is usually custom designed
 to support exactly the features that are present in the processor itself.
@@ -21,146 +22,181 @@ This also means there are differences between the protocols
 used by instruction fetch and load/store unit.
 
 The TCB protocol is designed to fulfill the shared needs of simple CPU/SoC designs and can be used for:
-- CPU instruction fetch interface,
-- CPU/DMA load/store interface,
-- simple cache hierarchies,
-- SoC interconnect (crossbar),
-- SoC peripheral interface.
+
+* CPU instruction fetch interface,
+* CPU/DMA load/store interface,
+* simple cache hierarchies,
+* SoC interconnect (crossbar),
+* SoC peripheral interface.
 
 The design is based on the following principles:
-- Intended for closely coupled memories and caches,
+
+* Intended for closely coupled memories and caches,
   and therefore based on synchronous/static memory (SRAM) interfaces.
-- Minimize latency and maximize throughput.
-- Support pipelining for both writes and reads to minimize stalling overhead.
+* Minimize latency and maximize throughput.
+* Support pipelining for both writes and reads to minimize stalling overhead.
   Meaning the handshake is done during the arbitration phase (explained later).
-- Handshake based on the AMBA AXI family of protocols (VALID/READY).
-- Low power consumption should be considered by reducing signal toggling and other means.
-- Choice of common (half-duplex) or independent (full-duplex) read/write channels,
+* Handshake based on the AMBA AXI family of protocols (VALID/READY).
+* Low power consumption should be considered by reducing signal toggling and other means.
+* Choice of common (half-duplex) or independent (full-duplex) read/write channels,
   allowing additional trade-off between throughput and complexity.
 
 What it is not intended for:
-- It is not optimized for clock domain crossing (CDC), which has a large delay (latency)
-  between the start of a request and the response, and the delay has some unpredictability.
-- Does not provide out of order access functionality.
-- It is not a good fit for managers with a variable pipeline delay in the load/store unit.
 
-## Terminology
+* It is not optimized for clock domain crossing (CDC), which has a large delay (latency)
+  between the start of a request and the response, and the delay has some unpredictability.
+* Does not provide out of order access functionality.
+* It is not a good fit for managers with a variable pipeline delay in the load/store unit.
+
+== Terminology
 
 TCB terminology and syntax is mostly based on:
-- AMBA AXI family of protocols,
-- Verilog/SystemVerilog HDL language.
 
-### Interconnect terms
+* AMBA AXI family of protocols,
+* Verilog/SystemVerilog HDL language.
 
-| module      | short | description |
-|-------------|-------|-------------|
-| manager     | `man` | Managers are modules driving requests toward a subordinate and receiving a response from it. This term is equivalent to _master_. |
-| subordinate | `sub` | Subordinates are module receiving requests from a manager and responding to it. This term is equivalent to _slave_. |
-| monitor     | `mon` | Monitors do not drive any protocol signals, they only observe them for error checking, statistics and logging. |
+=== Terms
 
-### Transfer level terms (protocol timing)
+.Interconnect terms
+[%autowidth]
+|===
+| module      | short | description
 
-| term         | description |
-|--------------|-------------|
-| clock period | The term _clock period_ is preferred over _clock cycle_ to avoid confusion with _access cycle_ which can be multiple clock periods long. |
-| handshake    | Exchange of `valid` and `ready` signals during between manager and subordinate. |
-| cycle        | A _request cycle_ is one or more clock periods long exchange between a master and a subordinate governed by a valid/ready handshake, and it ends with a transfer. A _response cycle_ starts `DLY` clock periods after the request cycle and has the same length. |
-| transfer     | Each access cycle ends in a single clock period long transfer when valid and ready handshake signals are both active. |
-| request      | The collective value of signals (address, write enable, byte enable, write data) driven by a manager, while valid is active during an access cycle. And sampled by a subordinate during a transfer. |
-| response     | In the current protocol version, a response is a single clock period delayed by a fixed number of clock periods from each transfer, in it read data and error status are driven by a subordinate and sampled by a manager. Future versions of the protocol might have responses encompassing multiple clock periods. |
-| backpressure | A subordinate can delay the transfer by driving the ready signal low. |
-| back-to-back | Performing transfers continuously in each clock period, without idling the bus by waiting the for a response before issuing e new request. |
+| manager     | `man` | Managers are modules driving requests toward a subordinate and receiving a response from it. This term is equivalent to _master_.
+| subordinate | `sub` | Subordinates are module receiving requests from a manager and responding to it. This term is equivalent to _slave_.
+| monitor     | `mon` | Monitors do not drive any protocol signals, they only observe them for error checking, statistics and logging.
+|===
 
-### Transaction level terms
+.Transfer level terms (protocol timing)
+[%autowidth]
+|===
+| term         | description
+
+| clock period | The term _clock period_ is preferred over _clock cycle_ to avoid confusion with _access cycle_ which can be multiple clock periods long.
+| handshake    | Exchange of `valid` and `ready` signals during between manager and subordinate.
+| cycle        | A _request cycle_ is one or more clock periods long exchange between a master and a subordinate
+                 governed by a valid/ready handshake, and it ends with a transfer.
+                 A _response cycle_ starts `DLY` clock periods after the request cycle and has the same length.
+| transfer     | Each access cycle ends in a single clock period long transfer when valid and ready handshake signals are both active.
+| request      | The collective value of signals (address, write enable, byte enable, write data) driven by a manager,
+                 while valid is active during an access cycle.
+                 And sampled by a subordinate during a transfer.
+| response     | In the current protocol version, a response is a single clock period delayed by a fixed number of clock periods from each transfer,
+                 in it read data and error status are driven by a subordinate and sampled by a manager.
+                 Future versions of the protocol might have responses encompassing multiple clock periods.
+| backpressure | A subordinate can delay the transfer by driving the ready signal low.
+| back-to-back | Performing transfers continuously in each clock period, without idling the bus by waiting the for a response before issuing e new request.
+|===
 
 A transaction is the atomic exchange of a desired data length requiring one or more transfers.
 The following words can be used to describe a transaction.
+
 **TODO: check for a TLM definition.**
 
-| descriptor | description |
-|------------|-------------|
-| write      | Used for CPU store operations. |
-| read       | Used for CPU load operations. |
-| aligned    | Address and transaction size or byte enable signals follow CPU ISA alignment rules. |
-| misaligned | A misaligned transaction can be a single misaligned transfer or be split into multiple aligned transfers. |
-| split      | A transaction with a size exceeding the data bus width can be split into multiple transfers. |
-| atomic     | In addition to CPU ISA atomic instructions, atomicity is desired in split transactions. |
-| burst      | Bursts are intended for communication between cache levels and high latency memories. |
+.Transaction level terms
+[%autowidth]
+|===
+| descriptor | description
+
+| write      | Used for CPU store operations.
+| read       | Used for CPU load operations.
+| aligned    | Address and transaction size or byte enable signals follow CPU ISA alignment rules.
+| misaligned | A misaligned transaction can be a single misaligned transfer or be split into multiple aligned transfers.
+| split      | A transaction with a size exceeding the data bus width can be split into multiple transfers.
+| atomic     | In addition to CPU ISA atomic instructions, atomicity is desired in split transactions.
+| burst      | Bursts are intended for communication between cache levels and high latency memories.
+|===
 
 While the bus width and transaction sizes are not limited to a finite set,
 the the following transaction sizes also have names.
 
-| size   | description |
-|--------|-------------|
-| byte   |   8-bit wide data. |
-| half   |  16-bit wide data. |
-| word   |  32-bit wide data. |
-| double |  64-bit wide data. |
-| long   | 128-bit wide data. |
+.Transaction size terms
+[%autowidth]
+|===
+| size   | description
 
-### Peripheral driver terms
+| byte   |   8-bit wide data.
+| half   |  16-bit wide data.
+| word   |  32-bit wide data.
+| double |  64-bit wide data.
+| long   | 128-bit wide data.
+|===
+
+.Peripheral driver terms
+[%autowidth]
+|===
+| term          | Description
+
+| parameter     | Static (compile time) configuration of a HDL/RTL module, `parameter` in Verilog or `generic` in VHDL.
+| quasi-static  | Can be driven at runtime during initialization, but is static (not changing) during system operation.
+| dynamic       | Can be driven at runtime during system operation, is expected to change.
+| volatile      | Can change at runtime during system operation.
+| configuration | Peripheral register/field containing configuration information, they are usually quasi-static, never volatile.
+| control       | Peripheral register/field used to control system operation at runtime, they are dynamic signals.
+| status        | Peripheral register/field used to monitor system operation at runtime, they are volatile signals.
+|===
 
 _Parameters_ are used in HDL code.
 Terms _quasi-static_, _dynamic_ and _volatile_ are used to describe properties of
 _configuration_, _control_ and _status_ registers of a peripheral.
 
-| term          | Description |
-|---------------|-------------|
-| parameter     | Static (compile time) configuration of a HDL/RTL module, `parameter` in Verilog or `generic` in VHDL. |
-| quasi-static  | Can be driven at runtime during initialization, but is static (not changing) during system operation. |
-| dynamic       | Can be driven at runtime during system operation, is expected to change. |
-| volatile      | Can change at runtime during system operation. |
-| configuration | Peripheral register/field containing configuration information, they are usually quasi-static, never volatile. |
-| control       | Peripheral register/field used to control system operation at runtime, they are dynamic signals. |
-| status        | Peripheral register/field used to monitor system operation at runtime, they are volatile signals. |
+.Acronyms
+[%autowidth]
+|===
+| acronym | definition
 
-### Acronyms
+| TCB     | Tightly Coupled Bus
+| BFM     | https://en.wikipedia.org/wiki/Bus_functional_model[Bus Functional Model]
+| TLM     | https://en.wikipedia.org/wiki/Transaction-level_modeling[Transaction-level modeling]
 
-| acronym | definition |
-|---------|------------|
-| TCB     | Tightly Coupled Bus |
-| CRW     | Common Read/Write channel |
-| IRW     | Independent Read/Write channels |
-| RDC     | ReaD Channel |
-| WRC     | WRite Channel |
-| BFM     | [Bus Functional Model](https://en.wikipedia.org/wiki/Bus_functional_model) |
-| TLM     | [Transaction-level modeling](https://en.wikipedia.org/wiki/Transaction-level_modeling) |
-| LSB     | [Least Significant Bit/Byte](https://en.wikipedia.org/wiki/Bit_numbering) |
-| MSB     | [Most Significant Bit/Byte](https://en.wikipedia.org/wiki/Bit_numbering) |
+| LSB     | https://en.wikipedia.org/wiki/Bit_numbering[Least Significant Bit/Byte]
+| MSB     | https://en.wikipedia.org/wiki/Bit_numbering[Most Significant Bit/Byte]
+| PHY     | https://en.wikipedia.org/wiki/Physical_layer#PHY[OSI model physical_layer]
 
-### Naming conventions
+| HDL     | https://en.wikipedia.org/wiki/Hardware_description_language[Hardware Description Language]
+| RTL     | https://en.wikipedia.org/wiki/Register-transfer_level[Register-transfer level]
+
+| ROM     | https://en.wikipedia.org/wiki/Read-only_memory[Read-only memory]
+| RAM     | https://en.wikipedia.org/wiki/Random-access_memory[Random-access memory]
+|===
+
+=== Naming conventions
 
 Mostly for aesthetic reasons (vertical alignment) all signal and names are
-[three-letter abbreviations (TLA)](https://en.wikipedia.org/wiki/Three-letter_acronym).
+https://en.wikipedia.org/wiki/Three-letter_acronym[three-letter abbreviations (TLA)].
 
 Suffixes specifying the direction of module ports as input/output (`in`/`out`, `i`/`o`) can be avoided.
 Instead signals can be organized into sets with a prefix or are grouped into a SystemVerilog interface.
 Set names shall use specifiers like manager/subordinate (`man`/`sub`) or request/response (`req`/`rsp`).
 
-## Base protocol
+== Base protocol
 
 The TCB protocol base is comprised of a valid/ready handshake for the request
 and a parameterized fixed delay (integer number of clock periods) for the response.
 Special considerations should be made for signal values during reset
 and reset release and assertion.
 
-![Manager, subordinate and monitor](tcb_manager_subordinate_monitor.svg)
+image::tcb_manager_subordinate_monitor.svg[Manager, subordinate and monitor]
 
-### System signals clock and reset
+=== System signals clock and reset
 
 System signals are propagated globally from a system controller
 to managers and subordinates.
 Implementations with separate clock/reset/power domains can have
 multiple independent system signal sets.
 
-| signal | description |
-|--------|-------------|
-| `clk`  | Clock (active on rising edge). |
-| `rst`  | Reset (active high) can be synchronous or asynchronous depending on implementation. |
+.System signals
+[%autowidth]
+|===
+| signal | description
+
+| `clk`  | Clock (active on rising edge).
+| `rst`  | Reset (active high) can be synchronous or asynchronous depending on implementation.
+|===
 
 TODO: define power domain functionality.
 
-### Handshake amd request/response signal sets
+=== Handshake amd request/response signal sets
 
 The manager initiates a request with the handshake signal `vld` (valid).
 Backpressure from the subordinate is supported by the handshake signal `rdy` (ready).
@@ -172,37 +208,50 @@ NOTE: The handshake signals intentionally use names from the AMBA AXI family of 
       since the handshake is governed by compatible (equivalent) rules.
       Otherwise the TCB protocol bears no relation to AMBA.
 
-| signal | direction      | description |
-|--------|----------------|-------------|
-| `vld`  | `man` -> `sub` | Handshake valid. |
-| `rdy`  | `sub` -> `man` | Handshake ready (can be omitted if there is no backpressure). |
+.Handshake signals
+[%autowidth]
+|===
+| signal | direction      | description
 
-Signals going from manager to subordinate are part of the request set,
-signals going in the opposite direction are part of the response set.
+| `vld`  | `man` -> `sub` | Handshake valid.
+| `rdy`  | `sub` -> `man` | Handshake ready (can be omitted if there is no backpressure).
+|===
+
+Signals going from manager to subordinate are part of the request group,
+signals going in the opposite direction are part of the response group.
 This signal sets are used to provide transaction type details, addressing and data.
 
-| signal | direction      | description |
-|--------|----------------|-------------|
-| `req`  | `man` -> `sub` | Request set. |
-| `rsp`  | `sub` -> `man` | Response set. |
+.Base protocol signal groups
+[%autowidth]
+|===
+| signal | direction      | description
+
+| `req`  | `man` -> `sub` | Request group.
+| `rsp`  | `sub` -> `man` | Response group.
+|===
 
 While the handshake defines the request transfer,
-the response is always provided `DLY` clock periods after the handshake transfer.
+the response is always provided `PHY.DLY` clock periods after the handshake transfer.
 
-| parameter | type           | description |
-|-----------|----------------|-------------|
-| `DLY`     | `int unsigned` | Response delay. |
+.Base protocol parameter
+[%autowidth]
+|===
+| parameter | type           | description
 
-### Handshake rules
+| `PHY.DLY` | `int unsigned` | Response delay.
+|===
+
+=== Handshake rules
 
 Handshake signals shall follow the same basic principles as defined for the AMBA AXI family of protocols:
-- `vld` shell be inactive during reset.
-- While valid is not active all other signals shall be ignored (`X` in timing/waveform diagrams).
-- Once the manager asserts `vld`, it must not remove it till the cycle is completed by an active `rdy` signal.
-- The manager must not wait for `rdy` to be asserted before starting a new cycle by asserting `vld`.
-- The subordinate can assert/remove the `rdy` signal without restrictions.
-- There is no inherent timeout mechanism.
-- TODO: clarify `rdy` behavior if only part of the system is under reset.
+
+* `vld` shell be inactive during reset.
+* While valid is not active all other signals shall be ignored (`X` in timing/waveform diagrams).
+* Once the manager asserts `vld`, it must not remove it till the cycle is completed by an active `rdy` signal.
+* The manager must not wait for `rdy` to be asserted before starting a new cycle by asserting `vld`.
+* The subordinate can assert/remove the `rdy` signal without restrictions.
+* There is no inherent timeout mechanism.
+* TODO: clarify `rdy` behavior if only part of the system is under reset.
 
 This means once a request cycle is initiated, it must be completed with a transfer.
 Since `rdy` can be asserted during reset (`rdy` can be a constant value),
@@ -216,22 +265,22 @@ although it would be possible to place such functionality
 into a module placed between a manager and a subordinate.
 The required additional complexity is not discussed in this document.
 
-### Transfer and request/response sequence
+=== Transfer and request/response sequence
 
 The manager shall drive a valid _request signal set_ `req` while the `vld` handshake signal is active.
 The subordinate shell sample the _request signal set_ `req` at the rising clock edge while
 both `vld` and `rdy` handshake signals are active indicating a transfer `trn` (local signal).
 
-When the delay parameter is zero (`DLY=0`),
+When the delay parameter is zero (`PHY.DLY=0`),
 the subordinate shall provide the response `rsp` combinationally
 in the same clock period as the transfer `trn` is active.
-When the delay parameter is greater then zero (`DLY>0`),
+When the delay parameter is greater then zero (`PHY.DLY>0`),
 the subordinate shall provide the response `rsp` sequentially
-in `DLY` clock periods after the transfer `trn` is active.
+in `PHY.DLY` clock periods after the transfer `trn` is active.
 
-![Handshake transfer and request/response](tcb_handshake.svg)
+image::tcb_handshake.svg[Handshake transfer and request/response]
 
-### Reset release and assertion sequences
+=== Reset release and assertion sequences
 
 A global system reset `rst` can be asserted at any moment,
 as long as it applies to the entire interconnect and all managers/subordinates connected to it.
@@ -253,9 +302,9 @@ In this case the `vld` signal depends on a register toggling after reset is rele
 and this can only happen with the described timing.
 The same explanation stands for `rdy` if it is not a constant value.
 
-![Reset sequence](tcb_reset.svg)
+image::tcb_reset.svg[Reset sequence]
 
-#### Reset sequence length
+==== Reset sequence length
 
 Ideally all devices would require the reset to be active for only a single clock period.
 Long (multiple clock periods) reset sequences are sometimes required
@@ -265,7 +314,7 @@ A global reset shall be applied for the longest sequence required by eny devices
 Requiring long active reset sequences just in case should be avoided,
 the exact required reset sequence length shall be derived from the RTL.
 
-#### Sequential logic without reset
+==== Sequential logic without reset
 
 It is allowed to use reset capable flipflops only for control signals (handshake signals in TCB),
 while address, data and other signals use flipflops without a reset for example to reduce ASIC area.
@@ -273,76 +322,94 @@ While this approach does not affect functionality,
 it affects reproducibility of power consumption tests.
 It might also have some effect on the viability of side channel attacks.
 
-## Memory mapped access protocol
+== Memory mapped access protocol
 
 For the protocol to support memories and memory mapped peripherals,
 the request and response signal sets must be further defined
 to contain the read/write control signal, the address, byte enable,
 read/write data busses, and various optional extensions.
 
-### Parameters
+=== Parameters
 
 All TCB interfaces are parameterized.
 In addition to the base protocol parameter `DLY` there are parameters for:
-- defining the address/data/... signal widths,
-- defining how data bytes are packed into the data bus.
 
-#### Signal width parameters
+* defining the address/data/... signal widths,
+* defining how data bytes are packed into the data bus.
 
-| parameter | default          | type           | description |
-|-----------|------------------|----------------|-------------|
-| `PHY.UNT` | `8`              | `int unsigned` | Data unit width (in most cases it should be 8, the size of a byte). |
-| `PHY.ADR` | `32`             | `int unsigned` | Address bus width. |
-| `PHY.DAT` | `32`             | `int unsigned` | Data bus width. |
-| `PHY_BEN` | `DAT/UNT`        | `int unsigned` | Byte enable width is the number of unit widths fitting into the data width. |
+==== Signal width parameters
 
-The data unit width parameter `UNT` defines the number of bits in a byte,
+.Signal width parameters
+[%autowidth]
+|===
+| parameter | default | type           | description
+
+| `PHY.UNT` | `8`     | `int unsigned` | Data unit width (in most cases it should be 8, the size of a byte).
+| `PHY.ADR` | `32`    | `int unsigned` | Address bus width.
+| `PHY.DAT` | `32`    | `int unsigned` | Data bus width.
+
+| `PHY_BEN` | `DAT/UNT`           | `int unsigned` | Byte enable width is the number of unit widths fitting into the data width.
+| `PHY_MAX` | `$clog2(PHY_BEN)`   | `int unsigned` | Maximum transfer logarithmic size, also width of 'off' (unit offset within data width) part of address.
+| `PHY_SIZ` | `$clog2(PHY_MAX+1)` | `int unsigned` | Width of logarithmic size signal.
+|===
+
+The data unit width parameter `PHY.UNT` defines the number of bits in a byte,
 for all standard use cases this defaults to 8.
-TODO: research use cases where `UNT` is not the default.
+
+TODO: research use cases where `PHY.UNT` is not the default.
 
 There are few restrictions on the address bus width `ADR`.
 Sometimes the size of the RISC-V load/store immediate (12-bit) is relevant.
 Similarly ARM defines a 12-bit memory management page size.
 
 Since TCB was designed with 32-bit CPU/SoC/peripherals in mind,
-32-bit is the default data bus width `DAT` and 4-bit is the default byte enable width `BEN`.
-Byte enable width `BEN` is a calculated local parameter,
-it should not passed across module hierarchy.
+32-bit is the default data bus width `PHY.DAT` and 4-bit is the default byte enable width `PHY_BEN`.
+Byte enable width `PHY_BEN` is a calculated local parameter,
+it should not be passed across module hierarchy.
 
-#### Data packing parameters
+==== Data packing parameters
 
 Data packing parameters are listed and described
-in the [data packing section]() of the document.
+in the TODO[data packing section] of the document.
 
-#### Custom extension signal type parameters
+==== Custom extension signal type parameters
 
 Data types for custom extension signals are listed here without details.
 Further in the document there are definitions for some standard configurations.
 
-| parameter       | description |
-|-----------------|-------------|
-| `tcb_req_cmd_t` | Custom request command signal `cmd` type. |
-| `tcb_rsp_sts_t` | Custom response status signal `sts` type. |
+.Custom signal types
+[%autowidth]
+|===
+| parameter       | description
 
-### Signals
+| `tcb_req_cmd_t` | Custom request command signal `cmd` type.
+| `tcb_rsp_sts_t` | Custom response status signal `sts` type.
+|===
+
+=== Signals
 
 Most signals are designed to directly interface with ASIC/FPGA SRAM memories:
-- address `adr`,
-- write enable `wen` and byte enable `ben`,
-- write data `wdt` and read data `rdt`.
 
-| signal    | width  | description |
-|-----------|--------|-------------|
-| `req.cmd` | custom | Custom request command protocol extensions. |
-| `req.ndn` | `1`    | Read/write data endianness. Only used in logarithmic size mode. |
-| `req.wen` | `1`    | Write enable. |
-| `req.ren` | `1`    | Read enable (only used in full-duplex channel configuration). |
-| `req.adr` | `ADR`  | Address. |
-| `req.siz` | `SIZ`* | Transfer size. Only used in logarithmic size mode. |
-| `req.ben` | `BEN`  | Byte enable/select. Only used in byte enable mode. |
-| `req.wdt` | `DAT`  | Write data. |
-| `rsp.rdt` | `DAT`  | Read data. |
-| `rsp.sts` | custom | Custom response status protocol extensions. |
+* address `adr`,
+* write enable `wen` and byte enable `ben`,
+* write data `wdt` and read data `rdt`.
+
+.Request/reponse signals
+[%autowidth]
+|===
+| signal    | width     | description
+
+| `req.cmd` | custom    | Custom request command protocol extensions.
+| `req.ndn` | `1`       | Read/write data endianness. Only used in logarithmic size mode.
+| `req.wen` | `1`       | Write enable.
+| `req.ren` | `1`       | Read enable (only used in full-duplex channel configuration).
+| `req.adr` | `PHY.ADR` | Address.
+| `req.siz` | `PHY_SIZ` | Transfer logarithmic size. Only used in logarithmic size mode.
+| `req.ben` | `PHY_BEN` | Byte enable/select. Only used in byte enable mode.
+| `req.wdt` | `PHY.DAT` | Write data.
+| `rsp.rdt` | `PHY.DAT` | Read data.
+| `rsp.sts` | custom    | Custom response status protocol extensions.
+|===
 
 The custom protocol extension signals, request command `cmd` and response status `sts`,
 do not directly affect the content of the data transfer.
@@ -354,35 +421,39 @@ It is a dynamic property of each data transfer
 and therefore a signal and not a parameter.
 
 For an interface modelled over a memory interface,
-read enable `ren` is not accessible by the used,
+read enable `ren` is not accessible by the user in most implementations,
 internally it is assigned the negated value of write enable `wen`.
 
-The transfer size signal `siz` is an alternative signal to byte enable `ben`.
-The choice between the two alternatives is described in the [data packing section](TODO).
+The transfer logarithmic size signal `siz` is an alternative signal to byte enable `ben`.
+The logarithmic size is a binary logarithm of the number of units/bytes in a transfer.
+For further details see section _transfer_size_encoding[Transfer size encoding].
 
-(*) How exactly the width of the `siz` signal depends on the `SIZ` parameter
-    is described in the [data packing section]().
-
-#### Custom protocol extension signals
+==== Custom protocol extension signals
 
 TODO: Custom protocol extension signals are still in the draft stage.
 
 The request command signals `cmd` are used to:
-- extend the protocol into multi transfer transactions and
-- to provide performance (latency, power, ...) optimizations.
 
-| signal        | width | description |
-|---------------|-------|-------------|
-| `req.cmd.lck` | `1`   | Arbitration lock. |
-| `req.cmd.rpt` | `1`   | Repeat address access. |
-| `req.cmd.inc` | `1`   | Incrementing address access. |
+* extend the protocol into multi transfer transactions and
+* to provide performance (latency, power, ...) optimizations.
+
+.Command signals
+[%autowidth]
+|===
+| signal        | width | description
+
+| `req.cmd.lck` | `1`   | Arbitration lock.
+| `req.cmd.rpt` | `1`   | Repeat address access.
+| `req.cmd.inc` | `1`   | Incrementing address access.
+|===
 
 The arbitration lock `lck` is used to implement atomic accesses
 by combining multiple transfers into a single transaction:
-- split transaction misaligned access,
-- transactions larger than data bus/transfer size,
-- uninterruptible burst transactions,
-- ...
+
+* split transaction misaligned access,
+* transactions larger than data bus/transfer size,
+* uninterruptible burst transactions,
+* ...
 
 NOTE: The lock signal `lck` has a similar functionality to AXI-Stream `LAST` signal,
 but with an inverted active state (`lck = ~LAST`).
@@ -394,23 +465,31 @@ The repeat address access `rpt` is used to reduce power consumption on repeated 
 The incrementing address access `inc` is used to tell prefetch mechanisms whether the address is the expected one.
 
 The response status error signal `err` is used for handling error conditions:
-- access to inactive subsystem with clock/power gating support,
-- address decoder errors while accessing undefined regions,
-- unsupported transfer size/alignment.
 
-| signal        | width | usage    | description |
-|---------------|-------|----------|-------------|
-| `rsp.sts.err` | `1`   | optional | Error response (can be omitted if there are no error conditions). |
+* access to inactive subsystem with clock/power gating support,
+* address decoder errors while accessing undefined regions,
+* unsupported transfer size/alignment.
+
+.Status signals
+[%autowidth]
+|===
+| signal        | width | usage    | description
+
+| `rsp.sts.err` | `1`   | optional | Error response (can be omitted if there are no error conditions).
+|===
 
 Various implementations can add custom (user defined) signals to either the request or response,
 some examples of custom signals would be:
-- cache related signals,
-- burst support,
-- quality of service signals,
-- multiple types of error responses,
-- ...
 
-#### Optional signal subsets and defaults
+* cache related signals,
+* burst support,
+* quality of service signals,
+* multiple types of error responses,
+* ...
+
+==== Optional signal subsets and defaults
+
+TODO: review this section.
 
 Custom implementations can use a subset of the full signal list.
 Some rules are provided for handling the missing signals.
@@ -421,32 +500,41 @@ which might be more appropriate.
 
 To connecting a manager and a subordinate with differing sets of optional signals,
 an adapter is needed which would provide:
-- a default for outputs and
-- a handler for inputs.
-The output default shall be chosen to match the protocol subset.
-(`wen=1'b0` and `wdt=DAT'bx` for ROM).
+
+* a default for outputs and
+* a handler for inputs.
+
+The output default shall be chosen to match the protocol subset (`wen=1'b0` and `wdt='x` for ROM).
 The input handler can either ignore the signal or cause an error condition.
 Default output values can always be ignored by an input handler, or simply no handler is needed.
 
 The following table defines some defaults and handlers.
 
-| use case     | signal    | default  | handler |
-|--------------|-----------|----------|---------|
-| interconnect | `req.cmd` |    `'b0` | Subordinates can ignore it. |
-| ROM          | `req.wen` |   `1'b0` | Respond with error on write access to subordinate without write support. |
-| ROM          | `req.wdt` | `DAT'bx` | Can be ignored, `wen` requires handling. |
-| peripheral   | `req.ben` | `BEN'b1` | Access with less than the full width shall trigger an error. |
-| interconnect | `rsp.sts` |    `'b0` | Can be ignored, if no error conditions are possible, otherwise requires and external handler (watchdog, ...). |
+.Defaults and handlers
+[%autowidth]
+|===
+| use case     | signal    | default | handler
+
+| interconnect | `req.cmd` |   `'b0` | Subordinates can ignore it.
+| ROM          | `req.wen` |  `1'b0` | Respond with error on write access to subordinate without write support.
+| ROM          | `req.wdt` |    `'x` | Can be ignored, `wen` requires handling.
+| peripheral   | `req.ben` |    `'1` | Access with less than the full width shall trigger an error.
+| interconnect | `rsp.sts` |   `'b0` | Can be ignored, if no error conditions are possible, otherwise requires and external handler (watchdog, ...).
+|===
 
 The custom request command also has sensible defaults.
 
-| signal        | default  | handler |
-|---------------|----------|---------|
-| `req.cmd.lck` |   `1'b0` | If another manager can access the same segment, respond with error, otherwise ignore. |
-| `req.cmd.rpt` |   `1'b0` | Subordinates can ignore it. |
-| `req.cmd.inc` |   `1'b0` | Subordinates can ignore it. |
+.Defaults and handlers
+[%autowidth]
+|===
+| signal        | default  | handler
 
-### Data packing
+| `req.cmd.lck` |   `1'b0` | If another manager can access the same segment, respond with error, otherwise ignore.
+| `req.cmd.rpt` |   `1'b0` | Subordinates can ignore it.
+| `req.cmd.inc` |   `1'b0` | Subordinates can ignore it.
+|===
+
+=== Data packing
 
 A combination of parameters and runtime signals define how
 bytes (smallest data units) are organized inside the read/write data bus,
@@ -457,37 +545,58 @@ To a degree data packing rules are a generalization of endianness rules.
 This section will first document the parameters
 and then provide examples of packing with some parameter configurations.
 
-#### Data packing parameters
+==== Data packing parameters
+
+NOTE: The current choice of data packing parameters can be confusing.
+      This might remain or change in future TCB standard releases, depending on user feedback.
 
 The following parameters affect data packing.
 
-| parameter | default      | type (enumeration) | description |
-|-----------|--------------|--------------------|-------------|
-| `PHY.MIN` | `clog2(BEN)` | TODO
-| `PHY.ALN` | `clog2(BEN)` | `int unsigned`     | Alignment width, number of least significant address bits which are zero. |
-| `PHY.MOD` | `LOG_SIZE`   | `tcb_phy_mode_t`   | Data position mode. |
-| `PHY.ORD` | `DESCENDING` | `tcb_phy_order_t`  | Byte order, ascending or descending. |
+.Data packing parameters
+[%autowidth]
+|===
+| parameter | type (enumeration) | range (options)          | default      | description
 
-Only a subset of 4 configurations from all parameter combinations
-results in practical and useful data packing rule.
+| `PHY.MIN` | `int unsigned`     | `0`~`PHY_MAX`            | `0`          | Minimum transfer logarithmic size.
+| `PHY.OFF` | `int unsigned`     | `0`~`PHY_MAX`            | `0`          | Number of LSB address bits (the offset of unit/byte inside the data bus) tied to zero.
+| `PHY.ALN` | `int unsigned`     | `0`~`PHY_MAX`            | `PHY_MAX`    | Alignment width, number of least significant address bits which are zero.
+| `PHY.MOD` | `tcb_phy_mode_t`   | `LOG_SIZE`/`BYTE_ENA`    | `LOG_SIZE`   | Data size/position mode.
+| `PHY.ORD` | `tcb_phy_order_t`  | `DESCENDING`/`ASCENDING` | `DESCENDING` | Byte order (related to little/big endian systems).
+|===
+
+Only a small subset of all parameter value combinations configurations from all parameter combinations
+results in practical and useful data packing rule (RISC-V RV32/64 access patterns are a large part of the subset).
 The rest are reserved with no intention to be documented and implemented.
 
-| `MOD`      | `ORD`        | `ALN`        | `ndn`   | description |
-|------------|--------------|--------------|---------|-------------|
-| `LOG_SIZE` | `DESCENDING` | any          | ignored | Packing used by CPU registers. |
-| `LOG_SIZE` | `ASCENDING`  | any          | ignored | Reserved, not used. |
-| `BYTE_ENA` | `DESCENDING` | 0            | both    | RISC-V memory model with misaligned access support. |
-| `BYTE_ENA` | `DESCENDING` | `clog2(BEN)` | both    | RISC-V memory model with only aligned accesses supported. |
-| `BYTE_ENA` | `ASCENDING`  | 0            | both    | Reserved, not used. |
-| `BYTE_ENA` | `ASCENDING`  | `clog2(BEN)` | both    | OpenPOWER storage operands. |
+.Relevant packing modes
+[%autowidth]
+|===
+| `MOD`      | `ORD`        | `PHY.DAT` | `PHY.MIN`   | `PHY.OFF`   | `PHY.ALN`   | `ndn`   | description
 
-The logarithmic size mode is a new concept added to TCB.
+| `LOG_SIZE` | `ASCENDING`  | `32`      | `PHY_MAX=2` | `PHY_MAX=2` | `PHY_MAX=2` | ignored | RISC-V single issue instruction fetch unit without C extension.
+| `LOG_SIZE` | `ASCENDING`  | `32`      |     `1`/`2` |         `1` |         ??? | ignored | RISC-V single issue instruction fetch unit with C extension.
 
-For contemporary useful configurations the RISC-V ISA is used as a reference.
+| `LOG_SIZE` | `DESCENDING` | `32`/`64` | `0`         | `0`         | 0           | ignored | RISC-V RV32/64 GPR load/store (no sign extension) with misaligned access support.
+| `LOG_SIZE` | `DESCENDING` | `32`/`64` | `0`         | `0`         | `PHY_MAX`   | ignored | RISC-V RV32/64 GPR load/store (no sign extension) with only aligned access support.
 
-The OpenPOWER specific configuration is included for historic compatibility, and completeness.
+| `LOG_SIZE` | `ASCENDING`  | any       | any         | any         | any         | ignored | Reserved (not defined or used).
 
-##### Alignment width
+| `BYTE_ENA` | `DESCENDING` | `32`/`64` | `0`         | `0`         | 0           | both    | RISC-V RV32/64 memory load/store with misaligned access support.
+| `BYTE_ENA` | `DESCENDING` | `32`/`64` | `0`         | `PHY_MAX`   | `PHY_MAX`   | both    | RISC-V RV32/64 memory load/store with only aligned access support.
+
+| `BYTE_ENA` | `DESCENDING` | `32`      | `PHY_MAX=2` | `PHY_MAX=2` | `PHY_MAX=2` | both    | Peripheral bus with only 4-byte (word) aligned access support.
+| `BYTE_ENA` | `DESCENDING` | `64`      | `PHY_MAX=3` | `PHY_MAX=3` | `PHY_MAX=3` | both    | Peripheral bus with only 8-byte (double) aligned accesses support.
+| `BYTE_ENA` | `DESCENDING` | `64`      |         `2` |         `2` | `PHY_MAX=3` | both    | Peripheral bus with mixed 4/8-byte aligned accesses support.
+
+| `BYTE_ENA` | `ASCENDING`  | `32`/`64` | TBD         | TBD         | TBD         | both    | OpenPOWER storage operands (for old peripherals).
+| `BYTE_ENA` | `ASCENDING`  | any other | any other   | any other   | any other   | both    | Reserved (not defined or used).
+|===
+
+
+
+NOTE: The OpenPOWER specific configuration is included for historic compatibility, and completeness.
+
+==== Supported size and alignment checking
 
 Alignment width `ALN` defines what kind of data alignments are supported.
 The values can be between `0` (no alignment requirements)
@@ -495,45 +604,47 @@ and `clog2(BEN)` (full alignment is required).
 Only this two values are documented,
 other values in between can be used for custom implementations.
 
-##### Transfer size encoding
+==== Transfer logarithmic size encoding
 
-TODO: remove references to LINEAR size.
+Interface signal `siz` encodes the logarithmic size of a transfer.
+The linear size (number of units/bytes) of the transfer is calculated as `2**siz`.
 
-The `SIZ` parameter encoding defines the following options.
-- `LOGARITHMIC`,
-- `LINEAR`.
-The parameter defines the encoding of the transfer size signal `siz`,
-and it defines restrictions on the valid encodings of the byte enable signal `ben`.
+The number bits required to encode sizes from 1 to `PHY_BEN` (unit/byte enable width) is
+`PHY_SIZ = $clog2(PHY_MAX+1)` where the largest transfer logarithmic size is `PHY_MAX`.
+Depending on the data bus width, some logarithmic size values encoded with `PHY_SIZ` bits
+can be invalid and are thus reserved.
 
-The default and backward compatible option is `LOGARITHMIC`.
-With this option, the transfer size is limited to a power of two of bytes.
+.Logarithmic size encoding
+[%autowidth]
+|===
+| `PHY.DAT` | `PHY_BEN` | `$clog2(PHY_BEN) = PHY_MAX` =   `siz` | `$clog2(PHY_MAX+1) = PHY_SIZ` | comment
+|       `8` |       `1` | `$clog2(      1) =       0` =    'b0` | `$clog2(      0+1) =       0` | The size is a constant, there is no need for `siz`.
+|      `16` |       `2` | `$clog2(      2) =       1` =    'b1` | `$clog2(      1+1) =       1` |
+|      `32` |       `4` | `$clog2(      4) =       2` =   'b10` | `$clog2(      2+1) =       2` |
+|      `64` |       `8` | `$clog2(      8) =       3` =   'b11` | `$clog2(      3+1) =       2` |
+|     `128` |      `16` | `$clog2(     16) =       4` =  'b100` | `$clog2(      4+1) =       3` |
+|     `256` |      `32` | `$clog2(     32) =       5` =  'b101` | `$clog2(      5+1) =       3` |
+|     `512` |      `64` | `$clog2(     64) =       6` =  'b110` | `$clog2(      6+1) =       3` |
+|    `1024` |     `128` | `$clog2(    128) =       7` =  'b111` | `$clog2(      7+1) =       3` |
+|    `2096` |     `256` | `$clog2(    256) =       8` = 'b1000` | `$clog2(      8+1) =       4` |
+|===
 
-The translation between the transfer size signal `siz` and
-the number of bytes being transferred is `num=2**siz`.
+NOTE: A linear size mode was initially considered, but later discarded,
+since the logarithmic size covers all functionality (power of 2 sized load/store transfers)
+documented in the RISC-V ISA and similar standards .
+One example of non power of 2 transfer would be 24-bit RGB data.
+A CPU could perform single cycle non aligned 24-bit accesses to memory,
+instead of performing a 32-bit access and masking the data with `0x00ffffff`.
+Another example would be a FIFO with a `PHY.DAT` wide interface accessed with a CPU or DMA.
+When writing/reading an arbitrarily long stream of bytes to/from the FIFO,
+the reminder at the end of the stream can be of a size which is not a power of 2
+(3 bytes o a 32-bit interface, 3/5/6/7 bytes on a 64-bit interface).
+A CPU with only logarithmic sized accesses, must split this reminder into multiple accesses (7=4+2+1).
+The difference in performance due to this overhead is in most use cases
+not worth the additional instruction encoding space in an ISA.
+Users are free to write custom TCB implementations with linear size support.
 
-| `siz` | num. | size   | description |
-|-------|------|--------|-------------|
-| `'d0` |    1 | byte   |   8-bit wide data. |
-| `'d1` |    2 | half   |  16-bit wide data. |
-| `'d2` |    4 | word   |  32-bit wide data. |
-| `'d3` |    8 | double |  64-bit wide data. |
-| `'d4` |   16 | long   | 128-bit wide data. |
-
-The width of the transfer size signal `siz` in the logarithmic case is
-`clog2(clog2(DAT/UNT))==clog2(clog2(BEN))`.
-
-NOTE: The linear option is an experimental proposal and
-is not yet compatible with any other standard or implementation.
-
-The byte enable signal `ben` is restricted in both the logarithmic and linear cases to
-only number long sequences of adjacent active bits (representing data bytes),
-with all other bits inactive.
-The same restriction for the number applies as for the transfer size signal `siz`.
-
-How active bytes are aligned inside the entire data bus is further defined by
-other parameters `ALN`/`MOD`/`ORD`, the address `adr` and the endianness signal `ndn`.
-
-##### Data position mode
+==== Data position mode
 
 The `MOD` parameter encoding defines the following options.
 - `LOG_SIZE`,
@@ -566,7 +677,7 @@ the instruction is 32-bit or 16-bit aligned in the memory.
 In this case a multiplexer for aligning the instruction would still be needed,
 but it would be placed in the interconnect instead of the CPU.
 
-##### Byte order
+==== Byte order
 
 The `ORD` parameter encoding defines the following options.
 - `DESCENDING`,
@@ -604,7 +715,7 @@ Modern OpenPOWER implementations use ascending order in the core to match the sp
 but use descending order on the system bus, which is usually AMBA AXI based.
 The only practical use case for ascending order would probably be while interfacing with historic hardware.
 
-### Channel configuration
+=== Channel configuration
 
 The `CHN` parameter is used to configure channel read/write capabilities.
 
@@ -621,7 +732,7 @@ The following configurations are defined,
 | `INDEPENDENT_WRITE`  | `1'b1` | `1'b0` |   used | unused | Write data is always enabled, read data is unused. |
 | `INDEPENDENT_READ`   | `1'b0` | `1'b1` | unused |   used | Write data is unused, read data is always enabled. |
 
-#### Common half duplex
+==== Common half duplex
 
 This is the common approach based on a SRAM memory interface.
 The address is shared between read/write operations and
@@ -639,7 +750,7 @@ is not used, internally can be assigned the negated value of write enable `ren`.
 assign ren = ~wen;
 ```
 
-#### Common full duplex
+==== Common full duplex
 
 Use cases:
 - data swap,
@@ -652,7 +763,7 @@ The control request use cases are similar to what RISC-V ISA *Zicsr* instruction
 
 The case where read and write enable signals are both inactive during a transfer is reserved.
 
-#### Independent read/write
+==== Independent read/write
 
 The read and write operations are separated into independent channels.
 The main purpose is to provide full-duplex access to independent addresses.
@@ -660,9 +771,9 @@ One advantage this approach provides is reduced power consumption in peripherals
 since during a write access the read data decoder and multiplexer are not active and
 during a read access the write data enable decoder is not active.
 
-## Examples
+== Examples
 
-### Data packing examples
+=== Data packing examples
 
 All provided examples are configured for descending order `ORD=DESCENDING`.
 Examples are given for the next data packing configurations:
@@ -673,7 +784,7 @@ The examples list all supported read/write transfers in a table.
 Unsupported transfers can be handled by ignoring the request and responding with an error.
 Alternatively unsupported transfers can just cause undefined behavior.
 
-#### Logarithmic size mode
+==== Logarithmic size mode
 
 Examples for the following logarithmic size mode configurations are provided:
 - data bus width sized transfers with size aligned address,
@@ -681,7 +792,7 @@ Examples for the following logarithmic size mode configurations are provided:
 - any size transfers with no address alignment restrictions,
 - instruction fetch for RISC-V with C extension.
 
-##### Full data width, aligned address
+===== Full data width, aligned address
 
 It is common to only allow full data bus width and aligned transfers when accessing peripherals.
 This case would specify the following parameter values and signal restrictions:
@@ -698,7 +809,7 @@ The following table lists such transfers for a 32-bit data bus.
 |------|------------|------------|---------------------------|
 | word | `2'd0`     | `2'd2`     | `{[31:24], [23:16], [15:08], [07:00]}` |
 
-##### Variable data width, aligned
+===== Variable data width, aligned
 
 If transfer size restrictions are relaxed down to a single byte,
 small registers can be arranged into a more compact structure,
@@ -753,7 +864,7 @@ such a conversion module would have to also handle the endianness signal `ndn`.
 A further generalization would entirely remove the alignment restriction to
 enable access to memories which support unaligned accesses.
 
-##### Variable data width, misalignment support
+===== Variable data width, misalignment support
 
 This case would specify the following parameter values and signal restrictions:
 - logarithmic size mode `MOD=LOG_SIZE`,
@@ -779,7 +890,7 @@ The following table lists such transfers for a 32-bit data bus.
 | word | misaligned | `2'd2`     | `2'd2`     | `{[31:24], [23:16], [15:08], [07:00]}` |
 | word | misaligned | `2'd3`     | `2'd2`     | `{[31:24], [23:16], [15:08], [07:00]}` |
 
-##### RISC-V with C extension instruction fetch
+===== RISC-V with C extension instruction fetch
 
 This case would specify the following parameter values and signal restrictions:
 - logarithmic size mode `MOD=LOG_SIZE`,
@@ -795,7 +906,7 @@ The following table lists such transfers.
 | word |    aligned | `2'd0`     | `2'd2`     | `{[31:24], [23:16], [15:08], [07:00]}` |
 | word | misaligned | `2'd2`     | `2'd2`     | `{[31:24], [23:16], [15:08], [07:00]}` |
 
-#### Byte enable mode
+==== Byte enable mode
 
 Examples for the following byte enable mode configurations are provided:
 - any size transfers with size aligned address,
@@ -805,7 +916,7 @@ Both configurations are documented for big and little endianness.
 The configuration with data bus width sized transfers with size aligned address,
 is functionally identical to the logarithmic size mode with the same configuration.
 
-##### Endianness and data alignment
+===== Endianness and data alignment
 
 The following table defines when an access is aligned depending on
 data transfer size and byte address LSB bits.
@@ -824,7 +935,7 @@ The protocol endianness can be either:
 - big endian,
 - a special case is defined for RISC-V instruction fetch of compressed instructions.
 
-#### Endianness agnostic (aligned)
+==== Endianness agnostic (aligned)
 
 The TCB protocol can be endianness agnostic,
 as long as the address is aligned to the data width.
@@ -838,7 +949,7 @@ the full data bus width (`DAT`) using only byte enable (`BEN`).
 The mapping of aligned accesses for little/big endian managers
 is shown in the following chapters.
 
-#### Little endian (any alignment)
+==== Little endian (any alignment)
 
 | size | alignment  | `adr[1:0]` | `ben[3:0]` | `wdt[31:00]`/`rdt[31:00]` |
 |------|------------|------------|------------|---------------------------|
@@ -884,7 +995,7 @@ is shown in the following chapters.
 
 TODO
 
-#### Big endian (any alignment)
+==== Big endian (any alignment)
 
 | size | alignment  | `adr[1:0]` | `ben[0:3]` | `wdt[00:31]`/`rdt[00:31]` |
 |------|------------|------------|------------|---------------------------|
@@ -901,13 +1012,13 @@ TODO
 | word | misaligned | `2'd2`     | `4'b1111`  | `{[16:23],[24:31],[00:07],[08:15]}` |
 | word | misaligned | `2'd3`     | `4'b1111`  | `{[08:15],[16:23],[24:31],[00:07]}` |
 
-#### Misalignment handler
+==== Misalignment handler
 
 Two different implementations
 1. Performs 2 accesses and stitches them together, optionally caches one or more unused parts of previous accesses.
 2. Splits the bus into narrower busses, and increments the address.
 
-### Access cycles
+=== Access cycles
 
 Read/write transfer cycles are shown with common response delays (parameter `DLY`) of 0, 1 and 2 clock periods.
 - `DLY=0` is the case with a combinational response to a request.
@@ -921,7 +1032,7 @@ Read/write transfer cycles are shown with common response delays (parameter `DLY
   would have an extra register added to the request path (address decoder)
   or response path (read data multiplexer) to improve timing.
 
-#### Write transfer
+==== Write transfer
 
 A write transfer is performed when both handshake signals `vld` and `rdy` are simultaneously active
 and the write enable signal `wen` is also active.
@@ -940,7 +1051,7 @@ write transfers reached their destination and were successfully applied.
 
 ![Write transfer](tcb_write.svg)
 
-#### Read transfer
+==== Read transfer
 
 A read transfer is performed when both handshake signals `vld` and `rdy` are simultaneously active
 and the write enable signal `wen` is not active.
@@ -956,7 +1067,7 @@ enable or disable read from each byte.
 
 ![Read transfer](tcb_read.svg)
 
-##### Repeat access transfer
+===== Repeat access transfer
 
 TODO: think this through.
 
@@ -975,7 +1086,7 @@ The repeat access signal `rpt` is intended to tell the SRAM
 to not perform another read from the same address.
 The interconnect would propagate the `rpt` as active only in case
 
-#### Arbitration locking mechanism
+==== Arbitration locking mechanism
 
 Arbitration locking is used in the TCB reference implementation library to:
 - Keep atomicity in data bus width conversion from a wider manager to a narrower subordinate.
@@ -984,7 +1095,7 @@ Arbitration locking is used in the TCB reference implementation library to:
 
 It can also be used for read modify write, and similar operations and for QoS control.
 
-## Signal timing
+== Signal timing
 
 While timing is not strictly part of the protocol,
 following recommendations across the entire design
@@ -1018,12 +1129,12 @@ as specified for SRAM, without affecting overall interconnect timing.
 
 ![Request/response signal timing](tcb_request_response_timing.svg)
 
-## Limitations and undefined features
+== Limitations and undefined features
 
 There are some generalizations and additional features that can be implemented,
 but were not researched well enough to be fully defined.
 
-### Data output hold
+=== Data output hold
 
 SRAM usually holds the data output from the last read request,
 till a new request is processed.
@@ -1035,17 +1146,17 @@ Read data hold can be useful during CPU stalls.
 Either there is no need to repeat a read or a temporary buffer
 for read data can be avoided.
 
-### Out of order transfers
+=== Out of order transfers
 
 Out of order reads are not supported.
 
-### Generalized read delay
+=== Generalized read delay
 
 The delay of 0 would be an asynchronous read,
 a delay of 1 is equal to a common SRAM read cycle,
 longer delays can be caused by registers in the system bus interconnect.
 
-### Integration with standard system busses
+=== Integration with standard system busses
 
 It is possible to translate between the processor native system bus and
 standard system busses like APB, AHB, AXI4-Lite, Wishbone, ...
@@ -1055,7 +1166,7 @@ so it might make sense to implement a standard bus interface unit (BIU)
 separately inside the processor core,
 instead of attaching translators to the optimized native bus.
 
-### Write confirmation
+=== Write confirmation
 
 Write confirmation is returned with the same timing as read data.
 
@@ -1064,7 +1175,7 @@ of connecting tightly coupled memories, writes can be assumed to always succeed.
 
 Write through cache access was not yet researched.
 
-### Atomic access
+=== Atomic access
 
 TODO, on some implementations it might be possible
 to simultaneously perform both read and write.
