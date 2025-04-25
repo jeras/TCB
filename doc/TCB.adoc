@@ -617,16 +617,16 @@ can be invalid and are thus reserved.
 .Logarithmic size encoding
 [%autowidth]
 |===
-| `PHY.DAT` | `PHY_BEN` | `$clog2(PHY_BEN) = PHY_MAX` =   `siz` | `$clog2(PHY_MAX+1) = PHY_SIZ` | comment
-|       `8` |       `1` | `$clog2(      1) =       0` =    'b0` | `$clog2(      0+1) =       0` | The size is a constant, there is no need for `siz`.
-|      `16` |       `2` | `$clog2(      2) =       1` =    'b1` | `$clog2(      1+1) =       1` |
-|      `32` |       `4` | `$clog2(      4) =       2` =   'b10` | `$clog2(      2+1) =       2` |
-|      `64` |       `8` | `$clog2(      8) =       3` =   'b11` | `$clog2(      3+1) =       2` |
-|     `128` |      `16` | `$clog2(     16) =       4` =  'b100` | `$clog2(      4+1) =       3` |
-|     `256` |      `32` | `$clog2(     32) =       5` =  'b101` | `$clog2(      5+1) =       3` |
-|     `512` |      `64` | `$clog2(     64) =       6` =  'b110` | `$clog2(      6+1) =       3` |
-|    `1024` |     `128` | `$clog2(    128) =       7` =  'b111` | `$clog2(      7+1) =       3` |
-|    `2096` |     `256` | `$clog2(    256) =       8` = 'b1000` | `$clog2(      8+1) =       4` |
+| `PHY.DAT` | `PHY_BEN` | `$clog2(PHY_BEN) = PHY_MAX =    siz` | `$clog2(PHY_MAX+1) = PHY_SIZ` | comment
+|       `8` |       `1` | `$clog2(      1) =       0 =    'b0` | `$clog2(      0+1) =       0` | The size is a constant, there is no need for `siz`.
+|      `16` |       `2` | `$clog2(      2) =       1 =    'b1` | `$clog2(      1+1) =       1` |
+|      `32` |       `4` | `$clog2(      4) =       2 =   'b10` | `$clog2(      2+1) =       2` |
+|      `64` |       `8` | `$clog2(      8) =       3 =   'b11` | `$clog2(      3+1) =       2` |
+|     `128` |      `16` | `$clog2(     16) =       4 =  'b100` | `$clog2(      4+1) =       3` |
+|     `256` |      `32` | `$clog2(     32) =       5 =  'b101` | `$clog2(      5+1) =       3` |
+|     `512` |      `64` | `$clog2(     64) =       6 =  'b110` | `$clog2(      6+1) =       3` |
+|    `1024` |     `128` | `$clog2(    128) =       7 =  'b111` | `$clog2(      7+1) =       3` |
+|    `2096` |     `256` | `$clog2(    256) =       8 = 'b1000` | `$clog2(      8+1) =       4` |
 |===
 
 NOTE: A linear size mode was initially considered, but later discarded,
@@ -1180,7 +1180,7 @@ is somehow opposite to what is usually recommended for RTL modules.
 The common recommendation is to place registers at
 module (hierarchical boundary) outputs and optionally at module inputs.
 
-* https://docs.xilinx.com/r/en-US/ug1387-acap-hardware-ip-platform-dev-methodology/Register-Data-Paths-at-Logical-Boundaries[Xilinx recomendations],
+* https://docs.xilinx.com/r/en-US/ug1387-acap-hardware-ip-platform-dev-methodology/Register-Data-Paths-at-Logical-Boundaries[Xilinx recommendations],
 * TODO: link more.
 
 For TCB it is recommended to ... TODO

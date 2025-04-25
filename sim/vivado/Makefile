@@ -23,6 +23,9 @@ TOP ?= tcb_vip_tb
 # tool specific flags
 ################################################################################
 
+# TODO, should be used on elab
+FLAGS = -debug all
+
 ################################################################################
 # Verilog define macros
 ################################################################################
@@ -44,21 +47,21 @@ DEF = -d TOOL_VIVADO_SIMULATOR
 # list of parameter overrides
 
 # protocol
-PHY_PAR += -GPHY_DLY=${PHY_DLY}
+PHY_PAR += -generic_top PHY_DLY=${PHY_DLY}
 # signal widths
-PHY_PAR += -GPHY_UNT=${PHY_UNT}
-PHY_PAR += -GPHY_ADR=${PHY_ADR}
-PHY_PAR += -GPHY_DAT=${PHY_DAT}
+PHY_PAR += -generic_top PHY_UNT=${PHY_UNT}
+PHY_PAR += -generic_top PHY_ADR=${PHY_ADR}
+PHY_PAR += -generic_top PHY_DAT=${PHY_DAT}
 # data packing parameters
-PHY_PAR += -GPHY_ALN=${PHY_ALN}
-PHY_PAR += -GPHY_MIN=${PHY_MIN}
-PHY_PAR ?= -GPHY_MOD=${PHY_MOD}
-PHY_PAR ?= -GPHY_ORD=${PHY_ORD}
+PHY_PAR += -generic_top PHY_ALN=${PHY_ALN}
+PHY_PAR += -generic_top PHY_MIN=${PHY_MIN}
+PHY_PAR ?= -generic_top PHY_MOD=${PHY_MOD}
+PHY_PAR ?= -generic_top PHY_ORD=${PHY_ORD}
 # channel configuration
-PHY_PAR ?= -GCHN_CHN=${PHY_CHN}
+PHY_PAR ?= -generic_top CHN_CHN=${PHY_CHN}
 
 # combined manager/subordinate parameters
-PAR = ${PHY_PAR}
+#PAR = ${PHY_PAR}
 
 ################################################################################
 # Verilog plusargs

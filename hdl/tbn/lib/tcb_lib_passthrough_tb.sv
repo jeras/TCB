@@ -41,6 +41,7 @@ module tcb_lib_passthrough_tb
     // size/mode/order parameters
     ALN: $clog2(DAT/TCB_PAR_PHY_DEF.UNT),
     MIN: TCB_PAR_PHY_DEF.MIN,
+    OFF: TCB_PAR_PHY_DEF.OFF,
     MOD: TCB_PAR_PHY_DEF.MOD,
     ORD: TCB_PAR_PHY_DEF.ORD,
     // channel configuration

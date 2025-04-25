@@ -259,13 +259,13 @@ package tcb_vip_transfer_pkg;
           @(posedge tcb.clk);
         end while (~tcb.trn);
       end
-      req.cmd <= tcb.req.cmd;
-      req.wen <= tcb.req.wen;
-      req.ndn <= tcb.req.ndn;
-      req.adr <= tcb.req.adr;
-      req.siz <= tcb.req.siz;
-      req.ben <= tcb.req.ben;
-      req.wdt <= tcb.req.wdt;
+      req.cmd = tcb.req.cmd;
+      req.wen = tcb.req.wen;
+      req.ndn = tcb.req.ndn;
+      req.adr = tcb.req.adr;
+      req.siz = tcb.req.siz;
+      req.ben = tcb.req.ben;
+      req.wdt = tcb.req.wdt;
     endtask: transfer_req_lsn
 
     // transfer response driver
