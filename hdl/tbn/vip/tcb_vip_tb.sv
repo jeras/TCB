@@ -83,6 +83,9 @@ module tcb_vip_tb
 // test non-blocking API
 ////////////////////////////////////////////////////////////////////////////////
 
+  // transaction counter
+  int unsigned tcb_cnt;
+
   // TCB interfaces
   tcb_if #(.PHY (PHY)) tcb (.clk (clk), .rst (rst));
 
@@ -105,83 +108,44 @@ module tcb_vip_tb
     tcb_nba_s::transfer_array_t tst_mon;
     tcb_nba_s::transfer_array_t tst_sub;
 
-//    // prepare transactions
-//    int unsigned i;
-//    foreach (lst_wen[idx_wen]) begin
-//      foreach (lst_idl[idx_idl]) begin
-//        foreach (lst_bpr[idx_bpr]) begin
-//          tcb_nba_s::transfer_t tst_tmp = '{
-//            // request
-//            req: '{
-//              cmd: '0,
-//              wen: lst_wen[idx_wen],
-//              ndn: 1'b0,
-//              adr: 'h00,
-//              siz: $clog2(tcb.PHY_BEN),
-//              ben: '1,
-//              wdt: data_test_f((tcb.PHY.UNT/2)'(2*i+0))
-//            },
-//            // response
-//            rsp: '{
-//              rdt: data_test_f((tcb.PHY.UNT/2)'(2*i+1)),
-//              sts: '0
-//            },
-//            // timing
-//            idl: lst_idl[idx_idl],
-//            bpr: lst_bpr[idx_bpr]
-//          };
-//          tst_ref.push_back(tst_tmp);
-//          i++;
-//        end
-//      end
+    // prepare transactions
+    int unsigned i;
+    foreach (lst_wen[idx_wen]) begin
+      foreach (lst_idl[idx_idl]) begin
+        foreach (lst_bpr[idx_bpr]) begin
+          tcb_nba_s::transfer_t tst_tmp = '{
+            // request
+            req: '{
+              cmd: '0,
+              wen: lst_wen[idx_wen],
+              ndn: 1'b0,
+              adr: 'h00,
+              siz: $clog2(tcb.PHY_BEN),
+              ben: '1,
+              wdt: data_test_f((tcb.PHY.UNT/2)'(2*i+0))
+            },
+            // response
+            rsp: '{
+              rdt: data_test_f((tcb.PHY.UNT/2)'(2*i+1)),
+              sts: '0
+            },
+            // timing
+            idl: lst_idl[idx_idl],
+            bpr: lst_bpr[idx_bpr],
+            // transfer ID
+            //id: $sformatf("i=%0d", i)
+            id: ""
+          };
+          tst_ref.push_back(tst_tmp);
+          i++;
+        end
+      end
+    end
+
+//    foreach(tst_ref[i]) begin
+//      $display("tst_ref[%0d] = %p", i, tst_ref[i]);
+//    //$display("tst_ref[%0d] = %0p", i, tst_ref[i]);
 //    end
-
-    tcb_nba_s::transfer_t tst_tmp;
-    // prepare transactions
-    tst_tmp = '{
-      // request
-      req: '{
-        cmd: '0,
-        wen: 1'b1,
-        ndn: 1'b0,
-        adr: 'h00,
-        siz: 2'b0,
-        ben: '1,
-        wdt: 32'h01234567
-      },
-      // response
-      rsp: '{
-        rdt: 32'hxxxxxxxx,
-        sts: '0
-      },
-      // timing
-      idl: 1,
-      bpr: 1
-    };
-    tst_ref.push_back(tst_tmp);
-    // prepare transactions
-    tst_tmp = '{
-      // request
-      req: '{
-        cmd: '0,
-        wen: 1'b0,
-        ndn: 1'b0,
-        adr: 'h08,
-        siz: 2'b1,
-        ben: '1,
-        wdt: 32'h9abcdef
-      },
-      // response
-      rsp: '{
-        rdt: 32'h00010203,
-        sts: '0
-      },
-      // timing
-      idl: 1,
-      bpr: 1
-    };
-    tst_ref.push_back(tst_tmp);
-
 
     tst_man = new[tst_ref.size()](tst_ref);
     tst_mon = new[tst_ref.size()];

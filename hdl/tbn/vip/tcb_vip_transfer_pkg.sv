@@ -27,7 +27,9 @@ package tcb_vip_transfer_pkg;
   class tcb_vip_transfer_c #(
     parameter       tcb_phy_t PHY = TCB_PAR_PHY_DEF,
     parameter  type tcb_req_cmd_t = tcb_req_cmd_def_t,
-    parameter  type tcb_rsp_sts_t = tcb_rsp_sts_def_t
+    parameter  type tcb_rsp_sts_t = tcb_rsp_sts_def_t,
+    // debugging options
+    parameter  bit  DEBUG = 1'b0
   );
 
   //////////////////////////////////////////////////////////////////////////////
@@ -119,6 +121,8 @@ package tcb_vip_transfer_pkg;
       // timing idle/backpressure
       int unsigned        idl;  // idle
       int unsigned        bpr;  // backpressure
+      // transfer ID
+      string              id;
     } transfer_t;
 
     typedef transfer_t transfer_array_t [];
@@ -142,7 +146,9 @@ package tcb_vip_transfer_pkg;
       },
       // timing idle/backpressure
       idl: 0,
-      bpr: 0
+      bpr: 0,
+      // transfer ID
+      id: ""
     };
 
     // transfer equivalence check
@@ -203,6 +209,7 @@ package tcb_vip_transfer_pkg;
     task automatic transfer_sub_drv (
       ref transfer_t itm  // transfer item
     );
+      if (DEBUG)  $display("DEBUG: transfer_sub_drv begin ID = \"%s\"", itm.id);
       tcb.rdy <= 1'b0;
       // TODO: rethink this if/else
       itm.idl = 0;
@@ -238,12 +245,14 @@ package tcb_vip_transfer_pkg;
       itm.req.siz = tcb.req.siz;
       itm.req.ben = tcb.req.ben;
       itm.req.wdt = tcb.req.wdt;
+      if (DEBUG)  $display("DEBUG: transfer_sub_drv end ID = \"%s\"", itm.id);
     endtask: transfer_sub_drv
 
     // monitor handshake listener
     task automatic transfer_mon_lsn (
       ref transfer_t itm  // transfer item
     );
+//      if (DEBUG)  $display("DEBUG: transfer_mon_lsn begin ID = \"%s\"", itm.id);
       // count idle/backpressure cycles
       itm.idl = 0;
       itm.bpr = 0;
@@ -260,6 +269,7 @@ package tcb_vip_transfer_pkg;
       itm.req.siz = tcb.req.siz;
       itm.req.ben = tcb.req.ben;
       itm.req.wdt = tcb.req.wdt;
+//      if (DEBUG)  $display("DEBUG: transfer_mon_lsn end ID = \"%s\"", itm.id);
     endtask: transfer_mon_lsn
 
   //////////////////////////////////////////////////////////////////////////////
@@ -268,15 +278,15 @@ package tcb_vip_transfer_pkg;
 
     // manager delay line (listen to response)
     task automatic transfer_man_dly (
-      ref transfer_response_t rsp
+      ref transfer_t itm
     );
       if (tcb.PHY.DLY == 0) begin
         // wait for transfer, and sample inside the transfer cycle
         do begin
           @(posedge tcb.clk);
           // sample response
-          rsp.rdt = tcb.rsp.rdt;
-          rsp.sts = tcb.rsp.sts;
+          itm.rsp.rdt = tcb.rsp.rdt;
+          itm.rsp.sts = tcb.rsp.sts;
         end while (~tcb.trn);
       end else begin
         // wait for transfer, and sample DLY cycles later
@@ -286,19 +296,20 @@ package tcb_vip_transfer_pkg;
         // delay
         repeat (tcb.PHY.DLY) @(posedge tcb.clk);
         // sample response
-        rsp.rdt = tcb.rsp.rdt;
-        rsp.sts = tcb.rsp.sts;
+        itm.rsp.rdt = tcb.rsp.rdt;
+        itm.rsp.sts = tcb.rsp.sts;
       end
     endtask: transfer_man_dly
 
     // subordinate delay line (drive the response)
     task automatic transfer_sub_dly (
-      ref transfer_response_t rsp
+      ref transfer_t itm
     );
+      if (DEBUG)  $display("DEBUG: transfer_sub_dly begin ID = \"%s\"", itm.id);
       if (tcb.PHY.DLY == 0) begin
         // drive response immediately
-        tcb.rsp.rdt = rsp.rdt;
-        tcb.rsp.sts = rsp.sts;
+        tcb.rsp.rdt = itm.rsp.rdt;
+        tcb.rsp.sts = itm.rsp.sts;
         // wait for transfer before exiting task
         do begin
           @(posedge tcb.clk);
@@ -311,16 +322,18 @@ package tcb_vip_transfer_pkg;
         // delay
         repeat (tcb.PHY.DLY-1) @(posedge tcb.clk);
         // drive response
-        tcb.rsp.rdt <= rsp.rdt;
-        tcb.rsp.sts <= rsp.sts;
+        tcb.rsp.rdt <= itm.rsp.rdt;
+        tcb.rsp.sts <= itm.rsp.sts;
+        @(posedge tcb.clk);
       end
+      if (DEBUG)  $display("DEBUG: transfer_sub_dly end ID = \"%s\"", itm.id);
     endtask: transfer_sub_dly
 
   //////////////////////////////////////////////////////////////////////////////
   // transfer sequence non-blocking API
   //////////////////////////////////////////////////////////////////////////////
 
-    // BUG: at DLY=0, there is a race condition between
+    // Questa does not allow the use of `ref` ports in combination with fork-join
 
     // request/response
     task automatic transfer_sequencer (
@@ -330,15 +343,15 @@ package tcb_vip_transfer_pkg;
         case (DIR)
           "MAN": fork 
             transfer_man_drv(transfer_array[i]);
-            transfer_man_dly(transfer_array[i].rsp);
+            transfer_man_dly(transfer_array[i]);
           join_any
           "MON": fork
             transfer_mon_lsn(transfer_array[i]);
-            transfer_man_dly(transfer_array[i].rsp);  // there is no dedicated monitor listener
+            transfer_man_dly(transfer_array[i]);  // there is no dedicated monitor listener
           join_any
           "SUB": fork
             transfer_sub_drv(transfer_array[i]);
-            transfer_sub_dly(transfer_array[i].rsp);
+            transfer_sub_dly(transfer_array[i]);
           join_any
         endcase
       end
