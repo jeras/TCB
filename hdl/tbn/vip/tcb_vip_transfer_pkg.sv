@@ -29,7 +29,7 @@ package tcb_vip_transfer_pkg;
     parameter  type tcb_req_cmd_t = tcb_req_cmd_def_t,
     parameter  type tcb_rsp_sts_t = tcb_rsp_sts_def_t,
     // debugging options
-    parameter  bit  DEBUG = 1'b0
+    parameter  bit  DEBUG = 1'b1
   );
 
   //////////////////////////////////////////////////////////////////////////////
@@ -44,10 +44,6 @@ package tcb_vip_transfer_pkg;
 
     // logarithmic transfer size width
     localparam int unsigned PHY_SIZ = $clog2(PHY_MAX+1);
-
-    // TODO: ???
-    // offset width (number of address bits defining the offset of units inside data)
-    localparam int unsigned PHY_OFF = $clog2(PHY_BEN);
 
   //////////////////////////////////////////////////////////////////////////////
   // virtual interface
@@ -90,6 +86,10 @@ package tcb_vip_transfer_pkg;
           tcb.rdy = 1'b0;
         end
       endcase
+      // start endless delay loop in a background process
+      fork
+        transfer_dly();
+      join_none
     endfunction: new
 
   //////////////////////////////////////////////////////////////////////////////
@@ -174,6 +174,7 @@ package tcb_vip_transfer_pkg;
     task automatic transfer_man_drv (
       ref transfer_t itm  // transfer item
     );
+      if (DEBUG)  $display("DEBUG: %t: transfer_man_drv begin ID = \"%s\".", $realtime, itm.id);
       // request timing
       repeat (itm.idl) @(posedge tcb.clk);
       // drive transfer
@@ -203,13 +204,14 @@ package tcb_vip_transfer_pkg;
       tcb.req.siz <= 'x;
       tcb.req.ben <= 'x;
       tcb.req.wdt <= 'x;
+      if (DEBUG)  $display("DEBUG: %t: transfer_man_drv end ID = \"%s\".", $realtime, itm.id);
     endtask: transfer_man_drv
 
     // subordinate handshake driver
     task automatic transfer_sub_drv (
       ref transfer_t itm  // transfer item
     );
-      if (DEBUG)  $display("DEBUG: transfer_sub_drv begin ID = \"%s\"", itm.id);
+      if (DEBUG)  $display("DEBUG: %t: transfer_sub_drv begin ID = \"%s\".", $realtime, itm.id);
       tcb.rdy <= 1'b0;
       // TODO: rethink this if/else
       itm.idl = 0;
@@ -245,14 +247,14 @@ package tcb_vip_transfer_pkg;
       itm.req.siz = tcb.req.siz;
       itm.req.ben = tcb.req.ben;
       itm.req.wdt = tcb.req.wdt;
-      if (DEBUG)  $display("DEBUG: transfer_sub_drv end ID = \"%s\"", itm.id);
+      if (DEBUG)  $display("DEBUG: %t: transfer_sub_drv end ID = \"%s\".", $realtime, itm.id);
     endtask: transfer_sub_drv
 
     // monitor handshake listener
     task automatic transfer_mon_lsn (
       ref transfer_t itm  // transfer item
     );
-//      if (DEBUG)  $display("DEBUG: transfer_mon_lsn begin ID = \"%s\"", itm.id);
+      if (DEBUG)  $display("DEBUG: %t: transfer_mon_lsn begin ID = \"%s\".", $realtime, itm.id);
       // count idle/backpressure cycles
       itm.idl = 0;
       itm.bpr = 0;
@@ -269,17 +271,27 @@ package tcb_vip_transfer_pkg;
       itm.req.siz = tcb.req.siz;
       itm.req.ben = tcb.req.ben;
       itm.req.wdt = tcb.req.wdt;
-//      if (DEBUG)  $display("DEBUG: transfer_mon_lsn end ID = \"%s\"", itm.id);
+      if (DEBUG)  $display("DEBUG: %t: transfer_mon_lsn end ID = \"%s\".", $realtime, itm.id);
     endtask: transfer_mon_lsn
 
   //////////////////////////////////////////////////////////////////////////////
   // transfer manager/subordinate response delay line
   //////////////////////////////////////////////////////////////////////////////
 
+    task static transfer_dly;
+      if (tcb.PHY.DLY > 0) begin
+        forever @(posedge tcb.clk)
+        begin
+          rsp_dly [1:PHY.DLY] <= rsp_dly [0:PHY.DLY-1];
+        end
+      end
+    endtask: transfer_dly
+
     // manager delay line (listen to response)
     task automatic transfer_man_dly (
       ref transfer_t itm
     );
+      if (DEBUG)  $display("DEBUG: %t: transfer_man_dly begin ID = \"%s\".", $realtime, itm.id);
       if (tcb.PHY.DLY == 0) begin
         // wait for transfer, and sample inside the transfer cycle
         do begin
@@ -299,13 +311,14 @@ package tcb_vip_transfer_pkg;
         itm.rsp.rdt = tcb.rsp.rdt;
         itm.rsp.sts = tcb.rsp.sts;
       end
+      if (DEBUG)  $display("DEBUG: %t: transfer_man_dly end ID = \"%s\".", $realtime, itm.id);
     endtask: transfer_man_dly
 
     // subordinate delay line (drive the response)
     task automatic transfer_sub_dly (
       ref transfer_t itm
     );
-      if (DEBUG)  $display("DEBUG: transfer_sub_dly begin ID = \"%s\"", itm.id);
+      if (DEBUG)  $display("DEBUG: %t: transfer_sub_dly begin ID = \"%s\".", $realtime, itm.id);
       if (tcb.PHY.DLY == 0) begin
         // drive response immediately
         tcb.rsp.rdt = itm.rsp.rdt;
@@ -326,7 +339,7 @@ package tcb_vip_transfer_pkg;
         tcb.rsp.sts <= itm.rsp.sts;
         @(posedge tcb.clk);
       end
-      if (DEBUG)  $display("DEBUG: transfer_sub_dly end ID = \"%s\"", itm.id);
+      if (DEBUG)  $display("DEBUG: %t: transfer_sub_dly end ID = \"%s\".", $realtime, itm.id);
     endtask: transfer_sub_dly
 
   //////////////////////////////////////////////////////////////////////////////
@@ -341,21 +354,23 @@ package tcb_vip_transfer_pkg;
     );
       foreach (transfer_array[i]) begin
         case (DIR)
-          "MAN": fork 
-            transfer_man_drv(transfer_array[i]);
-            transfer_man_dly(transfer_array[i]);
-          join_any
-          "MON": fork
-            transfer_mon_lsn(transfer_array[i]);
-            transfer_man_dly(transfer_array[i]);  // there is no dedicated monitor listener
-          join_any
-          "SUB": fork
-            transfer_sub_drv(transfer_array[i]);
-            transfer_sub_dly(transfer_array[i]);
-          join_any
+          "MAN": begin
+            fork transfer_man_dly(transfer_array[i]); join_none
+                 transfer_man_drv(transfer_array[i]);
+          end
+          "MON": begin
+            fork transfer_man_dly(transfer_array[i]); join_none  // there is no dedicated monitor listener
+                 transfer_mon_lsn(transfer_array[i]);
+          end
+          "SUB": begin
+            fork transfer_sub_dly(transfer_array[i]); join_none
+                 transfer_sub_drv(transfer_array[i]);
+          end
         endcase
       end
+      if (DEBUG)  $display("DEBUG: %t: transfer_sequencer end of drivers.", $realtime);
       wait fork;
+      if (DEBUG)  $display("DEBUG: %t: transfer_sequencer end of all forks.", $realtime);
     endtask: transfer_sequencer
 
   endclass: tcb_vip_transfer_c

@@ -76,7 +76,7 @@ package tcb_vip_transaction_pkg;
     // logarithmic size to byte enable
     static function automatic logic [PHY_BEN-1:0] siz2ben (
       input [PHY_SIZ-1:0] siz,
-      input [PHY_OFF-1:0] off = '0
+      input [PHY_MAX-1:0] off = '0
     );
       siz2ben = '0;
       for (int unsigned i=0; i<PHY_BEN; i++) begin
