@@ -18,7 +18,7 @@
 
 module tcb_lib_register_request_tb
   import tcb_pkg::*;
-  import tcb_vip_blocking_api_pkg::*;
+  import tcb_vip_blocking_pkg::*;
 #(
   // TCB widths
   int unsigned ADR = 32,       // address bus width

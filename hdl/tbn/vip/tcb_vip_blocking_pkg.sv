@@ -16,7 +16,7 @@
 // limitations under the License.
 ////////////////////////////////////////////////////////////////////////////////
 
-package tcb_vip_blocking_api_pkg;
+package tcb_vip_blocking_pkg;
 
   import tcb_pkg::*;
   import tcb_vip_transfer_pkg::*;
@@ -28,7 +28,7 @@ package tcb_vip_blocking_api_pkg;
 // TCB class
 ////////////////////////////////////////////////////////////////////////////////
 
-  class tcb_vip_c #(
+  class tcb_vip_blocking_c #(
     parameter       tcb_phy_t PHY = TCB_PAR_PHY_DEF,
     parameter  type tcb_req_cmd_t = tcb_req_cmd_def_t,
     parameter  type tcb_rsp_sts_t = tcb_rsp_sts_def_t
@@ -223,6 +223,6 @@ package tcb_vip_blocking_api_pkg;
       assert (tmp_sts == sts) else $error("(sts=  1'b%1b) !== (sts=  1'b%1b) mismatch."  , tmp_sts, sts);
     endtask: check128
 
-  endclass: tcb_vip_c
+  endclass: tcb_vip_blocking_c
 
-endpackage: tcb_vip_blocking_api_pkg
+endpackage: tcb_vip_blocking_pkg

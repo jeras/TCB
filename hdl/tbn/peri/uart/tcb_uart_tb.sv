@@ -18,7 +18,7 @@
 
 module tcb_uart_tb
   import tcb_pkg::*;
-  import tcb_vip_blocking_api_pkg::*;
+  import tcb_vip_blocking_pkg::*;
 #(
   // TCB widths
   int unsigned ADR = 32,

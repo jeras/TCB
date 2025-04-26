@@ -80,6 +80,7 @@ package tcb_vip_transfer_pkg;
         end
         // monitor
         "MON": begin
+          // there is no initialization for a monitor
         end
         // subordinate
         "SUB": begin
@@ -88,22 +89,6 @@ package tcb_vip_transfer_pkg;
         end
       endcase
     endfunction: new
-
-  //////////////////////////////////////////////////////////////////////////////
-  // reference data for tests
-  //////////////////////////////////////////////////////////////////////////////
-
-    // data organized into packed bytes
-    typedef logic [PHY_BEN-1:0][PHY.UNT-1:0] data_byte_t;
-
-    // created data for tests
-    static function automatic data_byte_t data_test_f (
-      input logic [PHY.UNT/2-1:0] val = 'x
-    );
-      for (int unsigned i=0; i<PHY_BEN; i++) begin
-        data_test_f[i] = {val, i[PHY.UNT/2-1:0]};
-      end
-    endfunction: data_test_f
 
   //////////////////////////////////////////////////////////////////////////////
   // local types, constants, functions
@@ -259,13 +244,15 @@ package tcb_vip_transfer_pkg;
     task automatic transfer_mon_lsn (
       ref transfer_t itm  // transfer item
     );
+      // count idle/backpressure cycles
       itm.idl = 0;
       itm.bpr = 0;
       do begin
         @(posedge tcb.clk);
-        if (~tcb.vld) itm.idl++;
-        if (~tcb.rdy) itm.bpr++;
+        if (~tcb.vld           ) itm.idl++;
+        if ( tcb.vld & ~tcb.rdy) itm.bpr++;
       end while (~tcb.trn);
+      // sample request
       itm.req.cmd = tcb.req.cmd;
       itm.req.wen = tcb.req.wen;
       itm.req.ndn = tcb.req.ndn;

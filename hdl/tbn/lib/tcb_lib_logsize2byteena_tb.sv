@@ -18,7 +18,7 @@
 
 module tcb_lib_logsize2byteena_tb
   import tcb_pkg::*;
-  import tcb_vip_blocking_api_pkg::*;
+  import tcb_vip_blocking_pkg::*;
 #(
   // protocol
   parameter  int unsigned      PHY_DLY = TCB_PAR_PHY_DEF.DLY,  // response delay
@@ -84,9 +84,9 @@ module tcb_lib_logsize2byteena_tb
   tcb_if #(.PHY (TCB_PHY_BEN)) tcb_mem [0:0] (.clk (clk), .rst (rst));
 
   // TCB class objects
-  tcb_vip_c #(.PHY (TCB_PHY_SIZ)) obj_man;
-  tcb_vip_c #(.PHY (TCB_PHY_BEN)) obj_sub;
-  tcb_vip_c #(.PHY (TCB_PHY_BEN)) obj_mem;
+  tcb_vip_blocking_c #(.PHY (TCB_PHY_SIZ)) obj_man;
+  tcb_vip_blocking_c #(.PHY (TCB_PHY_BEN)) obj_sub;
+  tcb_vip_blocking_c #(.PHY (TCB_PHY_BEN)) obj_mem;
 
 ////////////////////////////////////////////////////////////////////////////////
 // data checking

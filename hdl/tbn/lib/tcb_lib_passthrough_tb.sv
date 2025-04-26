@@ -18,7 +18,7 @@
 
 module tcb_lib_passthrough_tb
   import tcb_pkg::*;
-  import tcb_vip_blocking_api_pkg::*;
+  import tcb_vip_blocking_pkg::*;
 #(
   // response delay
   parameter  int unsigned DLY = 1,
@@ -67,12 +67,12 @@ module tcb_lib_passthrough_tb
   tcb_if tcb_man (.clk (clk), .rst (rst));
   tcb_if tcb_sub (.clk (clk), .rst (rst));
 
-  // parameterized class specialization
-  typedef tcb_vip_c #(.PHY (PHY)) tcb_s;
+  // parameterized class specialization (blocking API)
+  typedef tcb_vip_blocking_c #(.PHY (PHY)) tcb_bla_s;
 
   // TCB class objects
-  tcb_s obj_man;
-  tcb_s obj_sub;
+  tcb_bla_s obj_man;
+  tcb_bla_s obj_sub;
 
 ////////////////////////////////////////////////////////////////////////////////
 // data checking

@@ -58,7 +58,7 @@ PHY_PAR ?= -GPHY_ORD=${PHY_ORD}
 PHY_PAR ?= -GCHN_CHN=${PHY_CHN}
 
 # combined manager/subordinate parameters
-PAR = ${PHY_PAR}
+#PAR = ${PHY_PAR}
 
 ################################################################################
 # Verilog plusargs

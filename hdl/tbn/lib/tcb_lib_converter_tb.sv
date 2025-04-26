@@ -18,7 +18,7 @@
 
 module tcb_lib_converter_tb
   import tcb_pkg::*;
-  import tcb_vip_blocking_api_pkg::*;
+  import tcb_vip_blocking_pkg::*;
 #(
   // protocol
   parameter  int unsigned      MAN_DLY = TCB_PAR_PHY_DEF.DLY,  // response delay

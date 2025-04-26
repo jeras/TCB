@@ -18,10 +18,11 @@
 
 module tcb_vip_tb
   import tcb_pkg::*;
-  import tcb_vip_blocking_api_pkg::*;
+  import tcb_vip_transfer_pkg::*;
+  import tcb_vip_blocking_pkg::*;
 #(
   // response delay
-  parameter  int unsigned PHY_DLY = 0,
+  parameter  int unsigned PHY_DLY = 1,
   // TCB widths
   parameter  int unsigned PHY_ADR = 32,
   parameter  int unsigned PHY_DAT = 32,
@@ -50,8 +51,6 @@ module tcb_vip_tb
     CHN: TCB_PAR_PHY_DEF.CHN
   };
 
-//  localparam tcb_phy_t PHY = TCB_PAR_PHY_DEF;
-
 ////////////////////////////////////////////////////////////////////////////////
 // local signals
 ////////////////////////////////////////////////////////////////////////////////
@@ -60,26 +59,40 @@ module tcb_vip_tb
   logic clk;  // clock
   logic rst;  // reset
 
-  // TCB interfaces
-  tcb_if #(.PHY (PHY)) tcb (.clk (clk), .rst (rst));
-  // tcb_if tcb              (.clk (clk), .rst (rst));
-  // tcb_if tcb_mem [0:IFN-1] (.clk (clk), .rst (rst));
-
-  // parameterized class specialization
-  typedef tcb_vip_c #(.PHY (PHY)) tcb_s;
-
-  // TCB class objects
-  tcb_s obj_man;
-  tcb_s obj_mon;
-  tcb_s obj_sub;
-
   // testbench status signals
   string       testname;  // test name
   int unsigned errorcnt;  // ERROR counter
 
 ////////////////////////////////////////////////////////////////////////////////
+// reference data for tests
+////////////////////////////////////////////////////////////////////////////////
+
+  // data organized into packed bytes
+  typedef logic [tcb.PHY_BEN-1:0][tcb.PHY.UNT-1:0] data_byte_t;
+
+  // created data for tests
+  function automatic data_byte_t data_test_f (
+    input logic [tcb.PHY.UNT/2-1:0] val = 'x
+  );
+    for (int unsigned i=0; i<tcb.PHY_BEN; i++) begin
+      data_test_f[i] = {val, i[tcb.PHY.UNT/2-1:0]};
+    end
+  endfunction: data_test_f
+
+////////////////////////////////////////////////////////////////////////////////
 // test non-blocking API
 ////////////////////////////////////////////////////////////////////////////////
+
+  // TCB interfaces
+  tcb_if #(.PHY (PHY)) tcb (.clk (clk), .rst (rst));
+
+  // parameterized class specialization (non-blocking API)
+  typedef tcb_vip_transfer_c #(.PHY (PHY)) tcb_nba_s;
+
+  // TCB class objects
+  tcb_nba_s obj_man;
+  tcb_nba_s obj_mon;
+  tcb_nba_s obj_sub;
 
   task automatic test_nonblocking;
     // local variables
@@ -87,17 +100,17 @@ module tcb_vip_tb
     int lst_idl [3] = '{0, 1, 2};
     int lst_bpr [3] = '{0, 1, 2};
 
-    tcb_s::transfer_t       tst_ref [$];
-    tcb_s::transfer_array_t tst_man;
-    tcb_s::transfer_array_t tst_mon;
-    tcb_s::transfer_array_t tst_sub;
+    tcb_nba_s::transfer_t       tst_ref [$];
+    tcb_nba_s::transfer_array_t tst_man;
+    tcb_nba_s::transfer_array_t tst_mon;
+    tcb_nba_s::transfer_array_t tst_sub;
 
 //    // prepare transactions
 //    int unsigned i;
 //    foreach (lst_wen[idx_wen]) begin
 //      foreach (lst_idl[idx_idl]) begin
 //        foreach (lst_bpr[idx_bpr]) begin
-//          tcb_s::transfer_t tst_tmp = '{
+//          tcb_nba_s::transfer_t tst_tmp = '{
 //            // request
 //            req: '{
 //              cmd: '0,
@@ -106,11 +119,11 @@ module tcb_vip_tb
 //              adr: 'h00,
 //              siz: $clog2(tcb.PHY_BEN),
 //              ben: '1,
-//              wdt: tcb_s::data_test_f((tcb.PHY.UNT/2)'(2*i+0))
+//              wdt: data_test_f((tcb.PHY.UNT/2)'(2*i+0))
 //            },
 //            // response
 //            rsp: '{
-//              rdt: tcb_s::data_test_f((tcb.PHY.UNT/2)'(2*i+1)),
+//              rdt: data_test_f((tcb.PHY.UNT/2)'(2*i+1)),
 //              sts: '0
 //            },
 //            // timing
@@ -123,8 +136,9 @@ module tcb_vip_tb
 //      end
 //    end
 
+    tcb_nba_s::transfer_t tst_tmp;
     // prepare transactions
-    tcb_s::transfer_t tst_tmp = '{
+    tst_tmp = '{
       // request
       req: '{
         cmd: '0,
@@ -138,6 +152,28 @@ module tcb_vip_tb
       // response
       rsp: '{
         rdt: 32'hxxxxxxxx,
+        sts: '0
+      },
+      // timing
+      idl: 1,
+      bpr: 1
+    };
+    tst_ref.push_back(tst_tmp);
+    // prepare transactions
+    tst_tmp = '{
+      // request
+      req: '{
+        cmd: '0,
+        wen: 1'b0,
+        ndn: 1'b0,
+        adr: 'h08,
+        siz: 2'b1,
+        ben: '1,
+        wdt: 32'h9abcdef
+      },
+      // response
+      rsp: '{
+        rdt: 32'h00010203,
         sts: '0
       },
       // timing
@@ -202,8 +238,11 @@ module tcb_vip_tb
   // TCB interfaces
   tcb_if #(.PHY (PHY)) tcb_mem [0:IFN-1] (.clk (clk), .rst (rst));
 
+  // parameterized class specialization (blocking API)
+  typedef tcb_vip_blocking_c #(.PHY (PHY)) tcb_bla_s;
+
   // TCB class objects
-  tcb_s obj_mem [0:IFN-1];
+  tcb_bla_s obj_mem [0:IFN-1];
 
   // response
   logic [PHY.DAT-1:0] rdt;  // read data

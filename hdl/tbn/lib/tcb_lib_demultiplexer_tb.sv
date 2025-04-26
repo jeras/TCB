@@ -18,7 +18,7 @@
 
 module tcb_lib_demultiplexer_tb
   import tcb_pkg::*;
-  import tcb_vip_blocking_api_pkg::*;
+  import tcb_vip_blocking_pkg::*;
 #(
   // response delay
   parameter  int unsigned DLY = TCB_PAR_PHY_DEF.DLY,
