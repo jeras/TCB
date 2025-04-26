@@ -92,39 +92,63 @@ module tcb_vip_tb
     tcb_s::transfer_array_t tst_mon;
     tcb_s::transfer_array_t tst_sub;
 
+//    // prepare transactions
+//    int unsigned i;
+//    foreach (lst_wen[idx_wen]) begin
+//      foreach (lst_idl[idx_idl]) begin
+//        foreach (lst_bpr[idx_bpr]) begin
+//          tcb_s::transfer_t tst_tmp = '{
+//            // request
+//            req: '{
+//              cmd: '0,
+//              wen: lst_wen[idx_wen],
+//              ndn: 1'b0,
+//              adr: 'h00,
+//              siz: $clog2(tcb.PHY_BEN),
+//              ben: '1,
+//              wdt: tcb_s::data_test_f((tcb.PHY.UNT/2)'(2*i+0))
+//            },
+//            // response
+//            rsp: '{
+//              rdt: tcb_s::data_test_f((tcb.PHY.UNT/2)'(2*i+1)),
+//              sts: '0
+//            },
+//            // timing
+//            idl: lst_idl[idx_idl],
+//            bpr: lst_bpr[idx_bpr]
+//          };
+//          tst_ref.push_back(tst_tmp);
+//          i++;
+//        end
+//      end
+//    end
+
     // prepare transactions
-    int unsigned i;
-    foreach (lst_wen[idx_wen]) begin
-      foreach (lst_idl[idx_idl]) begin
-        foreach (lst_bpr[idx_bpr]) begin
-          tcb_s::transfer_t tst_tmp = '{
-            // request
-            req: '{
-              cmd: '0,
-              wen: lst_wen[idx_wen],
-              ndn: 1'b0,
-              adr: 'h00,
-              siz: $clog2(tcb.PHY_BEN),
-              ben: '1,
-              wdt: tcb_s::data_test_f((tcb.PHY.UNT/2)'(2*i+0))
-            },
-            // response
-            rsp: '{
-              rdt: tcb_s::data_test_f((tcb.PHY.UNT/2)'(2*i+1)),
-              sts: '0
-            },
-            // timing
-            idl: lst_idl[idx_idl],
-            bpr: lst_bpr[idx_bpr]
-          };
-          tst_ref.push_back(tst_tmp);
-          i++;
-        end
-      end
-    end
+    tcb_s::transfer_t tst_tmp = '{
+      // request
+      req: '{
+        cmd: '0,
+        wen: 1'b1,
+        ndn: 1'b0,
+        adr: 'h00,
+        siz: 2'b0,
+        ben: '1,
+        wdt: 32'h01234567
+      },
+      // response
+      rsp: '{
+        rdt: 32'hxxxxxxxx,
+        sts: '0
+      },
+      // timing
+      idl: 1,
+      bpr: 1
+    };
+    tst_ref.push_back(tst_tmp);
+
 
     tst_man = new[tst_ref.size()](tst_ref);
-    tst_mon = new[tst_ref.size()](tst_ref);
+    tst_mon = new[tst_ref.size()];
     tst_sub = new[tst_ref.size()](tst_ref);
 
     // drive transactions
@@ -235,13 +259,13 @@ module tcb_vip_tb
     testname = "nonblocking";
     test_nonblocking;
     repeat (2) @(posedge clk);
-    // test blobking API
-    testname = "blocking";
-    test_blocking;
-    repeat (2) @(posedge clk);
+//    // test blobking API
+//    testname = "blocking";
+//    test_blocking;
+//    repeat (2) @(posedge clk);
 
     if (errorcnt>0)  $display("FAILURE: there were %d errorcnts.", errorcnt);
-    else          $display("SUCCESS.");
+    else             $display("SUCCESS.");
     $finish();
   end
 

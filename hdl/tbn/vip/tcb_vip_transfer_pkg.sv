@@ -167,43 +167,44 @@ package tcb_vip_transfer_pkg;
       input  transfer_t trn_ref,  // reference
       input  transfer_t trn_msk   // mask
     );
+      // TODO
       //transfer_check = (trn_tst ==? (trn_ref ~^ trn_msk));
       transfer_check = 1'bx;
     endfunction: transfer_check
 
+    // response delay line
+    transfer_response_t rsp_dly [0:PHY.DLY];
+
   //////////////////////////////////////////////////////////////////////////////
-  // transfer request/response (enable pipelined transfers with full throughput)
+  // transfer manager/subordinate handshake
   //////////////////////////////////////////////////////////////////////////////
 
-    // transfer request driver
-    task automatic transfer_req_drv (
-      input  transfer_request_t req,
-      input  int unsigned       idl,
-      output int unsigned       bpr
+    // manager handshake driver
+    task automatic transfer_man_drv (
+      ref transfer_t itm  // transfer item
     );
       // request timing
-      repeat (idl) @(posedge tcb.clk);
+      repeat (itm.idl) @(posedge tcb.clk);
       // drive transfer
       // handshake
       tcb.vld <= 1'b1;
       // request
-      tcb.req.cmd <= req.cmd;
-      tcb.req.wen <= req.wen;
-      tcb.req.ndn <= req.ndn;
-      tcb.req.adr <= req.adr;
-      tcb.req.siz <= req.siz;
-      tcb.req.ben <= req.ben;
-      tcb.req.wdt <= req.wdt;
+      tcb.req.cmd <= itm.req.cmd;
+      tcb.req.wen <= itm.req.wen;
+      tcb.req.ndn <= itm.req.ndn;
+      tcb.req.adr <= itm.req.adr;
+      tcb.req.siz <= itm.req.siz;
+      tcb.req.ben <= itm.req.ben;
+      tcb.req.wdt <= itm.req.wdt;
       // backpressure
-      bpr = 0;
+      itm.bpr = 0;
       do begin
         @(posedge tcb.clk);
-        if (~tcb.rdy) bpr++;
+        if (~tcb.rdy) itm.bpr++;
       end while (~tcb.trn);
-      // drive idle/undefined
       // handshake
       tcb.vld <= 1'b0;
-      // request
+      // drive request
       tcb.req.cmd <= 'x;
       tcb.req.wen <= 'x;
       tcb.req.ndn <= 'x;
@@ -211,46 +212,29 @@ package tcb_vip_transfer_pkg;
       tcb.req.siz <= 'x;
       tcb.req.ben <= 'x;
       tcb.req.wdt <= 'x;
-    endtask: transfer_req_drv
+    endtask: transfer_man_drv
 
-    // transfer response listener
-    task automatic transfer_rsp_lsn (
-      output transfer_response_t rsp
-    );
-      // wait for response
-      do begin
-        @(posedge tcb.clk);
-      end while (~tcb.dly[tcb.PHY.DLY].ena);
-      // response
-//      $display("DEBUG: tcb.rsp.rdt = %h", tcb.rsp.rdt);
-      rsp.rdt = tcb.rsp.rdt;
-      rsp.sts = tcb.rsp.sts;
-//      $display("DEBUG: tcb.rsp.rdt = %h", rsp.rdt);
-    endtask: transfer_rsp_lsn
-
-    // transfer request listener
-    task automatic transfer_req_lsn (
-      output transfer_request_t req,
-      output int unsigned       idl,
-      input  int unsigned       bpr
+    // subordinate handshake driver
+    task automatic transfer_sub_drv (
+      ref transfer_t itm  // transfer item
     );
       tcb.rdy <= 1'b0;
-      // TODO: measure idle time
-      idl = 0;
+      // TODO: rethink this if/else
+      itm.idl = 0;
       // request
-      if (bpr == 0) begin
+      if (itm.bpr == 0) begin
         // ready
         tcb.rdy <= 1'b1;
         // wait for transfer
         do begin
           @(posedge tcb.clk);
-          idl += tcb.vld ? 0 : 1;
+          if (~tcb.vld) itm.idl++;
         end while (~tcb.trn);
       end else begin
         // backpressure
-        for (int unsigned i=0; i<bpr; i+=(tcb.vld?1:0)) begin
+        for (int unsigned i=0; i<itm.bpr; i+=(tcb.vld?1:0)) begin
           @(posedge tcb.clk);
-          idl += tcb.vld ? 0 : 1;
+          if (~tcb.vld) itm.idl++;
         end
         // ready
         tcb.rdy <= 1'b1;
@@ -259,27 +243,91 @@ package tcb_vip_transfer_pkg;
           @(posedge tcb.clk);
         end while (~tcb.trn);
       end
-      req.cmd = tcb.req.cmd;
-      req.wen = tcb.req.wen;
-      req.ndn = tcb.req.ndn;
-      req.adr = tcb.req.adr;
-      req.siz = tcb.req.siz;
-      req.ben = tcb.req.ben;
-      req.wdt = tcb.req.wdt;
-    endtask: transfer_req_lsn
+      // handshake
+      tcb.rdy <= 1'b0;
+      // sample request
+      itm.req.cmd = tcb.req.cmd;
+      itm.req.wen = tcb.req.wen;
+      itm.req.ndn = tcb.req.ndn;
+      itm.req.adr = tcb.req.adr;
+      itm.req.siz = tcb.req.siz;
+      itm.req.ben = tcb.req.ben;
+      itm.req.wdt = tcb.req.wdt;
+    endtask: transfer_sub_drv
 
-    // transfer response driver
-    task automatic transfer_rsp_drv (
-      input  transfer_response_t rsp
+    // monitor handshake listener
+    task automatic transfer_mon_lsn (
+      ref transfer_t itm  // transfer item
     );
-      // response
-      tcb.rsp.rdt <= rsp.rdt;
-      tcb.rsp.sts <= rsp.sts;
-      // wait for response
+      itm.idl = 0;
+      itm.bpr = 0;
       do begin
         @(posedge tcb.clk);
-      end while (~tcb.dly[tcb.PHY.DLY].ena);
-    endtask: transfer_rsp_drv
+        if (~tcb.vld) itm.idl++;
+        if (~tcb.rdy) itm.bpr++;
+      end while (~tcb.trn);
+      itm.req.cmd = tcb.req.cmd;
+      itm.req.wen = tcb.req.wen;
+      itm.req.ndn = tcb.req.ndn;
+      itm.req.adr = tcb.req.adr;
+      itm.req.siz = tcb.req.siz;
+      itm.req.ben = tcb.req.ben;
+      itm.req.wdt = tcb.req.wdt;
+    endtask: transfer_mon_lsn
+
+  //////////////////////////////////////////////////////////////////////////////
+  // transfer manager/subordinate response delay line
+  //////////////////////////////////////////////////////////////////////////////
+
+    // manager delay line (listen to response)
+    task automatic transfer_man_dly (
+      ref transfer_response_t rsp
+    );
+      if (tcb.PHY.DLY == 0) begin
+        // wait for transfer, and sample inside the transfer cycle
+        do begin
+          @(posedge tcb.clk);
+          // sample response
+          rsp.rdt = tcb.rsp.rdt;
+          rsp.sts = tcb.rsp.sts;
+        end while (~tcb.trn);
+      end else begin
+        // wait for transfer, and sample DLY cycles later
+        do begin
+          @(posedge tcb.clk);
+        end while (~tcb.trn);
+        // delay
+        repeat (tcb.PHY.DLY) @(posedge tcb.clk);
+        // sample response
+        rsp.rdt = tcb.rsp.rdt;
+        rsp.sts = tcb.rsp.sts;
+      end
+    endtask: transfer_man_dly
+
+    // subordinate delay line (drive the response)
+    task automatic transfer_sub_dly (
+      ref transfer_response_t rsp
+    );
+      if (tcb.PHY.DLY == 0) begin
+        // drive response immediately
+        tcb.rsp.rdt = rsp.rdt;
+        tcb.rsp.sts = rsp.sts;
+        // wait for transfer before exiting task
+        do begin
+          @(posedge tcb.clk);
+        end while (~tcb.trn);
+      end else begin
+        // wait for transfer
+        do begin
+          @(posedge tcb.clk);
+        end while (~tcb.trn);
+        // delay
+        repeat (tcb.PHY.DLY-1) @(posedge tcb.clk);
+        // drive response
+        tcb.rsp.rdt <= rsp.rdt;
+        tcb.rsp.sts <= rsp.sts;
+      end
+    endtask: transfer_sub_dly
 
   //////////////////////////////////////////////////////////////////////////////
   // transfer sequence non-blocking API
@@ -289,28 +337,25 @@ package tcb_vip_transfer_pkg;
 
     // request/response
     task automatic transfer_sequencer (
-      ref transfer_array_t transfer_array
+      inout transfer_array_t transfer_array
     );
-      fork
-        begin: fork_req
-          foreach (transfer_array[i]) begin
-            case (DIR)
-              "MAN": transfer_req_drv(transfer_array[i].req, transfer_array[i].idl, transfer_array[i].bpr);
-              "MON": transfer_req_lsn(transfer_array[i].req, transfer_array[i].idl, transfer_array[i].bpr);
-              "SUB": transfer_req_lsn(transfer_array[i].req, transfer_array[i].idl, transfer_array[i].bpr);
-            endcase
-          end
-        end: fork_req
-        begin: fork_rsp
-          foreach (transfer_array[i]) begin
-            case (DIR)
-              "MAN": transfer_rsp_lsn(transfer_array[i].rsp);
-              "MON": transfer_rsp_lsn(transfer_array[i].rsp);
-              "SUB": transfer_rsp_drv(transfer_array[i].rsp);
-            endcase
-          end
-        end: fork_rsp
-      join
+      foreach (transfer_array[i]) begin
+        case (DIR)
+          "MAN": fork 
+            transfer_man_drv(transfer_array[i]);
+            transfer_man_dly(transfer_array[i].rsp);
+          join_any
+          "MON": fork
+            transfer_mon_lsn(transfer_array[i]);
+            transfer_man_dly(transfer_array[i].rsp);  // there is no dedicated monitor listener
+          join_any
+          "SUB": fork
+            transfer_sub_drv(transfer_array[i]);
+            transfer_sub_dly(transfer_array[i].rsp);
+          join_any
+        endcase
+      end
+      wait fork;
     endtask: transfer_sequencer
 
   endclass: tcb_vip_transfer_c

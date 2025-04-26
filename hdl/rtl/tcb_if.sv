@@ -115,7 +115,7 @@ interface tcb_if
 
   // response pipeline stage
   typedef struct {
-    logic               ena;  // enable
+    logic               trn;  // transfer
     logic               ren;  // read enable
     logic               ndn;  // endianness
     logic [PHY_MAX-1:0] off;  // offset
@@ -170,7 +170,7 @@ interface tcb_if
   endgenerate
 
   // response pipeline combinational input
-  assign dly[0].ena = trn                         ;  // valid
+  assign dly[0].trn = trn                         ;  // transfer
   assign dly[0].ren =       req_ren               ;  // read enable
   assign dly[0].ndn =                 req.ndn     ;  // endianness
   assign dly[0].off =                 req_off     ;  // offset
