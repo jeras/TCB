@@ -5,6 +5,7 @@
   <Mappings Location="Common Libraries" Library="not mapped"/>
   <Mappings Location="doc" Library="not mapped"/>
   <Mappings Location="sim" Library="not mapped"/>
+  <Mappings Location="tmp" Library="not mapped"/>
   <Mappings Location="Common Libraries/STD" Library="std"/>
   <Mappings Location="" Library="work"/>
 </com.sigasi.hdt.shared.librarymapping.model:LibraryMappings>

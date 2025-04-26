@@ -29,7 +29,7 @@ package tcb_vip_transfer_pkg;
     parameter  type tcb_req_cmd_t = tcb_req_cmd_def_t,
     parameter  type tcb_rsp_sts_t = tcb_rsp_sts_def_t,
     // debugging options
-    parameter  bit  DEBUG = 1'b1
+    parameter  bit  DEBUG = 1'b0
   );
 
   //////////////////////////////////////////////////////////////////////////////
@@ -84,12 +84,10 @@ package tcb_vip_transfer_pkg;
         "SUB": begin
           // initialize to idle state
           tcb.rdy = 1'b0;
+          // start background process handling response delay line
+          transfer_dly_drv();
         end
       endcase
-      // start endless delay loop in a background process
-      fork
-        transfer_dly();
-      join_none
     endfunction: new
 
   //////////////////////////////////////////////////////////////////////////////
@@ -219,6 +217,9 @@ package tcb_vip_transfer_pkg;
       if (itm.bpr == 0) begin
         // ready
         tcb.rdy <= 1'b1;
+        // response
+        rsp_dly[0].rdt <= itm.rsp.rdt;
+        rsp_dly[0].sts <= itm.rsp.sts;
         // wait for transfer
         do begin
           @(posedge tcb.clk);
@@ -232,6 +233,9 @@ package tcb_vip_transfer_pkg;
         end
         // ready
         tcb.rdy <= 1'b1;
+        // response
+        rsp_dly[0].rdt <= itm.rsp.rdt;
+        rsp_dly[0].sts <= itm.rsp.sts;
         // wait for transfer
         do begin
           @(posedge tcb.clk);
@@ -278,20 +282,32 @@ package tcb_vip_transfer_pkg;
   // transfer manager/subordinate response delay line
   //////////////////////////////////////////////////////////////////////////////
 
-    task static transfer_dly;
-      if (tcb.PHY.DLY > 0) begin
-        forever @(posedge tcb.clk)
-        begin
-          rsp_dly [1:PHY.DLY] <= rsp_dly [0:PHY.DLY-1];
+    task transfer_dly_drv;
+      if (DEBUG)  $display("DEBUG: entered transfer_dly_drv.");
+      fork
+        // propagate response through the delay line
+        if (tcb.PHY.DLY > 0) begin
+          forever @(posedge tcb.clk)
+          begin
+            rsp_dly[1:PHY.DLY] <= rsp_dly[0:PHY.DLY-1];
+          end
         end
-      end
-    endtask: transfer_dly
+        // drive the TCB interface from the last delay line stage
+        forever
+        begin
+          @(rsp_dly[PHY.DLY].rdt, rsp_dly[PHY.DLY].sts);
+          if (DEBUG)  $display("DEBUG: transfer_dly_drv change.");
+          tcb.rsp.rdt <= rsp_dly[PHY.DLY].rdt;
+          tcb.rsp.sts <= rsp_dly[PHY.DLY].sts;
+        end
+      join_none
+    endtask: transfer_dly_drv
 
     // manager delay line (listen to response)
-    task automatic transfer_man_dly (
+    task automatic transfer_mon_dly (
       ref transfer_t itm
     );
-      if (DEBUG)  $display("DEBUG: %t: transfer_man_dly begin ID = \"%s\".", $realtime, itm.id);
+      if (DEBUG)  $display("DEBUG: %t: transfer_mon_dly begin ID = \"%s\".", $realtime, itm.id);
       if (tcb.PHY.DLY == 0) begin
         // wait for transfer, and sample inside the transfer cycle
         do begin
@@ -311,36 +327,8 @@ package tcb_vip_transfer_pkg;
         itm.rsp.rdt = tcb.rsp.rdt;
         itm.rsp.sts = tcb.rsp.sts;
       end
-      if (DEBUG)  $display("DEBUG: %t: transfer_man_dly end ID = \"%s\".", $realtime, itm.id);
-    endtask: transfer_man_dly
-
-    // subordinate delay line (drive the response)
-    task automatic transfer_sub_dly (
-      ref transfer_t itm
-    );
-      if (DEBUG)  $display("DEBUG: %t: transfer_sub_dly begin ID = \"%s\".", $realtime, itm.id);
-      if (tcb.PHY.DLY == 0) begin
-        // drive response immediately
-        tcb.rsp.rdt = itm.rsp.rdt;
-        tcb.rsp.sts = itm.rsp.sts;
-        // wait for transfer before exiting task
-        do begin
-          @(posedge tcb.clk);
-        end while (~tcb.trn);
-      end else begin
-        // wait for transfer
-        do begin
-          @(posedge tcb.clk);
-        end while (~tcb.trn);
-        // delay
-        repeat (tcb.PHY.DLY-1) @(posedge tcb.clk);
-        // drive response
-        tcb.rsp.rdt <= itm.rsp.rdt;
-        tcb.rsp.sts <= itm.rsp.sts;
-        @(posedge tcb.clk);
-      end
-      if (DEBUG)  $display("DEBUG: %t: transfer_sub_dly end ID = \"%s\".", $realtime, itm.id);
-    endtask: transfer_sub_dly
+      if (DEBUG)  $display("DEBUG: %t: transfer_mon_dly end ID = \"%s\".", $realtime, itm.id);
+    endtask: transfer_mon_dly
 
   //////////////////////////////////////////////////////////////////////////////
   // transfer sequence non-blocking API
@@ -355,15 +343,15 @@ package tcb_vip_transfer_pkg;
       foreach (transfer_array[i]) begin
         case (DIR)
           "MAN": begin
-            fork transfer_man_dly(transfer_array[i]); join_none
+            fork transfer_mon_dly(transfer_array[i]); join_none
                  transfer_man_drv(transfer_array[i]);
           end
           "MON": begin
-            fork transfer_man_dly(transfer_array[i]); join_none  // there is no dedicated monitor listener
+            fork transfer_mon_dly(transfer_array[i]); join_none
                  transfer_mon_lsn(transfer_array[i]);
           end
           "SUB": begin
-            fork transfer_sub_dly(transfer_array[i]); join_none
+//            fork transfer_sub_dly(transfer_array[i]); join_none
                  transfer_sub_drv(transfer_array[i]);
           end
         endcase

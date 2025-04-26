@@ -22,7 +22,7 @@ module tcb_vip_tb
   import tcb_vip_blocking_pkg::*;
 #(
   // response delay
-  parameter  int unsigned PHY_DLY = 0,
+  parameter  int unsigned PHY_DLY = 2,
   // TCB widths
   parameter  int unsigned PHY_ADR = 32,
   parameter  int unsigned PHY_DAT = 32,
@@ -133,8 +133,8 @@ module tcb_vip_tb
             idl: lst_idl[idx_idl],
             bpr: lst_bpr[idx_bpr],
             // transfer ID
-            id: $sformatf("i=%0d", i)
-            //id: ""
+            //id: $sformatf("i=%0d", i)
+            id: ""
           };
           tst_ref.push_back(tst_tmp);
           i++;
@@ -142,10 +142,10 @@ module tcb_vip_tb
       end
     end
 
-    foreach(tst_ref[i]) begin
-      $display("tst_ref[%0d] = %p", i, tst_ref[i]);
-    //$display("tst_ref[%0d] = %0p", i, tst_ref[i]);
-    end
+//    foreach(tst_ref[i]) begin
+//      $display("tst_ref[%0d] = %p", i, tst_ref[i]);
+//    //$display("tst_ref[%0d] = %0p", i, tst_ref[i]);
+//    end
 
     tst_man = new[tst_ref.size()](tst_ref);
     tst_mon = new[tst_ref.size()];
