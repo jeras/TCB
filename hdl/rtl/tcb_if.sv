@@ -19,27 +19,18 @@
 interface tcb_if
   import tcb_pkg::*;
 #(
-  parameter  tcb_phy_t  PHY = TCB_PAR_PHY_DEF,
-  parameter  type tcb_req_cmd_t = tcb_req_cmd_def_t,
-  parameter  type tcb_rsp_sts_t = tcb_rsp_sts_def_t
+  // PHY parameters
+  parameter  tcb_phy_t PHY = TCB_PHY_DEF,
+  // request/response structure types
+  parameter  type req_t = tcb_req_t,  // request
+  parameter  type rsp_t = tcb_rsp_t,  // response
+  // VIP (not to be used in RTL)
+  parameter  bit  VIP = 1'b0 // VIP end node
 )(
   // system signals
   input  logic clk,  // clock
   input  logic rst   // reset
 );
-
-////////////////////////////////////////////////////////////////////////////////
-// local parameters
-////////////////////////////////////////////////////////////////////////////////
-
-  // byte enable width (number of units inside data)
-  localparam int unsigned PHY_BEN = PHY.DAT / PHY.UNT;
-
-  // maximum transfer size
-  localparam int unsigned PHY_MAX = $clog2(PHY_BEN);
-
-  // logarithmic transfer size width
-  localparam int unsigned PHY_SIZ = $clog2(PHY_MAX+1);
 
 ////////////////////////////////////////////////////////////////////////////////
 // I/O ports
@@ -49,27 +40,15 @@ interface tcb_if
   logic vld;  // valid
   logic rdy;  // ready
 
-  // request
-  typedef struct packed {
-    tcb_req_cmd_t       cmd;  // command (optional)
-    logic               wen;  // write enable
-    logic               ren;  // read enable
-    logic               ndn;  // endianness
-    logic [PHY.ADR-1:0] adr;  // address
-    logic [PHY_SIZ-1:0] siz;  // logarithmic transfer size
-    logic [PHY_BEN-1:0] ben;  // byte enable
-    logic [PHY.DAT-1:0] wdt;  // write data
-  } req_t;
-
-  // response
-  typedef struct packed {
-    logic [PHY.DAT-1:0] rdt;  // read data
-    tcb_rsp_sts_t       sts;  // status (optional)
-  } rsp_t;
-
   // request/response
-  req_t req;
-  rsp_t rsp;
+  req_t req;  // request
+  rsp_t rsp;  // response
+
+  localparam int unsigned PHY_ADR = $bits(req.adr);
+  localparam int unsigned PHY_DAT = $bits(req.wdt);
+  localparam int unsigned PHY_BEN = $bits(req.ben);
+  localparam int unsigned PHY_SIZ = $bits(req.siz);
+  localparam int unsigned PHY_MAX = $clog2(PHY_BEN);
 
 ////////////////////////////////////////////////////////////////////////////////
 // transaction handshake and misalignment logic
@@ -91,100 +70,22 @@ interface tcb_if
   assign idl = ~vld | trn;
 
 ////////////////////////////////////////////////////////////////////////////////
-// request read/write enable logic depending on channel configuration
+// VIP response delay
 ////////////////////////////////////////////////////////////////////////////////
 
-  // local read enable
-  logic req_ren;
-
+  // TODO: Might have to move the delay outside of the generate,
+  //       so it is visible to the VIP regardless if used or not.
   generate
-  // hardcoded values for independent channels
-  case (PHY.CHN)
-    TCB_COMMON_HALF_DUPLEX: begin                                                end
-    TCB_COMMON_FULL_DUPLEX: begin                                                end
-    TCB_INDEPENDENT_WRITE : begin assign req.ren = 1'b0;  assign req.wen = 1'b1; end
-    TCB_INDEPENDENT_READ  : begin assign req.ren = 1'b1;  assign req.wen = 1'b0; end
-  endcase
-  // read enable is copied from negated write enable cor common half duplex channel
-  if (PHY.CHN == TCB_COMMON_HALF_DUPLEX)  assign req_ren = ~req.wen;
-  endgenerate
-
-////////////////////////////////////////////////////////////////////////////////
-// response logic (never outputs on modports)
-////////////////////////////////////////////////////////////////////////////////
-
-  // response pipeline stage
-  typedef struct {
-    logic               trn;  // transfer
-    logic               ren;  // read enable
-    logic               ndn;  // endianness
-    logic [PHY_MAX-1:0] off;  // offset
-    logic [PHY.ALN-1:0] aln;  // alignment
-    logic [PHY_SIZ-1:0] siz;  // logarithmic transfer size
-    logic [PHY_BEN-1:0] ben;  // byte enable
-  } dly_t;
-
-  // response pipeline
-  dly_t dly [0:PHY.DLY];
-
-  // local offset
-  logic [PHY_MAX-1:0] req_off;
-
-  // local alignment
-  logic [PHY.ALN-1:0] req_aln;
-
-  // local byte enable
-  logic [PHY_BEN-1:0] req_ben;
-
-  // local offset
-  assign req_off = req.adr[PHY_MAX-1:0];
-
-  // TODO: this check only works in TCB_LOG_SIZE mode, add check for TCB_BYTE_ENA mode
-  // misalignment
-  generate
-    if (PHY.ALN > 0) begin: misalignment_mask
-      always_comb
-      begin
-        for (int unsigned i=0; i<PHY.ALN; i++) begin
-          req_aln[i] = (i < req.siz) ? req.adr[PHY.ALN-1:0] : 1'b0;
-        end
-      end
-    end: misalignment_mask
-    else begin
-      assign req_aln = 1'b0;
+  if (VIP) begin: vip
+    rsp_t dly [0:PHY.DLY];
+    if (PHY.DLY > 0) begin
+      // propagate response through the delay line
+      always_ff @(posedge clk)
+      dly[1:PHY.DLY] <= dly[0:PHY.DLY-1];
     end
-  endgenerate
-
-    // transfer size encoding
-  generate
-  case (PHY.MOD)
-    TCB_LOG_SIZE: begin: byteenable
-      for (genvar b=0; b<PHY_BEN; b++) begin
-        assign req_ben[b] = b < (2**req.siz);
-      end
-    end: byteenable
-    TCB_BYTE_ENA: begin
-      assign req_ben = req.ben;
-    end
-  endcase
-  endgenerate
-
-  // response pipeline combinational input
-  assign dly[0].trn = trn                         ;  // transfer
-  assign dly[0].ren =       req_ren               ;  // read enable
-  assign dly[0].ndn =                 req.ndn     ;  // endianness
-  assign dly[0].off =                 req_off     ;  // offset
-  assign dly[0].aln =                 req_aln     ;  // alignment
-  assign dly[0].siz =                 req.siz     ;  // logarithmic transfer size
-  assign dly[0].ben = trn & req_ren ? req_ben : '0;  // byte enable
-
-  // response pipeline
-  // TODO: avoid toggling if there is not transfer
-  generate
-  if (PHY.DLY > 0) begin: delay
-    always_ff @(posedge clk)
-    dly[1:PHY.DLY] <= dly[0:PHY.DLY-1];
-  end: delay
+    // delayed response assignment
+    assign rsp = dly[PHY.DLY];
+  end: vip
   endgenerate
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -205,8 +106,7 @@ interface tcb_if
     // local signals
     input  trn,
     input  stl,
-    input  idl,
-    input  dly
+    input  idl
   );
 
   // monitor
@@ -223,8 +123,7 @@ interface tcb_if
     // local signals
     input  trn,
     input  stl,
-    input  idl,
-    input  dly
+    input  idl
   );
 
   // subordinate
@@ -241,8 +140,7 @@ interface tcb_if
     // local signals
     input  trn,
     input  stl,
-    input  idl,
-    input  dly
+    input  idl
   );
 
 endinterface: tcb_if

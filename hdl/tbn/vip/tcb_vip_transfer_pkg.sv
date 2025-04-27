@@ -25,25 +25,16 @@ package tcb_vip_transfer_pkg;
 ////////////////////////////////////////////////////////////////////////////////
 
   class tcb_vip_transfer_c #(
-    parameter       tcb_phy_t PHY = TCB_PAR_PHY_DEF,
-    parameter  type tcb_req_cmd_t = tcb_req_cmd_def_t,
-    parameter  type tcb_rsp_sts_t = tcb_rsp_sts_def_t,
+    // PHY parameters
+    parameter  tcb_phy_t PHY = TCB_PHY_DEF,
+    // request/response structure types
+    parameter  type req_t = tcb_req_t,  // request
+    parameter  type rsp_t = tcb_rsp_t,  // response
+    // VIP (not to be used in RTL)
+    parameter  bit  VIP = 0, // VIP end node
     // debugging options
     parameter  bit  DEBUG = 1'b0
   );
-
-  //////////////////////////////////////////////////////////////////////////////
-  // local parameters
-  //////////////////////////////////////////////////////////////////////////////
-
-    // byte enable width (number of units inside data)
-    localparam int unsigned PHY_BEN = PHY.DAT / PHY.UNT;
-
-    // maximum transfer size
-    localparam int unsigned PHY_MAX = $clog2(PHY_BEN);
-
-    // logarithmic transfer size width
-    localparam int unsigned PHY_SIZ = $clog2(PHY_MAX+1);
 
   //////////////////////////////////////////////////////////////////////////////
   // virtual interface
@@ -51,9 +42,10 @@ package tcb_vip_transfer_pkg;
 
     // virtual interface type definition
     typedef virtual tcb_if #(
-      .PHY           (PHY),
-      .tcb_req_cmd_t (tcb_req_cmd_t),
-      .tcb_rsp_sts_t (tcb_rsp_sts_t)
+      .PHY   (PHY),
+      .req_t (req_t),
+      .rsp_t (rsp_t),
+      .VIP   (VIP)
     ) tcb_vif_t;
 
     // virtual interface instance
@@ -64,11 +56,11 @@ package tcb_vip_transfer_pkg;
 
     //constructor
     function new(
-      string DIR = "MON",
-      tcb_vif_t tcb
+      tcb_vif_t tcb,
+      string DIR = "MON"
     );
-      this.DIR = DIR;
       this.tcb = tcb;
+      this.DIR = DIR;
       // initialization
       case (DIR)
         // manager
@@ -84,9 +76,8 @@ package tcb_vip_transfer_pkg;
         "SUB": begin
           // initialize to idle state
           tcb.rdy = 1'b0;
-          // start background process handling response delay line
-          transfer_dly_drv();
         end
+        default: $fatal("Unsupported DIR value: \"%s\"", DIR);
       endcase
     endfunction: new
 
@@ -94,54 +85,24 @@ package tcb_vip_transfer_pkg;
   // local types, constants, functions
   //////////////////////////////////////////////////////////////////////////////
 
-    // TCB transfer request structure
-    typedef struct {
-      tcb_req_cmd_t                    cmd;  // command (optional)
-      logic                            wen;  // write enable
-      logic                            ndn;  // endianness
-      logic [PHY.ADR-1:0]              adr;  // address
-      logic [PHY_SIZ-1:0]              siz;  // logarithmic size
-      logic [PHY_BEN-1:0]              ben;  // byte enable
-      logic [PHY_BEN-1:0][PHY.UNT-1:0] wdt;  // write data
-    } transfer_request_t;
-
-    // TCB transfer response structure
-    typedef struct {
-      logic [PHY_BEN-1:0][PHY.UNT-1:0] rdt;  // read data
-      tcb_rsp_sts_t                    sts;  // status (optional)
-    } transfer_response_t;
-
     // TCB transfer structure
     typedef struct {
       // request/response
-      transfer_request_t  req;  // request
-      transfer_response_t rsp;  // response
+      req_t req;  // request
+      rsp_t rsp;  // response
       // timing idle/backpressure
-      int unsigned        idl;  // idle
-      int unsigned        bpr;  // backpressure
+      int unsigned idl;  // idle
+      int unsigned bpr;  // backpressure
       // transfer ID
-      string              id;
+      string       id;
     } transfer_t;
 
     typedef transfer_t transfer_array_t [];
 
     // constants
     static const transfer_t TRANSFER_INIT = '{
-      // request
-      req: '{
-        cmd: 'x,
-        wen: 1'bx,
-        ndn: 1'bx,
-        adr: 'x,
-        siz: 'x,
-        ben: 'x,
-        wdt: 'x
-      },
-      // response
-      rsp: '{
-        rdt: 'x,
-        sts: 'x
-      },
+      req: '{default: 'x},  // request
+      rsp: '{default: 'x},  // response
       // timing idle/backpressure
       idl: 0,
       bpr: 0,
@@ -161,9 +122,6 @@ package tcb_vip_transfer_pkg;
       transfer_check = 1'bx;
     endfunction: transfer_check
 
-    // response delay line
-    transfer_response_t rsp_dly [0:PHY.DLY];
-
   //////////////////////////////////////////////////////////////////////////////
   // transfer manager/subordinate handshake
   //////////////////////////////////////////////////////////////////////////////
@@ -179,13 +137,7 @@ package tcb_vip_transfer_pkg;
       // handshake
       tcb.vld <= 1'b1;
       // request
-      tcb.req.cmd <= itm.req.cmd;
-      tcb.req.wen <= itm.req.wen;
-      tcb.req.ndn <= itm.req.ndn;
-      tcb.req.adr <= itm.req.adr;
-      tcb.req.siz <= itm.req.siz;
-      tcb.req.ben <= itm.req.ben;
-      tcb.req.wdt <= itm.req.wdt;
+      tcb.req <= itm.req;
       // backpressure
       itm.bpr = 0;
       do begin
@@ -195,13 +147,7 @@ package tcb_vip_transfer_pkg;
       // handshake
       tcb.vld <= 1'b0;
       // drive request
-      tcb.req.cmd <= 'x;
-      tcb.req.wen <= 'x;
-      tcb.req.ndn <= 'x;
-      tcb.req.adr <= 'x;
-      tcb.req.siz <= 'x;
-      tcb.req.ben <= 'x;
-      tcb.req.wdt <= 'x;
+      tcb.req <= '{default: 'x};
       if (DEBUG)  $display("DEBUG: %t: transfer_man_drv end ID = \"%s\".", $realtime, itm.id);
     endtask: transfer_man_drv
 
@@ -218,8 +164,7 @@ package tcb_vip_transfer_pkg;
         // ready
         tcb.rdy <= 1'b1;
         // response
-        rsp_dly[0].rdt <= itm.rsp.rdt;
-        rsp_dly[0].sts <= itm.rsp.sts;
+        tcb.vip.dly[0] <= itm.rsp;
         // wait for transfer
         do begin
           @(posedge tcb.clk);
@@ -234,8 +179,7 @@ package tcb_vip_transfer_pkg;
         // ready
         tcb.rdy <= 1'b1;
         // response
-        rsp_dly[0].rdt <= itm.rsp.rdt;
-        rsp_dly[0].sts <= itm.rsp.sts;
+        tcb.vip.dly[0] <= itm.rsp;
         // wait for transfer
         do begin
           @(posedge tcb.clk);
@@ -244,13 +188,7 @@ package tcb_vip_transfer_pkg;
       // handshake
       tcb.rdy <= 1'b0;
       // sample request
-      itm.req.cmd = tcb.req.cmd;
-      itm.req.wen = tcb.req.wen;
-      itm.req.ndn = tcb.req.ndn;
-      itm.req.adr = tcb.req.adr;
-      itm.req.siz = tcb.req.siz;
-      itm.req.ben = tcb.req.ben;
-      itm.req.wdt = tcb.req.wdt;
+      itm.req = tcb.req;
       if (DEBUG)  $display("DEBUG: %t: transfer_sub_drv end ID = \"%s\".", $realtime, itm.id);
     endtask: transfer_sub_drv
 
@@ -268,40 +206,13 @@ package tcb_vip_transfer_pkg;
         if ( tcb.vld & ~tcb.rdy) itm.bpr++;
       end while (~tcb.trn);
       // sample request
-      itm.req.cmd = tcb.req.cmd;
-      itm.req.wen = tcb.req.wen;
-      itm.req.ndn = tcb.req.ndn;
-      itm.req.adr = tcb.req.adr;
-      itm.req.siz = tcb.req.siz;
-      itm.req.ben = tcb.req.ben;
-      itm.req.wdt = tcb.req.wdt;
+      itm.req = tcb.req;
       if (DEBUG)  $display("DEBUG: %t: transfer_mon_lsn end ID = \"%s\".", $realtime, itm.id);
     endtask: transfer_mon_lsn
 
   //////////////////////////////////////////////////////////////////////////////
   // transfer manager/subordinate response delay line
   //////////////////////////////////////////////////////////////////////////////
-
-    task transfer_dly_drv;
-      if (DEBUG)  $display("DEBUG: entered transfer_dly_drv.");
-      fork
-        // propagate response through the delay line
-        if (tcb.PHY.DLY > 0) begin
-          forever @(posedge tcb.clk)
-          begin
-            rsp_dly[1:PHY.DLY] <= rsp_dly[0:PHY.DLY-1];
-          end
-        end
-        // drive the TCB interface from the last delay line stage
-        forever
-        begin
-          @(rsp_dly[PHY.DLY].rdt, rsp_dly[PHY.DLY].sts);
-          if (DEBUG)  $display("DEBUG: transfer_dly_drv change.");
-          tcb.rsp.rdt <= rsp_dly[PHY.DLY].rdt;
-          tcb.rsp.sts <= rsp_dly[PHY.DLY].sts;
-        end
-      join_none
-    endtask: transfer_dly_drv
 
     // manager delay line (listen to response)
     task automatic transfer_mon_dly (
@@ -313,8 +224,7 @@ package tcb_vip_transfer_pkg;
         do begin
           @(posedge tcb.clk);
           // sample response
-          itm.rsp.rdt = tcb.rsp.rdt;
-          itm.rsp.sts = tcb.rsp.sts;
+          itm.rsp = tcb.rsp;
         end while (~tcb.trn);
       end else begin
         // wait for transfer, and sample DLY cycles later
@@ -324,8 +234,7 @@ package tcb_vip_transfer_pkg;
         // delay
         repeat (tcb.PHY.DLY) @(posedge tcb.clk);
         // sample response
-        itm.rsp.rdt = tcb.rsp.rdt;
-        itm.rsp.sts = tcb.rsp.sts;
+        itm.rsp = tcb.rsp;
       end
       if (DEBUG)  $display("DEBUG: %t: transfer_mon_dly end ID = \"%s\".", $realtime, itm.id);
     endtask: transfer_mon_dly

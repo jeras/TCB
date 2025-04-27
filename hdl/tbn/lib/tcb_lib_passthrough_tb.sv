@@ -31,24 +31,18 @@ module tcb_lib_passthrough_tb
   // is not working well thus this workaround
 
   // physical interface parameter
-  localparam tcb_phy_t PHY1 = '{
+  localparam tcb_phy_t PHY = '{
     // protocol
     DLY: DLY,
-    // signal bus widths
-    UNT: TCB_PAR_PHY_DEF.UNT,
-    ADR: ADR,
-    DAT: DAT,
     // size/mode/order parameters
-    ALN: $clog2(DAT/TCB_PAR_PHY_DEF.UNT),
-    MIN: TCB_PAR_PHY_DEF.MIN,
-    OFF: TCB_PAR_PHY_DEF.OFF,
-    MOD: TCB_PAR_PHY_DEF.MOD,
-    ORD: TCB_PAR_PHY_DEF.ORD,
+    ALN: TCB_PHY_DEF.ALN,
+    MIN: TCB_PHY_DEF.MIN,
+    OFF: TCB_PHY_DEF.OFF,
+    MOD: TCB_PHY_DEF.MOD,
+    ORD: TCB_PHY_DEF.ORD,
     // channel configuration
-    CHN: TCB_PAR_PHY_DEF.CHN
+    CHN: TCB_PHY_DEF.CHN
   };
-
-  localparam tcb_phy_t PHY = TCB_PAR_PHY_DEF;
 
 ////////////////////////////////////////////////////////////////////////////////
 // local signals
@@ -79,12 +73,10 @@ module tcb_lib_passthrough_tb
 ////////////////////////////////////////////////////////////////////////////////
 
   // response
-  logic [PHY.DAT-1:0] rdt;  // read data
-  tcb_rsp_sts_def_t   sts;  // status response
-
   logic [ 8-1:0] rdt8 ;  //  8-bit read data
   logic [16-1:0] rdt16;  // 16-bit read data
   logic [32-1:0] rdt32;  // 32-bit read data
+  tcb_rsp_sts_t  sts;    // status response
 
 ////////////////////////////////////////////////////////////////////////////////
 // test sequence
@@ -98,8 +90,8 @@ module tcb_lib_passthrough_tb
   initial
   begin
     // connect virtual interfaces
-    obj_man = new("MAN", tcb_man);
-    obj_sub = new("SUB", tcb_sub);
+    obj_man = new(tcb_man, "MAN");
+    obj_sub = new(tcb_sub, "SUB");
     // reset sequence
     rst = 1'b1;
     repeat (2) @(posedge clk);

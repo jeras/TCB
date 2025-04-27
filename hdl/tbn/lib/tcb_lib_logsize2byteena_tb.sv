@@ -21,28 +21,20 @@ module tcb_lib_logsize2byteena_tb
   import tcb_vip_blocking_pkg::*;
 #(
   // protocol
-  parameter  int unsigned      PHY_DLY = TCB_PAR_PHY_DEF.DLY,  // response delay
-  // signal widths
-  parameter  int unsigned      PHY_UNT = TCB_PAR_PHY_DEF.UNT,  // data unit   width (byte width is 8 by default)
-  parameter  int unsigned      PHY_ADR = TCB_PAR_PHY_DEF.ADR,  // address bus width
-  parameter  int unsigned      PHY_DAT = TCB_PAR_PHY_DEF.DAT,  // data    bus width
+  parameter  int unsigned      PHY_DLY = TCB_PHY_DEF.DLY,  // response delay
   // data packing parameters for manager/subordinate
-  parameter  int unsigned      PHY_ALN = TCB_PAR_PHY_DEF.ALN,  // TODO
-  parameter  int unsigned      PHY_MIN = TCB_PAR_PHY_DEF.MIN,  // TODO
-  parameter  int unsigned      PHY_OFF = TCB_PAR_PHY_DEF.OFF,  // TODO
-  parameter  tcb_phy_mode_t    PHY_MOD = TCB_PAR_PHY_DEF.MOD,  // manager     data position mode
-  parameter  tcb_phy_order_t   PHY_ORD = TCB_PAR_PHY_DEF.ORD,  // manager     byte order
+  parameter  int unsigned      PHY_ALN = TCB_PHY_DEF.ALN,  // TODO
+  parameter  int unsigned      PHY_MIN = TCB_PHY_DEF.MIN,  // TODO
+  parameter  int unsigned      PHY_OFF = TCB_PHY_DEF.OFF,  // TODO
+  parameter  tcb_phy_mode_t    PHY_MOD = TCB_PHY_DEF.MOD,  // manager     data position mode
+  parameter  tcb_phy_order_t   PHY_ORD = TCB_PHY_DEF.ORD,  // manager     byte order
   // channel configuration
-  parameter  tcb_phy_channel_t PHY_CHN = TCB_PAR_PHY_DEF.CHN  // channel configuration
+  parameter  tcb_phy_channel_t PHY_CHN = TCB_PHY_DEF.CHN  // channel configuration
 );
 
   localparam tcb_phy_t TCB_PHY_SIZ = '{
     // protocol
     DLY: PHY_DLY,
-    // signal widths
-    UNT: PHY_UNT,
-    ADR: PHY_ADR,
-    DAT: PHY_DAT,
     // data packing parameters
     ALN: 2,
     MIN: 0,
@@ -56,10 +48,6 @@ module tcb_lib_logsize2byteena_tb
   localparam tcb_phy_t TCB_PHY_BEN = '{
     // protocol
     DLY: PHY_DLY,
-    // signal widths
-    UNT: PHY_UNT,
-    ADR: PHY_ADR,
-    DAT: PHY_DAT,
     // data packing parameters
     ALN: 2,
     MIN: 0,
@@ -79,22 +67,22 @@ module tcb_lib_logsize2byteena_tb
   logic rst = 1'b1;  // reset
 
   // TCB interfaces
-  tcb_if #(.PHY (TCB_PHY_SIZ)) tcb_man       (.clk (clk), .rst (rst));
-  tcb_if #(.PHY (TCB_PHY_BEN)) tcb_sub       (.clk (clk), .rst (rst));
-  tcb_if #(.PHY (TCB_PHY_BEN)) tcb_mem [0:0] (.clk (clk), .rst (rst));
+  tcb_if #(TCB_PHY_SIZ, tcb_req_t, tcb_rsp_t) tcb_man       (.clk (clk), .rst (rst));
+  tcb_if #(TCB_PHY_BEN, tcb_req_t, tcb_rsp_t) tcb_sub       (.clk (clk), .rst (rst));
+  tcb_if #(TCB_PHY_BEN, tcb_req_t, tcb_rsp_t) tcb_mem [0:0] (.clk (clk), .rst (rst));
 
   // TCB class objects
-  tcb_vip_blocking_c #(.PHY (TCB_PHY_SIZ)) obj_man;
-  tcb_vip_blocking_c #(.PHY (TCB_PHY_BEN)) obj_sub;
-  tcb_vip_blocking_c #(.PHY (TCB_PHY_BEN)) obj_mem;
+  tcb_vip_blocking_c #(TCB_PHY_SIZ, tcb_req_t, tcb_rsp_t) obj_man;
+  tcb_vip_blocking_c #(TCB_PHY_BEN, tcb_req_t, tcb_rsp_t) obj_sub;
+  tcb_vip_blocking_c #(TCB_PHY_BEN, tcb_req_t, tcb_rsp_t) obj_mem;
 
 ////////////////////////////////////////////////////////////////////////////////
 // data checking
 ////////////////////////////////////////////////////////////////////////////////
 
   // response
-  logic [tcb_man.PHY_BEN-1:0][tcb_man.PHY.UNT-1:0] rdt;  // read data
-  tcb_rsp_sts_def_t                                sts;  // status response
+  logic [tcb_man.PHY_BEN-1:0][8-1:0] rdt;  // read data
+  tcb_rsp_sts_t                      sts;  // status response
 
 ////////////////////////////////////////////////////////////////////////////////
 // test sequence

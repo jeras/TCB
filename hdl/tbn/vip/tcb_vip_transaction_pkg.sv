@@ -27,23 +27,39 @@ package tcb_vip_transaction_pkg;
 ////////////////////////////////////////////////////////////////////////////////
 
   class tcb_vip_transaction_c #(
-    parameter       tcb_phy_t PHY = TCB_PAR_PHY_DEF,
-    parameter  type tcb_req_cmd_t = tcb_req_cmd_def_t,
-    parameter  type tcb_rsp_sts_t = tcb_rsp_sts_def_t
+    // PHY parameters
+    parameter  tcb_phy_t PHY = TCB_PHY_DEF,
+    // request/response structure types
+    parameter  type req_t = tcb_req_t,  // request
+    parameter  type rsp_t = tcb_rsp_t,  // response
+    // VIP (not to be used in RTL)
+    parameter  bit  VIP = 0, // VIP end node
+    // debugging options
+    parameter  bit  DEBUG = 1'b0
   ) extends tcb_vip_transfer_c #(
-    .PHY           (PHY),
-    .tcb_req_cmd_t (tcb_req_cmd_t),
-    .tcb_rsp_sts_t (tcb_rsp_sts_t)
+    .PHY   (PHY),
+    .req_t (req_t),
+    .rsp_t (rsp_t),
+    .VIP   (VIP),
+    .DEBUG (DEBUG)
   );
 
+    // virtual interface type definition
+    typedef virtual tcb_if #(
+      .PHY   (PHY),
+      .req_t (req_t),
+      .rsp_t (rsp_t),
+      .VIP   (VIP)
+    ) tcb_vif_t;
+    
     //constructor
     function new(
-      string DIR = "MON",
-      tcb_vif_t tcb
+      tcb_vif_t tcb,
+      string DIR = "MON"
     );
       super.new(
-        .DIR (DIR),
-        .tcb (tcb)
+        .tcb (tcb),
+        .DIR (DIR)
       );
     endfunction: new
 
@@ -51,26 +67,32 @@ package tcb_vip_transaction_pkg;
   // local types, constants, functions
   //////////////////////////////////////////////////////////////////////////////
 
+    localparam int unsigned PHY_ADR = $bits(tcb.req_t.adr);
+    localparam int unsigned PHY_DAT = $bits(tcb.req_t.dat);
+    localparam int unsigned PHY_BEN = $bits(tcb.req_t.ben);
+    localparam int unsigned PHY_SIZ = $bits(tcb.req_t.siz);
+    localparam int unsigned PHY_MAX = $clog2(PHY_BEN);
+
     // TCB transaction request structure
     typedef struct {
       // request
       tcb_cfg_endian_t    ndn;
       logic               wen;
-      logic [PHY.ADR-1:0] adr;
-      logic [PHY.UNT-1:0] wdt [];
-    } transaction_request_t;
+      logic [PHY_ADR-1:0] adr;
+      logic       [8-1:0] wdt [];
+    } transaction_req_t;
 
     // TCB transaction response structure
     typedef struct {
       // response
-      logic [PHY.UNT-1:0] rdt [];
-      tcb_rsp_sts_t       sts;
-    } transaction_response_t;
+      logic [8-1:0] rdt [];
+      tcb_rsp_sts_t sts;
+    } transaction_rsp_t;
 
     // TCB transaction structure
     typedef struct {
-      transaction_request_t  req;
-      transaction_response_t rsp;
+      transaction_req_t req;
+      transaction_rsp_t rsp;
     } transaction_t;
 
     // logarithmic size to byte enable
@@ -101,7 +123,7 @@ package tcb_vip_transaction_pkg;
 
     // read/write request transaction of power of 2 size
     static function automatic transfer_array_t transaction_request (
-      ref transaction_request_t transaction_req
+      ref transaction_req_t transaction_req
     );
       // the requested transaction is organized into transfer_array
       int unsigned siz;  // transaction side (units/bytes)
@@ -176,14 +198,14 @@ package tcb_vip_transaction_pkg;
     endfunction: transaction_request
 
     // read/write response transaction of power of 2 size
-    static function automatic transaction_response_t transaction_response (
+    static function automatic transaction_rsp_t transaction_response (
       ref transfer_array_t transfer_array
     );
       // transaction response
       int unsigned siz;  // transaction side (units/bytes)
       int unsigned len;  // transaction length (transfers)
       // return transaction response
-      transaction_response_t transaction_rsp;
+      transaction_rsp_t transaction_rsp;
       // transaction length (number of transfer items)
       len = transfer_array.size();
       // data size
@@ -227,10 +249,10 @@ package tcb_vip_transaction_pkg;
     task automatic transaction (
       // request
       input  logic               wen,
-      input  logic [PHY.ADR-1:0] adr,
-      ref    logic [PHY.UNT-1:0] wdt [],
+      input  logic [PHY_ADR-1:0] adr,
+      ref    logic       [8-1:0] wdt [],
       // response
-      ref    logic [PHY.UNT-1:0] rdt [],
+      ref    logic       [8-1:0] rdt [],
       output tcb_rsp_sts_t       sts,
       // endianness
       input  tcb_cfg_endian_t    ndn = TCB_LITTLE

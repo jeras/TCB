@@ -104,7 +104,6 @@ module tcb_vip_memory
 
     // local copies of TCB PHY parameters
     localparam DLY = tcb[i].PHY.DLY;
-    localparam UNT = tcb[i].PHY.UNT;
     localparam BEN = tcb[i].PHY_BEN;
 
     // request address and size (TCB_LOG_SIZE mode)
@@ -112,8 +111,8 @@ module tcb_vip_memory
     int unsigned siz;
 
     // read/write data packed arrays
-    logic [BEN-1:0][UNT-1:0] wdt;
-    logic [BEN-1:0][UNT-1:0] rdt [0:DLY] = '{default: 'x};
+    logic [BEN-1:0][8-1:0] wdt;
+    logic [BEN-1:0][8-1:0] rdt [0:DLY] = '{default: 'x};
 
     // request address and size
     assign adr =    int'(tcb[i].req.adr);
@@ -187,9 +186,10 @@ module tcb_vip_memory
           end: log_size
           TCB_BYTE_ENA: begin: byte_ena
             for (int unsigned b=0; b<BEN; b++) begin: bytes
-              if (tcb[i].dly[d-1].ben[b]) begin
+              // TODO
+//              if (tcb[i].dly[d-1].ben[b]) begin
                 rdt[d][b] <= rdt[d-1][b];
-              end
+//              end
             end: bytes
           end: byte_ena
         endcase

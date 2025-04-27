@@ -25,9 +25,7 @@ module tcb_vip_tb
   parameter  int unsigned PHY_DLY = 2,
   // TCB widths
   parameter  int unsigned PHY_ADR = 32,
-  parameter  int unsigned PHY_DAT = 32,
-  // memory interface number
-  parameter  int unsigned IFN = 1
+  parameter  int unsigned PHY_DAT = 32
 );
 
   // TODO: parameter propagation through virtual interfaces in classes
@@ -37,18 +35,14 @@ module tcb_vip_tb
   localparam tcb_phy_t PHY = '{
     // protocol
     DLY: PHY_DLY,
-    // signal bus widths
-    UNT: TCB_PAR_PHY_DEF.UNT,
-    ADR: PHY_ADR,
-    DAT: PHY_DAT,
     // size/mode/order parameters
-    ALN: $clog2(PHY_DAT/TCB_PAR_PHY_DEF.UNT),
-    MIN: TCB_PAR_PHY_DEF.MIN,
-    OFF: TCB_PAR_PHY_DEF.OFF,
-    MOD: TCB_PAR_PHY_DEF.MOD,
-    ORD: TCB_PAR_PHY_DEF.ORD,
+    ALN: TCB_PHY_DEF.ALN,
+    MIN: TCB_PHY_DEF.MIN,
+    OFF: TCB_PHY_DEF.OFF,
+    MOD: TCB_PHY_DEF.MOD,
+    ORD: TCB_PHY_DEF.ORD,
     // channel configuration
-    CHN: TCB_PAR_PHY_DEF.CHN
+    CHN: TCB_PHY_DEF.CHN
   };
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -63,19 +57,21 @@ module tcb_vip_tb
   string       testname;  // test name
   int unsigned errorcnt;  // ERROR counter
 
+  localparam bit VIP = 1'b1;
+
 ////////////////////////////////////////////////////////////////////////////////
 // reference data for tests
 ////////////////////////////////////////////////////////////////////////////////
 
   // data organized into packed bytes
-  typedef logic [tcb.PHY_BEN-1:0][tcb.PHY.UNT-1:0] data_byte_t;
+  typedef logic [tcb.PHY_BEN-1:0][8-1:0] data_byte_t;
 
   // created data for tests
   function automatic data_byte_t data_test_f (
-    input logic [tcb.PHY.UNT/2-1:0] val = 'x
+    input logic [8/2-1:0] val = 'x
   );
     for (int unsigned i=0; i<tcb.PHY_BEN; i++) begin
-      data_test_f[i] = {val, i[tcb.PHY.UNT/2-1:0]};
+      data_test_f[i] = {val, i[8/2-1:0]};
     end
   endfunction: data_test_f
 
@@ -87,15 +83,15 @@ module tcb_vip_tb
   int unsigned tcb_cnt;
 
   // TCB interfaces
-  tcb_if #(.PHY (PHY)) tcb (.clk (clk), .rst (rst));
+  tcb_if #(PHY, tcb_req_t, tcb_rsp_t, VIP) tcb (.clk (clk), .rst (rst));
 
   // parameterized class specialization (non-blocking API)
-  typedef tcb_vip_transfer_c #(.PHY (PHY)) tcb_nba_s;
+  typedef tcb_vip_transfer_c #(PHY, tcb_req_t, tcb_rsp_t, VIP) tcb_nba_s;
 
   // TCB class objects
-  tcb_nba_s obj_man;
-  tcb_nba_s obj_mon;
-  tcb_nba_s obj_sub;
+  tcb_nba_s obj_man = new(tcb);
+  tcb_nba_s obj_mon = new(tcb);
+  tcb_nba_s obj_sub = new(tcb);
 
   task automatic test_nonblocking;
     // local variables
@@ -117,16 +113,17 @@ module tcb_vip_tb
             // request
             req: '{
               cmd: '0,
-              wen: lst_wen[idx_wen],
+              wen:  lst_wen[idx_wen],
+              ren: ~lst_wen[idx_wen],
               ndn: 1'b0,
               adr: 'h00,
               siz: $clog2(tcb.PHY_BEN),
               ben: '1,
-              wdt: data_test_f((tcb.PHY.UNT/2)'(2*i+0))
+              wdt: data_test_f((8/2)'(2*i+0))
             },
             // response
             rsp: '{
-              rdt: data_test_f((tcb.PHY.UNT/2)'(2*i+1)),
+              rdt: data_test_f((8/2)'(2*i+1)),
               sts: '0
             },
             // timing
@@ -196,48 +193,6 @@ module tcb_vip_tb
   endtask: test_nonblocking
 
 ////////////////////////////////////////////////////////////////////////////////
-// test blocking API
-////////////////////////////////////////////////////////////////////////////////
-
-  // TCB interfaces
-  tcb_if #(.PHY (PHY)) tcb_mem [0:IFN-1] (.clk (clk), .rst (rst));
-
-  // parameterized class specialization (blocking API)
-  typedef tcb_vip_blocking_c #(.PHY (PHY)) tcb_bla_s;
-
-  // TCB class objects
-  tcb_bla_s obj_mem [0:IFN-1];
-
-  // response
-  logic [PHY.DAT-1:0] rdt;  // read data
-  tcb_rsp_sts_def_t   sts;  // status response
-
-  logic [  8-1:0] rdt8  ;  //   8-bit read data
-  logic [ 16-1:0] rdt16 ;  //  16-bit read data
-  logic [ 32-1:0] rdt32 ;  //  32-bit read data
-  logic [ 64-1:0] dat64 ;  //  64-bit read data
-  logic [128-1:0] dat128;  // 128-bit read data
-
-  task automatic test_blocking;
-    $display("INFO: blocking API test begin.");
-    //                adr,          dat, sts
-    obj_mem[0].write32('h00, 32'h01234567, sts);
-    obj_mem[0].read32 ('h00, rdt32       , sts);
-    //                adr,          dat, sts
-    obj_mem[0].write32('h11, 32'h01234567, sts);
-    obj_mem[0].read32 ('h11, rdt32       , sts);
-    $display("INFO: blocking API test end.");
-  endtask: test_blocking
-
-  generate
-    for (genvar i=0; i<IFN; i++) begin
-      initial begin
-        obj_mem[i] = new("MAN", tcb_mem[i]);
-      end
-    end
-  endgenerate
-  
-////////////////////////////////////////////////////////////////////////////////
 // test sequence
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -249,43 +204,24 @@ module tcb_vip_tb
   initial
   begin
     // connect virtual interfaces
-    obj_man = new("MAN", tcb);
-    obj_mon = new("MON", tcb);
-    obj_sub = new("SUB", tcb);
+    obj_man = new(tcb, "MAN");
+    obj_mon = new(tcb, "MON");
+    obj_sub = new(tcb, "SUB");
     // reset sequence
     rst = 1'b1;
     repeat (2) @(posedge clk);
     rst = 1'b0;
     repeat (1) @(posedge clk);
     
-    // test non blobking API
+    // test non blocking API
     testname = "nonblocking";
     test_nonblocking;
     repeat (2) @(posedge clk);
-//    // test blobking API
-//    testname = "blocking";
-//    test_blocking;
-//    repeat (2) @(posedge clk);
 
     if (errorcnt>0)  $display("FAILURE: there were %d errorcnts.", errorcnt);
     else             $display("SUCCESS.");
     $finish();
   end
-
-////////////////////////////////////////////////////////////////////////////////
-// VIP instances
-////////////////////////////////////////////////////////////////////////////////
-
-  // memory model subordinate
-  tcb_vip_memory #(
-    .SIZ (2**8)
-  ) mem (
-    .tcb (tcb_mem)
-  );
-
-////////////////////////////////////////////////////////////////////////////////
-// DUT instance
-////////////////////////////////////////////////////////////////////////////////
 
 ////////////////////////////////////////////////////////////////////////////////
 // VCD/FST waveform trace

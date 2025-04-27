@@ -64,12 +64,8 @@ package tcb_pkg;
   // physical interface parameter structure
   // TODO: the structure is packed to workaround a Verilator bug
   typedef struct packed {
-    // protocol
+    // transfer level protocol
     int unsigned      DLY;  // response delay
-    // signal widths
-    int unsigned      UNT;  // data unit width (byte width is 8 by default)
-    int unsigned      ADR;  // address   width
-    int unsigned      DAT;  // data      width
     // data packing parameters
     int unsigned      ALN;  // alignment (number of aligned address bits)
     int unsigned      MIN;  // minimum transfer logarithmic size
@@ -81,13 +77,9 @@ package tcb_pkg;
   } tcb_phy_t;
 
   // physical interface parameter default
-  localparam tcb_phy_t TCB_PAR_PHY_DEF = '{
+  localparam tcb_phy_t TCB_PHY_DEF = '{
     // protocol
     DLY: 0,
-    // signal widths
-    UNT: 8,
-    ADR: 32,
-    DAT: 32,
     // data packing parameters
     ALN: 0,   // maximum $clog2(DAT/UNT)
     MIN: 0,   // maximum $clog2(DAT/UNT)
@@ -105,9 +97,6 @@ package tcb_pkg;
   // status structure
   typedef struct packed {
     bit DLY;
-    bit UNT;
-    bit ADR;
-    bit DAT;
     bit ALN;
     bit MIN;
     bit OFF;
@@ -128,9 +117,6 @@ package tcb_pkg;
 
     // comparison
     status.DLY = match ? (phy_val.DLY ==? phy_ref.DLY) : 1'b1;
-    status.UNT = match ? (phy_val.UNT ==? phy_ref.UNT) : 1'b1;
-    status.ADR = match ? (phy_val.ADR ==? phy_ref.ADR) : 1'b1;
-    status.DAT = match ? (phy_val.DAT ==? phy_ref.DAT) : 1'b1;
     status.ALN = match ? (phy_val.ALN ==? phy_ref.ALN) : 1'b1;
     status.MIN = match ? (phy_val.MIN ==? phy_ref.MIN) : 1'b1;
     status.OFF = match ? (phy_val.OFF ==? phy_ref.OFF) : 1'b1;
@@ -140,9 +126,6 @@ package tcb_pkg;
 
     // reporting validation status
     assert (status.DLY)  $error("TCB PHY parameter mismatch PHY.DLY=%d != PHY.DLY=%d at %m.", phy_val.DLY, phy_ref.DLY);
-    assert (status.UNT)  $error("TCB PHY parameter mismatch PHY.UNT=%d != PHY.UNT=%d at %m.", phy_val.UNT, phy_ref.UNT);
-    assert (status.ADR)  $error("TCB PHY parameter mismatch PHY.ADR=%d != PHY.ADR=%d at %m.", phy_val.ADR, phy_ref.ADR);
-    assert (status.DAT)  $error("TCB PHY parameter mismatch PHY.DAT=%d != PHY.DAT=%d at %m.", phy_val.DAT, phy_ref.DAT);
     assert (status.ALN)  $error("TCB PHY parameter mismatch PHY.ALN=%d != PHY.ALN=%d at %m.", phy_val.ALN, phy_ref.ALN);
     assert (status.MIN)  $error("TCB PHY parameter mismatch PHY.MIN=%d != PHY.MIN=%d at %m.", phy_val.MIN, phy_ref.MIN);
     assert (status.OFF)  $error("TCB PHY parameter mismatch PHY.OFF=%d != PHY.OFF=%d at %m.", phy_val.OFF, phy_ref.OFF);
@@ -173,11 +156,29 @@ package tcb_pkg;
     logic inc;  // incremented address
     logic rpt;  // repeated address
     logic lck;  // arbitration lock
-  } tcb_req_cmd_def_t;
+  } tcb_req_cmd_t;
 
   // status
   typedef struct packed {
     logic err;  // error response
-  } tcb_rsp_sts_def_t;
+  } tcb_rsp_sts_t;
+
+  // request
+  typedef struct packed {
+    tcb_req_cmd_t        cmd;  // command (optional)
+    logic                wen;  // write enable
+    logic                ren;  // read enable
+    logic                ndn;  // endianness
+    logic [4-1:0][8-1:0] adr;  // address
+    logic        [2-1:0] siz;  // logarithmic transfer size
+    logic        [4-1:0] ben;  // byte enable
+    logic [4-1:0][8-1:0] wdt;  // write data
+  } tcb_req_t;
+
+  // request
+  typedef struct packed {
+    logic [4-1:0][8-1:0] rdt;  // read data
+    tcb_rsp_sts_t        sts;  // status
+  } tcb_rsp_t;
 
 endpackage: tcb_pkg
