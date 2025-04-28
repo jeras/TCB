@@ -68,7 +68,7 @@ package tcb_vip_transaction_pkg;
   //////////////////////////////////////////////////////////////////////////////
 
     localparam int unsigned PHY_ADR = $bits(tcb.req_t.adr);
-    localparam int unsigned PHY_DAT = $bits(tcb.req_t.dat);
+    localparam int unsigned PHY_DAT = $bits(tcb.req_t.wdt);
     localparam int unsigned PHY_BEN = $bits(tcb.req_t.ben);
     localparam int unsigned PHY_SIZ = $bits(tcb.req_t.siz);
     localparam int unsigned PHY_MAX = $clog2(PHY_BEN);

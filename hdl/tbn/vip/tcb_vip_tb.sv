@@ -22,7 +22,7 @@ module tcb_vip_tb
   import tcb_vip_blocking_pkg::*;
 #(
   // response delay
-  parameter  int unsigned PHY_DLY = 2,
+  parameter  int unsigned PHY_DLY = 1,
   // TCB widths
   parameter  int unsigned PHY_ADR = 32,
   parameter  int unsigned PHY_DAT = 32

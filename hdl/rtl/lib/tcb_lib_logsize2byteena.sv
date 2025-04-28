@@ -69,30 +69,30 @@ module tcb_lib_logsize2byteena
 ////////////////////////////////////////////////////////////////////////////////
 
   // request/response data packed arrays
-  logic [sub.PHY_BEN-1:0][sub.PHY.UNT-1:0] sub_req_wdt, sub_rsp_rdt;
-  logic [man.PHY_BEN-1:0][man.PHY.UNT-1:0] man_req_wdt, man_rsp_rdt;
+  logic [sub.PHY_BEN-1:0][8-1:0] sub_req_wdt, sub_rsp_rdt;
+  logic [man.PHY_BEN-1:0][8-1:0] man_req_wdt, man_rsp_rdt;
 
   // byte enable
-  logic [sub.PHY_BEN-1:0]                  sub_req_ben             ;
+  logic [sub.PHY_BEN-1:0]        sub_req_ben             ;
 
   // request/response address segment
-  logic [sub.PHY_MAX-1:0]                      req_off,     rsp_off;
+  logic [sub.PHY_MAX-1:0]        req_off,     rsp_off;
 
   // request/response endianness
-  logic                                        req_ndn,     rsp_ndn;
+  logic                          req_ndn,     rsp_ndn;
 
 ////////////////////////////////////////////////////////////////////////////////
 // address alignment
 ////////////////////////////////////////////////////////////////////////////////
 
   // request/response address segment
-  assign req_off = sub.dly[0          ].off;
-  assign rsp_off = sub.dly[sub.PHY.DLY].off;
+  assign req_off = sub.req_dly[0          ].adr[sub.PHY_MAX-1:0];
+  assign rsp_off = sub.req_dly[sub.PHY.DLY].adr[sub.PHY_MAX-1:0];
 
   // mask unaligned address bits
   generate
     if (sub.PHY.ALN > 0) begin: alignment
-      assign man.req.adr = {sub.req.adr[sub.PHY.ADR-1:sub.PHY.ALN], sub.PHY.ALN'('0)};
+      assign man.req.adr = {sub.req.adr[sub.PHY_ADR-1:sub.PHY.ALN], sub.PHY.ALN'('0)};
     end: alignment
     else begin
       assign man.req.adr = sub.req.adr;
@@ -104,8 +104,8 @@ module tcb_lib_logsize2byteena
 ////////////////////////////////////////////////////////////////////////////////
 
   // request/response endianness
-  assign req_ndn = sub.req             .ndn;
-  assign rsp_ndn = sub.dly[sub.PHY.DLY].ndn;
+  assign req_ndn = sub.req                 .ndn;
+  assign rsp_ndn = sub.req_dly[sub.PHY.DLY].ndn;
 
   // logarithmic size mode (subordinate interface) byte enable
   always_comb
@@ -203,9 +203,9 @@ if (ALIGNED) begin
 //      man_rsp_rdt[rsp_off | 2'b00]
 //    };
 
-    logic [4-1:0][sub.PHY.UNT-1:0] tmp_dtw;  // data word
-    logic [2-1:0][sub.PHY.UNT-1:0] tmp_dth;  // data half
-    logic [1-1:0][sub.PHY.UNT-1:0] tmp_dtb;  // data byte
+    logic [4-1:0][8-1:0] tmp_dtw;  // data word
+    logic [2-1:0][8-1:0] tmp_dth;  // data half
+    logic [1-1:0][8-1:0] tmp_dtb;  // data byte
 
     // read data multiplexer
     assign tmp_dtw = man_rsp_rdt[3:0];

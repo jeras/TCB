@@ -164,7 +164,7 @@ package tcb_vip_transfer_pkg;
         // ready
         tcb.rdy <= 1'b1;
         // response
-        tcb.vip.dly[0] <= itm.rsp;
+        tcb.rsp_dly[0] <= itm.rsp;
         // wait for transfer
         do begin
           @(posedge tcb.clk);
@@ -179,7 +179,7 @@ package tcb_vip_transfer_pkg;
         // ready
         tcb.rdy <= 1'b1;
         // response
-        tcb.vip.dly[0] <= itm.rsp;
+        tcb.rsp_dly[0] <= itm.rsp;
         // wait for transfer
         do begin
           @(posedge tcb.clk);

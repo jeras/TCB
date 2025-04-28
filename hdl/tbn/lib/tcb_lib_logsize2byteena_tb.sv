@@ -97,9 +97,9 @@ module tcb_lib_logsize2byteena_tb
   initial
   begin
     // connect virtual interfaces
-    obj_man = new("MAN", tcb_man    );
-    obj_sub = new("MON", tcb_sub    );
-    obj_mem = new("MON", tcb_mem [0]);
+    obj_man = new(tcb_man   , "MAN");
+    obj_sub = new(tcb_sub   , "MON");
+    obj_mem = new(tcb_mem[0], "MON");
     // reset sequence
     repeat (2) @(posedge clk);
     rst <= 1'b0;

@@ -70,22 +70,53 @@ interface tcb_if
   assign idl = ~vld | trn;
 
 ////////////////////////////////////////////////////////////////////////////////
-// VIP response delay
+// request/response delay
 ////////////////////////////////////////////////////////////////////////////////
 
-  // TODO: Might have to move the delay outside of the generate,
-  //       so it is visible to the VIP regardless if used or not.
+  logic trn_dly [0:PHY.DLY];
+  req_t req_dly [0:PHY.DLY];
+  rsp_t rsp_dly [0:PHY.DLY];
+
   generate
-  if (VIP) begin: vip
-    rsp_t dly [0:PHY.DLY];
-    if (PHY.DLY > 0) begin
-      // propagate response through the delay line
-      always_ff @(posedge clk)
-      dly[1:PHY.DLY] <= dly[0:PHY.DLY-1];
-    end
-    // delayed response assignment
-    assign rsp = dly[PHY.DLY];
-  end: vip
+    // delay line
+    for (genvar i=0; i<=PHY.DLY; i++) begin: dly
+  
+      if (i==0) begin: req_0
+        // continuous assignment
+        assign req_dly[i] = req;
+      end: req_0
+      else if (i==1) begin: req_1
+        // load on transfer
+        always_ff @(posedge clk)
+        if (trn) req_dly[i] <= req_dly[i-1];
+      end: req_1
+      else begin: req_i
+        // propagate through delay line
+        always_ff @(posedge clk)
+        req_dly[i] <= req_dly[i-1];
+      end: req_i
+  
+      if (i==0) begin: rsp_0
+        // continuous assignment
+        // performed by VIP
+      end: rsp_0
+      else if (i==1) begin: rsp_1
+        // load on transfer
+        always_ff @(posedge clk)
+        if (trn) rsp_dly[i] <= rsp_dly[i-1];
+      end: rsp_1
+      else begin: rsp_i
+        // propagate through delay line
+        always_ff @(posedge clk)
+        rsp_dly[i] <= rsp_dly[i-1];
+      end: rsp_i
+  
+    end: dly
+
+    if (VIP) begin: vip
+      // continuous assignment
+      assign rsp = rsp_dly[PHY.DLY];
+    end: vip
   endgenerate
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -100,13 +131,16 @@ interface tcb_if
     // handshake
     output vld,
     input  rdy,
-    // request/response
-    output req,
-    input  rsp,
     // local signals
     input  trn,
     input  stl,
-    input  idl
+    input  idl,
+    // request/response
+    output req,
+    input  rsp,
+    // delayed request/response
+    input  req_dly,
+    input  rsp_dly
   );
 
   // monitor
@@ -117,13 +151,16 @@ interface tcb_if
     // handshake
     input  vld,
     input  rdy,
-    // request/response
-    input  req,
-    input  rsp,
     // local signals
     input  trn,
     input  stl,
-    input  idl
+    input  idl,
+    // request/response
+    input  req,
+    input  rsp,
+    // delayed request/response
+    input  req_dly,
+    input  rsp_dly
   );
 
   // subordinate
@@ -134,13 +171,16 @@ interface tcb_if
     // handshake
     input  vld,
     output rdy,
-    // request/response
-    input  req,
-    output rsp,
     // local signals
     input  trn,
     input  stl,
-    input  idl
+    input  idl,
+    // request/response
+    input  req,
+    output rsp,
+    // delayed request/response
+    input  req_dly,
+    input  rsp_dly
   );
 
 endinterface: tcb_if
