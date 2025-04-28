@@ -27,8 +27,11 @@ package tcb_vip_transaction_pkg;
 ////////////////////////////////////////////////////////////////////////////////
 
   class tcb_vip_transaction_c #(
-    // PHY parameters
-    parameter  tcb_phy_t PHY = TCB_PHY_DEF,
+    // handshake parameter
+    parameter  int unsigned DLY = TCB_DLY_DEF,    // response delay
+    // PHY parameters (combined into a structure)
+    parameter  type phy_t = tcb_phy_t,  // PHY parameter type
+    parameter  phy_t PHY = TCB_PHY_DEF,
     // request/response structure types
     parameter  type req_t = tcb_req_t,  // request
     parameter  type rsp_t = tcb_rsp_t,  // response
@@ -37,6 +40,8 @@ package tcb_vip_transaction_pkg;
     // debugging options
     parameter  bit  DEBUG = 1'b0
   ) extends tcb_vip_transfer_c #(
+    .DLY   (DLY),
+    .phy_t (phy_t),
     .PHY   (PHY),
     .req_t (req_t),
     .rsp_t (rsp_t),

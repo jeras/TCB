@@ -19,18 +19,11 @@
 package tcb_pkg;
 
 ////////////////////////////////////////////////////////////////////////////////
-// miscellaneous
+// handshake
 ////////////////////////////////////////////////////////////////////////////////
 
-  // transaction sizes
-  typedef enum {
-    TCB_BYTE = 0,  //   8-bit byte
-    TCB_HALF = 1,  //  16-bit half-word
-    TCB_WORD = 2,  //  32-bit word
-    TCB_DBLE = 3,  //  64-bit double-word
-    TCB_QUAD = 4,  // 128-bit quad-word
-    TCB_OCTA = 8   // 256-bit octa-word
-  } tcb_size_t;
+  // delay default value
+  localparam int unsigned TCB_DLY_DEF = 1;
 
 ////////////////////////////////////////////////////////////////////////////////
 // size/mode/order/channel (used for compile time parameters)
@@ -58,14 +51,12 @@ package tcb_pkg;
   } tcb_phy_channel_t;
 
 ////////////////////////////////////////////////////////////////////////////////
-// parameter structure
+// PHY parameter structure
 ////////////////////////////////////////////////////////////////////////////////
 
   // physical interface parameter structure
   // TODO: the structure is packed to workaround a Verilator bug
   typedef struct packed {
-    // transfer level protocol
-    int unsigned      DLY;  // response delay
     // data packing parameters
     int unsigned      ALN;  // alignment (number of aligned address bits)
     int unsigned      MIN;  // minimum transfer logarithmic size
@@ -78,8 +69,6 @@ package tcb_pkg;
 
   // physical interface parameter default
   localparam tcb_phy_t TCB_PHY_DEF = '{
-    // protocol
-    DLY: 0,
     // data packing parameters
     ALN: 0,   // maximum $clog2(DAT/UNT)
     MIN: 0,   // maximum $clog2(DAT/UNT)
@@ -96,7 +85,6 @@ package tcb_pkg;
 
   // status structure
   typedef struct packed {
-    bit DLY;
     bit ALN;
     bit MIN;
     bit OFF;
@@ -116,7 +104,6 @@ package tcb_pkg;
     tcb_phy_match_t status;
 
     // comparison
-    status.DLY = match ? (phy_val.DLY ==? phy_ref.DLY) : 1'b1;
     status.ALN = match ? (phy_val.ALN ==? phy_ref.ALN) : 1'b1;
     status.MIN = match ? (phy_val.MIN ==? phy_ref.MIN) : 1'b1;
     status.OFF = match ? (phy_val.OFF ==? phy_ref.OFF) : 1'b1;
@@ -125,7 +112,6 @@ package tcb_pkg;
     status.CHN = match ? (phy_val.CHN ==? phy_ref.CHN) : 1'b1;
 
     // reporting validation status
-    assert (status.DLY)  $error("TCB PHY parameter mismatch PHY.DLY=%d != PHY.DLY=%d at %m.", phy_val.DLY, phy_ref.DLY);
     assert (status.ALN)  $error("TCB PHY parameter mismatch PHY.ALN=%d != PHY.ALN=%d at %m.", phy_val.ALN, phy_ref.ALN);
     assert (status.MIN)  $error("TCB PHY parameter mismatch PHY.MIN=%d != PHY.MIN=%d at %m.", phy_val.MIN, phy_ref.MIN);
     assert (status.OFF)  $error("TCB PHY parameter mismatch PHY.OFF=%d != PHY.OFF=%d at %m.", phy_val.OFF, phy_ref.OFF);
@@ -180,5 +166,19 @@ package tcb_pkg;
     logic [4-1:0][8-1:0] rdt;  // read data
     tcb_rsp_sts_t        sts;  // status
   } tcb_rsp_t;
+
+////////////////////////////////////////////////////////////////////////////////
+// miscellaneous
+////////////////////////////////////////////////////////////////////////////////
+
+  // transaction sizes
+  typedef enum {
+    TCB_BYTE = 0,  //   8-bit byte
+    TCB_HALF = 1,  //  16-bit half-word
+    TCB_WORD = 2,  //  32-bit word
+    TCB_DBLE = 3,  //  64-bit double-word
+    TCB_QUAD = 4,  // 128-bit quad-word
+    TCB_OCTA = 8   // 256-bit octa-word
+  } tcb_size_t;
 
 endpackage: tcb_pkg

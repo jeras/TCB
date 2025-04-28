@@ -103,7 +103,7 @@ module tcb_vip_memory
   for (genvar i=0; i<SPN; i++) begin: port
 
     // local copies of TCB PHY parameters
-    localparam DLY = tcb[i].PHY.DLY;
+    localparam DLY = tcb[i].DLY;
     localparam BEN = tcb[i].PHY_BEN;
 
     // request address and size (TCB_LOG_SIZE mode)

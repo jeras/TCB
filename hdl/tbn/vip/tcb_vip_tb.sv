@@ -22,7 +22,7 @@ module tcb_vip_tb
   import tcb_vip_blocking_pkg::*;
 #(
   // response delay
-  parameter  int unsigned PHY_DLY = 1,
+  parameter  int unsigned DLY = TCB_DLY_DEF,
   // TCB widths
   parameter  int unsigned PHY_ADR = 32,
   parameter  int unsigned PHY_DAT = 32
@@ -33,8 +33,6 @@ module tcb_vip_tb
 
   // physical interface parameter
   localparam tcb_phy_t PHY = '{
-    // protocol
-    DLY: PHY_DLY,
     // size/mode/order parameters
     ALN: TCB_PHY_DEF.ALN,
     MIN: TCB_PHY_DEF.MIN,
@@ -83,10 +81,10 @@ module tcb_vip_tb
   int unsigned tcb_cnt;
 
   // TCB interfaces
-  tcb_if #(PHY, tcb_req_t, tcb_rsp_t, VIP) tcb (.clk (clk), .rst (rst));
+  tcb_if #(DLY, tcb_phy_t, PHY, tcb_req_t, tcb_rsp_t, VIP) tcb (.clk (clk), .rst (rst));
 
   // parameterized class specialization (non-blocking API)
-  typedef tcb_vip_transfer_c #(PHY, tcb_req_t, tcb_rsp_t, VIP) tcb_nba_s;
+  typedef tcb_vip_transfer_c #(DLY, tcb_phy_t, PHY, tcb_req_t, tcb_rsp_t, VIP) tcb_nba_s;
 
   // TCB class objects
   tcb_nba_s obj_man = new(tcb);

@@ -86,8 +86,8 @@ module tcb_lib_logsize2byteena
 ////////////////////////////////////////////////////////////////////////////////
 
   // request/response address segment
-  assign req_off = sub.req_dly[0          ].adr[sub.PHY_MAX-1:0];
-  assign rsp_off = sub.req_dly[sub.PHY.DLY].adr[sub.PHY_MAX-1:0];
+  assign req_off = sub.req_dly[0      ].adr[sub.PHY_MAX-1:0];
+  assign rsp_off = sub.req_dly[sub.DLY].adr[sub.PHY_MAX-1:0];
 
   // mask unaligned address bits
   generate
@@ -104,8 +104,8 @@ module tcb_lib_logsize2byteena
 ////////////////////////////////////////////////////////////////////////////////
 
   // request/response endianness
-  assign req_ndn = sub.req                 .ndn;
-  assign rsp_ndn = sub.req_dly[sub.PHY.DLY].ndn;
+  assign req_ndn = sub.req             .ndn;
+  assign rsp_ndn = sub.req_dly[sub.DLY].ndn;
 
   // logarithmic size mode (subordinate interface) byte enable
   always_comb
@@ -161,7 +161,7 @@ if (ALIGNED) begin
 //  // read access
 //  always_comb
 //  begin
-//    case (sub.dly[sub.PHY.DLY].siz)
+//    case (sub.dly[sub.DLY].siz)
 //      TCB_BYTE: case (rsp_off)
 //        2'b00:  sub_rsp_rdt = '{0: man_rsp_rdt[0], default: 'x};
 //        2'b01:  sub_rsp_rdt = '{0: man_rsp_rdt[1], default: 'x};

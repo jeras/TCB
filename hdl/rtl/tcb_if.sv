@@ -19,8 +19,11 @@
 interface tcb_if
   import tcb_pkg::*;
 #(
-  // PHY parameters
-  parameter  tcb_phy_t PHY = TCB_PHY_DEF,
+  // handshake parameter
+  parameter  int unsigned DLY = 1,    // response delay
+  // PHY parameters (combined into a structure)
+  parameter  type phy_t = tcb_phy_t,  // PHY parameter type
+  parameter  phy_t PHY = TCB_PHY_DEF,
   // request/response structure types
   parameter  type req_t = tcb_req_t,  // request
   parameter  type rsp_t = tcb_rsp_t,  // response
@@ -73,13 +76,13 @@ interface tcb_if
 // request/response delay
 ////////////////////////////////////////////////////////////////////////////////
 
-  logic trn_dly [0:PHY.DLY];
-  req_t req_dly [0:PHY.DLY];
-  rsp_t rsp_dly [0:PHY.DLY];
+  logic trn_dly [0:DLY];
+  req_t req_dly [0:DLY];
+  rsp_t rsp_dly [0:DLY];
 
   generate
     // delay line
-    for (genvar i=0; i<=PHY.DLY; i++) begin: dly
+    for (genvar i=0; i<=DLY; i++) begin: dly
   
       if (i==0) begin: req_0
         // continuous assignment
@@ -115,7 +118,7 @@ interface tcb_if
 
     if (VIP) begin: vip
       // continuous assignment
-      assign rsp = rsp_dly[PHY.DLY];
+      assign rsp = rsp_dly[DLY];
     end: vip
   endgenerate
 

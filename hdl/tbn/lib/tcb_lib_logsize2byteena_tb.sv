@@ -21,7 +21,7 @@ module tcb_lib_logsize2byteena_tb
   import tcb_vip_blocking_pkg::*;
 #(
   // protocol
-  parameter  int unsigned      PHY_DLY = TCB_PHY_DEF.DLY,  // response delay
+  parameter  int unsigned      DLY     = TCB_DLY_DEF,      // response delay
   // data packing parameters for manager/subordinate
   parameter  int unsigned      PHY_ALN = TCB_PHY_DEF.ALN,  // TODO
   parameter  int unsigned      PHY_MIN = TCB_PHY_DEF.MIN,  // TODO
@@ -33,8 +33,6 @@ module tcb_lib_logsize2byteena_tb
 );
 
   localparam tcb_phy_t TCB_PHY_SIZ = '{
-    // protocol
-    DLY: PHY_DLY,
     // data packing parameters
     ALN: 2,
     MIN: 0,
@@ -46,8 +44,6 @@ module tcb_lib_logsize2byteena_tb
   };
 
   localparam tcb_phy_t TCB_PHY_BEN = '{
-    // protocol
-    DLY: PHY_DLY,
     // data packing parameters
     ALN: 2,
     MIN: 0,
@@ -67,14 +63,14 @@ module tcb_lib_logsize2byteena_tb
   logic rst = 1'b1;  // reset
 
   // TCB interfaces
-  tcb_if #(TCB_PHY_SIZ, tcb_req_t, tcb_rsp_t) tcb_man       (.clk (clk), .rst (rst));
-  tcb_if #(TCB_PHY_BEN, tcb_req_t, tcb_rsp_t) tcb_sub       (.clk (clk), .rst (rst));
-  tcb_if #(TCB_PHY_BEN, tcb_req_t, tcb_rsp_t) tcb_mem [0:0] (.clk (clk), .rst (rst));
+  tcb_if #(DLY, tcb_phy_t, TCB_PHY_SIZ, tcb_req_t, tcb_rsp_t) tcb_man       (.clk (clk), .rst (rst));
+  tcb_if #(DLY, tcb_phy_t, TCB_PHY_BEN, tcb_req_t, tcb_rsp_t) tcb_sub       (.clk (clk), .rst (rst));
+  tcb_if #(DLY, tcb_phy_t, TCB_PHY_BEN, tcb_req_t, tcb_rsp_t) tcb_mem [0:0] (.clk (clk), .rst (rst));
 
   // TCB class objects
-  tcb_vip_blocking_c #(TCB_PHY_SIZ, tcb_req_t, tcb_rsp_t) obj_man;
-  tcb_vip_blocking_c #(TCB_PHY_BEN, tcb_req_t, tcb_rsp_t) obj_sub;
-  tcb_vip_blocking_c #(TCB_PHY_BEN, tcb_req_t, tcb_rsp_t) obj_mem;
+  tcb_vip_blocking_c #(DLY, tcb_phy_t, TCB_PHY_SIZ, tcb_req_t, tcb_rsp_t) obj_man;
+  tcb_vip_blocking_c #(DLY, tcb_phy_t, TCB_PHY_BEN, tcb_req_t, tcb_rsp_t) obj_sub;
+  tcb_vip_blocking_c #(DLY, tcb_phy_t, TCB_PHY_BEN, tcb_req_t, tcb_rsp_t) obj_mem;
 
 ////////////////////////////////////////////////////////////////////////////////
 // data checking

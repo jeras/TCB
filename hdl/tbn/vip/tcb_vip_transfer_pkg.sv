@@ -25,8 +25,11 @@ package tcb_vip_transfer_pkg;
 ////////////////////////////////////////////////////////////////////////////////
 
   class tcb_vip_transfer_c #(
-    // PHY parameters
-    parameter  tcb_phy_t PHY = TCB_PHY_DEF,
+    // handshake parameter
+    parameter  int unsigned DLY = TCB_DLY_DEF,    // response delay
+    // PHY parameters (combined into a structure)
+    parameter  type phy_t = tcb_phy_t,  // PHY parameter type
+    parameter  phy_t PHY = TCB_PHY_DEF,
     // request/response structure types
     parameter  type req_t = tcb_req_t,  // request
     parameter  type rsp_t = tcb_rsp_t,  // response
@@ -42,6 +45,8 @@ package tcb_vip_transfer_pkg;
 
     // virtual interface type definition
     typedef virtual tcb_if #(
+      .DLY   (DLY),
+      .phy_t (phy_t),
       .PHY   (PHY),
       .req_t (req_t),
       .rsp_t (rsp_t),
@@ -219,7 +224,7 @@ package tcb_vip_transfer_pkg;
       ref transfer_t itm
     );
       if (DEBUG)  $display("DEBUG: %t: transfer_mon_dly begin ID = \"%s\".", $realtime, itm.id);
-      if (tcb.PHY.DLY == 0) begin
+      if (tcb.DLY == 0) begin
         // wait for transfer, and sample inside the transfer cycle
         do begin
           @(posedge tcb.clk);
@@ -232,7 +237,7 @@ package tcb_vip_transfer_pkg;
           @(posedge tcb.clk);
         end while (~tcb.trn);
         // delay
-        repeat (tcb.PHY.DLY) @(posedge tcb.clk);
+        repeat (tcb.DLY) @(posedge tcb.clk);
         // sample response
         itm.rsp = tcb.rsp;
       end

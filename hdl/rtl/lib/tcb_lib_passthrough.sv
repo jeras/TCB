@@ -27,10 +27,12 @@ module tcb_lib_passthrough (
 
 `ifdef ALTERA_RESERVED_QIS
 `else
-  // camparing subordinate and manager interface parameters
-  generate
-    if (sub.PHY != man.PHY)  $error("ERROR: %m parameter (sub.PHY = %p) != (man.PHY = %p)", sub.PHY, man.PHY);
-  endgenerate
+  // comparing subordinate and manager interface parameters
+  initial
+  begin
+    assert (sub.DLY == man.DLY) else $fatal(0, "Parameter (sub.DLY = %p) != (man.DLY = %p)", sub.DLY, man.DLY);
+    assert (sub.PHY == man.PHY) else $fatal(0, "Parameter (sub.PHY = %p) != (man.PHY = %p)", sub.PHY, man.PHY);
+  end
 `endif
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -41,7 +43,7 @@ module tcb_lib_passthrough (
   assign man.vld = sub.vld;
   assign sub.rdy = man.rdy;
 
-  // request response
+  // request/response
   assign man.req = sub.req;
   assign sub.rsp = man.rsp;
 

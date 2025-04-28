@@ -19,30 +19,7 @@
 module tcb_lib_passthrough_tb
   import tcb_pkg::*;
   import tcb_vip_blocking_pkg::*;
-#(
-  // response delay
-  parameter  int unsigned DLY = 1,
-  // TCB widths
-  parameter  int unsigned ADR = 32,
-  parameter  int unsigned DAT = 32
-);
-
-  // TODO: parameter propagation through virtual interfaces in classes
-  // is not working well thus this workaround
-
-  // physical interface parameter
-  localparam tcb_phy_t PHY = '{
-    // protocol
-    DLY: DLY,
-    // size/mode/order parameters
-    ALN: TCB_PHY_DEF.ALN,
-    MIN: TCB_PHY_DEF.MIN,
-    OFF: TCB_PHY_DEF.OFF,
-    MOD: TCB_PHY_DEF.MOD,
-    ORD: TCB_PHY_DEF.ORD,
-    // channel configuration
-    CHN: TCB_PHY_DEF.CHN
-  };
+#();
 
 ////////////////////////////////////////////////////////////////////////////////
 // local signals
@@ -51,18 +28,14 @@ module tcb_lib_passthrough_tb
   // system signals
   logic clk;  // clock
   logic rst;  // reset
-/*
-  // TCB interfaces
-  tcb_if #(.PHY (PHY)) tcb_man (.clk (clk), .rst (rst));
-  tcb_if #(.PHY (PHY)) tcb_sub (.clk (clk), .rst (rst));
-*/
+
   // TODO: the above code should be used instead
   // TCB interfaces
   tcb_if tcb_man (.clk (clk), .rst (rst));
   tcb_if tcb_sub (.clk (clk), .rst (rst));
 
   // parameterized class specialization (blocking API)
-  typedef tcb_vip_blocking_c #(.PHY (PHY)) tcb_bla_s;
+  typedef tcb_vip_blocking_c tcb_bla_s;
 
   // TCB class objects
   tcb_bla_s obj_man;
