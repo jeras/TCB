@@ -135,17 +135,21 @@ package tcb_vip_transfer_pkg;
     task automatic transfer_man_drv (
       ref transfer_t itm  // transfer item
     );
+      int unsigned itm_idl;
       if (DEBUG)  $display("DEBUG: %t: transfer_man_drv begin ID = \"%s\".", $realtime, itm.id);
-      // insert idle timing
-      repeat (itm.idl) @(posedge tcb.clk);
-      // drive transfer
-      // start handshake and request
-      tcb.vld <= 1'b1;
-      tcb.req <= itm.req;
-      // measure backpressure timing
+      // initialize timing counters
+      itm_idl = 0;
       itm.bpr = 0;
+      // drive transfer
+      tcb.vld <= 1'b0;
       do begin
+        if (itm_idl == itm.idl) begin
+          // start handshake and request
+          tcb.vld <= 1'b1;
+          tcb.req <= itm.req;
+        end
         @(posedge tcb.clk);
+        if (~tcb.vld) itm_idl++;
         if (~tcb.rdy) itm.bpr++;
       end while (~tcb.trn);
       // end handshake and request
@@ -158,40 +162,26 @@ package tcb_vip_transfer_pkg;
     task automatic transfer_sub_drv (
       ref transfer_t itm  // transfer item
     );
+      int unsigned itm_bpr;
       if (DEBUG)  $display("DEBUG: %t: transfer_sub_drv begin ID = \"%s\".", $realtime, itm.id);
-      tcb.rdy <= 1'b0;
-      // TODO: rethink this if/else
+      // initialize timing counters
       itm.idl = 0;
-      // request
-      if (itm.bpr == 0) begin
-        // ready
-        tcb.rdy <= 1'b1;
-        // response
-        tcb.rsp_dly[0] <= itm.rsp;
-        // wait for transfer
-        do begin
-          @(posedge tcb.clk);
-          if (~tcb.vld) itm.idl++;
-        end while (~tcb.trn);
-      end else begin
-        // backpressure
-        for (int unsigned i=0; i<itm.bpr; i+=(tcb.vld?1:0)) begin
-          @(posedge tcb.clk);
-          if (~tcb.vld) itm.idl++;
-        end
-        // ready
-        tcb.rdy <= 1'b1;
-        // response
-        tcb.rsp_dly[0] <= itm.rsp;
-        // wait for transfer
-        do begin
-          @(posedge tcb.clk);
-        end while (~tcb.trn);
-      end
-      // handshake
+      itm_bpr = 0;
+      // drive transfer
       tcb.rdy <= 1'b0;
-      // sample request
-      itm.req = tcb.req;
+      do begin
+        if (itm_bpr == itm.bpr) begin
+          // start handshake and response
+          tcb.rdy <= 1'b1;
+          tcb.rsp_dly[0] <= itm.rsp;
+        end
+        @(posedge tcb.clk);
+        if (~tcb.vld) itm.idl++;
+        if (~tcb.rdy) itm_bpr++;
+      end while (~tcb.trn);
+      // end handshake and response
+      tcb.rdy <= 1'b0;
+      tcb.rsp_dly[0] <= '{default: '0};
       if (DEBUG)  $display("DEBUG: %t: transfer_sub_drv end ID = \"%s\".", $realtime, itm.id);
     endtask: transfer_sub_drv
 
@@ -205,8 +195,8 @@ package tcb_vip_transfer_pkg;
       itm.bpr = 0;
       do begin
         @(posedge tcb.clk);
-        if (~tcb.vld           ) itm.idl++;
-        if ( tcb.vld & ~tcb.rdy) itm.bpr++;
+        if (~tcb.vld) itm.idl++;
+        if (~tcb.rdy) itm.bpr++;
       end while (~tcb.trn);
       // sample request
       itm.req = tcb.req;
@@ -222,23 +212,14 @@ package tcb_vip_transfer_pkg;
       ref transfer_t itm
     );
       if (DEBUG)  $display("DEBUG: %t: transfer_mon_dly begin ID = \"%s\".", $realtime, itm.id);
-      if (tcb.DLY == 0) begin
-        // wait for transfer, and sample inside the transfer cycle
-        do begin
-          @(posedge tcb.clk);
-          // sample response
-          itm.rsp = tcb.rsp;
-        end while (~tcb.trn);
-      end else begin
-        // wait for transfer, and sample DLY cycles later
-        do begin
-          @(posedge tcb.clk);
-        end while (~tcb.trn);
-        // delay
-        repeat (tcb.DLY) @(posedge tcb.clk);
-        // sample response
-        itm.rsp = tcb.rsp;
-      end
+      // wait for transfer
+      do begin
+        @(posedge tcb.clk);
+      end while (~tcb.trn);
+      // delay
+      repeat (tcb.DLY) @(posedge tcb.clk);
+      // sample response
+      itm.rsp = tcb.rsp;
       if (DEBUG)  $display("DEBUG: %t: transfer_mon_dly end ID = \"%s\".", $realtime, itm.id);
     endtask: transfer_mon_dly
 

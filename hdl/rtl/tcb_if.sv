@@ -20,7 +20,7 @@ interface tcb_if
   import tcb_pkg::*;
 #(
   // handshake parameter
-  parameter  int unsigned DLY = 1,    // response delay
+  parameter  int unsigned DLY = TCB_DLY_DEF,  // response delay
   // PHY parameters (combined into a structure)
   parameter  type phy_t = tcb_phy_t,  // PHY parameter type
   parameter  phy_t PHY = TCB_PHY_DEF,
