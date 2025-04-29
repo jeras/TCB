@@ -47,6 +47,11 @@ interface tcb_if
   req_t req;  // request
   rsp_t rsp;  // response
 
+////////////////////////////////////////////////////////////////////////////////
+// local parameters
+////////////////////////////////////////////////////////////////////////////////
+
+  // TODO: rethink whether this fits here, since it depends on req_t
   localparam int unsigned PHY_ADR = $bits(req.adr);
   localparam int unsigned PHY_DAT = $bits(req.wdt);
   localparam int unsigned PHY_BEN = $bits(req.ben);

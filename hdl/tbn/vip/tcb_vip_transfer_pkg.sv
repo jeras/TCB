@@ -136,22 +136,20 @@ package tcb_vip_transfer_pkg;
       ref transfer_t itm  // transfer item
     );
       if (DEBUG)  $display("DEBUG: %t: transfer_man_drv begin ID = \"%s\".", $realtime, itm.id);
-      // request timing
+      // insert idle timing
       repeat (itm.idl) @(posedge tcb.clk);
       // drive transfer
-      // handshake
+      // start handshake and request
       tcb.vld <= 1'b1;
-      // request
       tcb.req <= itm.req;
-      // backpressure
+      // measure backpressure timing
       itm.bpr = 0;
       do begin
         @(posedge tcb.clk);
         if (~tcb.rdy) itm.bpr++;
       end while (~tcb.trn);
-      // handshake
+      // end handshake and request
       tcb.vld <= 1'b0;
-      // drive request
       tcb.req <= '{default: 'x};
       if (DEBUG)  $display("DEBUG: %t: transfer_man_drv end ID = \"%s\".", $realtime, itm.id);
     endtask: transfer_man_drv
