@@ -128,7 +128,8 @@ package tcb_vip_transaction_pkg;
 
     // read/write request transaction of power of 2 size
     static function automatic transfer_array_t transaction_request (
-      ref transaction_req_t transaction_req
+      ref transaction_req_t transaction_req,
+      ref string            id
     );
       // the requested transaction is organized into transfer_array
       int unsigned siz;  // transaction side (units/bytes)
@@ -164,6 +165,7 @@ package tcb_vip_transaction_pkg;
           TCB_LOG_SIZE:  transfer_array[i].req.siz = PHY_MAX;
           TCB_BYTE_ENA:  transfer_array[i].req.ben = '1;
         endcase
+        transfer_array[i].id = $sprintf("%s[%0d]", id, i);
       end
       if (siz < PHY_MAX) begin
         case (PHY.MOD)
@@ -259,6 +261,8 @@ package tcb_vip_transaction_pkg;
       // response
       ref    logic       [8-1:0] rdt [],
       output tcb_rsp_sts_t       sts,
+      // identification
+      input  string              id = "",
       // endianness
       input  tcb_cfg_endian_t    ndn = TCB_LITTLE
     );
@@ -266,7 +270,7 @@ package tcb_vip_transaction_pkg;
       transaction_t transaction;
       // request
       transaction.req = '{ndn: ndn, wen: wen, adr: adr, wdt: wdt};
-      transfer_array = transaction_request(transaction.req);
+      transfer_array = transaction_request(transaction.req, id);
       // transaction
 //      $display("DEBUG: swq-: transfer_array = %p", transfer_array);
       transfer_sequencer(transfer_array);
