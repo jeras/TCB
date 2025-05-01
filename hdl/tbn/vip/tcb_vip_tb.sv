@@ -87,9 +87,9 @@ module tcb_vip_tb
   typedef tcb_vip_transfer_c #(DLY, tcb_phy_t, PHY, tcb_req_t, tcb_rsp_t, VIP) tcb_nba_s;
 
   // TCB class objects
-  tcb_nba_s obj_man = new(tcb);
-  tcb_nba_s obj_mon = new(tcb);
-  tcb_nba_s obj_sub = new(tcb);
+  tcb_nba_s obj_man = new(tcb, "MAN");
+  tcb_nba_s obj_mon = new(tcb, "MON");
+  tcb_nba_s obj_sub = new(tcb, "SUB");
 
   task automatic test_nonblocking;
     // local variables
@@ -201,10 +201,6 @@ module tcb_vip_tb
   // test sequence
   initial
   begin
-    // connect virtual interfaces
-    obj_man = new(tcb, "MAN");
-    obj_mon = new(tcb, "MON");
-    obj_sub = new(tcb, "SUB");
     // reset sequence
     rst = 1'b1;
     repeat (2) @(posedge clk);
