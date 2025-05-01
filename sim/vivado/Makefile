@@ -81,10 +81,10 @@ PHY_PAR ?= -generic_top CHN_CHN=${PHY_CHN}
 all: simulate
 
 compile: ${HDL}
-	xvlog ${FLAGS} ${DEF} -sv ${HDL}
+	xvlog ${DEF} -sv ${HDL}
 
 elaborate: compile
-	xelab ${PAR} work.${TOP} -s ${TOP}
+	xelab ${FLAGS} ${PAR} work.${TOP} -s ${TOP}
 
 simulate: elaborate
 	xsim ${ARG} ${TOP} -R
