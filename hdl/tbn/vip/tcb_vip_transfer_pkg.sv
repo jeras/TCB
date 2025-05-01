@@ -82,7 +82,7 @@ package tcb_vip_transfer_pkg;
           // initialize to idle state
           tcb.rdy = 1'b0;
         end
-        default: $fatal("Unsupported DIR value: \"%s\"", DIR);
+        default: $fatal(0, "Unsupported DIR value: \"%s\"", DIR);
       endcase
     endfunction: new
 
