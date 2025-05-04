@@ -167,7 +167,7 @@ package tcb_vip_transaction_pkg;
           TCB_LOG_SIZE:  transfer_array[i].req.siz = PHY_MAX;
           TCB_BYTE_ENA:  transfer_array[i].req.ben = '1;
         endcase
-        transfer_array[i].id = $sprintf("%s[%0d]", id, i);
+        transfer_array[i].id = $sformatf("%s[%0d]", id, i);
       end
       if (siz < PHY_MAX) begin
         case (PHY.MOD)
@@ -256,6 +256,8 @@ package tcb_vip_transaction_pkg;
   //////////////////////////////////////////////////////////////////////////////
 
     task automatic transaction (
+      // endianness
+      input  tcb_cfg_endian_t    ndn = TCB_LITTLE,
       // request
       input  logic               wen,
       input  logic [PHY_ADR-1:0] adr,
@@ -264,9 +266,7 @@ package tcb_vip_transaction_pkg;
       ref    logic       [8-1:0] rdt [],
       output tcb_rsp_sts_t       sts,
       // identification
-      input  string              id = "",
-      // endianness
-      input  tcb_cfg_endian_t    ndn = TCB_LITTLE
+      input  string              id = ""
     );
       transfer_array_t transfer_array;
       transaction_t transaction;
