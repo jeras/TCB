@@ -51,6 +51,8 @@ package tcb_vip_transaction_pkg;
 
     // virtual interface type definition
     typedef virtual tcb_if #(
+      .DLY   (DLY),
+      .phy_t (phy_t),
       .PHY   (PHY),
       .req_t (req_t),
       .rsp_t (rsp_t),

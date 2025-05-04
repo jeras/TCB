@@ -55,6 +55,8 @@ package tcb_vip_blocking_pkg;
 
     // virtual interface type definition
     typedef virtual tcb_if #(
+      .DLY   (DLY),
+      .phy_t (phy_t),
       .PHY   (PHY),
       .req_t (req_t),
       .rsp_t (rsp_t),
@@ -77,19 +79,19 @@ package tcb_vip_blocking_pkg;
   //////////////////////////////////////////////////////////////////////////////
 
     task write8 (
-      input  adr_t adr,
+      input  adr_t                adr,
       input  logic [1-1:0][8-1:0] wdt,
       output logic                sts,
       input  string               id = ""
     );
-      logic [8-1:0] tmp_wdt [] = new[1];
+      logic [8-1:0] tmp_wdt [] = new[1]('{default: 'x});
       logic [8-1:0] tmp_rdt [] = new[1];
       tmp_wdt = {<<8{type(tmp_wdt)'(wdt)}};  // reversed unit/byte order
       transaction(1'b1, adr, tmp_wdt, tmp_rdt, sts, id);
     endtask: write8
 
     task read8 (
-      input  adr_t adr,
+      input  adr_t                adr,
       output logic [1-1:0][8-1:0] rdt,
       output logic                sts,
       input  string               id = ""
@@ -101,7 +103,7 @@ package tcb_vip_blocking_pkg;
     endtask: read8
 
     task check8 (
-      input  adr_t adr,
+      input  adr_t                adr,
       input  logic [1-1:0][8-1:0] rdt,
       input  logic                sts,
       input  string               id = ""
@@ -114,7 +116,7 @@ package tcb_vip_blocking_pkg;
     endtask: check8
 
     task write16 (
-      input  adr_t adr,
+      input  adr_t                adr,
       input  logic [2-1:0][8-1:0] wdt,
       output logic                sts,
       input  string               id = ""
@@ -126,7 +128,7 @@ package tcb_vip_blocking_pkg;
     endtask: write16
 
     task read16 (
-      input  adr_t adr,
+      input  adr_t                adr,
       output logic [2-1:0][8-1:0] rdt,
       output logic                sts,
       input  string               id = ""
@@ -138,7 +140,7 @@ package tcb_vip_blocking_pkg;
     endtask: read16
 
     task check16 (
-      input  adr_t adr,
+      input  adr_t                adr,
       input  logic [2-1:0][8-1:0] rdt,
       input  logic                sts,
       input  string               id = ""
@@ -151,7 +153,7 @@ package tcb_vip_blocking_pkg;
     endtask: check16
 
     task write32 (
-      input  adr_t adr,
+      input  adr_t                adr,
       input  logic [4-1:0][8-1:0] wdt,
       output logic                sts,
       input  string               id = ""
@@ -163,7 +165,7 @@ package tcb_vip_blocking_pkg;
     endtask: write32
 
     task read32 (
-      input  adr_t adr,
+      input  adr_t                adr,
       output logic [4-1:0][8-1:0] rdt,
       output logic                sts,
       input  string               id = ""
@@ -175,7 +177,7 @@ package tcb_vip_blocking_pkg;
     endtask: read32
 
     task check32 (
-      input  adr_t adr,
+      input  adr_t                adr,
       input  logic [4-1:0][8-1:0] rdt,
       input  logic                sts,
       input  string               id = ""
@@ -188,7 +190,7 @@ package tcb_vip_blocking_pkg;
     endtask: check32
 
     task write64 (
-      input  adr_t adr,
+      input  adr_t                adr,
       input  logic [8-1:0][8-1:0] wdt,
       output logic                sts,
       input  string               id = ""
@@ -200,7 +202,7 @@ package tcb_vip_blocking_pkg;
     endtask: write64
 
     task read64 (
-      input  adr_t adr,
+      input  adr_t                adr,
       output logic [8-1:0][8-1:0] rdt,
       output logic                sts,
       input  string               id = ""
@@ -212,7 +214,7 @@ package tcb_vip_blocking_pkg;
     endtask: read64
 
     task check64 (
-      input  adr_t adr,
+      input  adr_t                adr,
       input  logic [8-1:0][8-1:0] rdt,
       input  logic                sts,
       input  string               id = ""
@@ -225,19 +227,19 @@ package tcb_vip_blocking_pkg;
     endtask: check64
 
     task write128 (
-      input  logic   [PHY_ADR-1:0] adr,
+      input  adr_t                 adr,
       input  logic [16-1:0][8-1:0] wdt,
       output logic                 sts,
       input  string                id = ""
     );
-    logic [8-1:0] tmp_wdt [] = new[16]('{default: 'x});
-    logic [8-1:0] tmp_rdt [] = new[16];
-    tmp_wdt = {<<8{type(tmp_wdt)'(wdt)}};  // reversed unit/byte order
-    transaction(1'b1, adr, tmp_wdt, tmp_rdt, sts, id);
-  endtask: write128
+      logic [8-1:0] tmp_wdt [] = new[16]('{default: 'x});
+      logic [8-1:0] tmp_rdt [] = new[16];
+      tmp_wdt = {<<8{type(tmp_wdt)'(wdt)}};  // reversed unit/byte order
+      transaction(1'b1, adr, tmp_wdt, tmp_rdt, sts, id);
+    endtask: write128
  
     task read128 (
-      input  logic   [PHY_ADR-1:0] adr,
+      input  adr_t                 adr,
       output logic [16-1:0][8-1:0] rdt,
       output logic                 sts,
       input  string                id = ""
@@ -249,7 +251,7 @@ package tcb_vip_blocking_pkg;
     endtask: read128
  
     task check128 (
-      input  logic   [PHY_ADR-1:0] adr,
+      input  adr_t                 adr,
       input  logic [16-1:0][8-1:0] rdt,
       input  logic                 sts,
       input  string                id = ""
