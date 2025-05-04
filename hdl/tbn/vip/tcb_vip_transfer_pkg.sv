@@ -103,6 +103,7 @@ package tcb_vip_transfer_pkg;
     } transfer_t;
 
     typedef transfer_t transfer_array_t [];
+    typedef transfer_t transfer_queue_t [$];
 
     // constants
     static const transfer_t TRANSFER_INIT = '{

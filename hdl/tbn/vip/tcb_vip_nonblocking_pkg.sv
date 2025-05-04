@@ -78,6 +78,7 @@ package tcb_vip_nonblocking_pkg;
   // write/read/check
   //////////////////////////////////////////////////////////////////////////////
 
+/*
     task access8 (
       input  logic                wen,
       input  adr_t                adr,
@@ -152,7 +153,8 @@ package tcb_vip_nonblocking_pkg;
       transaction(wen, adr, tmp_wdt, tmp_rdt, sts, id);
       rdt = type(rdt)'({<<8{tmp_rdt[0:16-1]}});  // crop and reverse byte order
     endtask: write128
- 
+
+*/
   endclass: tcb_vip_nonblocking_c
 
 endpackage: tcb_vip_nonblocking_pkg
