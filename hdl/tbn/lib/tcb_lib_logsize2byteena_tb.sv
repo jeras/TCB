@@ -67,10 +67,18 @@ module tcb_lib_logsize2byteena_tb
   tcb_if #(DLY, tcb_phy_t, TCB_PHY_BEN, tcb_req_t, tcb_rsp_t) tcb_sub       (.clk (clk), .rst (rst));
   tcb_if #(DLY, tcb_phy_t, TCB_PHY_BEN, tcb_req_t, tcb_rsp_t) tcb_mem [0:0] (.clk (clk), .rst (rst));
 
+  // parameterized class specialization
+  typedef tcb_vip_blocking_c #(DLY, tcb_phy_t, TCB_PHY_SIZ, tcb_req_t, tcb_rsp_t) tcb_vip_siz_s;
+  typedef tcb_vip_blocking_c #(DLY, tcb_phy_t, TCB_PHY_BEN, tcb_req_t, tcb_rsp_t) tcb_vip_ben_s;
+
   // TCB class objects
-  tcb_vip_blocking_c #(DLY, tcb_phy_t, TCB_PHY_SIZ, tcb_req_t, tcb_rsp_t) obj_man;
-  tcb_vip_blocking_c #(DLY, tcb_phy_t, TCB_PHY_BEN, tcb_req_t, tcb_rsp_t) obj_sub;
-  tcb_vip_blocking_c #(DLY, tcb_phy_t, TCB_PHY_BEN, tcb_req_t, tcb_rsp_t) obj_mem;
+  tcb_vip_siz_s obj_man = new(tcb_man, "MAN");
+  tcb_vip_ben_s obj_sub = new(tcb_sub, "MON");
+
+  // transfer reference/monitor array
+  tcb_vip_ben_s::transfer_queue_t tst_tmp;
+  tcb_vip_ben_s::transfer_queue_t tst_ref;
+  tcb_vip_ben_s::transfer_queue_t tst_mon;
 
 ////////////////////////////////////////////////////////////////////////////////
 // data checking
@@ -84,33 +92,55 @@ module tcb_lib_logsize2byteena_tb
 // test sequence
 ////////////////////////////////////////////////////////////////////////////////
 
-  string test = "none";
+  string testname = "none";
 
   // clock
   always #(20ns/2) clk = ~clk;
 
   // test sequence
   initial
-  begin
-    // connect virtual interfaces
-    obj_man = new(tcb_man   , "MAN");
-    obj_sub = new(tcb_sub   , "MON");
-    obj_mem = new(tcb_mem[0], "MON");
+  begin: test
     // reset sequence
     repeat (2) @(posedge clk);
     rst <= 1'b0;
     repeat (1) @(posedge clk);
+
     // write sequence
     $display("write sequence");
-    obj_man.write8 (32'h00000010,        8'h10, sts);
-    obj_man.write8 (32'h00000011,      8'h32  , sts);
-    obj_man.write8 (32'h00000012,    8'h54    , sts);
-    obj_man.write8 (32'h00000013,  8'h76      , sts);
-    obj_man.write16(32'h00000020,     16'h3210, sts);
-    obj_man.write16(32'h00000022, 16'h7654    , sts);
-    obj_man.write32(32'h00000030, 32'h76543210, sts);
+    testname = "write";
+    fork
+      // manager (blocking API)
+      begin: fork_man
+        obj_man.write8 (32'h00000010,        8'h10, sts);
+        obj_man.write8 (32'h00000011,      8'h32  , sts);
+        obj_man.write8 (32'h00000012,    8'h54    , sts);
+        obj_man.write8 (32'h00000013,  8'h76      , sts);
+        obj_man.write16(32'h00000020,     16'h3210, sts);
+        obj_man.write16(32'h00000022, 16'h7654    , sts);
+        obj_man.write32(32'h00000030, 32'h76543210, sts);            
+      end: fork_man
+      // subordinate (monitor)
+      begin: fork_mon
+        obj_sub.transfer_monitor(tst_mon);
+      end: fork_mon
+    join_any
+    // disable transfer monitor
+    @(posedge clk);
+    disable fork;
+    // reference transfer queue
+    sts = '0;
+    tst_ref = {tst_ref, obj_sub.set_transaction('{req: '{TCB_LITTLE, 1'b1, 32'h00000010, '{8'h10}}, rsp: '{'{default: 'x}, sts}, default: 'x})};
+    tst_ref = {tst_ref, obj_sub.set_transaction('{req: '{TCB_LITTLE, 1'b1, 32'h00000011, '{8'h32}}, rsp: '{'{default: 'x}, sts}, default: 'x})};
+    tst_ref = {tst_ref, obj_sub.set_transaction('{req: '{TCB_LITTLE, 1'b1, 32'h00000012, '{8'h54}}, rsp: '{'{default: 'x}, sts}, default: 'x})};
+    tst_ref = {tst_ref, obj_sub.set_transaction('{req: '{TCB_LITTLE, 1'b1, 32'h00000013, '{8'h76}}, rsp: '{'{default: 'x}, sts}, default: 'x})};
+
+    // compare transfers from monitor to reference
+    foreach(tst_mon[i]) $display("DEBUG: tst_ref[%0d] = %p", i, tst_ref[i]);
+    foreach(tst_mon[i]) $display("DEBUG: tst_mon[%0d] = %p", i, tst_mon[i]);
+    
     // read sequence
     $display("read sequence");
+    testname = "read";
     obj_man.read8  (32'h00000010, rdt[1-1:0]  , sts);
     obj_man.read8  (32'h00000011, rdt[1-1:0]  , sts);
     obj_man.read8  (32'h00000012, rdt[1-1:0]  , sts);
@@ -118,9 +148,10 @@ module tcb_lib_logsize2byteena_tb
     obj_man.read16 (32'h00000020, rdt[2-1:0]  , sts);
     obj_man.read16 (32'h00000022, rdt[2-1:0]  , sts);
     obj_man.read32 (32'h00000030, rdt[4-1:0]  , sts);
+
     // check sequence
     $display("check sequence");
-    test = "check";
+    testname = "check";
     obj_man.check8 (32'h00000010,        8'h10, 1'b0);
     obj_man.check8 (32'h00000011,      8'h32  , 1'b0);
     obj_man.check8 (32'h00000012,    8'h54    , 1'b0);
@@ -133,7 +164,7 @@ module tcb_lib_logsize2byteena_tb
     // end of test
     repeat (4) @(posedge clk);
     $finish();
-  end
+  end: test
 
 ////////////////////////////////////////////////////////////////////////////////
 // VIP instances

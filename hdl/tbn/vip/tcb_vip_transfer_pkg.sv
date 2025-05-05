@@ -116,28 +116,16 @@ package tcb_vip_transfer_pkg;
       id: ""
     };
 
-    // transfer equivalence check
-    static function automatic logic transfer_check (
-      // transfer_array
-      input  transfer_t trn_tst,  // test
-      input  transfer_t trn_ref,  // reference
-      input  transfer_t trn_msk   // mask
-    );
-      // TODO
-      //transfer_check = (trn_tst ==? (trn_ref ~^ trn_msk));
-      transfer_check = 1'bx;
-    endfunction: transfer_check
-
   //////////////////////////////////////////////////////////////////////////////
-  // transfer manager/subordinate handshake
+  // transfer manager/subordinate/monitor handshake
   //////////////////////////////////////////////////////////////////////////////
 
     // manager handshake driver
-    task automatic transfer_man_drv (
+    task automatic handshake_manager (
       ref transfer_t itm  // transfer item
     );
       int unsigned itm_idl;
-      if (DEBUG)  $display("DEBUG: %t: transfer_man_drv begin ID = \"%s\".", $realtime, itm.id);
+      if (DEBUG)  $info("DEBUG: %t: handshake_manager begin ID = \"%s\".", $realtime, itm.id);
       // initialize timing counters
       itm_idl = 0;
       itm.bpr = 0;
@@ -156,15 +144,15 @@ package tcb_vip_transfer_pkg;
       // end handshake and request
       tcb.vld <= 1'b0;
       tcb.req <= '{default: 'x};
-      if (DEBUG)  $display("DEBUG: %t: transfer_man_drv end ID = \"%s\".", $realtime, itm.id);
-    endtask: transfer_man_drv
+      if (DEBUG)  $info("DEBUG: %t: handshake_manager end ID = \"%s\".", $realtime, itm.id);
+    endtask: handshake_manager
 
     // subordinate handshake driver
-    task automatic transfer_sub_drv (
+    task automatic handshake_subordinate (
       ref transfer_t itm  // transfer item
     );
       int unsigned itm_bpr;
-      if (DEBUG)  $display("DEBUG: %t: transfer_sub_drv begin ID = \"%s\".", $realtime, itm.id);
+      if (DEBUG)  $info("DEBUG: %t: handshake_subordinate begin ID = \"%s\".", $realtime, itm.id);
       // initialize timing counters
       itm.idl = 0;
       itm_bpr = 0;
@@ -183,14 +171,14 @@ package tcb_vip_transfer_pkg;
       // end handshake and response
       tcb.rdy <= 1'b0;
       tcb.rsp_dly[0] <= '{default: '0};
-      if (DEBUG)  $display("DEBUG: %t: transfer_sub_drv end ID = \"%s\".", $realtime, itm.id);
-    endtask: transfer_sub_drv
+      if (DEBUG)  $info("DEBUG: %t: handshake_subordinate end ID = \"%s\".", $realtime, itm.id);
+    endtask: handshake_subordinate
 
     // monitor handshake listener
-    task automatic transfer_mon_lsn (
+    task automatic handshake_monitor (
       ref transfer_t itm  // transfer item
     );
-      if (DEBUG)  $display("DEBUG: %t: transfer_mon_lsn begin ID = \"%s\".", $realtime, itm.id);
+      if (DEBUG)  $info("DEBUG: %t: handshake_monitor begin ID = \"%s\".", $realtime, itm.id);
       // count idle/backpressure cycles
       itm.idl = 0;
       itm.bpr = 0;
@@ -201,18 +189,18 @@ package tcb_vip_transfer_pkg;
       end while (~tcb.trn);
       // sample request
       itm.req = tcb.req;
-      if (DEBUG)  $display("DEBUG: %t: transfer_mon_lsn end ID = \"%s\".", $realtime, itm.id);
-    endtask: transfer_mon_lsn
+      if (DEBUG)  $info("DEBUG: %t: handshake_monitor end ID = \"%s\".", $realtime, itm.id);
+    endtask: handshake_monitor
 
   //////////////////////////////////////////////////////////////////////////////
-  // transfer manager/subordinate response delay line
+  // transfer manager/subordinate/monitor response delay line
   //////////////////////////////////////////////////////////////////////////////
 
-    // manager delay line (listen to response)
-    task automatic transfer_mon_dly (
+    // monitor delay line (listen to response)
+    task automatic handshake_delay (
       ref transfer_t itm
     );
-      if (DEBUG)  $display("DEBUG: %t: transfer_mon_dly begin ID = \"%s\".", $realtime, itm.id);
+      if (DEBUG)  $info("DEBUG: %t: handshake_delay begin ID = \"%s\".", $realtime, itm.id);
       // wait for transfer
       do begin
         @(posedge tcb.clk);
@@ -221,39 +209,59 @@ package tcb_vip_transfer_pkg;
       repeat (tcb.DLY) @(posedge tcb.clk);
       // sample response
       itm.rsp = tcb.rsp;
-      if (DEBUG)  $display("DEBUG: %t: transfer_mon_dly end ID = \"%s\".", $realtime, itm.id);
-    endtask: transfer_mon_dly
+      if (DEBUG)  $info("DEBUG: %t: handshake_delay end ID = \"%s\".", $realtime, itm.id);
+    endtask: handshake_delay
 
   //////////////////////////////////////////////////////////////////////////////
-  // transfer sequence non-blocking API
+  // transfer sequence (non-blocking)
   //////////////////////////////////////////////////////////////////////////////
-
-    // Questa does not allow the use of `ref` ports in combination with fork-join
 
     // request/response
     task automatic transfer_sequencer (
+      // use of `ref` ports in combination with fork-join is not allowed
       inout transfer_array_t transfer_array
     );
       foreach (transfer_array[i]) begin
         case (DIR)
           "MAN": begin
-            fork transfer_mon_dly(transfer_array[i]); join_none
-                 transfer_man_drv(transfer_array[i]);
+            fork handshake_delay      (transfer_array[i]); join_none
+                 handshake_manager    (transfer_array[i]);
           end
           "MON": begin
-            fork transfer_mon_dly(transfer_array[i]); join_none
-                 transfer_mon_lsn(transfer_array[i]);
+            fork handshake_delay      (transfer_array[i]); join_none
+                 handshake_monitor    (transfer_array[i]);
           end
           "SUB": begin
-//            fork transfer_sub_dly(transfer_array[i]); join_none
-                 transfer_sub_drv(transfer_array[i]);
+            fork handshake_delay      (transfer_array[i]); join_none
+                 handshake_subordinate(transfer_array[i]);
           end
         endcase
       end
-      if (DEBUG)  $display("DEBUG: %t: transfer_sequencer end of drivers.", $realtime);
+      if (DEBUG)  $info("DEBUG: %t: transfer_sequencer end of drivers.", $realtime);
       wait fork;
-      if (DEBUG)  $display("DEBUG: %t: transfer_sequencer end of all forks.", $realtime);
+      if (DEBUG)  $info("DEBUG: %t: transfer_sequencer end of all forks.", $realtime);
     endtask: transfer_sequencer
+
+  //////////////////////////////////////////////////////////////////////////////
+  // transfer monitor
+  //////////////////////////////////////////////////////////////////////////////
+
+    // monitor delayed request/response
+    task automatic transfer_monitor (
+      ref transfer_queue_t transfer_queue
+    );
+      if (DEBUG)  $info("DEBUG: %t: transfer_monitor started.", $realtime);
+      forever
+      begin: loop
+        // wait for delayed transfer
+        do begin
+          @(posedge tcb.clk);
+        end while (~tcb.trn_dly[tcb.DLY]);
+        // sample delayed request and response
+        transfer_queue.push_back('{req: tcb.req_dly[tcb.DLY], rsp: tcb.rsp, default: 'x});
+      end: loop
+      if (DEBUG)  $info("DEBUG: %t: transfer_monitor stopped.", $realtime);
+    endtask: transfer_monitor
 
   endclass: tcb_vip_transfer_c
 

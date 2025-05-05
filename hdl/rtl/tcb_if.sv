@@ -88,44 +88,34 @@ interface tcb_if
   generate
     // delay line
     for (genvar i=0; i<=DLY; i++) begin: dly
-  
-      if (i==0) begin: req_0
+      // handshake transfer
+      if (i==0) begin: dly_0
         // continuous assignment
+        assign trn_dly[i] = trn;
         assign req_dly[i] = req;
-      end: req_0
-      else if (i==1) begin: req_1
-        // load on transfer
-        always_ff @(posedge clk)
-        if (trn) req_dly[i] <= req_dly[i-1];
-      end: req_1
-      else begin: req_i
+        // response assigned by VIP
+      end: dly_0
+      else begin: dly_i
         // propagate through delay line
         always_ff @(posedge clk)
-        req_dly[i] <= req_dly[i-1];
-      end: req_i
-  
-      if (i==0) begin: rsp_0
-        // continuous assignment
-        // performed by VIP
-      end: rsp_0
-      else if (i==1) begin: rsp_1
-        // load on transfer
-        always_ff @(posedge clk)
-        if (trn) rsp_dly[i] <= rsp_dly[i-1];
-      end: rsp_1
-      else begin: rsp_i
-        // propagate through delay line
-        always_ff @(posedge clk)
-        rsp_dly[i] <= rsp_dly[i-1];
-      end: rsp_i
-  
+        begin
+                            trn_dly[i] <= trn_dly[i-1];
+          if (trn_dly[i-1]) req_dly[i] <= req_dly[i-1];
+          if (trn_dly[i-1]) rsp_dly[i] <= rsp_dly[i-1];
+        end
+      end: dly_i
     end: dly
 
     if (VIP) begin: vip
       // continuous assignment
-      assign rsp = rsp_dly[DLY];
+      if (DLY == 0) begin
+        assign rsp = trn ? rsp_dly[DLY] : '{default: 'x};
+      end else begin
+        assign rsp =       rsp_dly[DLY];
+      end
     end: vip
-  endgenerate
+
+endgenerate
 
 ////////////////////////////////////////////////////////////////////////////////
 // modports

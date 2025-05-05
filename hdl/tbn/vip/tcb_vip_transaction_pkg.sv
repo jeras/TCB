@@ -130,15 +130,15 @@ package tcb_vip_transaction_pkg;
   //////////////////////////////////////////////////////////////////////////////
 
     // read/write request transaction of power of 2 size
-    static function automatic transfer_array_t set_transaction (
-      ref transaction_t transaction,
-      ref string        id
+    static function automatic transfer_queue_t set_transaction (
+      input transaction_t transaction,
+      input string      id = ""
     );
       // the requested transaction is organized into transfer_array
       int unsigned siz;  // transaction side (units/bytes)
       int unsigned len;  // transaction length (transfers)
-      // return transfer array
-      transfer_array_t transfer_array;
+      // return transfer queue
+      transfer_queue_t transfer_queue;
 
       // data size
       siz = $clog2(transaction.req.wdt.size());
@@ -146,9 +146,6 @@ package tcb_vip_transaction_pkg;
       // transaction length (number of transfer items)
       if (2**siz < PHY_BEN)  len = 1;
       else                   len = 2**siz / PHY_BEN;
-
-      // allocate transaction array
-      transfer_array = new[len]('{default: TRANSFER_INIT});
 
       // alignment check
       // TODO: implement this later
@@ -163,29 +160,32 @@ package tcb_vip_transaction_pkg;
 
       // loop over transfers within transaction
       for (int unsigned i=0; i<len; i++) begin
+        transfer_t tmp;
         // request signals
-        transfer_array[i].req.cmd = '{lck: (i == len-1) ? 1'b0 : 1'b1, default: '0};
-        transfer_array[i].req.wen = transaction.req.wen;
-        transfer_array[i].req.ndn = transaction.req.ndn;
-        transfer_array[i].req.adr = transaction.req.adr + i*PHY_BEN;
+        tmp.req.cmd = '{lck: (i == len-1) ? 1'b0 : 1'b1, default: '0};
+        tmp.req.wen = transaction.req.wen;
+        tmp.req.ndn = transaction.req.ndn;
+        tmp.req.adr = transaction.req.adr + i*PHY_BEN;
         case (PHY.MOD)
-          TCB_LOG_SIZE:  transfer_array[i].req.siz = PHY_MAX;
-          TCB_BYTE_ENA:  transfer_array[i].req.ben = '1;
+          TCB_LOG_SIZE:  tmp.req.siz = PHY_MAX;
+          TCB_BYTE_ENA:  tmp.req.ben = '1;
         endcase
         // response
-        transfer_array[i].rsp.sts = transaction.rsp.sts;
+        tmp.rsp.sts = transaction.rsp.sts;
         // ID
-        transfer_array[i].id = $sformatf("%s[%0d]", id, i);
+        tmp.id = $sformatf("%s[%0d]", id, i);
+        // add transfer to queue
+        transfer_queue.push_back(tmp);
       end
       if (siz < PHY_MAX) begin
         case (PHY.MOD)
-          TCB_LOG_SIZE:  transfer_array[0].req.siz = siz;
-          TCB_BYTE_ENA:  transfer_array[0].req.ben = siz2ben(siz, transaction.req.adr[PHY_MAX-1:0]);  // TODO: this will not work for PHY_MAX = 0
+          TCB_LOG_SIZE:  transfer_queue[0].req.siz = siz;
+          TCB_BYTE_ENA:  transfer_queue[0].req.ben = siz2ben(siz, transaction.req.adr[PHY_MAX-1:0]);  // TODO: this will not work for PHY_MAX = 0
         endcase
       end
 
 //      $display("DEBUG: transaction_request: siz = %d, len = %d", siz, len);
-//      $display("DEBUG: transaction_request: transfer_array = %p", transfer_array);
+//      $display("DEBUG: transaction_request: transfer_queue = %p", transfer_queue);
       // data signals
       for (int unsigned i=0; i<2**siz; i++) begin
         // temporary variables
@@ -204,21 +204,21 @@ package tcb_vip_transaction_pkg;
           TCB_ASCENDING :  byt = PHY_BEN - 1 - byt;  // reverse byte order
         endcase
         // request
-        transfer_array[cnt].req.ben[byt] = 1'b1;
+        transfer_queue[cnt].req.ben[byt] = 1'b1;
         // request endianness
         case (transaction.req.ndn)
-          TCB_LITTLE:  transfer_array[cnt].req.wdt[byt] = transaction.req.wdt[             i];
-          TCB_BIG   :  transfer_array[cnt].req.wdt[byt] = transaction.req.wdt[2**siz - 1 - i];
+          TCB_LITTLE:  transfer_queue[cnt].req.wdt[byt] = transaction.req.wdt[             i];
+          TCB_BIG   :  transfer_queue[cnt].req.wdt[byt] = transaction.req.wdt[2**siz - 1 - i];
         endcase
         // response endianness
         case (transaction.req.ndn)
-          TCB_LITTLE:  transfer_array[cnt].rsp.rdt[byt] = transaction.rsp.rdt[             i];
-          TCB_BIG   :  transfer_array[cnt].rsp.rdt[byt] = transaction.rsp.rdt[2**siz - 1 - i];
+          TCB_LITTLE:  transfer_queue[cnt].rsp.rdt[byt] = transaction.rsp.rdt[             i];
+          TCB_BIG   :  transfer_queue[cnt].rsp.rdt[byt] = transaction.rsp.rdt[2**siz - 1 - i];
         endcase
       end
 
-      //      $display("DEBUG: inside: transfer_array.size() = %d", transfer_array.size());
-      return(transfer_array);
+      //      $display("DEBUG: inside: transfer_queue.size() = %d", transfer_queue.size());
+      return(transfer_queue);
     endfunction: set_transaction
 
   //////////////////////////////////////////////////////////////////////////////

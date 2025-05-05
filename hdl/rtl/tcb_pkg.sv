@@ -155,7 +155,7 @@ package tcb_pkg;
     logic                wen;  // write enable
     logic                ren;  // read enable
     logic                ndn;  // endianness
-    logic [4-1:0][8-1:0] adr;  // address
+    logic       [32-1:0] adr;  // address
     logic        [2-1:0] siz;  // logarithmic transfer size
     logic        [4-1:0] ben;  // byte enable
     logic [4-1:0][8-1:0] wdt;  // write data

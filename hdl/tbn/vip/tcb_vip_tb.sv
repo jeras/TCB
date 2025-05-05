@@ -84,12 +84,12 @@ module tcb_vip_tb
   tcb_if #(DLY, tcb_phy_t, PHY, tcb_req_t, tcb_rsp_t, VIP) tcb (.clk (clk), .rst (rst));
 
   // parameterized class specialization (non-blocking API)
-  typedef tcb_vip_transfer_c #(DLY, tcb_phy_t, PHY, tcb_req_t, tcb_rsp_t, VIP) tcb_nba_s;
+  typedef tcb_vip_transfer_c #(DLY, tcb_phy_t, PHY, tcb_req_t, tcb_rsp_t, VIP) tcb_transfer_s;
 
   // TCB class objects
-  tcb_nba_s obj_man = new(tcb, "MAN");
-  tcb_nba_s obj_mon = new(tcb, "MON");
-  tcb_nba_s obj_sub = new(tcb, "SUB");
+  tcb_transfer_s obj_man = new(tcb, "MAN");
+  tcb_transfer_s obj_mon = new(tcb, "MON");
+  tcb_transfer_s obj_sub = new(tcb, "SUB");
 
   task automatic test_nonblocking;
     // local variables
@@ -97,17 +97,17 @@ module tcb_vip_tb
     int lst_idl [3] = '{0, 1, 2};
     int lst_bpr [3] = '{0, 1, 2};
 
-    tcb_nba_s::transfer_t       tst_ref [$];
-    tcb_nba_s::transfer_array_t tst_man;
-    tcb_nba_s::transfer_array_t tst_mon;
-    tcb_nba_s::transfer_array_t tst_sub;
+    tcb_transfer_s::transfer_queue_t tst_ref;
+    tcb_transfer_s::transfer_array_t tst_man;
+    tcb_transfer_s::transfer_array_t tst_mon;
+    tcb_transfer_s::transfer_array_t tst_sub;
 
     // prepare transactions
     int unsigned i;
     foreach (lst_wen[idx_wen]) begin
       foreach (lst_idl[idx_idl]) begin
         foreach (lst_bpr[idx_bpr]) begin
-          tcb_nba_s::transfer_t tst_tmp = '{
+          tcb_transfer_s::transfer_t tst_tmp = '{
             // request
             req: '{
               cmd: '0,
