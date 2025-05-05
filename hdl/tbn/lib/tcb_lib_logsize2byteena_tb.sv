@@ -129,14 +129,21 @@ module tcb_lib_logsize2byteena_tb
     disable fork;
     // reference transfer queue
     sts = '0;
-    tst_ref = {tst_ref, obj_sub.set_transaction('{req: '{TCB_LITTLE, 1'b1, 32'h00000010, '{8'h10}}, rsp: '{'{default: 'x}, sts}, default: 'x})};
-    tst_ref = {tst_ref, obj_sub.set_transaction('{req: '{TCB_LITTLE, 1'b1, 32'h00000011, '{8'h32}}, rsp: '{'{default: 'x}, sts}, default: 'x})};
-    tst_ref = {tst_ref, obj_sub.set_transaction('{req: '{TCB_LITTLE, 1'b1, 32'h00000012, '{8'h54}}, rsp: '{'{default: 'x}, sts}, default: 'x})};
-    tst_ref = {tst_ref, obj_sub.set_transaction('{req: '{TCB_LITTLE, 1'b1, 32'h00000013, '{8'h76}}, rsp: '{'{default: 'x}, sts}, default: 'x})};
+    tst_ref = {tst_ref, obj_sub.set_transaction('{req: '{TCB_LITTLE, 1'b1, 32'h00000010, '{8'h10                     }}, rsp: '{'{default: 'x}, sts}, default: 'x})};
+    tst_ref = {tst_ref, obj_sub.set_transaction('{req: '{TCB_LITTLE, 1'b1, 32'h00000011, '{       8'h32              }}, rsp: '{'{default: 'x}, sts}, default: 'x})};
+    tst_ref = {tst_ref, obj_sub.set_transaction('{req: '{TCB_LITTLE, 1'b1, 32'h00000012, '{              8'h54       }}, rsp: '{'{default: 'x}, sts}, default: 'x})};
+    tst_ref = {tst_ref, obj_sub.set_transaction('{req: '{TCB_LITTLE, 1'b1, 32'h00000013, '{                     8'h76}}, rsp: '{'{default: 'x}, sts}, default: 'x})};
+    tst_ref = {tst_ref, obj_sub.set_transaction('{req: '{TCB_LITTLE, 1'b1, 32'h00000020, '{8'h10, 8'h32              }}, rsp: '{'{default: 'x}, sts}, default: 'x})};
+    tst_ref = {tst_ref, obj_sub.set_transaction('{req: '{TCB_LITTLE, 1'b1, 32'h00000022, '{              8'h54, 8'h76}}, rsp: '{'{default: 'x}, sts}, default: 'x})};
+    tst_ref = {tst_ref, obj_sub.set_transaction('{req: '{TCB_LITTLE, 1'b1, 32'h00000030, '{8'h10, 8'h32, 8'h54, 8'h76}}, rsp: '{'{default: 'x}, sts}, default: 'x})};
 
     // compare transfers from monitor to reference
-    foreach(tst_mon[i]) $display("DEBUG: tst_ref[%0d] = %p", i, tst_ref[i]);
-    foreach(tst_mon[i]) $display("DEBUG: tst_mon[%0d] = %p", i, tst_mon[i]);
+    foreach(tst_ref[i]) $display("DEBUG: tst_ref[%0d] = %p", i, tst_ref[i]);
+    foreach(tst_ref[i]) $display("DEBUG: tst_mon[%0d] = %p", i, tst_mon[i]);
+    foreach(tst_ref[i]) begin
+      assert (tst_mon[i].req ==? tst_ref[i].req) else $error("\ntst_mon[%0d].req = %p !=? \ntst_ref[%0d].req = %p", i, tst_mon[i].req, i, tst_ref[i].req);
+      assert (tst_mon[i].rsp ==? tst_ref[i].rsp) else $error("\ntst_mon[%0d].rsp = %p !=? \ntst_ref[%0d].rsp = %p", i, tst_mon[i].rsp, i, tst_ref[i].rsp);
+    end
     
     // read sequence
     $display("read sequence");
