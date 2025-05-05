@@ -49,17 +49,7 @@ package tcb_vip_transaction_pkg;
     .DEBUG (DEBUG)
   );
 
-    // virtual interface type definition
-    typedef virtual tcb_if #(
-      .DLY   (DLY),
-      .phy_t (phy_t),
-      .PHY   (PHY),
-      .req_t (req_t),
-      .rsp_t (rsp_t),
-      .VIP   (VIP)
-    ) tcb_vif_t;
-    
-    //constructor
+    // constructor
     function new(
       tcb_vif_t tcb,
       string DIR = "MON"
@@ -74,10 +64,14 @@ package tcb_vip_transaction_pkg;
   // local types, constants, functions
   //////////////////////////////////////////////////////////////////////////////
 
-    localparam int unsigned PHY_ADR = $bits(tcb.req_t.adr);
-    localparam int unsigned PHY_DAT = $bits(tcb.req_t.wdt);
-    localparam int unsigned PHY_BEN = $bits(tcb.req_t.ben);
-    localparam int unsigned PHY_SIZ = $bits(tcb.req_t.siz);
+    // dummy transfer request (only used to calculate local parameters)
+    req_t dummy_req;
+
+    // local parameters
+    localparam int unsigned PHY_ADR = $bits(dummy_req.adr);
+    localparam int unsigned PHY_DAT = $bits(dummy_req.wdt);
+    localparam int unsigned PHY_BEN = $bits(dummy_req.ben);
+    localparam int unsigned PHY_SIZ = $bits(dummy_req.siz);
     localparam int unsigned PHY_MAX = $clog2(PHY_BEN);
 
     // TCB transaction request structure
