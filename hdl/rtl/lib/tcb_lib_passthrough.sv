@@ -30,8 +30,8 @@ module tcb_lib_passthrough (
   // comparing subordinate and manager interface parameters
   initial
   begin
-    assert (sub.DLY == man.DLY) else $fatal(0, "Parameter (sub.DLY = %p) != (man.DLY = %p)", sub.DLY, man.DLY);
-    assert (sub.PHY == man.PHY) else $fatal(0, "Parameter (sub.PHY = %p) != (man.PHY = %p)", sub.PHY, man.PHY);
+    assert (sub.HSK_DLY == man.HSK_DLY) else $fatal(0, "Parameter (sub.HSK_DLY = %p) != (man.HSK_DLY = %p)", sub.HSK_DLY, man.HSK_DLY);
+    assert (sub.BUS == man.BUS) else $fatal(0, "Parameter (sub.BUS = %p) != (man.BUS = %p)", sub.BUS, man.BUS);
   end
 `endif
 

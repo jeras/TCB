@@ -26,13 +26,13 @@ module tcb_lib_register_request_tb
   int unsigned UNT =       8,  // data unit   width
   int unsigned BEN = DAT/UNT,  // byte enable width
   // response delay
-  int unsigned DLY = 1,
+  int unsigned HSK_DLY = 1,
   // bus hold granularity (byte granularity by default)
   int unsigned GRN = 1
 );
 
-  localparam DLY_MAN = DLY+1;
-  localparam DLY_SUB = DLY;
+  localparam DLY_MAN = HSK_DLY+1;
+  localparam DLY_SUB = HSK_DLY;
 
   // system signals
   logic clk;  // clock
@@ -46,9 +46,9 @@ module tcb_lib_register_request_tb
 // local signals
 ////////////////////////////////////////////////////////////////////////////////
 
-  tcb_if #(.ADR (ADR), .DAT (DAT), .DLY (DLY_MAN)) tcb_man       (.clk (clk), .rst (rst));
-  tcb_if #(.ADR (ADR), .DAT (DAT), .DLY (DLY_SUB)) tcb_sub       (.clk (clk), .rst (rst));
-  tcb_if #(.ADR (ADR), .DAT (DAT), .DLY (DLY_SUB)) tcb_mem [0:0] (.clk (clk), .rst (rst));
+  tcb_if #(.ADR (ADR), .DAT (DAT), .HSK_DLY (DLY_MAN)) tcb_man       (.clk (clk), .rst (rst));
+  tcb_if #(.ADR (ADR), .DAT (DAT), .HSK_DLY (DLY_SUB)) tcb_sub       (.clk (clk), .rst (rst));
+  tcb_if #(.ADR (ADR), .DAT (DAT), .HSK_DLY (DLY_SUB)) tcb_mem [0:0] (.clk (clk), .rst (rst));
 
 ////////////////////////////////////////////////////////////////////////////////
 // test sequence

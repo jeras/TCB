@@ -32,11 +32,11 @@ module tcb_lib_register_backpressure
   // camparing subordinate and manager interface parameters
   generate
     // bus widths
-    if (sub.PHY.ADR != man.PHY.ADR)  $error("ERROR: %m parameter (sub.ADR = %d) != (man.ADR = %d)", sub.PHY.ADR, man.PHY.ADR);
-    if (sub.PHY.DAT != man.PHY.DAT)  $error("ERROR: %m parameter (sub.DAT = %d) != (man.DAT = %d)", sub.PHY.DAT, man.PHY.DAT);
-    if (sub.PHY.UNT != man.PHY.UNT)  $error("ERROR: %m parameter (sub.UNT = %d) != (man.UNT = %d)", sub.PHY.UNT, man.PHY.UNT);
+    if (sub.BUS.ADR != man.BUS.ADR)  $error("ERROR: %m parameter (sub.ADR = %d) != (man.ADR = %d)", sub.BUS.ADR, man.BUS.ADR);
+    if (sub.BUS.DAT != man.BUS.DAT)  $error("ERROR: %m parameter (sub.DAT = %d) != (man.DAT = %d)", sub.BUS.DAT, man.BUS.DAT);
+    if (sub.BUS.UNT != man.BUS.UNT)  $error("ERROR: %m parameter (sub.UNT = %d) != (man.UNT = %d)", sub.BUS.UNT, man.BUS.UNT);
     // response delay
-    if (sub.PHY.DLY != man.PHY.DLY)  $error("ERROR: %m parameter (sub.DLY = %d) != (man.DLY = %d)", sub.PHY.DLY, man.PHY.DLY);
+    if (sub.HSK_DLY != man.HSK_DLY)  $error("ERROR: %m parameter (sub.HSK_DLY = %d) != (man.HSK_DLY = %d)", sub.HSK_DLY, man.HSK_DLY);
   endgenerate
 `endif
 
@@ -50,10 +50,10 @@ module tcb_lib_register_backpressure
   logic                   tmp_lck;  // arbitration lock
   // request
   logic                   tmp_wen;  // write enable
-  logic [sub.PHY.ADR-1:0] tmp_adr;  // address
-  logic [sub.PHY_SIZ-1:0] tmp_siz;  // logarithmic size
-  logic [sub.PHY_BEN-1:0] tmp_ben;  // byte enable
-  logic [sub.PHY.DAT-1:0] tmp_wdt;  // write data
+  logic [sub.BUS.ADR-1:0] tmp_adr;  // address
+  logic [sub.BUS_SIZ-1:0] tmp_siz;  // logarithmic size
+  logic [sub.BUS_BEN-1:0] tmp_ben;  // byte enable
+  logic [sub.BUS.DAT-1:0] tmp_wdt;  // write data
 
   always_ff @(posedge sub.clk)
   begin
@@ -67,10 +67,10 @@ module tcb_lib_register_backpressure
       tmp_siz <= sub.req.siz;
       tmp_ben <= sub.req.ben;
       tmp_adr <= sub.req.adr;
-      for (int unsigned i=0; i<sub.PHY_BEN; i++) begin
+      for (int unsigned i=0; i<sub.BUS_BEN; i++) begin
         // data granularity
         if (sub.req.wen & sub.req.ben[i]) begin
-          tmp_wdt[sub.PHY.UNT*i+:sub.PHY.UNT] <= sub.req.wdt[sub.PHY.UNT*i+:sub.PHY.UNT];
+          tmp_wdt[sub.BUS.UNT*i+:sub.BUS.UNT] <= sub.req.wdt[sub.BUS.UNT*i+:sub.BUS.UNT];
         end
       end
     end

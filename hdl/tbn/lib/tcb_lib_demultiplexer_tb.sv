@@ -21,11 +21,11 @@ module tcb_lib_demultiplexer_tb
   import tcb_vip_blocking_pkg::*;
 #(
   // response delay
-  parameter  int unsigned DLY = TCB_PAR_PHY_DEF.DLY,
+  parameter  int unsigned HSK_DLY = TCB_PAR_BUS_DEF.HSK_DLY,
   // TCB widths
-  parameter  int unsigned UNT = TCB_PAR_PHY_DEF.UNT,       // data unit   width
-  parameter  int unsigned ADR = TCB_PAR_PHY_DEF.ADR,       // address bus width
-  parameter  int unsigned DAT = TCB_PAR_PHY_DEF.DAT,       // data    bus width
+  parameter  int unsigned UNT = TCB_PAR_BUS_DEF.UNT,       // data unit   width
+  parameter  int unsigned ADR = TCB_PAR_BUS_DEF.ADR,       // address bus width
+  parameter  int unsigned DAT = TCB_PAR_BUS_DEF.DAT,       // data    bus width
   // interconnect parameters
   parameter  int unsigned MPN = 3,        // port number
   parameter  int unsigned MPL = $clog2(MPN),
@@ -34,20 +34,20 @@ module tcb_lib_demultiplexer_tb
 );
 
   // TCB physical interface parameters
-  localparam tcb_phy_t PHY = '{
+  localparam tcb_bus_t BUS = '{
     // protocol
-    DLY: DLY,
+    HSK_DLY: HSK_DLY,
     // signal bus widths
     UNT: UNT,
     ADR: ADR,
     DAT: DAT,
     // size/mode/order parameters
-    ALN: TCB_PAR_PHY_DEF.ALN,
-    MIN: TCB_PAR_PHY_DEF.MIN,
-    MOD: TCB_PAR_PHY_DEF.MOD,
-    ORD: TCB_PAR_PHY_DEF.ORD,
+    ALN: TCB_PAR_BUS_DEF.ALN,
+    MIN: TCB_PAR_BUS_DEF.MIN,
+    MOD: TCB_PAR_BUS_DEF.MOD,
+    ORD: TCB_PAR_BUS_DEF.ORD,
     // channel configuration
-    CHN: TCB_PAR_PHY_DEF.CHN
+    CHN: TCB_PAR_BUS_DEF.CHN
   };
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -69,8 +69,8 @@ module tcb_lib_demultiplexer_tb
 // local signals
 ////////////////////////////////////////////////////////////////////////////////
 
-  tcb_if #(.PHY (PHY)) tcb_man            (.clk (clk), .rst (rst));
-  tcb_if #(.PHY (PHY)) tcb_sub  [MPN-1:0] (.clk (clk), .rst (rst));
+  tcb_if #(.BUS (BUS)) tcb_man            (.clk (clk), .rst (rst));
+  tcb_if #(.BUS (BUS)) tcb_sub  [MPN-1:0] (.clk (clk), .rst (rst));
 
 ////////////////////////////////////////////////////////////////////////////////
 // test sequence

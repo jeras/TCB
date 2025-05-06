@@ -14,7 +14,7 @@
 include ../filelist.mk
 
 include ../tcb_pkg.mk
-include ../tcb_phy_parameters.mk
+include ../tcb_bus_parameters.mk
 
 # top level module
 TOP ?= tcb_vip_tb
@@ -47,21 +47,21 @@ DEF = -d TOOL_VIVADO_SIMULATOR
 # list of parameter overrides
 
 # protocol
-PHY_PAR += -generic_top PHY_DLY=${PHY_DLY}
+BUS_PAR += -generic_top HSK_DLY=${HSK_DLY}
 # signal widths
-PHY_PAR += -generic_top PHY_UNT=${PHY_UNT}
-PHY_PAR += -generic_top PHY_ADR=${PHY_ADR}
-PHY_PAR += -generic_top PHY_DAT=${PHY_DAT}
+BUS_PAR += -generic_top BUS_UNT=${BUS_UNT}
+BUS_PAR += -generic_top BUS_ADR=${BUS_ADR}
+BUS_PAR += -generic_top BUS_DAT=${BUS_DAT}
 # data packing parameters
-PHY_PAR += -generic_top PHY_ALN=${PHY_ALN}
-PHY_PAR += -generic_top PHY_MIN=${PHY_MIN}
-PHY_PAR ?= -generic_top PHY_MOD=${PHY_MOD}
-PHY_PAR ?= -generic_top PHY_ORD=${PHY_ORD}
+BUS_PAR += -generic_top BUS_ALN=${BUS_ALN}
+BUS_PAR += -generic_top BUS_MIN=${BUS_MIN}
+BUS_PAR ?= -generic_top BUS_MOD=${BUS_MOD}
+BUS_PAR ?= -generic_top BUS_ORD=${BUS_ORD}
 # channel configuration
-PHY_PAR ?= -generic_top CHN_CHN=${PHY_CHN}
+BUS_PAR ?= -generic_top CHN_CHN=${BUS_CHN}
 
 # combined manager/subordinate parameters
-#PAR = ${PHY_PAR}
+#PAR = ${BUS_PAR}
 
 ################################################################################
 # Verilog plusargs

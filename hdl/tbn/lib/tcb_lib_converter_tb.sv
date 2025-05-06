@@ -21,38 +21,38 @@ module tcb_lib_converter_tb
   import tcb_vip_blocking_pkg::*;
 #(
   // protocol
-  parameter  int unsigned      MAN_DLY = TCB_PAR_PHY_DEF.DLY,  // response delay
+  parameter  int unsigned      MAN_DLY = TCB_PAR_BUS_DEF.HSK_DLY,  // response delay
   // signal widths
-  parameter  int unsigned      MAN_UNT = TCB_PAR_PHY_DEF.UNT,  // data unit   width (byte width is 8 by default)
-  parameter  int unsigned      MAN_ADR = TCB_PAR_PHY_DEF.ADR,  // address bus width
-  parameter  int unsigned      MAN_DAT = TCB_PAR_PHY_DEF.DAT,  // data    bus width
+  parameter  int unsigned      MAN_UNT = TCB_PAR_BUS_DEF.UNT,  // data unit   width (byte width is 8 by default)
+  parameter  int unsigned      MAN_ADR = TCB_PAR_BUS_DEF.ADR,  // address bus width
+  parameter  int unsigned      MAN_DAT = TCB_PAR_BUS_DEF.DAT,  // data    bus width
   // data packing parameters for manager/subordinate
-  parameter  int unsigned      MAN_ALN = TCB_PAR_PHY_DEF.ALN,  // TODO
-  parameter  int unsigned      MAN_MIN = TCB_PAR_PHY_DEF.MIN,  // TODO
-  parameter  tcb_phy_mode_t    MAN_MOD = TCB_PAR_PHY_DEF.MOD,  // manager     data position mode
-  parameter  tcb_phy_order_t   MAN_ORD = TCB_PAR_PHY_DEF.ORD,  // manager     byte order
+  parameter  int unsigned      MAN_ALN = TCB_PAR_BUS_DEF.ALN,  // TODO
+  parameter  int unsigned      MAN_MIN = TCB_PAR_BUS_DEF.MIN,  // TODO
+  parameter  tcb_bus_mode_t    MAN_MOD = TCB_PAR_BUS_DEF.MOD,  // manager     data position mode
+  parameter  tcb_bus_order_t   MAN_ORD = TCB_PAR_BUS_DEF.ORD,  // manager     byte order
   // channel configuration
-  parameter  tcb_phy_channel_t MAN_CHN = TCB_PAR_PHY_DEF.CHN,  // channel configuration
+  parameter  tcb_bus_channel_t MAN_CHN = TCB_PAR_BUS_DEF.CHN,  // channel configuration
 
   // protocol
-  parameter  int unsigned      SUB_DLY = TCB_PAR_PHY_DEF.DLY,  // response delay
+  parameter  int unsigned      SUB_DLY = TCB_PAR_BUS_DEF.HSK_DLY,  // response delay
   // signal widths
-  parameter  int unsigned      SUB_UNT = TCB_PAR_PHY_DEF.UNT,  // data unit   width (byte width is 8 by default)
-  parameter  int unsigned      SUB_ADR = TCB_PAR_PHY_DEF.ADR,  // address bus width
-  parameter  int unsigned      SUB_DAT = TCB_PAR_PHY_DEF.DAT,  // data    bus width
+  parameter  int unsigned      SUB_UNT = TCB_PAR_BUS_DEF.UNT,  // data unit   width (byte width is 8 by default)
+  parameter  int unsigned      SUB_ADR = TCB_PAR_BUS_DEF.ADR,  // address bus width
+  parameter  int unsigned      SUB_DAT = TCB_PAR_BUS_DEF.DAT,  // data    bus width
   // data packing parameters for manager/subordinate
-  parameter  int unsigned      SUB_ALN = TCB_PAR_PHY_DEF.ALN,  // TODO
-  parameter  int unsigned      SUB_MIN = TCB_PAR_PHY_DEF.MIN,  // TODO
-  parameter  tcb_phy_mode_t    SUB_MOD = TCB_PAR_PHY_DEF.MOD,  // subordinate data position mode
-  parameter  tcb_phy_order_t   SUB_ORD = TCB_PAR_PHY_DEF.ORD,  // subordinate byte order
+  parameter  int unsigned      SUB_ALN = TCB_PAR_BUS_DEF.ALN,  // TODO
+  parameter  int unsigned      SUB_MIN = TCB_PAR_BUS_DEF.MIN,  // TODO
+  parameter  tcb_bus_mode_t    SUB_MOD = TCB_PAR_BUS_DEF.MOD,  // subordinate data position mode
+  parameter  tcb_bus_order_t   SUB_ORD = TCB_PAR_BUS_DEF.ORD,  // subordinate byte order
   // channel configuration
-  parameter  tcb_phy_channel_t SUB_CHN = TCB_PAR_PHY_DEF.CHN   // channel configuration
+  parameter  tcb_bus_channel_t SUB_CHN = TCB_PAR_BUS_DEF.CHN   // channel configuration
 );
 
   // manager physical interface parameter
-  localparam tcb_phy_t MAN_PHY = '{
+  localparam tcb_bus_t MAN_BUS = '{
     // protocol
-    DLY: MAN_DLY,
+    HSK_DLY: MAN_DLY,
     // signal bus widths
     UNT: MAN_UNT,
     ADR: MAN_ADR,
@@ -67,9 +67,9 @@ module tcb_lib_converter_tb
   };
 
   // subordinate physical interface parameter
-  localparam tcb_phy_t SUB_PHY = '{
+  localparam tcb_bus_t SUB_BUS = '{
     // protocol
-    DLY: SUB_DLY,
+    HSK_DLY: SUB_DLY,
     // signal bus widths
     UNT: SUB_UNT,
     ADR: SUB_ADR,
@@ -92,21 +92,21 @@ module tcb_lib_converter_tb
   logic rst;  // reset
 
   // TCB interfaces
-  tcb_if #(.PHY (MAN_PHY)) tcb_man       (.clk (clk), .rst (rst));
-  tcb_if #(.PHY (SUB_PHY)) tcb_sub       (.clk (clk), .rst (rst));
-  tcb_if #(.PHY (SUB_PHY)) tcb_mem [0:0] (.clk (clk), .rst (rst));
+  tcb_if #(.BUS (MAN_BUS)) tcb_man       (.clk (clk), .rst (rst));
+  tcb_if #(.BUS (SUB_BUS)) tcb_sub       (.clk (clk), .rst (rst));
+  tcb_if #(.BUS (SUB_BUS)) tcb_mem [0:0] (.clk (clk), .rst (rst));
 
   // TCB class objects
-  tcb_transfer_c #(.PHY (MAN_PHY)) obj_man;
-  tcb_transfer_c #(.PHY (SUB_PHY)) obj_sub;
-  tcb_transfer_c #(.PHY (SUB_PHY)) obj_mem;
+  tcb_transfer_c #(.BUS (MAN_BUS)) obj_man;
+  tcb_transfer_c #(.BUS (SUB_BUS)) obj_sub;
+  tcb_transfer_c #(.BUS (SUB_BUS)) obj_mem;
 
 ////////////////////////////////////////////////////////////////////////////////
 // data checking
 ////////////////////////////////////////////////////////////////////////////////
 
   // response
-  logic [tcb_man.PHY_BEN-1:0][tcb_man.PHY.UNT-1:0] rdt;  // read data
+  logic [tcb_man.BUS_BEN-1:0][tcb_man.BUS.UNT-1:0] rdt;  // read data
   tcb_rsp_sts_def_t                                sts;  // status response
 
 ////////////////////////////////////////////////////////////////////////////////

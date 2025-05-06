@@ -24,30 +24,30 @@ module tcb_gpio_tb
   int unsigned ADR = 32,
   int unsigned DAT = 32,
   // RW channels
-  tcb_phy_channel_t CHN = TCB_COMMON_HALF_DUPLEX
+  tcb_bus_channel_t CHN = TCB_HALF_DUPLEX
 );
 
   // TODO: parameter propagation through virtual interfaces in classes
   // is not working well in Vivado 2023.1 thus this workaround
 
   // physical interface parameter
-  localparam tcb_phy_t PHY1 = '{
+  localparam tcb_bus_t PHY1 = '{
     // protocol
-    DLY: 0,
+    HSK_DLY: 0,
     // signal bus widths
-    UNT: TCB_PAR_PHY_DEF.UNT,
+    UNT: TCB_PAR_BUS_DEF.UNT,
     ADR: ADR,
     DAT: DAT,
-    ALN: $clog2(DAT/TCB_PAR_PHY_DEF.UNT),
+    ALN: $clog2(DAT/TCB_PAR_BUS_DEF.UNT),
     // size/mode/order parameters
-    SIZ: TCB_PAR_PHY_DEF.SIZ,
-    MOD: TCB_PAR_PHY_DEF.MOD,
-    ORD: TCB_PAR_PHY_DEF.ORD,
+    SIZ: TCB_PAR_BUS_DEF.SIZ,
+    MOD: TCB_PAR_BUS_DEF.MOD,
+    ORD: TCB_PAR_BUS_DEF.ORD,
     // channel configuration
-    CHN: TCB_PAR_PHY_DEF.CHN
+    CHN: TCB_PAR_BUS_DEF.CHN
   };
 
-  localparam tcb_phy_t PHY = TCB_PAR_PHY_DEF;
+  localparam tcb_bus_t BUS = TCB_PAR_BUS_DEF;
 
   // GPIO width
   localparam int unsigned GW = 32;
@@ -61,9 +61,9 @@ module tcb_gpio_tb
   logic rst;  // reset
 /*
   // TCB interface
-  tcb_if #(.PHY (PHY)) tcb_man     (.clk (clk), .rst (rst));
-  tcb_if #(.PHY (PHY)) tcb_man_wrc (.clk (clk), .rst (rst));
-  tcb_if #(.PHY (PHY)) tcb_man_rdc (.clk (clk), .rst (rst));
+  tcb_if #(.BUS (BUS)) tcb_man     (.clk (clk), .rst (rst));
+  tcb_if #(.BUS (BUS)) tcb_man_wrc (.clk (clk), .rst (rst));
+  tcb_if #(.BUS (BUS)) tcb_man_rdc (.clk (clk), .rst (rst));
 */
   // TODO: the above code should be used instead
   // TCB interfaces
@@ -72,7 +72,7 @@ module tcb_gpio_tb
   tcb_if tcb_man_rdc (.clk (clk), .rst (rst));
 
   // parameterized class specialization
-  typedef tcb_transfer_c #(.PHY (PHY)) tcb_s;
+  typedef tcb_transfer_c #(.BUS (BUS)) tcb_s;
 
   // TCB class objects
   tcb_s obj_man;
@@ -82,7 +82,7 @@ module tcb_gpio_tb
 ////////////////////////////////////////////////////////////////////////////////
 
   // response
-  logic [PHY.DAT-1:0] rdt;  // read data
+  logic [BUS.DAT-1:0] rdt;  // read data
   tcb_rsp_sts_def_t   sts;  // status response
 
   logic [ 8-1:0] rdt8 ;  //  8-bit read data
@@ -158,7 +158,7 @@ module tcb_gpio_tb
 ////////////////////////////////////////////////////////////////////////////////
 
   generate
-  if (CHN == TCB_COMMON_HALF_DUPLEX)
+  if (CHN == TCB_HALF_DUPLEX)
   begin: cmn
 
   // TCB GPIO

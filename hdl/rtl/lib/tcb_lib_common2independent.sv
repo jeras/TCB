@@ -32,8 +32,8 @@ module tcb_lib_common2independent (
 `else
   // camparing subordinate and manager interface parameters
   generate
-    if (tcb_cmn_sub.PHY != tcb_wrc_man.PHY)  $error("ERROR: %m parameter (tcb_cmn_sub.PHY = %p) != (tcb_wrc_man.PHY = %p)", tcb_cmn_sub.PHY, tcb_wrc_man.PHY);
-    if (tcb_cmn_sub.PHY != tcb_rdc_man.PHY)  $error("ERROR: %m parameter (tcb_cmn_sub.PHY = %p) != (tcb_rdc_man.PHY = %p)", tcb_cmn_sub.PHY, tcb_rdc_man.PHY);
+    if (tcb_cmn_sub.BUS != tcb_wrc_man.BUS)  $error("ERROR: %m parameter (tcb_cmn_sub.BUS = %p) != (tcb_wrc_man.BUS = %p)", tcb_cmn_sub.BUS, tcb_wrc_man.BUS);
+    if (tcb_cmn_sub.BUS != tcb_rdc_man.BUS)  $error("ERROR: %m parameter (tcb_cmn_sub.BUS = %p) != (tcb_rdc_man.BUS = %p)", tcb_cmn_sub.BUS, tcb_rdc_man.BUS);
   endgenerate
 `endif
 
@@ -54,7 +54,7 @@ module tcb_lib_common2independent (
   assign tcb_wrc_man.req =  tcb_cmn_sub.req;
   // response
   // TODO: avoid passing read data from write channel
-  assign tcb_cmn_sub.rsp =  tcb_cmn_sub.dly[tcb_cmn_sub.PHY.DLY].ren ? tcb_rdc_man.rsp
+  assign tcb_cmn_sub.rsp =  tcb_cmn_sub.dly[tcb_cmn_sub.HSK_DLY].ren ? tcb_rdc_man.rsp
                                                                      : tcb_wrc_man.rsp;
 
 endmodule: tcb_lib_common2independent

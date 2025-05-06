@@ -20,45 +20,45 @@ module tcb_lib_register_backpressure_tb
   import tcb_vip_blocking_pkg::*;
 #(
   // response delay
-  parameter  int unsigned DLY = TCB_PAR_PHY_DEF.DLY,
+  parameter  int unsigned HSK_DLY = TCB_PAR_BUS_DEF.HSK_DLY,
   // TCB widths
-  parameter  int unsigned UNT = TCB_PAR_PHY_DEF.UNT,       // data unit   width
-  parameter  int unsigned ADR = TCB_PAR_PHY_DEF.ADR,       // address bus width
-  parameter  int unsigned DAT = TCB_PAR_PHY_DEF.DAT        // data    bus width
+  parameter  int unsigned UNT = TCB_PAR_BUS_DEF.UNT,       // data unit   width
+  parameter  int unsigned ADR = TCB_PAR_BUS_DEF.ADR,       // address bus width
+  parameter  int unsigned DAT = TCB_PAR_BUS_DEF.DAT        // data    bus width
 );
 
   // TCB physical interface parameters for manager
-  localparam tcb_phy_t PHY_MAN = '{
+  localparam tcb_bus_t BUS_MAN = '{
     // protocol
-    DLY: DLY,
+    HSK_DLY: HSK_DLY,
     // signal bus widths
     UNT: UNT,
     ADR: ADR,
     DAT: DAT,
     // size/mode/order parameters
-    ALN: TCB_PAR_PHY_DEF.ALN,
-    MIN: TCB_PAR_PHY_DEF.MIN,
-    MOD: TCB_PAR_PHY_DEF.MOD,
-    ORD: TCB_PAR_PHY_DEF.ORD,
+    ALN: TCB_PAR_BUS_DEF.ALN,
+    MIN: TCB_PAR_BUS_DEF.MIN,
+    MOD: TCB_PAR_BUS_DEF.MOD,
+    ORD: TCB_PAR_BUS_DEF.ORD,
     // channel configuration
-    CHN: TCB_PAR_PHY_DEF.CHN
+    CHN: TCB_PAR_BUS_DEF.CHN
   };
 
   // TCB physical interface parameters for subordinate
-  localparam tcb_phy_t PHY_SUB = '{
+  localparam tcb_bus_t BUS_SUB = '{
     // protocol
-    DLY: DLY,
+    HSK_DLY: HSK_DLY,
     // signal bus widths
     UNT: UNT,
     ADR: ADR,
     DAT: DAT,
     // size/mode/order parameters
-    ALN: TCB_PAR_PHY_DEF.ALN,
-    MIN: TCB_PAR_PHY_DEF.MIN,
-    MOD: TCB_PAR_PHY_DEF.MOD,
-    ORD: TCB_PAR_PHY_DEF.ORD,
+    ALN: TCB_PAR_BUS_DEF.ALN,
+    MIN: TCB_PAR_BUS_DEF.MIN,
+    MOD: TCB_PAR_BUS_DEF.MOD,
+    ORD: TCB_PAR_BUS_DEF.ORD,
     // channel configuration
-    CHN: TCB_PAR_PHY_DEF.CHN
+    CHN: TCB_PAR_BUS_DEF.CHN
   };
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -77,9 +77,9 @@ module tcb_lib_register_backpressure_tb
 // local signals
 ////////////////////////////////////////////////////////////////////////////////
 
-  tcb_if #(.PHY (PHY_MAN)) tcb_man       (.clk (clk), .rst (rst));
-  tcb_if #(.PHY (PHY_SUB)) tcb_sub       (.clk (clk), .rst (rst));
-  tcb_if #(.PHY (PHY_SUB)) tcb_mem [0:0] (.clk (clk), .rst (rst));
+  tcb_if #(.BUS (BUS_MAN)) tcb_man       (.clk (clk), .rst (rst));
+  tcb_if #(.BUS (BUS_SUB)) tcb_sub       (.clk (clk), .rst (rst));
+  tcb_if #(.BUS (BUS_SUB)) tcb_mem [0:0] (.clk (clk), .rst (rst));
 
 ////////////////////////////////////////////////////////////////////////////////
 // test sequence

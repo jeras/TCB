@@ -6,7 +6,7 @@
 include ../filelist.mk
 
 include ../tcb_pkg.mk
-include ../tcb_phy_parameters.mk
+include ../tcb_bus_parameters.mk
 
 # top level module
 TOP ?= tcb_vip_tb
@@ -44,21 +44,21 @@ DEF = -defineall TOOL_QUESTA
 # list of parameter overrides
 
 # protocol
-PHY_PAR += -GPHY_DLY=${PHY_DLY}
+BUS_PAR += -GBUS_DLY=${HSK_DLY}
 # signal widths
-PHY_PAR += -GPHY_UNT=${PHY_UNT}
-PHY_PAR += -GPHY_ADR=${PHY_ADR}
-PHY_PAR += -GPHY_DAT=${PHY_DAT}
+BUS_PAR += -GBUS_UNT=${BUS_UNT}
+BUS_PAR += -GBUS_ADR=${BUS_ADR}
+BUS_PAR += -GBUS_DAT=${BUS_DAT}
 # data packing parameters
-PHY_PAR += -GPHY_ALN=${PHY_ALN}
-PHY_PAR += -GPHY_MIN=${PHY_MIN}
-PHY_PAR ?= -GPHY_MOD=${PHY_MOD}
-PHY_PAR ?= -GPHY_ORD=${PHY_ORD}
+BUS_PAR += -GBUS_ALN=${BUS_ALN}
+BUS_PAR += -GBUS_MIN=${BUS_MIN}
+BUS_PAR ?= -GBUS_MOD=${BUS_MOD}
+BUS_PAR ?= -GBUS_ORD=${BUS_ORD}
 # channel configuration
-PHY_PAR ?= -GCHN_CHN=${PHY_CHN}
+BUS_PAR ?= -GCHN_CHN=${BUS_CHN}
 
 # combined manager/subordinate parameters
-#PAR = ${PHY_PAR}
+#PAR = ${BUS_PAR}
 
 ################################################################################
 # Verilog plusargs

@@ -102,9 +102,9 @@ module tcb_vip_memory
   generate
   for (genvar i=0; i<SPN; i++) begin: port
 
-    // local copies of TCB PHY parameters
-    localparam DLY = tcb[i].DLY;
-    localparam BEN = tcb[i].PHY_BEN;
+    // local copies of TCB BUS parameters
+    localparam HSK_DLY = tcb[i].HSK_DLY;
+    localparam BEN = tcb[i].BUS_BEN;
 
     // request address and size (TCB_LOG_SIZE mode)
     int unsigned adr;
@@ -112,7 +112,7 @@ module tcb_vip_memory
 
     // read/write data packed arrays
     logic [BEN-1:0][8-1:0] wdt;
-    logic [BEN-1:0][8-1:0] rdt [0:DLY] = '{default: 'x};
+    logic [BEN-1:0][8-1:0] rdt [0:HSK_DLY] = '{default: 'x};
 
     // request address and size
     assign adr =    int'(tcb[i].req.adr);
@@ -132,7 +132,7 @@ module tcb_vip_memory
       if (tcb[i].trn) begin
         if (tcb[i].req.wen) begin: write
           for (int unsigned b=0; b<BEN; b++) begin: bytes
-            case (tcb[i].PHY.MOD)
+            case (tcb[i].BUS.MOD)
               TCB_LOG_SIZE: begin: log_size
                 // write only transfer size bytes
                 if (b < siz)  mem[(adr+b)%SIZ] <= wdt[b];
@@ -153,7 +153,7 @@ module tcb_vip_memory
     if (tcb[i].trn) begin
       if (~tcb[i].req.wen) begin: read
         for (int unsigned b=0; b<BEN; b++) begin: bytes
-          case (tcb[i].PHY.MOD)
+          case (tcb[i].BUS.MOD)
             TCB_LOG_SIZE: begin: log_size
               // read only transfer size bytes, the rest remains undefined
               if (b < siz)  rdt[0][b] = mem[(adr+b)%SIZ];
@@ -177,10 +177,10 @@ module tcb_vip_memory
     // TODO: rethink handling of read data bus when there was no access to a byte
 
     // read data delay pipeline
-    for (genvar d=1; d<=DLY; d++) begin: delay
+    for (genvar d=1; d<=HSK_DLY; d++) begin: delay
       always @(posedge tcb[i].clk)
       begin
-        case (tcb[i].PHY.MOD)
+        case (tcb[i].BUS.MOD)
           TCB_LOG_SIZE: begin: log_size
             rdt[d] <= rdt[d-1];
           end: log_size
@@ -197,7 +197,7 @@ module tcb_vip_memory
     end: delay
 
     // map read data from an unpacked array
-    assign tcb[i].rsp.rdt = rdt[DLY];
+    assign tcb[i].rsp.rdt = rdt[HSK_DLY];
 
     // as a memory model, there is no immediate need for error responses, this feature might be added in the future
     // TODO

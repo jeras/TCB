@@ -33,7 +33,7 @@ module tcb_lib_misaligned_single_cycle_memory
   // comparing subordinate and manager interface parameters
   generate
 // TODO: this is a converter, parameters will not match
-//    if (sub.PHY != man.PHY)  $error("ERROR: %m parameter (sub.PHY = %p) != (man.PHY = %p)", sub.PHY, man.PHY);
+//    if (sub.BUS != man.BUS)  $error("ERROR: %m parameter (sub.BUS = %p) != (man.BUS = %p)", sub.BUS, man.BUS);
   endgenerate
 `endif
 
@@ -58,14 +58,14 @@ module tcb_lib_misaligned_single_cycle_memory
 ////////////////////////////////////////////////////////////////////////////////
 
   // request/response data packed arrays
-  logic [sub.PHY_BEN-1:0][sub.PHY.UNT-1:0] sub_req_wdt, sub_rsp_rdt;
-  logic [man.PHY_BEN-1:0][man.PHY.UNT-1:0] man_req_wdt, man_rsp_rdt;
+  logic [sub.BUS_BEN-1:0][sub.BUS.UNT-1:0] sub_req_wdt, sub_rsp_rdt;
+  logic [man.BUS_BEN-1:0][man.BUS.UNT-1:0] man_req_wdt, man_rsp_rdt;
 
   // byte enable
-  logic [sub.PHY_BEN-1:0]                  sub_req_ben             ;
+  logic [sub.BUS_BEN-1:0]                  sub_req_ben             ;
 
   // request/response address segment
-  logic [sub.PHY_OFF-1:0]                      req_off,     rsp_off;
+  logic [sub.BUS_OFF-1:0]                      req_off,     rsp_off;
 
   // request/response endianness
   logic                                        req_ndn,     rsp_ndn;
@@ -76,12 +76,12 @@ module tcb_lib_misaligned_single_cycle_memory
 
   // request/response address segment
   assign req_off = sub.dly[0          ].off;
-  assign rsp_off = sub.dly[sub.PHY.DLY].off;
+  assign rsp_off = sub.dly[sub.HSK_DLY].off;
 
   // mask unaligned address bits
   generate
-    if (sub.PHY.ALN > 0) begin: alignment
-      assign man.req.adr = {sub.req.adr[sub.PHY.ADR-1:sub.PHY.ALN], sub.PHY.ALN'('0)};
+    if (sub.BUS.ALN > 0) begin: alignment
+      assign man.req.adr = {sub.req.adr[sub.BUS.ADR-1:sub.BUS.ALN], sub.BUS.ALN'('0)};
     end: alignment
     else begin
       assign man.req.adr = sub.req.adr;
@@ -94,11 +94,11 @@ module tcb_lib_misaligned_single_cycle_memory
 
   // request/response endianness
   assign req_ndn = sub.req             .ndn;
-  assign rsp_ndn = sub.dly[sub.PHY.DLY].ndn;
+  assign rsp_ndn = sub.dly[sub.HSK_DLY].ndn;
 
   // logarithmic size mode (subordinate interface) byte enable
   always_comb
-  for (int unsigned i=0; i<sub.PHY_BEN; i++) begin: logsize2byteena
+  for (int unsigned i=0; i<sub.BUS_BEN; i++) begin: logsize2byteena
     sub_req_ben[i] = (i < 2**sub.req.siz) ? 1'b1 : 1'b0;
   end: logsize2byteena
 
@@ -109,15 +109,15 @@ module tcb_lib_misaligned_single_cycle_memory
   // TODO: do not implement rotations if misaligned accesses are not implemented.
   // request path multiplexer (little/big endian)
   always_comb
-  for (int unsigned i=0; i<sub.PHY_BEN; i++) begin: req_logsize2byteena
+  for (int unsigned i=0; i<sub.BUS_BEN; i++) begin: req_logsize2byteena
     unique case (sub.req.ndn)
       TCB_LITTLE: begin
-        man.req.ben[i] = sub_req_ben[(            (i-req_off)) % sub.PHY_BEN];
-        man_req_wdt[i] = sub_req_wdt[(            (i-req_off)) % sub.PHY_BEN];
+        man.req.ben[i] = sub_req_ben[(            (i-req_off)) % sub.BUS_BEN];
+        man_req_wdt[i] = sub_req_wdt[(            (i-req_off)) % sub.BUS_BEN];
       end
       TCB_BIG   : begin
-        man.req.ben[i] = sub_req_ben[(sub.PHY_BEN-(i-req_off)) % sub.PHY_BEN];
-        man_req_wdt[i] = sub_req_wdt[(sub.PHY_BEN-(i-req_off)) % sub.PHY_BEN];
+        man.req.ben[i] = sub_req_ben[(sub.BUS_BEN-(i-req_off)) % sub.BUS_BEN];
+        man_req_wdt[i] = sub_req_wdt[(sub.BUS_BEN-(i-req_off)) % sub.BUS_BEN];
       end
     endcase
   end: req_logsize2byteena
@@ -126,13 +126,13 @@ module tcb_lib_misaligned_single_cycle_memory
   // TODO: do not implement rotations if misaligned accesses are not implemented.
   // request path multiplexer (little/big endian)
   always_comb
-  for (int unsigned i=0; i<sub.PHY_BEN; i++) begin: rsp_logsize2byteena
+  for (int unsigned i=0; i<sub.BUS_BEN; i++) begin: rsp_logsize2byteena
     unique case (sub.req.ndn)
       TCB_LITTLE: begin
-        sub_rsp_rdt[i] = man_rsp_rdt[(            (i+rsp_off)) % sub.PHY_BEN];
+        sub_rsp_rdt[i] = man_rsp_rdt[(            (i+rsp_off)) % sub.BUS_BEN];
       end
       TCB_BIG   : begin
-        sub_rsp_rdt[i] = man_rsp_rdt[(sub.PHY_BEN-(i+rsp_off)) % sub.PHY_BEN];
+        sub_rsp_rdt[i] = man_rsp_rdt[(sub.BUS_BEN-(i+rsp_off)) % sub.BUS_BEN];
       end
     endcase
   end: rsp_logsize2byteena

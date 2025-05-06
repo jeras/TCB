@@ -28,10 +28,10 @@ package tcb_vip_transaction_pkg;
 
   class tcb_vip_transaction_c #(
     // handshake parameter
-    parameter  int unsigned DLY = TCB_DLY_DEF,    // response delay
-    // PHY parameters (combined into a structure)
-    parameter  type phy_t = tcb_phy_t,  // PHY parameter type
-    parameter  phy_t PHY = TCB_PHY_DEF,
+    parameter  int unsigned HSK_DLY = TCB_HSK_DEF,    // response delay
+    // BUS parameters (combined into a structure)
+    parameter  type bus_t = tcb_bus_t,  // BUS parameter type
+    parameter  bus_t BUS = TCB_BUS_DEF,
     // request/response structure types
     parameter  type req_t = tcb_req_t,  // request
     parameter  type rsp_t = tcb_rsp_t,  // response
@@ -40,9 +40,9 @@ package tcb_vip_transaction_pkg;
     // debugging options
     parameter  bit  DEBUG = 1'b0
   ) extends tcb_vip_transfer_c #(
-    .DLY   (DLY),
-    .phy_t (phy_t),
-    .PHY   (PHY),
+    .HSK_DLY   (HSK_DLY),
+    .bus_t (bus_t),
+    .BUS   (BUS),
     .req_t (req_t),
     .rsp_t (rsp_t),
     .VIP   (VIP),
@@ -68,18 +68,18 @@ package tcb_vip_transaction_pkg;
     req_t dummy_req;
 
     // local parameters
-    localparam int unsigned PHY_ADR = $bits(dummy_req.adr);
-    localparam int unsigned PHY_DAT = $bits(dummy_req.wdt);
-    localparam int unsigned PHY_BEN = $bits(dummy_req.ben);
-    localparam int unsigned PHY_SIZ = $bits(dummy_req.siz);
-    localparam int unsigned PHY_MAX = $clog2(PHY_BEN);
+    localparam int unsigned BUS_ADR = $bits(dummy_req.adr);
+    localparam int unsigned BUS_DAT = $bits(dummy_req.wdt);
+    localparam int unsigned BUS_BEN = $bits(dummy_req.ben);
+    localparam int unsigned BUS_SIZ = $bits(dummy_req.siz);
+    localparam int unsigned BUS_MAX = $clog2(BUS_BEN);
 
     // TCB transaction request structure
     typedef struct {
       // request
       tcb_cfg_endian_t    ndn;
       logic               wen;
-      logic [PHY_ADR-1:0] adr;
+      logic [BUS_ADR-1:0] adr;
       logic       [8-1:0] wdt [];
     } transaction_req_t;
 
@@ -97,24 +97,24 @@ package tcb_vip_transaction_pkg;
     } transaction_t;
 
     // logarithmic size to byte enable
-    static function automatic logic [PHY_BEN-1:0] siz2ben (
-      input [PHY_SIZ-1:0] siz,
-      input [PHY_MAX-1:0] off = '0
+    static function automatic logic [BUS_BEN-1:0] siz2ben (
+      input [BUS_SIZ-1:0] siz,
+      input [BUS_MAX-1:0] off = '0
     );
       siz2ben = '0;
-      for (int unsigned i=0; i<PHY_BEN; i++) begin
-        siz2ben[(i+off)%PHY_BEN] = (i < 2**siz) ? 1'b1 : 1'b0;
+      for (int unsigned i=0; i<BUS_BEN; i++) begin
+        siz2ben[(i+off)%BUS_BEN] = (i < 2**siz) ? 1'b1 : 1'b0;
       end
     endfunction: siz2ben
 
     // byte enable to logarithmic size
-    static function automatic logic [PHY_BEN-1:0] ben2siz (
-      input [PHY_BEN-1:0] ben,
-      input [PHY_MAX-1:0] off = '0
+    static function automatic logic [BUS_BEN-1:0] ben2siz (
+      input [BUS_BEN-1:0] ben,
+      input [BUS_MAX-1:0] off = '0
     );
       int unsigned cnt = 0;
-      for (int unsigned i=0; i<PHY_BEN; i++) begin
-        if (ben[(i+off)%PHY_BEN])  cnt++;
+      for (int unsigned i=0; i<BUS_BEN; i++) begin
+        if (ben[(i+off)%BUS_BEN])  cnt++;
       end
       ben2siz = $clog2(cnt);
     endfunction: ben2siz
@@ -138,17 +138,17 @@ package tcb_vip_transaction_pkg;
       siz = $clog2(transaction.req.wdt.size());
       assert (transaction.req.wdt.size() == 2**siz) else $error("Data array size is not a power of 2.");
       // transaction length (number of transfer items)
-      if (2**siz < PHY_BEN)  len = 1;
-      else                   len = 2**siz / PHY_BEN;
+      if (2**siz < BUS_BEN)  len = 1;
+      else                   len = 2**siz / BUS_BEN;
 
       // alignment check
       // TODO: implement this later
       ////adr%siz==0
-      //if (PHY.ALN > 0) begin
-      //  logic [PHY.ALN-1:0] adr_alw;
-      //  adr_alw = transaction.req.adr[(PHY.ALN>0?(PHY.ALN-1):0):0];
+      //if (BUS.ALN > 0) begin
+      //  logic [BUS.ALN-1:0] adr_alw;
+      //  adr_alw = transaction.req.adr[(BUS.ALN>0?(BUS.ALN-1):0):0];
       //  if (|adr_alw) begin
-      //    $error("Transaction address is not aligned to supported size. adr[%0d:0]=%0d'b%b", PHY.ALN-1, PHY.ALN, adr_alw);
+      //    $error("Transaction address is not aligned to supported size. adr[%0d:0]=%0d'b%b", BUS.ALN-1, BUS.ALN, adr_alw);
       //  end
       //end
 
@@ -159,9 +159,9 @@ package tcb_vip_transaction_pkg;
         tmp.req.cmd = '{lck: (i == len-1) ? 1'b0 : 1'b1, default: '0};
         tmp.req.wen = transaction.req.wen;
         tmp.req.ndn = transaction.req.ndn;
-        tmp.req.adr = transaction.req.adr + i*PHY_BEN;
-        case (PHY.MOD)
-          TCB_LOG_SIZE:  tmp.req.siz = PHY_MAX;
+        tmp.req.adr = transaction.req.adr + i*BUS_BEN;
+        case (BUS.MOD)
+          TCB_LOG_SIZE:  tmp.req.siz = BUS_MAX;
           TCB_BYTE_ENA:  tmp.req.ben = '1;
         endcase
         // response
@@ -171,10 +171,10 @@ package tcb_vip_transaction_pkg;
         // add transfer to queue
         transfer_queue.push_back(tmp);
       end
-      if (siz < PHY_MAX) begin
-        case (PHY.MOD)
+      if (siz < BUS_MAX) begin
+        case (BUS.MOD)
           TCB_LOG_SIZE:  transfer_queue[0].req.siz = siz;
-          TCB_BYTE_ENA:  transfer_queue[0].req.ben = siz2ben(siz, transaction.req.adr[PHY_MAX-1:0]);  // TODO: this will not work for PHY_MAX = 0
+          TCB_BYTE_ENA:  transfer_queue[0].req.ben = siz2ben(siz, transaction.req.adr[BUS_MAX-1:0]);  // TODO: this will not work for BUS_MAX = 0
         endcase
       end
 
@@ -186,16 +186,16 @@ package tcb_vip_transaction_pkg;
         int unsigned cnt;  // transfer counter
         int unsigned byt;  // byte index
         // transfer counter
-        cnt = i / PHY_BEN;
+        cnt = i / BUS_BEN;
         // mode logarithmic size vs. byte enable
-        case (PHY.MOD)
+        case (BUS.MOD)
           TCB_LOG_SIZE:  byt = i;  // all data bytes are LSB aligned
-          TCB_BYTE_ENA:  byt = (i + transaction.req.adr) % PHY_BEN;
+          TCB_BYTE_ENA:  byt = (i + transaction.req.adr) % BUS_BEN;
         endcase
         // order descending/ascending
-        case (PHY.ORD)
+        case (BUS.ORD)
           TCB_DESCENDING:  byt = byt;                // no change
-          TCB_ASCENDING :  byt = PHY_BEN - 1 - byt;  // reverse byte order
+          TCB_ASCENDING :  byt = BUS_BEN - 1 - byt;  // reverse byte order
         endcase
         // request
         transfer_queue[cnt].req.ben[byt] = 1'b1;
@@ -234,7 +234,7 @@ package tcb_vip_transaction_pkg;
       // transaction length (number of transfer items)
       len = transfer_array.size();
       // data size
-      siz = $clog2(len*PHY_BEN);
+      siz = $clog2(len*BUS_BEN);
 
       // request signals (first transfer)
       transaction.req.wen =                  (transfer_array[0].req.wen);
@@ -247,10 +247,10 @@ package tcb_vip_transaction_pkg;
         // request signals
         assert (transfer_array[i].req.wen == transaction.req.wen            ) else $warning("wen mismatch");
         assert (transfer_array[i].req.ndn == transaction.req.ndn            ) else $warning("ndn mismatch");
-        assert (transfer_array[i].req.adr == transaction.req.adr + i*PHY_BEN) else $warning("adr mismatch");
-        case (PHY.MOD)
+        assert (transfer_array[i].req.adr == transaction.req.adr + i*BUS_BEN) else $warning("adr mismatch");
+        case (BUS.MOD)
           TCB_LOG_SIZE:  siz += transfer_array[0].req.siz;
-          TCB_BYTE_ENA:  siz += ben2siz(transfer_array[0].req.ben, transaction.req.adr[PHY_MAX-1:0]);  // TODO: this will not work for PHY_MAX = 0
+          TCB_BYTE_ENA:  siz += ben2siz(transfer_array[0].req.ben, transaction.req.adr[BUS_MAX-1:0]);  // TODO: this will not work for BUS_MAX = 0
         endcase
         // response status
         transaction.rsp.sts |= transfer_array[i].rsp.sts;
@@ -267,16 +267,16 @@ package tcb_vip_transaction_pkg;
         int unsigned byt;  // byte index
         int unsigned cnt;  // transfer counter
         // transfer counter
-        cnt = i / PHY_BEN;
+        cnt = i / BUS_BEN;
         // mode logarithmic size vs. byte enable
-        case (PHY.MOD)
-          TCB_LOG_SIZE:  byt =  i                                % PHY_BEN;  // all data bytes are LSB aligned
-          TCB_BYTE_ENA:  byt = (i + transfer_array[cnt].req.adr) % PHY_BEN;
+        case (BUS.MOD)
+          TCB_LOG_SIZE:  byt =  i                                % BUS_BEN;  // all data bytes are LSB aligned
+          TCB_BYTE_ENA:  byt = (i + transfer_array[cnt].req.adr) % BUS_BEN;
         endcase
         // order descending/ascending
-        case (PHY.ORD)
+        case (BUS.ORD)
           TCB_DESCENDING:  byt = byt;                // no change
-          TCB_ASCENDING :  byt = PHY_BEN - 1 - byt;  // reverse byte order
+          TCB_ASCENDING :  byt = BUS_BEN - 1 - byt;  // reverse byte order
         endcase
         // request endianness
         case (transfer_array[cnt].req.ndn)

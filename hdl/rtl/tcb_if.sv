@@ -20,10 +20,10 @@ interface tcb_if
   import tcb_pkg::*;
 #(
   // handshake parameter
-  parameter  int unsigned DLY = TCB_DLY_DEF,  // response delay
-  // PHY parameters (combined into a structure)
-  parameter  type phy_t = tcb_phy_t,  // PHY parameter type
-  parameter  phy_t PHY = TCB_PHY_DEF,
+  parameter  int unsigned HSK_DLY = TCB_HSK_DEF,  // response delay
+  // bus parameters (combined into a structure)
+  parameter  type bus_t = tcb_bus_t,  // bus parameter type
+  parameter  bus_t BUS = TCB_BUS_DEF,
   // request/response structure types
   parameter  type req_t = tcb_req_t,  // request
   parameter  type rsp_t = tcb_rsp_t,  // response
@@ -52,11 +52,11 @@ interface tcb_if
 ////////////////////////////////////////////////////////////////////////////////
 
   // TODO: rethink whether this fits here, since it depends on req_t
-  localparam int unsigned PHY_ADR = $bits(req.adr);
-  localparam int unsigned PHY_DAT = $bits(req.wdt);
-  localparam int unsigned PHY_BEN = $bits(req.ben);
-  localparam int unsigned PHY_SIZ = $bits(req.siz);
-  localparam int unsigned PHY_MAX = $clog2(PHY_BEN);
+  localparam int unsigned BUS_ADR = $bits(req.adr);
+  localparam int unsigned BUS_DAT = $bits(req.wdt);
+  localparam int unsigned BUS_BEN = $bits(req.ben);
+  localparam int unsigned BUS_SIZ = $bits(req.siz);
+  localparam int unsigned BUS_MAX = $clog2(BUS_BEN);
 
 ////////////////////////////////////////////////////////////////////////////////
 // transaction handshake and misalignment logic
@@ -81,13 +81,13 @@ interface tcb_if
 // request/response delay
 ////////////////////////////////////////////////////////////////////////////////
 
-  logic trn_dly [0:DLY];
-  req_t req_dly [0:DLY];
-  rsp_t rsp_dly [0:DLY];
+  logic trn_dly [0:HSK_DLY];
+  req_t req_dly [0:HSK_DLY];
+  rsp_t rsp_dly [0:HSK_DLY];
 
   generate
     // delay line
-    for (genvar i=0; i<=DLY; i++) begin: dly
+    for (genvar i=0; i<=HSK_DLY; i++) begin: dly
       // handshake transfer
       if (i==0) begin: dly_0
         // continuous assignment
@@ -108,10 +108,10 @@ interface tcb_if
 
     if (VIP) begin: vip
       // continuous assignment
-      if (DLY == 0) begin
-        assign rsp = trn ? rsp_dly[DLY] : '{default: 'x};
+      if (HSK_DLY == 0) begin
+        assign rsp = trn ? rsp_dly[HSK_DLY] : '{default: 'x};
       end else begin
-        assign rsp =       rsp_dly[DLY];
+        assign rsp =       rsp_dly[HSK_DLY];
       end
     end: vip
 

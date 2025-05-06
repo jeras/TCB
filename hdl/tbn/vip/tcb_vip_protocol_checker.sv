@@ -27,8 +27,8 @@ module tcb_vip_protocol_checker (
 // local signals
 ////////////////////////////////////////////////////////////////////////////////
 
-  // TCB system bus delayed by DLY clock periods
-  tcb_if #(.PHY (tcb.PHY)) dly (.clk (tcb.clk), .rst (tcb.rst));
+  // TCB system bus delayed by HSK_DLY clock periods
+  tcb_if #(.BUS (tcb.BUS)) dly (.clk (tcb.clk), .rst (tcb.rst));
 
 ////////////////////////////////////////////////////////////////////////////////
 // protocol monitor
@@ -56,7 +56,7 @@ module tcb_vip_protocol_checker (
         assert (!$isunknown(tcb.rdy)) else $fatal(0, "TCB %m: tcb.rdy is unknown during a valid cycle.");
         // write enable defined/driven     
         assert (!$isunknown(tcb.req.wen)) else $fatal(0, "TCB %m: tcb.req.wen is unknown during a cycle.");
-        case (tcb.PHY.MOD)
+        case (tcb.BUS.MOD)
           TCB_LOG_SIZE: assert (!$isunknown(tcb.req.siz)) else $fatal(0, "TCB %m: tcb.req.siz is unknown during a cycle.");
           TCB_BYTE_ENA: assert (!$isunknown(tcb.req.ben)) else $fatal(0, "TCB %m: tcb.req.ben is unknown during a cycle.");
         endcase
@@ -66,7 +66,7 @@ module tcb_vip_protocol_checker (
       if (tcb.stl) begin
         assert ($stable(tcb.req)) else $fatal(0, "TCB %m: tcb.req is unstable during a stall.");
       end
-      // read data hold (DLY>1)
+      // read data hold (HSK_DLY>1)
       // TODO
     end
   end

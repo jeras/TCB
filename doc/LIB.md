@@ -156,7 +156,7 @@ and other HDL languages also have constructs with equivalent functionality.
 
 | parameter     | type           | default | description |
 |---------------|----------------|---------|-------------|
-| `DLY`         | `int unsigned` | `'d1`   | Read delay. |
+| `HSK_DLY`         | `int unsigned` | `'d1`   | Read delay. |
 | `CFG_REQ_REG` | `bit`          | `1'b0`  | Configuration: enable REQest REGister. |
 | `CFG_RSP_REG` | `bit`          | `1'b1`  | Configuration: enable ReSPonse REGister. |
 | `CFG_ENR_CFG` | `bit`          | `1'b1`  | Configuration: ENable Read access to ConFiGuration registers. |

@@ -26,10 +26,10 @@ package tcb_vip_transfer_pkg;
 
   class tcb_vip_transfer_c #(
     // handshake parameter
-    parameter  int unsigned DLY = TCB_DLY_DEF,    // response delay
-    // PHY parameters (combined into a structure)
-    parameter  type phy_t = tcb_phy_t,  // PHY parameter type
-    parameter  phy_t PHY = TCB_PHY_DEF,
+    parameter  int unsigned HSK_DLY = TCB_HSK_DEF,    // response delay
+    // BUS parameters (combined into a structure)
+    parameter  type bus_t = tcb_bus_t,  // BUS parameter type
+    parameter  bus_t BUS = TCB_BUS_DEF,
     // request/response structure types
     parameter  type req_t = tcb_req_t,  // request
     parameter  type rsp_t = tcb_rsp_t,  // response
@@ -45,9 +45,9 @@ package tcb_vip_transfer_pkg;
 
     // virtual interface type definition
     typedef virtual tcb_if #(
-      .DLY   (DLY),
-      .phy_t (phy_t),
-      .PHY   (PHY),
+      .HSK_DLY   (HSK_DLY),
+      .bus_t (bus_t),
+      .BUS   (BUS),
       .req_t (req_t),
       .rsp_t (rsp_t),
       .VIP   (VIP)
@@ -206,7 +206,7 @@ package tcb_vip_transfer_pkg;
         @(posedge tcb.clk);
       end while (~tcb.trn);
       // delay
-      repeat (tcb.DLY) @(posedge tcb.clk);
+      repeat (tcb.HSK_DLY) @(posedge tcb.clk);
       // sample response
       itm.rsp = tcb.rsp;
       if (DEBUG)  $info("DEBUG: %t: handshake_delay end ID = \"%s\".", $realtime, itm.id);
@@ -256,9 +256,9 @@ package tcb_vip_transfer_pkg;
         // wait for delayed transfer
         do begin
           @(posedge tcb.clk);
-        end while (~tcb.trn_dly[tcb.DLY]);
+        end while (~tcb.trn_dly[tcb.HSK_DLY]);
         // sample delayed request and response
-        transfer_queue.push_back('{req: tcb.req_dly[tcb.DLY], rsp: tcb.rsp, default: 'x});
+        transfer_queue.push_back('{req: tcb.req_dly[tcb.HSK_DLY], rsp: tcb.rsp, default: 'x});
       end: loop
       if (DEBUG)  $info("DEBUG: %t: transfer_monitor stopped.", $realtime);
     endtask: transfer_monitor

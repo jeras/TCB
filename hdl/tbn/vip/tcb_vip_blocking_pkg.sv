@@ -30,10 +30,10 @@ package tcb_vip_blocking_pkg;
 
   class tcb_vip_blocking_c #(
     // handshake parameter
-    parameter  int unsigned DLY = TCB_DLY_DEF,  // response delay
-    // PHY parameters (combined into a structure)
-    parameter  type phy_t = tcb_phy_t,  // PHY parameter type
-    parameter  phy_t PHY = TCB_PHY_DEF,
+    parameter  int unsigned HSK_DLY = TCB_HSK_DEF,  // response delay
+    // BUS parameters (combined into a structure)
+    parameter  type bus_t = tcb_bus_t,  // BUS parameter type
+    parameter  bus_t BUS = TCB_BUS_DEF,
     // request/response structure types
     parameter  type req_t = tcb_req_t,  // request
     parameter  type rsp_t = tcb_rsp_t,  // response
@@ -44,9 +44,9 @@ package tcb_vip_blocking_pkg;
     // debugging options
     parameter  bit  DEBUG = 1'b0
   ) extends tcb_vip_transaction_c #(
-    .DLY   (DLY),
-    .phy_t (phy_t),
-    .PHY   (PHY),
+    .HSK_DLY   (HSK_DLY),
+    .bus_t (bus_t),
+    .BUS   (BUS),
     .req_t (req_t),
     .rsp_t (rsp_t),
     .VIP   (VIP),

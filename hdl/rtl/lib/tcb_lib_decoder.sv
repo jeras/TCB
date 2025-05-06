@@ -20,12 +20,12 @@ module tcb_lib_decoder
   import tcb_pkg::*;
 #(
   // TCB parameters (contains address width)
-  parameter  tcb_phy_t PHY = TCB_PAR_PHY_DEF,
+  parameter  tcb_bus_t BUS = TCB_PAR_BUS_DEF,
   // interconnect parameters (subordinate port number and logarithm)
   parameter  int unsigned SPN = 2,
   localparam int unsigned SPL = $clog2(SPN),
   // decoder address and mask array
-  parameter  logic [PHY.ADR-1:0] DAM [SPN-1:0] = '{default: 'x}
+  parameter  logic [BUS.ADR-1:0] DAM [SPN-1:0] = '{default: 'x}
 )(
   // TCB interfaces
   tcb_if.sub tcb,  // TCB subordinate port (manager device connects here)
@@ -44,7 +44,7 @@ module tcb_lib_decoder
 // local signals
 ////////////////////////////////////////////////////////////////////////////////
 
-  logic [PHY.ADR-1:0] adr;
+  logic [BUS.ADR-1:0] adr;
 
   // extract address from TCB
   assign adr = tcb.req.adr;
@@ -55,8 +55,8 @@ module tcb_lib_decoder
 
 //  // match
 //  function [SPN-1:0] match (
-//    logic [PHY.ADR-1:0] val,           // input
-//    logic [PHY.ADR-1:0] mch [SPN-1:0]   // matching reference
+//    logic [BUS.ADR-1:0] val,           // input
+//    logic [BUS.ADR-1:0] mch [SPN-1:0]   // matching reference
 //  );
 //    for (int unsigned i=0; i<SPN; i++) begin
 //      assign match[i] = val ==? mch[i];

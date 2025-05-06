@@ -19,109 +19,78 @@
 package tcb_pkg;
 
 ////////////////////////////////////////////////////////////////////////////////
-// handshake
+// handshake layer (defines the response delay)
 ////////////////////////////////////////////////////////////////////////////////
 
-  // delay default value
-  localparam int unsigned TCB_DLY_DEF = 1;
+  // handshake delay (HSK_DLY) default value
+  localparam int unsigned TCB_HSK_DEF = 1;
 
 ////////////////////////////////////////////////////////////////////////////////
-// size/mode/order/channel (used for compile time parameters)
+// bus layer (defines which signal subset is used)
 ////////////////////////////////////////////////////////////////////////////////
 
-  // data position mode
+  // data position/sizing mode
   typedef enum bit {
     TCB_LOG_SIZE = 1'b0,  // logarithmic size
     TCB_BYTE_ENA = 1'b1   // byte enable
-  } tcb_phy_mode_t;
+  } tcb_bus_mode_t;
+
+  // channel configuration
+  typedef enum bit [2-1:0] {
+    // 2 bit value {rd,wr}
+    TCB_HALF_DUPLEX = 2'b00,  // half duplex read/write (wen is used to distinguish between write and read)
+    TCB_FULL_DUPLEX = 2'b11,  // full duplex read/write (wen/ren are both used)
+    TCB_WRITE_ONLY  = 2'b01,  // write only channel (wen/ren are both ignored)
+    TCB_READ_ONLY   = 2'b10   // read  only channel (wen/ren are both ignored)
+  } tcb_bus_channel_t;
+
+//  // prefetch configuration
+//  typedef enum bit {
+//    TCB_PREFETCH = 1'b0,  // logarithmic size
+//    TCB_PREFETCH = 1'b1   // byte enable
+//  } tcb_bus_prefetch_t;
+
+////////////////////////////////////////////////////////////////////////////////
+// protocol layer (defines the relations between bus signals)
+////////////////////////////////////////////////////////////////////////////////
 
   // byte order
   typedef enum bit {
     TCB_DESCENDING = 1'b0,  // descending order
     TCB_ASCENDING  = 1'b1   //  ascending order
-  } tcb_phy_order_t;
-
-  // channel configuration
-  typedef enum bit [2-1:0] {
-    // 2 bit value {rd,wr}
-    TCB_COMMON_HALF_DUPLEX = 2'b00,  // common channel with half duplex read/write
-    TCB_COMMON_FULL_DUPLEX = 2'b11,  // common channel with full duplex read/write
-    TCB_INDEPENDENT_WRITE  = 2'b01,  // independent write channel
-    TCB_INDEPENDENT_READ   = 2'b10   // independent read channel
-  } tcb_phy_channel_t;
+  } tcb_bus_order_t;
 
 ////////////////////////////////////////////////////////////////////////////////
-// PHY parameter structure
+// bus protocol parameter structure
 ////////////////////////////////////////////////////////////////////////////////
 
-  // physical interface parameter structure
   // TODO: the structure is packed to workaround a Verilator bug
   typedef struct packed {
+    // bus layer
+    tcb_bus_channel_t CHN;  // channel configuration
+    tcb_bus_mode_t    MOD;  // data position mode
     // data packing parameters
     int unsigned      ALN;  // alignment (number of aligned address bits)
     int unsigned      MIN;  // minimum transfer logarithmic size
     int unsigned      OFF;  // number of zeroed offset bits
-    tcb_phy_order_t   ORD;  // byte order
-    tcb_phy_mode_t    MOD;  // data position mode
-    // channel configuration
-    tcb_phy_channel_t CHN;  // channel configuration
-  } tcb_phy_t;
+    tcb_bus_order_t   ORD;  // byte order
+  } tcb_bus_t;
+
+////////////////////////////////////////////////////////////////////////////////
+// BUS parameter structure
+////////////////////////////////////////////////////////////////////////////////
 
   // physical interface parameter default
-  localparam tcb_phy_t TCB_PHY_DEF = '{
+  localparam tcb_bus_t TCB_BUS_DEF = '{
+    // bus layer
+    CHN: TCB_HALF_DUPLEX,
+    MOD: TCB_BYTE_ENA,
     // data packing parameters
     ALN: 0,   // maximum $clog2(DAT/UNT)
     MIN: 0,   // maximum $clog2(DAT/UNT)
     OFF: 0,   // maximum $clog2(DAT/UNT)
-    ORD: TCB_DESCENDING,
-    MOD: TCB_BYTE_ENA,
-    // channel configuration
-    CHN: TCB_COMMON_HALF_DUPLEX
+    ORD: TCB_DESCENDING
   };
-
-////////////////////////////////////////////////////////////////////////////////
-// parameter structure validation tasks functions
-////////////////////////////////////////////////////////////////////////////////
-
-  // status structure
-  typedef struct packed {
-    bit ALN;
-    bit MIN;
-    bit OFF;
-    bit SIZ;
-    bit ORD;
-    bit MOD;
-    bit CHN;
-  } tcb_phy_match_t;
-
-  // check for equivalence
-  function automatic tcb_phy_match (
-    input tcb_phy_t       phy_val,
-    input tcb_phy_t       phy_ref,  // reference can contain wildcard values
-    input tcb_phy_match_t match = '1
-  );
-    // status for each PHY element
-    tcb_phy_match_t status;
-
-    // comparison
-    status.ALN = match ? (phy_val.ALN ==? phy_ref.ALN) : 1'b1;
-    status.MIN = match ? (phy_val.MIN ==? phy_ref.MIN) : 1'b1;
-    status.OFF = match ? (phy_val.OFF ==? phy_ref.OFF) : 1'b1;
-    status.ORD = match ? (phy_val.ORD ==? phy_ref.ORD) : 1'b1;
-    status.MOD = match ? (phy_val.MOD ==? phy_ref.MOD) : 1'b1;
-    status.CHN = match ? (phy_val.CHN ==? phy_ref.CHN) : 1'b1;
-
-    // reporting validation status
-    assert (status.ALN)  $error("TCB PHY parameter mismatch PHY.ALN=%d != PHY.ALN=%d at %m.", phy_val.ALN, phy_ref.ALN);
-    assert (status.MIN)  $error("TCB PHY parameter mismatch PHY.MIN=%d != PHY.MIN=%d at %m.", phy_val.MIN, phy_ref.MIN);
-    assert (status.OFF)  $error("TCB PHY parameter mismatch PHY.OFF=%d != PHY.OFF=%d at %m.", phy_val.OFF, phy_ref.OFF);
-    assert (status.ORD)  $error("TCB PHY parameter mismatch PHY.ORD=%d != PHY.ORD=%d at %m.", phy_val.ORD, phy_ref.ORD);
-    assert (status.MOD)  $error("TCB PHY parameter mismatch PHY.MOD=%d != PHY.MOD=%d at %m.", phy_val.MOD, phy_ref.MOD);
-    assert (status.CHN)  $error("TCB PHY parameter mismatch PHY.CHN=%d != PHY.CHN=%d at %m.", phy_val.CHN, phy_ref.CHN);
-
-    // return simple status
-    return(&status);
-  endfunction: tcb_phy_match
 
 ////////////////////////////////////////////////////////////////////////////////
 // endianness (used for runtime signal values)
@@ -141,7 +110,7 @@ package tcb_pkg;
   typedef struct packed {
     logic inc;  // incremented address
     logic rpt;  // repeated address
-    logic lck;  // arbitration lock
+    logic lck;  // arbitration lock (TODO: rename into frame)
   } tcb_req_cmd_t;
 
   // status

@@ -35,18 +35,18 @@ module tcb_lib_logsize2byteena
   // comparing subordinate and manager interface parameters
   initial
   begin
-    tcb_phy_match_t match = '{MOD: 1'b0, default: 1'b1};
-    // validate TCB PHY.MOD parameter
-    assert (sub.PHY.MOD == TCB_LOG_SIZE)
-      $fatal("ERROR: %m parameter (sub.PHY.MOD = %s) != TCB_LOG_SIZE", sub.PHY.MOD.name());
-    assert (man.PHY.MOD == TCB_BYTE_ENA)
-      $fatal("ERROR: %m parameter (sub.PHY.MOD = %s) != TCB_LOG_SIZE", man.PHY.MOD.name());
-    // TCB PHY.ORD ASCENDING byte order is not supported
-    assert (sub.PHY.MOD != TCB_DESCENDING)
-      $fatal("ERROR: %m parameter (sub.PHY.ORD = %s) != TCB_DESCENDING", sub.PHY.ORD.name());
-    // validate remaining TCB PHY parameters
-    assert tcb_phy_match(sub.PHY, man.PHY, match)
-      $fatal("ERROR: %m parameter (sub.PHY = %p) != (man.PHY = %p)", sub.PHY, man.PHY);
+    tcb_bus_match_t match = '{MOD: 1'b0, default: 1'b1};
+    // validate TCB BUS.MOD parameter
+    assert (sub.BUS.MOD == TCB_LOG_SIZE)
+      $fatal("ERROR: %m parameter (sub.BUS.MOD = %s) != TCB_LOG_SIZE", sub.BUS.MOD.name());
+    assert (man.BUS.MOD == TCB_BYTE_ENA)
+      $fatal("ERROR: %m parameter (sub.BUS.MOD = %s) != TCB_LOG_SIZE", man.BUS.MOD.name());
+    // TCB BUS.ORD ASCENDING byte order is not supported
+    assert (sub.BUS.MOD != TCB_DESCENDING)
+      $fatal("ERROR: %m parameter (sub.BUS.ORD = %s) != TCB_DESCENDING", sub.BUS.ORD.name());
+    // validate remaining TCB BUS parameters
+    assert tcb_bus_match(sub.BUS, man.BUS, match)
+      $fatal("ERROR: %m parameter (sub.BUS = %p) != (man.BUS = %p)", sub.BUS, man.BUS);
   end
 `endif
 
@@ -69,14 +69,14 @@ module tcb_lib_logsize2byteena
 ////////////////////////////////////////////////////////////////////////////////
 
   // request/response data packed arrays
-  logic [sub.PHY_BEN-1:0][8-1:0] sub_req_wdt, sub_rsp_rdt;
-  logic [man.PHY_BEN-1:0][8-1:0] man_req_wdt, man_rsp_rdt;
+  logic [sub.BUS_BEN-1:0][8-1:0] sub_req_wdt, sub_rsp_rdt;
+  logic [man.BUS_BEN-1:0][8-1:0] man_req_wdt, man_rsp_rdt;
 
   // byte enable
-  logic [sub.PHY_BEN-1:0]        sub_req_ben             ;
+  logic [sub.BUS_BEN-1:0]        sub_req_ben             ;
 
   // request/response address segment
-  logic [sub.PHY_MAX-1:0]        req_off,     rsp_off;
+  logic [sub.BUS_MAX-1:0]        req_off,     rsp_off;
 
   // request/response endianness
   logic                          req_ndn,     rsp_ndn;
@@ -86,13 +86,13 @@ module tcb_lib_logsize2byteena
 ////////////////////////////////////////////////////////////////////////////////
 
   // request/response address segment
-  assign req_off = sub.req_dly[0      ].adr[sub.PHY_MAX-1:0];
-  assign rsp_off = sub.req_dly[sub.DLY].adr[sub.PHY_MAX-1:0];
+  assign req_off = sub.req_dly[0      ].adr[sub.BUS_MAX-1:0];
+  assign rsp_off = sub.req_dly[sub.HSK_DLY].adr[sub.BUS_MAX-1:0];
 
   // mask unaligned address bits
   generate
-    if (sub.PHY.ALN > 0) begin: alignment
-      assign man.req.adr = {sub.req.adr[sub.PHY_ADR-1:sub.PHY.ALN], sub.PHY.ALN'('0)};
+    if (sub.BUS.ALN > 0) begin: alignment
+      assign man.req.adr = {sub.req.adr[sub.BUS_ADR-1:sub.BUS.ALN], sub.BUS.ALN'('0)};
     end: alignment
     else begin
       assign man.req.adr = sub.req.adr;
@@ -105,11 +105,11 @@ module tcb_lib_logsize2byteena
 
   // request/response endianness
   assign req_ndn = sub.req             .ndn;
-  assign rsp_ndn = sub.req_dly[sub.DLY].ndn;
+  assign rsp_ndn = sub.req_dly[sub.HSK_DLY].ndn;
 
   // logarithmic size mode (subordinate interface) byte enable
   always_comb
-  for (int unsigned i=0; i<sub.PHY_BEN; i++) begin: logsize2byteena
+  for (int unsigned i=0; i<sub.BUS_BEN; i++) begin: logsize2byteena
     sub_req_ben[i] = (i < 2**sub.req.siz) ? 1'b1 : 1'b0;
   end: logsize2byteena
 
@@ -161,7 +161,7 @@ if (ALIGNED) begin
 //  // read access
 //  always_comb
 //  begin
-//    case (sub.dly[sub.DLY].siz)
+//    case (sub.dly[sub.HSK_DLY].siz)
 //      TCB_BYTE: case (rsp_off)
 //        2'b00:  sub_rsp_rdt = '{0: man_rsp_rdt[0], default: 'x};
 //        2'b01:  sub_rsp_rdt = '{0: man_rsp_rdt[1], default: 'x};
@@ -218,28 +218,28 @@ if (ALIGNED) begin
 
     // byte enable
     always_comb
-    for (int unsigned i=0; i<sub.PHY_BEN; i++) begin: ben
+    for (int unsigned i=0; i<sub.BUS_BEN; i++) begin: ben
       unique case (sub.req.ndn)
-        TCB_LITTLE:  man.req.ben[i] = sub_req_ben[(            (i-req_off)) % sub.PHY_BEN];
-        TCB_BIG   :  man.req.ben[i] = sub_req_ben[(sub.PHY_BEN-(i-req_off)) % sub.PHY_BEN];
+        TCB_LITTLE:  man.req.ben[i] = sub_req_ben[(            (i-req_off)) % sub.BUS_BEN];
+        TCB_BIG   :  man.req.ben[i] = sub_req_ben[(sub.BUS_BEN-(i-req_off)) % sub.BUS_BEN];
       endcase
     end: ben
 
     // write data
     always_comb
-    for (int unsigned i=0; i<sub.PHY_BEN; i++) begin: wdt
+    for (int unsigned i=0; i<sub.BUS_BEN; i++) begin: wdt
       unique case (sub.req.ndn)
-        TCB_LITTLE:  man_req_wdt[i] = sub_req_wdt[(            (i-req_off)) % sub.PHY_BEN];
-        TCB_BIG   :  man_req_wdt[i] = sub_req_wdt[(sub.PHY_BEN-(i-req_off)) % sub.PHY_BEN];
+        TCB_LITTLE:  man_req_wdt[i] = sub_req_wdt[(            (i-req_off)) % sub.BUS_BEN];
+        TCB_BIG   :  man_req_wdt[i] = sub_req_wdt[(sub.BUS_BEN-(i-req_off)) % sub.BUS_BEN];
       endcase
     end: wdt
 
     // read data
     always_comb
-    for (int unsigned i=0; i<sub.PHY_BEN; i++) begin: rdt
+    for (int unsigned i=0; i<sub.BUS_BEN; i++) begin: rdt
       unique case (sub.req.ndn)
-        TCB_LITTLE:  sub_rsp_rdt[i] = man_rsp_rdt[(            (i+rsp_off)) % sub.PHY_BEN];
-        TCB_BIG   :  sub_rsp_rdt[i] = man_rsp_rdt[(sub.PHY_BEN-(i+rsp_off)) % sub.PHY_BEN];
+        TCB_LITTLE:  sub_rsp_rdt[i] = man_rsp_rdt[(            (i+rsp_off)) % sub.BUS_BEN];
+        TCB_BIG   :  sub_rsp_rdt[i] = man_rsp_rdt[(sub.BUS_BEN-(i+rsp_off)) % sub.BUS_BEN];
       endcase
     end: rdt
 
