@@ -31,9 +31,12 @@ package tcb_vip_blocking_pkg;
   class tcb_vip_blocking_c #(
     // handshake parameter
     parameter  int unsigned HSK_DLY = TCB_HSK_DEF,  // response delay
-    // BUS parameters (combined into a structure)
-    parameter  type bus_t = tcb_bus_t,  // BUS parameter type
+    // bus parameters (combined into a structure)
+    parameter  type bus_t = tcb_bus_t,  // bus parameter type
     parameter  bus_t BUS = TCB_BUS_DEF,
+    // packing parameters
+    parameter  type pck_t = tcb_pck_t,  // packing parameter type
+    parameter  pck_t PCK = TCB_PCK_DEF,
     // request/response structure types
     parameter  type req_t = tcb_req_t,  // request
     parameter  type rsp_t = tcb_rsp_t,  // response
@@ -44,13 +47,15 @@ package tcb_vip_blocking_pkg;
     // debugging options
     parameter  bit  DEBUG = 1'b0
   ) extends tcb_vip_transaction_c #(
-    .HSK_DLY   (HSK_DLY),
-    .bus_t (bus_t),
-    .BUS   (BUS),
-    .req_t (req_t),
-    .rsp_t (rsp_t),
-    .VIP   (VIP),
-    .DEBUG (DEBUG)
+    .HSK_DLY (HSK_DLY),
+    .bus_t   (bus_t),
+    .BUS     (BUS),
+    .pck_t   (pck_t),
+    .PCK     (PCK),
+    .req_t   (req_t),
+    .rsp_t   (rsp_t),
+    .VIP     (VIP),
+    .DEBUG   (DEBUG)
   );
 
     //constructor
@@ -68,7 +73,7 @@ package tcb_vip_blocking_pkg;
   // local state
   //////////////////////////////////////////////////////////////////////////////
 
-    static tcb_cfg_endian_t ndn = TCB_LITTLE;
+    static tcb_endian_t ndn = TCB_LITTLE;
 
   //////////////////////////////////////////////////////////////////////////////
   // transaction sequence blocking API

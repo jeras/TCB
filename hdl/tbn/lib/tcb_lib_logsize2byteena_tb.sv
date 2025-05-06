@@ -20,40 +20,46 @@ module tcb_lib_logsize2byteena_tb
   import tcb_pkg::*;
   import tcb_vip_blocking_pkg::*;
 #(
-  // protocol
-  parameter  int unsigned      HSK_DLY     = TCB_HSK_DEF,      // response delay
-  // data packing parameters for manager/subordinate
-  parameter  int unsigned      BUS_ALN = TCB_BUS_DEF.ALN,  // TODO
-  parameter  int unsigned      BUS_MIN = TCB_BUS_DEF.MIN,  // TODO
-  parameter  int unsigned      BUS_OFF = TCB_BUS_DEF.OFF,  // TODO
-  parameter  tcb_bus_mode_t    BUS_MOD = TCB_BUS_DEF.MOD,  // manager     data position mode
-  parameter  tcb_bus_order_t   BUS_ORD = TCB_BUS_DEF.ORD,  // manager     byte order
-  // channel configuration
-  parameter  tcb_bus_channel_t BUS_CHN = TCB_BUS_DEF.CHN  // channel configuration
+  // handshake parameter
+  parameter  int unsigned      HSK_DLY = TCB_HSK_DEF      // response delay
+//  // bus parameters
+//  parameter  tcb_bus_channel_t BUS_CHN = TCB_BUS_DEF.CHN,  // channel configuration
+//  parameter  tcb_bus_mode_t    BUS_MOD = TCB_BUS_DEF.MOD,  // manager     data position mode
+//  // data packing parameters for manager/subordinate
+//  parameter  int unsigned      BUS_ALN = TCB_BUS_DEF.ALN,  // TODO
+//  parameter  int unsigned      BUS_MIN = TCB_BUS_DEF.MIN,  // TODO
+//  parameter  int unsigned      BUS_OFF = TCB_BUS_DEF.OFF,  // TODO
+//  parameter  tcb_pck_order_t   PCK_ORD = TCB_BUS_DEF.ORD   // manager     byte order
 );
 
+  // physical interface parameter default
   localparam tcb_bus_t TCB_BUS_SIZ = '{
-    // data packing parameters
-    ALN: 2,
-    MIN: 0,
-    OFF: 0,
-    MOD: TCB_LOG_SIZE,
-    ORD: BUS_ORD,
-    // channel configuration
-    CHN: BUS_CHN
+    FRM: TCB_FRM_ENABLED,
+    CHN: TCB_CHN_HALF_DUPLEX,
+    PRF: TCB_PRF_ENABLED,
+    NXT: TCB_NXT_ENABLED,
+    MOD: TCB_MOD_LOG_SIZE,
+    NDN: TCB_NDN_BI_NDN
   };
 
+  // physical interface parameter default
   localparam tcb_bus_t TCB_BUS_BEN = '{
-    // data packing parameters
+    FRM: TCB_FRM_ENABLED,
+    CHN: TCB_CHN_HALF_DUPLEX,
+    PRF: TCB_PRF_ENABLED,
+    NXT: TCB_NXT_ENABLED,
+    MOD: TCB_MOD_BYTE_ENA,
+    NDN: TCB_NDN_BI_NDN
+  };
+
+  // physical interface parameter default
+  localparam tcb_pck_t TCB_PCK = '{
     ALN: 2,
     MIN: 0,
     OFF: 0,
-    MOD: TCB_BYTE_ENA,
-    ORD: BUS_ORD,
-    // channel configuration
-    CHN: BUS_CHN
+    ORD: TCB_ORD_DESCENDING
   };
-
+  
 ////////////////////////////////////////////////////////////////////////////////
 // local signals
 ////////////////////////////////////////////////////////////////////////////////
@@ -63,13 +69,13 @@ module tcb_lib_logsize2byteena_tb
   logic rst = 1'b1;  // reset
 
   // TCB interfaces
-  tcb_if #(HSK_DLY, tcb_bus_t, TCB_BUS_SIZ, tcb_req_t, tcb_rsp_t) tcb_man       (.clk (clk), .rst (rst));
-  tcb_if #(HSK_DLY, tcb_bus_t, TCB_BUS_BEN, tcb_req_t, tcb_rsp_t) tcb_sub       (.clk (clk), .rst (rst));
-  tcb_if #(HSK_DLY, tcb_bus_t, TCB_BUS_BEN, tcb_req_t, tcb_rsp_t) tcb_mem [0:0] (.clk (clk), .rst (rst));
+  tcb_if #(HSK_DLY, tcb_bus_t, TCB_BUS_SIZ, tcb_pck_t, TCB_PCK, tcb_req_t, tcb_rsp_t) tcb_man       (.clk (clk), .rst (rst));
+  tcb_if #(HSK_DLY, tcb_bus_t, TCB_BUS_BEN, tcb_pck_t, TCB_PCK, tcb_req_t, tcb_rsp_t) tcb_sub       (.clk (clk), .rst (rst));
+  tcb_if #(HSK_DLY, tcb_bus_t, TCB_BUS_BEN, tcb_pck_t, TCB_PCK, tcb_req_t, tcb_rsp_t) tcb_mem [0:0] (.clk (clk), .rst (rst));
 
   // parameterized class specialization
-  typedef tcb_vip_blocking_c #(HSK_DLY, tcb_bus_t, TCB_BUS_SIZ, tcb_req_t, tcb_rsp_t) tcb_vip_siz_s;
-  typedef tcb_vip_blocking_c #(HSK_DLY, tcb_bus_t, TCB_BUS_BEN, tcb_req_t, tcb_rsp_t) tcb_vip_ben_s;
+  typedef tcb_vip_blocking_c #(HSK_DLY, tcb_bus_t, TCB_BUS_SIZ, tcb_pck_t, TCB_PCK, tcb_req_t, tcb_rsp_t) tcb_vip_siz_s;
+  typedef tcb_vip_blocking_c #(HSK_DLY, tcb_bus_t, TCB_BUS_BEN, tcb_pck_t, TCB_PCK, tcb_req_t, tcb_rsp_t) tcb_vip_ben_s;
 
   // TCB class objects
   tcb_vip_siz_s obj_man = new(tcb_man, "MAN");

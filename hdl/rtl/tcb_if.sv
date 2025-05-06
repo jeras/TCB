@@ -24,6 +24,9 @@ interface tcb_if
   // bus parameters (combined into a structure)
   parameter  type bus_t = tcb_bus_t,  // bus parameter type
   parameter  bus_t BUS = TCB_BUS_DEF,
+  // packing parameters
+  parameter  type pck_t = tcb_pck_t,  // packing parameter type
+  parameter  pck_t PCK = TCB_PCK_DEF,
   // request/response structure types
   parameter  type req_t = tcb_req_t,  // request
   parameter  type rsp_t = tcb_rsp_t,  // response

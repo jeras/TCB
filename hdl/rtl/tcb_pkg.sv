@@ -53,7 +53,7 @@ package tcb_pkg;
   // endianness configuration
   typedef enum bit [2-1:0] {
     TCB_NDN_LITTLE = 2'b00,  // little endian only
-    TCB_NDN_BIG    = 2'b00,  // big    endian only
+    TCB_NDN_BIG    = 2'b01,  // big    endian only
     TCB_NDN_BI_NDN = 2'b10   // bi-    endian support
   //BCB_NDN_RSV    = 2'b11   // reserved
   } tcb_bus_endian_t;
@@ -96,14 +96,14 @@ package tcb_pkg;
   };
 
 ////////////////////////////////////////////////////////////////////////////////
-// packaging layer (defines the relations between bus signals)
+// packing layer (defines the relations between bus signals)
 ////////////////////////////////////////////////////////////////////////////////
 
   // byte order
   typedef enum bit {
     TCB_ORD_DESCENDING = 1'b0,  // descending order
     TCB_ORD_ASCENDING  = 1'b1   //  ascending order
-  } tcb_pkg_order_t;
+  } tcb_pck_order_t;
 
   // bus parameter structure
   `ifdef VERILATOR
@@ -114,22 +114,22 @@ package tcb_pkg;
     int unsigned      ALN;  // alignment (number of aligned address bits)
     int unsigned      MIN;  // minimum transfer logarithmic size
     int unsigned      OFF;  // number of zeroed offset bits
-    tcb_pkg_order_t   ORD;  // byte order
-  } tcb_pkg_t;
+    tcb_pck_order_t   ORD;  // byte order
+  } tcb_pck_t;
 
   // physical interface parameter default
-  localparam tcb_pkg_t TCB_PKG_DEF = '{
+  localparam tcb_pck_t TCB_PCK_DEF = '{
     ALN: 0,   // maximum $clog2(BUS_DAT/8)
     MIN: 0,   // maximum $clog2(BUS_DAT/8)
     OFF: 0,   // maximum $clog2(BUS_DAT/8)
     ORD: TCB_ORD_DESCENDING
   };
 
-  // endianness packaging (used for runtime signal values)
+  // endianness packing (used for runtime signal values)
   typedef enum logic {
     TCB_LITTLE = 1'b0,  // little-endian
     TCB_BIG    = 1'b1   // big-endian
-  } tcb_pkg_endian_t;
+  } tcb_endian_t;
 
 ////////////////////////////////////////////////////////////////////////////////
 // default structures containing all optional signals
@@ -140,17 +140,11 @@ package tcb_pkg;
     logic err;  // error response
   } tcb_rsp_sts_t;
 
-  tcb_bus_framing_t  FRM;  // framing configuration
-  tcb_bus_channel_t  CHN;  // channel configuration
-  tcb_bus_prefetch_t PRF;  // prefetch configuration
-  tcb_bus_next_t     NXT;  // next address configuration
-  tcb_bus_mode_t     MOD;  // data sizing mode
-  tcb_bus_endian_t   NDN;  // endianness configuration
-
   // request
   typedef struct packed {
     // framing
     logic                frm;  // frame
+    logic                len;  // frame length
     // channel
     logic                wen;  // write enable
     logic                ren;  // read enable
@@ -160,16 +154,16 @@ package tcb_pkg;
     // address and next address
     logic       [32-1:0] adr;  // current address
     logic       [32-1:0] nxt;  // next address
-
+    // data sizing
     logic        [2-1:0] siz;  // logarithmic transfer size
     logic        [4-1:0] ben;  // byte enable
-
+    // endianness
     logic                ndn;  // endianness
-    logic       [32-1:0] adr;  // address
+    // data
     logic [4-1:0][8-1:0] wdt;  // write data
   } tcb_req_t;
 
-  // request
+  // response
   typedef struct packed {
     logic [4-1:0][8-1:0] rdt;  // read data
     tcb_rsp_sts_t        sts;  // status

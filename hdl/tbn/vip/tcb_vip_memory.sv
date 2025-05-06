@@ -133,11 +133,11 @@ module tcb_vip_memory
         if (tcb[i].req.wen) begin: write
           for (int unsigned b=0; b<BEN; b++) begin: bytes
             case (tcb[i].BUS.MOD)
-              TCB_LOG_SIZE: begin: log_size
+              TCB_MOD_LOG_SIZE: begin: log_size
                 // write only transfer size bytes
                 if (b < siz)  mem[(adr+b)%SIZ] <= wdt[b];
               end: log_size
-              TCB_BYTE_ENA: begin: byte_ena
+              TCB_MOD_BYTE_ENA: begin: byte_ena
                 // write only enabled bytes
                 if (tcb[i].req.ben[(adr+b)%BEN])  mem[(adr+b)%SIZ] <= wdt[(adr+b)%BEN];
               end: byte_ena
@@ -154,12 +154,12 @@ module tcb_vip_memory
       if (~tcb[i].req.wen) begin: read
         for (int unsigned b=0; b<BEN; b++) begin: bytes
           case (tcb[i].BUS.MOD)
-            TCB_LOG_SIZE: begin: log_size
+            TCB_MOD_LOG_SIZE: begin: log_size
               // read only transfer size bytes, the rest remains undefined
               if (b < siz)  rdt[0][b] = mem[(adr+b)%SIZ];
               else          rdt[0][b] = 'x;
             end: log_size
-            TCB_BYTE_ENA: begin: byte_ena
+            TCB_MOD_BYTE_ENA: begin: byte_ena
               // read only enabled bytes, the rest remains undefined
               if (tcb[i].req.ben[(adr+b)%BEN])  rdt[0][(adr+b)%BEN] = mem[(adr+b)%SIZ];
               else                              rdt[0][(adr+b)%BEN] = 'x;
@@ -181,10 +181,10 @@ module tcb_vip_memory
       always @(posedge tcb[i].clk)
       begin
         case (tcb[i].BUS.MOD)
-          TCB_LOG_SIZE: begin: log_size
+          TCB_MOD_LOG_SIZE: begin: log_size
             rdt[d] <= rdt[d-1];
           end: log_size
-          TCB_BYTE_ENA: begin: byte_ena
+          TCB_MOD_BYTE_ENA: begin: byte_ena
             for (int unsigned b=0; b<BEN; b++) begin: bytes
               // TODO
 //              if (tcb[i].dly[d-1].ben[b]) begin

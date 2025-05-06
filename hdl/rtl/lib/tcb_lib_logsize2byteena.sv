@@ -60,7 +60,7 @@ module tcb_lib_logsize2byteena
   assign man.vld = sub.vld;
 
   // request
-  assign man.req.cmd = sub.req.cmd;
+  assign man.req.frm = sub.req.frm;
   assign man.req.wen = sub.req.wen;
   assign man.req.ndn = sub.req.ndn;
 
@@ -86,13 +86,13 @@ module tcb_lib_logsize2byteena
 ////////////////////////////////////////////////////////////////////////////////
 
   // request/response address segment
-  assign req_off = sub.req_dly[0      ].adr[sub.BUS_MAX-1:0];
+  assign req_off = sub.req_dly[0          ].adr[sub.BUS_MAX-1:0];
   assign rsp_off = sub.req_dly[sub.HSK_DLY].adr[sub.BUS_MAX-1:0];
 
   // mask unaligned address bits
   generate
-    if (sub.BUS.ALN > 0) begin: alignment
-      assign man.req.adr = {sub.req.adr[sub.BUS_ADR-1:sub.BUS.ALN], sub.BUS.ALN'('0)};
+    if (sub.PCK.ALN > 0) begin: alignment
+      assign man.req.adr = {sub.req.adr[sub.BUS_ADR-1:sub.PCK.ALN], sub.PCK.ALN'('0)};
     end: alignment
     else begin
       assign man.req.adr = sub.req.adr;

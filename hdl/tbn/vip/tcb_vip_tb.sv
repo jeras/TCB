@@ -32,16 +32,8 @@ module tcb_vip_tb
   // is not working well thus this workaround
 
   // physical interface parameter
-  localparam tcb_bus_t BUS = '{
-    // size/mode/order parameters
-    ALN: TCB_BUS_DEF.ALN,
-    MIN: TCB_BUS_DEF.MIN,
-    OFF: TCB_BUS_DEF.OFF,
-    MOD: TCB_BUS_DEF.MOD,
-    ORD: TCB_BUS_DEF.ORD,
-    // channel configuration
-    CHN: TCB_BUS_DEF.CHN
-  };
+  localparam tcb_bus_t BUS = TCB_BUS_DEF;
+  localparam tcb_pck_t PCK = TCB_PCK_DEF;
 
 ////////////////////////////////////////////////////////////////////////////////
 // local signals
@@ -81,10 +73,10 @@ module tcb_vip_tb
   int unsigned tcb_cnt;
 
   // TCB interfaces
-  tcb_if #(HSK_DLY, tcb_bus_t, BUS, tcb_req_t, tcb_rsp_t, VIP) tcb (.clk (clk), .rst (rst));
+  tcb_if #(HSK_DLY, tcb_bus_t, BUS, tcb_pck_t, PCK, tcb_req_t, tcb_rsp_t, VIP) tcb (.clk (clk), .rst (rst));
 
   // parameterized class specialization (non-blocking API)
-  typedef tcb_vip_transfer_c #(HSK_DLY, tcb_bus_t, BUS, tcb_req_t, tcb_rsp_t, VIP) tcb_transfer_s;
+  typedef tcb_vip_transfer_c #(HSK_DLY, tcb_bus_t, BUS, tcb_pck_t, PCK, tcb_req_t, tcb_rsp_t, VIP) tcb_transfer_s;
 
   // TCB class objects
   tcb_transfer_s obj_man = new(tcb, "MAN");

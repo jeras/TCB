@@ -27,9 +27,12 @@ package tcb_vip_transfer_pkg;
   class tcb_vip_transfer_c #(
     // handshake parameter
     parameter  int unsigned HSK_DLY = TCB_HSK_DEF,    // response delay
-    // BUS parameters (combined into a structure)
-    parameter  type bus_t = tcb_bus_t,  // BUS parameter type
+    // bus parameters (combined into a structure)
+    parameter  type bus_t = tcb_bus_t,  // bus parameter type
     parameter  bus_t BUS = TCB_BUS_DEF,
+    // packing parameters
+    parameter  type pck_t = tcb_pck_t,  // packing parameter type
+    parameter  pck_t PCK = TCB_PCK_DEF,
     // request/response structure types
     parameter  type req_t = tcb_req_t,  // request
     parameter  type rsp_t = tcb_rsp_t,  // response
@@ -45,12 +48,14 @@ package tcb_vip_transfer_pkg;
 
     // virtual interface type definition
     typedef virtual tcb_if #(
-      .HSK_DLY   (HSK_DLY),
-      .bus_t (bus_t),
-      .BUS   (BUS),
-      .req_t (req_t),
-      .rsp_t (rsp_t),
-      .VIP   (VIP)
+      .HSK_DLY (HSK_DLY),
+      .bus_t   (bus_t),
+      .BUS     (BUS),
+      .pck_t   (pck_t),
+      .PCK     (PCK),
+      .req_t   (req_t),
+      .rsp_t   (rsp_t),
+      .VIP     (VIP)
     ) tcb_vif_t;
 
     // virtual interface instance

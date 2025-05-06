@@ -29,9 +29,12 @@ package tcb_vip_transaction_pkg;
   class tcb_vip_transaction_c #(
     // handshake parameter
     parameter  int unsigned HSK_DLY = TCB_HSK_DEF,    // response delay
-    // BUS parameters (combined into a structure)
-    parameter  type bus_t = tcb_bus_t,  // BUS parameter type
+    // bus parameters (combined into a structure)
+    parameter  type bus_t = tcb_bus_t,  // bus parameter type
     parameter  bus_t BUS = TCB_BUS_DEF,
+    // packing parameters
+    parameter  type pck_t = tcb_pck_t,  // packing parameter type
+    parameter  pck_t PCK = TCB_PCK_DEF,
     // request/response structure types
     parameter  type req_t = tcb_req_t,  // request
     parameter  type rsp_t = tcb_rsp_t,  // response
@@ -40,13 +43,15 @@ package tcb_vip_transaction_pkg;
     // debugging options
     parameter  bit  DEBUG = 1'b0
   ) extends tcb_vip_transfer_c #(
-    .HSK_DLY   (HSK_DLY),
-    .bus_t (bus_t),
-    .BUS   (BUS),
-    .req_t (req_t),
-    .rsp_t (rsp_t),
-    .VIP   (VIP),
-    .DEBUG (DEBUG)
+    .HSK_DLY (HSK_DLY),
+    .bus_t   (bus_t),
+    .BUS     (BUS),
+    .pck_t   (pck_t),
+    .PCK     (PCK),
+    .req_t   (req_t),
+    .rsp_t   (rsp_t),
+    .VIP     (VIP),
+    .DEBUG   (DEBUG)
   );
 
     // constructor
@@ -77,7 +82,7 @@ package tcb_vip_transaction_pkg;
     // TCB transaction request structure
     typedef struct {
       // request
-      tcb_cfg_endian_t    ndn;
+      tcb_endian_t        ndn;
       logic               wen;
       logic [BUS_ADR-1:0] adr;
       logic       [8-1:0] wdt [];
@@ -144,11 +149,11 @@ package tcb_vip_transaction_pkg;
       // alignment check
       // TODO: implement this later
       ////adr%siz==0
-      //if (BUS.ALN > 0) begin
-      //  logic [BUS.ALN-1:0] adr_alw;
-      //  adr_alw = transaction.req.adr[(BUS.ALN>0?(BUS.ALN-1):0):0];
+      //if (PCK.ALN > 0) begin
+      //  logic [PCK.ALN-1:0] adr_alw;
+      //  adr_alw = transaction.req.adr[(PCK.ALN>0?(PCK.ALN-1):0):0];
       //  if (|adr_alw) begin
-      //    $error("Transaction address is not aligned to supported size. adr[%0d:0]=%0d'b%b", BUS.ALN-1, BUS.ALN, adr_alw);
+      //    $error("Transaction address is not aligned to supported size. adr[%0d:0]=%0d'b%b", PCK.ALN-1, PCK.ALN, adr_alw);
       //  end
       //end
 
@@ -156,13 +161,13 @@ package tcb_vip_transaction_pkg;
       for (int unsigned i=0; i<len; i++) begin
         transfer_t tmp;
         // request signals
-        tmp.req.cmd = '{lck: (i == len-1) ? 1'b0 : 1'b1, default: '0};
+        tmp.req.frm = (i == len-1) ? 1'b0 : 1'b1;
         tmp.req.wen = transaction.req.wen;
         tmp.req.ndn = transaction.req.ndn;
         tmp.req.adr = transaction.req.adr + i*BUS_BEN;
         case (BUS.MOD)
-          TCB_LOG_SIZE:  tmp.req.siz = BUS_MAX;
-          TCB_BYTE_ENA:  tmp.req.ben = '1;
+          TCB_MOD_LOG_SIZE:  tmp.req.siz = BUS_MAX;
+          TCB_MOD_BYTE_ENA:  tmp.req.ben = '1;
         endcase
         // response
         tmp.rsp.sts = transaction.rsp.sts;
@@ -173,8 +178,8 @@ package tcb_vip_transaction_pkg;
       end
       if (siz < BUS_MAX) begin
         case (BUS.MOD)
-          TCB_LOG_SIZE:  transfer_queue[0].req.siz = siz;
-          TCB_BYTE_ENA:  transfer_queue[0].req.ben = siz2ben(siz, transaction.req.adr[BUS_MAX-1:0]);  // TODO: this will not work for BUS_MAX = 0
+          TCB_MOD_LOG_SIZE:  transfer_queue[0].req.siz = siz;
+          TCB_MOD_BYTE_ENA:  transfer_queue[0].req.ben = siz2ben(siz, transaction.req.adr[BUS_MAX-1:0]);  // TODO: this will not work for BUS_MAX = 0
         endcase
       end
 
@@ -189,25 +194,25 @@ package tcb_vip_transaction_pkg;
         cnt = i / BUS_BEN;
         // mode logarithmic size vs. byte enable
         case (BUS.MOD)
-          TCB_LOG_SIZE:  byt = i;  // all data bytes are LSB aligned
-          TCB_BYTE_ENA:  byt = (i + transaction.req.adr) % BUS_BEN;
+          TCB_MOD_LOG_SIZE:  byt = i;  // all data bytes are LSB aligned
+          TCB_MOD_BYTE_ENA:  byt = (i + transaction.req.adr) % BUS_BEN;
         endcase
         // order descending/ascending
-        case (BUS.ORD)
-          TCB_DESCENDING:  byt = byt;                // no change
-          TCB_ASCENDING :  byt = BUS_BEN - 1 - byt;  // reverse byte order
+        case (PCK.ORD)
+          TCB_ORD_DESCENDING:  byt = byt;                // no change
+          TCB_ORD_ASCENDING :  byt = BUS_BEN - 1 - byt;  // reverse byte order
         endcase
         // request
         transfer_queue[cnt].req.ben[byt] = 1'b1;
         // request endianness
         case (transaction.req.ndn)
-          TCB_LITTLE:  transfer_queue[cnt].req.wdt[byt] = transaction.req.wdt[             i];
-          TCB_BIG   :  transfer_queue[cnt].req.wdt[byt] = transaction.req.wdt[2**siz - 1 - i];
+          TCB_NDN_LITTLE:  transfer_queue[cnt].req.wdt[byt] = transaction.req.wdt[             i];
+          TCB_NDN_BIG   :  transfer_queue[cnt].req.wdt[byt] = transaction.req.wdt[2**siz - 1 - i];
         endcase
         // response endianness
         case (transaction.req.ndn)
-          TCB_LITTLE:  transfer_queue[cnt].rsp.rdt[byt] = transaction.rsp.rdt[             i];
-          TCB_BIG   :  transfer_queue[cnt].rsp.rdt[byt] = transaction.rsp.rdt[2**siz - 1 - i];
+          TCB_NDN_LITTLE:  transfer_queue[cnt].rsp.rdt[byt] = transaction.rsp.rdt[             i];
+          TCB_NDN_BIG   :  transfer_queue[cnt].rsp.rdt[byt] = transaction.rsp.rdt[2**siz - 1 - i];
         endcase
       end
 
@@ -237,9 +242,9 @@ package tcb_vip_transaction_pkg;
       siz = $clog2(len*BUS_BEN);
 
       // request signals (first transfer)
-      transaction.req.wen =                  (transfer_array[0].req.wen);
-      transaction.req.ndn = tcb_cfg_endian_t'(transfer_array[0].req.ndn);
-      transaction.req.adr =                  (transfer_array[0].req.adr);
+      transaction.req.wen =              (transfer_array[0].req.wen);
+      transaction.req.ndn = tcb_endian_t'(transfer_array[0].req.ndn);
+      transaction.req.adr =              (transfer_array[0].req.adr);
 
       siz = 0;
       i = 0;
@@ -249,12 +254,12 @@ package tcb_vip_transaction_pkg;
         assert (transfer_array[i].req.ndn == transaction.req.ndn            ) else $warning("ndn mismatch");
         assert (transfer_array[i].req.adr == transaction.req.adr + i*BUS_BEN) else $warning("adr mismatch");
         case (BUS.MOD)
-          TCB_LOG_SIZE:  siz += transfer_array[0].req.siz;
-          TCB_BYTE_ENA:  siz += ben2siz(transfer_array[0].req.ben, transaction.req.adr[BUS_MAX-1:0]);  // TODO: this will not work for BUS_MAX = 0
+          TCB_MOD_LOG_SIZE:  siz += transfer_array[0].req.siz;
+          TCB_MOD_BYTE_ENA:  siz += ben2siz(transfer_array[0].req.ben, transaction.req.adr[BUS_MAX-1:0]);  // TODO: this will not work for BUS_MAX = 0
         endcase
         // response status
         transaction.rsp.sts |= transfer_array[i].rsp.sts;
-      end while (transfer_array[i++].req.cmd.lck);
+      end while (transfer_array[i++].req.frm);
       len = i;
 
       // initialize response
@@ -270,23 +275,23 @@ package tcb_vip_transaction_pkg;
         cnt = i / BUS_BEN;
         // mode logarithmic size vs. byte enable
         case (BUS.MOD)
-          TCB_LOG_SIZE:  byt =  i                                % BUS_BEN;  // all data bytes are LSB aligned
-          TCB_BYTE_ENA:  byt = (i + transfer_array[cnt].req.adr) % BUS_BEN;
+          TCB_MOD_LOG_SIZE:  byt =  i                                % BUS_BEN;  // all data bytes are LSB aligned
+          TCB_MOD_BYTE_ENA:  byt = (i + transfer_array[cnt].req.adr) % BUS_BEN;
         endcase
         // order descending/ascending
-        case (BUS.ORD)
-          TCB_DESCENDING:  byt = byt;                // no change
-          TCB_ASCENDING :  byt = BUS_BEN - 1 - byt;  // reverse byte order
+        case (PCK.ORD)
+          TCB_ORD_DESCENDING:  byt = byt;                // no change
+          TCB_ORD_ASCENDING :  byt = BUS_BEN - 1 - byt;  // reverse byte order
         endcase
         // request endianness
         case (transfer_array[cnt].req.ndn)
-          TCB_LITTLE:  transaction.req.wdt[          i] = transfer_array[cnt].req.wdt[byt];
-          TCB_BIG   :  transaction.req.wdt[siz - 1 - i] = transfer_array[cnt].req.wdt[byt];
+          TCB_NDN_LITTLE:  transaction.req.wdt[          i] = transfer_array[cnt].req.wdt[byt];
+          TCB_NDN_BIG   :  transaction.req.wdt[siz - 1 - i] = transfer_array[cnt].req.wdt[byt];
         endcase
         // response  endianness
         case (transfer_array[cnt].req.ndn)
-          TCB_LITTLE:  transaction.rsp.rdt[          i] = transfer_array[cnt].rsp.rdt[byt];
-          TCB_BIG   :  transaction.rsp.rdt[siz - 1 - i] = transfer_array[cnt].rsp.rdt[byt];
+          TCB_NDN_LITTLE:  transaction.rsp.rdt[          i] = transfer_array[cnt].rsp.rdt[byt];
+          TCB_NDN_BIG   :  transaction.rsp.rdt[siz - 1 - i] = transfer_array[cnt].rsp.rdt[byt];
         endcase
       end
 
