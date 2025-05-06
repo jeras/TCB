@@ -29,104 +29,143 @@ package tcb_pkg;
 // bus layer (defines which signal subset is used)
 ////////////////////////////////////////////////////////////////////////////////
 
-  // data position/sizing mode
+  // framing configuration
   typedef enum bit {
-    TCB_LOG_SIZE = 1'b0,  // logarithmic size
-    TCB_BYTE_ENA = 1'b1   // byte enable
-  } tcb_bus_mode_t;
+    TCB_FRM_DISABLED = 1'b0,
+    TCB_FRM_ENABLED  = 1'b1
+  } tcb_bus_framing_t;
 
   // channel configuration
   typedef enum bit [2-1:0] {
     // 2 bit value {rd,wr}
-    TCB_HALF_DUPLEX = 2'b00,  // half duplex read/write (wen is used to distinguish between write and read)
-    TCB_FULL_DUPLEX = 2'b11,  // full duplex read/write (wen/ren are both used)
-    TCB_WRITE_ONLY  = 2'b01,  // write only channel (wen/ren are both ignored)
-    TCB_READ_ONLY   = 2'b10   // read  only channel (wen/ren are both ignored)
+    TCB_CHN_HALF_DUPLEX = 2'b00,  // half duplex read/write (wen is used to distinguish between write and read)
+    TCB_CHN_FULL_DUPLEX = 2'b11,  // full duplex read/write (wen/ren are both used)
+    TCB_CHN_WRITE_ONLY  = 2'b01,  // write only channel (wen/ren are both ignored)
+    TCB_CHN_READ_ONLY   = 2'b10   // read  only channel (wen/ren are both ignored)
   } tcb_bus_channel_t;
 
-//  // prefetch configuration
-//  typedef enum bit {
-//    TCB_PREFETCH = 1'b0,  // logarithmic size
-//    TCB_PREFETCH = 1'b1   // byte enable
-//  } tcb_bus_prefetch_t;
+  // data sizing mode
+  typedef enum bit {
+    TCB_MOD_LOG_SIZE = 1'b0,  // logarithmic size
+    TCB_MOD_BYTE_ENA = 1'b1   // byte enable
+  } tcb_bus_mode_t;
+
+  // endianness configuration
+  typedef enum bit [2-1:0] {
+    TCB_NDN_LITTLE = 2'b00,  // little endian only
+    TCB_NDN_BIG    = 2'b00,  // big    endian only
+    TCB_NDN_BI_NDN = 2'b10   // bi-    endian support
+  //BCB_NDN_RSV    = 2'b11   // reserved
+  } tcb_bus_endian_t;
+
+  // prefetch configuration
+  typedef enum bit {
+    TCB_PRF_DISABLED = 1'b0,  //
+    TCB_PRF_ENABLED  = 1'b1   // enable prefetch signals
+  } tcb_bus_prefetch_t;
+
+  // next address configuration (for misaligned accesses)
+  typedef enum bit {
+    TCB_NXT_DISABLED = 1'b0,  //
+    TCB_NXT_ENABLED  = 1'b1   // enable prefetch signals
+  } tcb_bus_next_t;
+
+  // bus layer parameter structure
+  // TODO: the structure is packed to workaround a Verilator bug
+  `ifdef VERILATOR
+  typedef struct packed {
+  `else
+  typedef struct {
+  `endif
+    tcb_bus_framing_t  FRM;  // framing configuration
+    tcb_bus_channel_t  CHN;  // channel configuration
+    tcb_bus_prefetch_t PRF;  // prefetch configuration
+    tcb_bus_next_t     NXT;  // next address configuration
+    tcb_bus_mode_t     MOD;  // data sizing mode
+    tcb_bus_endian_t   NDN;  // endianness configuration
+  } tcb_bus_t;
+
+  // physical interface parameter default
+  localparam tcb_bus_t TCB_BUS_DEF = '{
+    FRM: TCB_FRM_ENABLED,
+    CHN: TCB_CHN_HALF_DUPLEX,
+    PRF: TCB_PRF_ENABLED,
+    NXT: TCB_NXT_ENABLED,
+    MOD: TCB_MOD_BYTE_ENA,
+    NDN: TCB_NDN_BI_NDN
+  };
 
 ////////////////////////////////////////////////////////////////////////////////
-// protocol layer (defines the relations between bus signals)
+// packaging layer (defines the relations between bus signals)
 ////////////////////////////////////////////////////////////////////////////////
 
   // byte order
   typedef enum bit {
-    TCB_DESCENDING = 1'b0,  // descending order
-    TCB_ASCENDING  = 1'b1   //  ascending order
-  } tcb_bus_order_t;
+    TCB_ORD_DESCENDING = 1'b0,  // descending order
+    TCB_ORD_ASCENDING  = 1'b1   //  ascending order
+  } tcb_pkg_order_t;
 
-////////////////////////////////////////////////////////////////////////////////
-// bus protocol parameter structure
-////////////////////////////////////////////////////////////////////////////////
-
-  // TODO: the structure is packed to workaround a Verilator bug
+  // bus parameter structure
+  `ifdef VERILATOR
   typedef struct packed {
-    // bus layer
-    tcb_bus_channel_t CHN;  // channel configuration
-    tcb_bus_mode_t    MOD;  // data position mode
-    // data packing parameters
+  `else
+  typedef struct {
+  `endif
     int unsigned      ALN;  // alignment (number of aligned address bits)
     int unsigned      MIN;  // minimum transfer logarithmic size
     int unsigned      OFF;  // number of zeroed offset bits
-    tcb_bus_order_t   ORD;  // byte order
-  } tcb_bus_t;
-
-////////////////////////////////////////////////////////////////////////////////
-// BUS parameter structure
-////////////////////////////////////////////////////////////////////////////////
+    tcb_pkg_order_t   ORD;  // byte order
+  } tcb_pkg_t;
 
   // physical interface parameter default
-  localparam tcb_bus_t TCB_BUS_DEF = '{
-    // bus layer
-    CHN: TCB_HALF_DUPLEX,
-    MOD: TCB_BYTE_ENA,
-    // data packing parameters
-    ALN: 0,   // maximum $clog2(DAT/UNT)
-    MIN: 0,   // maximum $clog2(DAT/UNT)
-    OFF: 0,   // maximum $clog2(DAT/UNT)
-    ORD: TCB_DESCENDING
+  localparam tcb_pkg_t TCB_PKG_DEF = '{
+    ALN: 0,   // maximum $clog2(BUS_DAT/8)
+    MIN: 0,   // maximum $clog2(BUS_DAT/8)
+    OFF: 0,   // maximum $clog2(BUS_DAT/8)
+    ORD: TCB_ORD_DESCENDING
   };
 
-////////////////////////////////////////////////////////////////////////////////
-// endianness (used for runtime signal values)
-////////////////////////////////////////////////////////////////////////////////
-
-  // endianness
+  // endianness packaging (used for runtime signal values)
   typedef enum logic {
     TCB_LITTLE = 1'b0,  // little-endian
     TCB_BIG    = 1'b1   // big-endian
-  } tcb_cfg_endian_t;
+  } tcb_pkg_endian_t;
 
 ////////////////////////////////////////////////////////////////////////////////
-// default structures containing optional signals
+// default structures containing all optional signals
 ////////////////////////////////////////////////////////////////////////////////
-
-  // command
-  typedef struct packed {
-    logic inc;  // incremented address
-    logic rpt;  // repeated address
-    logic lck;  // arbitration lock (TODO: rename into frame)
-  } tcb_req_cmd_t;
 
   // status
   typedef struct packed {
     logic err;  // error response
   } tcb_rsp_sts_t;
 
+  tcb_bus_framing_t  FRM;  // framing configuration
+  tcb_bus_channel_t  CHN;  // channel configuration
+  tcb_bus_prefetch_t PRF;  // prefetch configuration
+  tcb_bus_next_t     NXT;  // next address configuration
+  tcb_bus_mode_t     MOD;  // data sizing mode
+  tcb_bus_endian_t   NDN;  // endianness configuration
+
   // request
   typedef struct packed {
-    tcb_req_cmd_t        cmd;  // command (optional)
+    // framing
+    logic                frm;  // frame
+    // channel
     logic                wen;  // write enable
     logic                ren;  // read enable
-    logic                ndn;  // endianness
-    logic       [32-1:0] adr;  // address
+    // prefetch
+    logic                inc;  // incremented address
+    logic                rpt;  // repeated address
+    // address and next address
+    logic       [32-1:0] adr;  // current address
+    logic       [32-1:0] nxt;  // next address
+
     logic        [2-1:0] siz;  // logarithmic transfer size
     logic        [4-1:0] ben;  // byte enable
+
+    logic                ndn;  // endianness
+    logic       [32-1:0] adr;  // address
     logic [4-1:0][8-1:0] wdt;  // write data
   } tcb_req_t;
 
