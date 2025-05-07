@@ -59,7 +59,7 @@ module tcb_lib_logsize2byteena_tb
     OFF: 0,
     ORD: TCB_ORD_DESCENDING
   };
-  
+
 ////////////////////////////////////////////////////////////////////////////////
 // local signals
 ////////////////////////////////////////////////////////////////////////////////
@@ -82,13 +82,11 @@ module tcb_lib_logsize2byteena_tb
   tcb_vip_ben_s obj_sub = new(tcb_sub, "MON");
 
   // transfer reference/monitor array
-  tcb_vip_ben_s::transfer_queue_t tst_tmp;
   tcb_vip_ben_s::transfer_queue_t tst_ref;
   tcb_vip_ben_s::transfer_queue_t tst_mon;
 
-////////////////////////////////////////////////////////////////////////////////
-// data checking
-////////////////////////////////////////////////////////////////////////////////
+  // empty array
+  logic [8-1:0] nul [];
 
   // response
   logic [tcb_man.BUS_BEN-1:0][8-1:0] rdt;  // read data
@@ -123,7 +121,7 @@ module tcb_lib_logsize2byteena_tb
         obj_man.write8 (32'h00000013,  8'h76      , sts);
         obj_man.write16(32'h00000020,     16'h3210, sts);
         obj_man.write16(32'h00000022, 16'h7654    , sts);
-        obj_man.write32(32'h00000030, 32'h76543210, sts);            
+        obj_man.write32(32'h00000030, 32'h76543210, sts);
       end: fork_man_write
       // subordinate (monitor)
       begin: fork_mon_write
@@ -136,34 +134,32 @@ module tcb_lib_logsize2byteena_tb
     // reference transfer queue
     sts = '0;
     //                                                   ndn       , wen , adr         , wdt                           ,        rdt
-    tst_ref = {tst_ref, obj_sub.set_transaction('{req: '{TCB_LITTLE, 1'b1, 32'h00000010, '{8'h10                     }}, rsp: '{'{default: 'x}, sts}, default: 'x})};
-    tst_ref = {tst_ref, obj_sub.set_transaction('{req: '{TCB_LITTLE, 1'b1, 32'h00000011, '{       8'h32              }}, rsp: '{'{default: 'x}, sts}, default: 'x})};
-    tst_ref = {tst_ref, obj_sub.set_transaction('{req: '{TCB_LITTLE, 1'b1, 32'h00000012, '{              8'h54       }}, rsp: '{'{default: 'x}, sts}, default: 'x})};
-    tst_ref = {tst_ref, obj_sub.set_transaction('{req: '{TCB_LITTLE, 1'b1, 32'h00000013, '{                     8'h76}}, rsp: '{'{default: 'x}, sts}, default: 'x})};
-    tst_ref = {tst_ref, obj_sub.set_transaction('{req: '{TCB_LITTLE, 1'b1, 32'h00000020, '{8'h10, 8'h32              }}, rsp: '{'{default: 'x}, sts}, default: 'x})};
-    tst_ref = {tst_ref, obj_sub.set_transaction('{req: '{TCB_LITTLE, 1'b1, 32'h00000022, '{              8'h54, 8'h76}}, rsp: '{'{default: 'x}, sts}, default: 'x})};
-    tst_ref = {tst_ref, obj_sub.set_transaction('{req: '{TCB_LITTLE, 1'b1, 32'h00000030, '{8'h10, 8'h32, 8'h54, 8'h76}}, rsp: '{'{default: 'x}, sts}, default: 'x})};
+    tst_ref = {tst_ref, obj_sub.set_transaction('{req: '{TCB_LITTLE, 1'b1, 32'h00000010, '{8'h10                     }}, rsp: '{nul, sts}, default: 'x})};
+    tst_ref = {tst_ref, obj_sub.set_transaction('{req: '{TCB_LITTLE, 1'b1, 32'h00000011, '{       8'h32              }}, rsp: '{nul, sts}, default: 'x})};
+    tst_ref = {tst_ref, obj_sub.set_transaction('{req: '{TCB_LITTLE, 1'b1, 32'h00000012, '{              8'h54       }}, rsp: '{nul, sts}, default: 'x})};
+    tst_ref = {tst_ref, obj_sub.set_transaction('{req: '{TCB_LITTLE, 1'b1, 32'h00000013, '{                     8'h76}}, rsp: '{nul, sts}, default: 'x})};
+    tst_ref = {tst_ref, obj_sub.set_transaction('{req: '{TCB_LITTLE, 1'b1, 32'h00000020, '{8'h10, 8'h32              }}, rsp: '{nul, sts}, default: 'x})};
+    tst_ref = {tst_ref, obj_sub.set_transaction('{req: '{TCB_LITTLE, 1'b1, 32'h00000022, '{              8'h54, 8'h76}}, rsp: '{nul, sts}, default: 'x})};
+    tst_ref = {tst_ref, obj_sub.set_transaction('{req: '{TCB_LITTLE, 1'b1, 32'h00000030, '{8'h10, 8'h32, 8'h54, 8'h76}}, rsp: '{nul, sts}, default: 'x})};
     // compare transfers from monitor to reference
-//  foreach(tst_ref[i]) $display("DEBUG: tst_ref[%0d] = %p", i, tst_ref[i]);
-//  foreach(tst_ref[i]) $display("DEBUG: tst_mon[%0d] = %p", i, tst_mon[i]);
     foreach(tst_ref[i]) begin
       assert (tst_mon[i].req ==? tst_ref[i].req) else $error("\ntst_mon[%0d].req = %p !=? \ntst_ref[%0d].req = %p", i, tst_mon[i].req, i, tst_ref[i].req);
       assert (tst_mon[i].rsp ==? tst_ref[i].rsp) else $error("\ntst_mon[%0d].rsp = %p !=? \ntst_ref[%0d].rsp = %p", i, tst_mon[i].rsp, i, tst_ref[i].rsp);
     end
-    
+
     // read sequence
     $display("read sequence");
     testname = "read";
     fork
       // manager (blocking API)
       begin: fork_man_read
-        obj_man.read8  (32'h00000010, rdt[1-1:0]  , sts);
-        obj_man.read8  (32'h00000011, rdt[1-1:0]  , sts);
-        obj_man.read8  (32'h00000012, rdt[1-1:0]  , sts);
-        obj_man.read8  (32'h00000013, rdt[1-1:0]  , sts);
-        obj_man.read16 (32'h00000020, rdt[2-1:0]  , sts);
-        obj_man.read16 (32'h00000022, rdt[2-1:0]  , sts);
-        obj_man.read32 (32'h00000030, rdt[4-1:0]  , sts);
+        obj_man.read8  (32'h00000010, rdt[1-1:0], sts);
+        obj_man.read8  (32'h00000011, rdt[1-1:0], sts);
+        obj_man.read8  (32'h00000012, rdt[1-1:0], sts);
+        obj_man.read8  (32'h00000013, rdt[1-1:0], sts);
+        obj_man.read16 (32'h00000020, rdt[2-1:0], sts);
+        obj_man.read16 (32'h00000022, rdt[2-1:0], sts);
+        obj_man.read32 (32'h00000030, rdt[4-1:0], sts);
       end: fork_man_read
       // subordinate (monitor)
       begin: fork_mon_read
@@ -175,14 +171,14 @@ module tcb_lib_logsize2byteena_tb
     disable fork;
     // reference transfer queue
     sts = '0;
-    //                                                   ndn       , wen , adr         , wdt            ,        rdt
-    tst_ref = {tst_ref, obj_sub.set_transaction('{req: '{TCB_LITTLE, 1'b0, 32'h00000010, '{default: 'x}}, rsp: '{'{8'h10                     }, sts}, default: 'x})};
-    tst_ref = {tst_ref, obj_sub.set_transaction('{req: '{TCB_LITTLE, 1'b0, 32'h00000011, '{default: 'x}}, rsp: '{'{       8'h32              }, sts}, default: 'x})};
-    tst_ref = {tst_ref, obj_sub.set_transaction('{req: '{TCB_LITTLE, 1'b0, 32'h00000012, '{default: 'x}}, rsp: '{'{              8'h54       }, sts}, default: 'x})};
-    tst_ref = {tst_ref, obj_sub.set_transaction('{req: '{TCB_LITTLE, 1'b0, 32'h00000013, '{default: 'x}}, rsp: '{'{                     8'h76}, sts}, default: 'x})};
-    tst_ref = {tst_ref, obj_sub.set_transaction('{req: '{TCB_LITTLE, 1'b0, 32'h00000020, '{default: 'x}}, rsp: '{'{8'h10, 8'h32              }, sts}, default: 'x})};
-    tst_ref = {tst_ref, obj_sub.set_transaction('{req: '{TCB_LITTLE, 1'b0, 32'h00000022, '{default: 'x}}, rsp: '{'{              8'h54, 8'h76}, sts}, default: 'x})};
-    tst_ref = {tst_ref, obj_sub.set_transaction('{req: '{TCB_LITTLE, 1'b0, 32'h00000030, '{default: 'x}}, rsp: '{'{8'h10, 8'h32, 8'h54, 8'h76}, sts}, default: 'x})};
+    //                                                   ndn       , wen , adr         , wdt ,        rdt
+    tst_ref = {tst_ref, obj_sub.set_transaction('{req: '{TCB_LITTLE, 1'b0, 32'h00000010, nul}, rsp: '{'{8'h10                     }, sts}, default: 'x})};
+    tst_ref = {tst_ref, obj_sub.set_transaction('{req: '{TCB_LITTLE, 1'b0, 32'h00000011, nul}, rsp: '{'{       8'h32              }, sts}, default: 'x})};
+    tst_ref = {tst_ref, obj_sub.set_transaction('{req: '{TCB_LITTLE, 1'b0, 32'h00000012, nul}, rsp: '{'{              8'h54       }, sts}, default: 'x})};
+    tst_ref = {tst_ref, obj_sub.set_transaction('{req: '{TCB_LITTLE, 1'b0, 32'h00000013, nul}, rsp: '{'{                     8'h76}, sts}, default: 'x})};
+    tst_ref = {tst_ref, obj_sub.set_transaction('{req: '{TCB_LITTLE, 1'b0, 32'h00000020, nul}, rsp: '{'{8'h10, 8'h32              }, sts}, default: 'x})};
+    tst_ref = {tst_ref, obj_sub.set_transaction('{req: '{TCB_LITTLE, 1'b0, 32'h00000022, nul}, rsp: '{'{              8'h54, 8'h76}, sts}, default: 'x})};
+    tst_ref = {tst_ref, obj_sub.set_transaction('{req: '{TCB_LITTLE, 1'b0, 32'h00000030, nul}, rsp: '{'{8'h10, 8'h32, 8'h54, 8'h76}, sts}, default: 'x})};
     foreach(tst_ref[i]) begin
       assert (tst_mon[i].req ==? tst_ref[i].req) else $error("\ntst_mon[%0d].req = %p !=? \ntst_ref[%0d].req = %p", i, tst_mon[i].req, i, tst_ref[i].req);
       assert (tst_mon[i].rsp ==? tst_ref[i].rsp) else $error("\ntst_mon[%0d].rsp = %p !=? \ntst_ref[%0d].rsp = %p", i, tst_mon[i].rsp, i, tst_ref[i].rsp);
@@ -200,6 +196,45 @@ module tcb_lib_logsize2byteena_tb
     obj_man.check16(32'h00000022, 16'h7654    , 1'b0);
     obj_man.check32(32'h00000020, 32'h76543210, 1'b0);
     obj_man.check32(32'h00000030, 32'h76543210, 1'b0);
+
+/*
+    // misaligned write sequence
+    $display("misaligned write sequence");
+    testname = "misaligned write";
+    // clear memory
+    mem.mem = '{default: 'x};
+    // test sequence
+    fork
+      // manager (blocking API)
+      begin: fork_man_misaligned_write
+        obj_man.write16(32'h00000011, 16'h3210    , sts);
+        obj_man.write16(32'h00000023, 16'h7654    , sts);
+        obj_man.write32(32'h00000031, 32'h76543210, sts);
+        obj_man.write32(32'h00000042, 32'h76543210, sts);
+        obj_man.write32(32'h00000053, 32'h76543210, sts);
+      end: fork_man_misaligned_write
+      // subordinate (monitor)
+      begin: fork_mon_misaligned_write
+        obj_sub.transfer_monitor(tst_mon);
+      end: fork_mon_misaligned_write
+    join_any
+    // disable transfer monitor
+    @(posedge clk);
+    disable fork;
+    // reference transfer queue
+    sts = '0;
+    //                                                   ndn       , wen , adr         , wdt                           ,        rdt
+    tst_ref = {tst_ref, obj_sub.set_transaction('{req: '{TCB_LITTLE, 1'b1, 32'h00000011, '{8'h10, 8'h32              }}, rsp: '{nul, sts}, default: 'x})};
+    tst_ref = {tst_ref, obj_sub.set_transaction('{req: '{TCB_LITTLE, 1'b1, 32'h00000023, '{8'h54, 8'h76              }}, rsp: '{nul, sts}, default: 'x})};
+    tst_ref = {tst_ref, obj_sub.set_transaction('{req: '{TCB_LITTLE, 1'b1, 32'h00000031, '{8'h10, 8'h32, 8'h54, 8'h76}}, rsp: '{nul, sts}, default: 'x})};
+    tst_ref = {tst_ref, obj_sub.set_transaction('{req: '{TCB_LITTLE, 1'b1, 32'h00000042, '{8'h10, 8'h32, 8'h54, 8'h76}}, rsp: '{nul, sts}, default: 'x})};
+    tst_ref = {tst_ref, obj_sub.set_transaction('{req: '{TCB_LITTLE, 1'b1, 32'h00000053, '{8'h10, 8'h32, 8'h54, 8'h76}}, rsp: '{nul, sts}, default: 'x})};
+    // compare transfers from monitor to reference
+    foreach(tst_ref[i]) begin
+      assert (tst_mon[i].req ==? tst_ref[i].req) else $error("\ntst_mon[%0d].req = %p !=? \ntst_ref[%0d].req = %p", i, tst_mon[i].req, i, tst_ref[i].req);
+      assert (tst_mon[i].rsp ==? tst_ref[i].rsp) else $error("\ntst_mon[%0d].rsp = %p !=? \ntst_ref[%0d].rsp = %p", i, tst_mon[i].rsp, i, tst_ref[i].rsp);
+    end
+*/
     // end of test
     repeat (4) @(posedge clk);
     $finish();

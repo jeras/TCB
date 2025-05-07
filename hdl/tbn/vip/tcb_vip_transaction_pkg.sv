@@ -75,7 +75,7 @@ package tcb_vip_transaction_pkg;
     // local parameters
     localparam int unsigned BUS_ADR = $bits(dummy_req.adr);
     localparam int unsigned BUS_DAT = $bits(dummy_req.wdt);
-    localparam int unsigned BUS_BEN = $bits(dummy_req.ben);
+    localparam int unsigned BUS_BEN = BUS_DAT/8;
     localparam int unsigned BUS_SIZ = $bits(dummy_req.siz);
     localparam int unsigned BUS_MAX = $clog2(BUS_BEN);
 
@@ -133,15 +133,53 @@ package tcb_vip_transaction_pkg;
       input transaction_t transaction,
       input string      id = ""
     );
+      // write/read data linear size
+      int unsigned wdt_size;
+      int unsigned rdt_size;
+      // request/response logarithmic siz
+      int unsigned req_siz;
+      int unsigned rsp_siz;
       // the requested transaction is organized into transfer_array
       int unsigned siz;  // transaction side (units/bytes)
       int unsigned len;  // transaction length (transfers)
       // return transfer queue
       transfer_queue_t transfer_queue;
 
-      // data size
-      siz = $clog2(transaction.req.wdt.size());
-      assert (transaction.req.wdt.size() == 2**siz) else $error("Data array size is not a power of 2.");
+      // write/read data linear size
+      wdt_size = transaction.req.wdt.size();
+      rdt_size = transaction.rsp.rdt.size();
+      // request/response logarithmic siz
+      req_siz = $clog2(wdt_size);
+      rsp_siz = $clog2(rdt_size);
+
+      // write access
+      if ( (BUS.CHN == TCB_CHN_WRITE_ONLY) || ((BUS.CHN == TCB_CHN_HALF_DUPLEX) && (transaction.req.wen == 1'b1)) ) begin
+        siz = req_siz;
+        assert (wdt_size == 2**siz) else $error("Write data array size is not a power of 2.");
+      end
+      // read access
+      if ( (BUS.CHN == TCB_CHN_READ_ONLY) || ((BUS.CHN == TCB_CHN_HALF_DUPLEX) && (transaction.req.wen == 1'b0)) ) begin
+        siz = rsp_siz;
+        assert (rdt_size == 2**siz) else $error("Read data array size is not a power of 2.");
+      end
+      // full duplex access
+      if (BUS.CHN == TCB_CHN_FULL_DUPLEX) begin
+        // check if write/read data arrays are of the same size
+        if (transaction.req.wen === 1'bx) begin
+          assert (wdt_size == rdt_size) else $error("Write/read data arrays are not of the same size.");
+        end
+        // write access
+        if (transaction.req.wen === 1'b1) begin
+          siz = req_siz;
+          assert (wdt_size == 2**siz) else $error("Write data array size is not a power of 2.");
+        end
+        // read access
+        if (transaction.req.wen === 1'b0) begin
+          siz = rsp_siz;
+          assert (rdt_size == 2**siz) else $error("Read data array size is not a power of 2.");
+        end
+      end
+
       // transaction length (number of transfer items)
       if (2**siz < BUS_BEN)  len = 1;
       else                   len = 2**siz / BUS_BEN;
