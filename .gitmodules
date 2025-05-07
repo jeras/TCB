@@ -1,0 +1,3 @@
+[submodule "submodules/synthesis-primitives"]
+	path = submodules/synthesis-primitives
+	url = ../synthesis-primitives

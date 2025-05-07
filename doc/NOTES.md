@@ -24,5 +24,7 @@ There are two types of duplex communication systems: full-duplex (FDX) and half-
 3. Protocol layer
 
 Defines restrictions on signal values, what are valid/invalid combinations.
-
 Abbreviation PTC (ProToCol)
+
+Packeting layer
+PCK

@@ -1,4 +1,5 @@
 = Tightly Coupled Bus
+:toc:
 
 Tightly Coupled Bus is a simple general purpose system bus based on FPGA/ASIC SRAM memory interfaces.
 
@@ -19,7 +20,7 @@ This are few alternative naming for tightly coupled memories:
 A processor native system bus is usually custom designed
 to support exactly the features that are present in the processor itself.
 This also means there are differences between the protocols
-used by instruction fetch and load/store unit.
+used by instruction fetch and load/store units.
 
 The TCB protocol is designed to fulfill the shared needs of simple CPU/SoC designs and can be used for:
 
@@ -38,7 +39,7 @@ The design is based on the following principles:
   Meaning the handshake is done during the arbitration phase (explained later).
 * Handshake based on the AMBA AXI family of protocols (VALID/READY).
 * Low power consumption should be considered by reducing signal toggling and other means.
-* Choice of common (half-duplex) or independent (full-duplex) read/write channels,
+* Choice of common (half-duplex) or independent (simplex) read/write channels,
   allowing additional trade-off between throughput and complexity.
 
 What it is not intended for:
@@ -47,6 +48,18 @@ What it is not intended for:
   between the start of a request and the response, and the delay has some unpredictability.
 * Does not provide out of order access functionality.
 * It is not a good fit for managers with a variable pipeline delay in the load/store unit.
+
+The protocol description is split into layers:
+
+* handshake layer,
+* bus layer,
+* packeting layer.
+
+Except for the handshake layer, the standard gives users the freedom to customize.
+Still, the standard attempts to document as many common use cases as possible
+to avoid unnecessary non standard customizations.
+Implementers are free to only use a subset of features, and define the subset with parameters,
+this parameters can then be used for automatic compatibility validation in the RTL code.
 
 == Terminology
 
@@ -151,7 +164,6 @@ _configuration_, _control_ and _status_ registers of a peripheral.
 
 | LSB     | https://en.wikipedia.org/wiki/Bit_numbering[Least Significant Bit/Byte]
 | MSB     | https://en.wikipedia.org/wiki/Bit_numbering[Most Significant Bit/Byte]
-| BUS     | https://en.wikipedia.org/wiki/Physical_layer#BUS[OSI model physical_layer]
 
 | HDL     | https://en.wikipedia.org/wiki/Hardware_description_language[Hardware Description Language]
 | RTL     | https://en.wikipedia.org/wiki/Register-transfer_level[Register-transfer level]
@@ -169,9 +181,9 @@ Suffixes specifying the direction of module ports as input/output (`in`/`out`, `
 Instead signals can be organized into sets with a prefix or are grouped into a SystemVerilog interface.
 Set names shall use specifiers like manager/subordinate (`man`/`sub`) or request/response (`req`/`rsp`).
 
-== Base protocol
+== Handshake layer
 
-The TCB protocol base is comprised of a valid/ready handshake for the request
+The TCB protocol most basic layer is comprised of a valid/ready handshake for the request
 and a parameterized fixed delay (integer number of clock periods) for the response.
 Special considerations should be made for signal values during reset
 and reset release and assertion.
@@ -194,9 +206,9 @@ multiple independent system signal sets.
 | `rst`  | Reset (active high) can be synchronous or asynchronous depending on implementation.
 |===
 
-TODO: define power domain functionality.
+TODO: define clock/reset/power domain functionality.
 
-=== Handshake amd request/response signal sets
+=== Handshake amd request/response signal groups
 
 The manager initiates a request with the handshake signal `vld` (valid).
 Backpressure from the subordinate is supported by the handshake signal `rdy` (ready).
@@ -211,23 +223,23 @@ NOTE: The handshake signals intentionally use names from the AMBA AXI family of 
 .Handshake signals
 [%autowidth]
 |===
-| signal | direction      | description
+| signal | type    | direction      | description
 
-| `vld`  | `man` -> `sub` | Handshake valid.
-| `rdy`  | `sub` -> `man` | Handshake ready (can be omitted if there is no backpressure).
+| `vld`  | `logic` | `man` -> `sub` | Handshake valid.
+| `rdy`  | `logic` | `sub` -> `man` | Handshake ready (can be omitted if there is no backpressure).
 |===
 
 Signals going from manager to subordinate are part of the request group,
 signals going in the opposite direction are part of the response group.
-This signal sets are used to provide transaction type details, addressing and data.
+This signal groups are used to provide transaction type details, addressing and data.
 
 .Base protocol signal groups
 [%autowidth]
 |===
-| signal | direction      | description
+| signal | type    | direction      | description
 
-| `req`  | `man` -> `sub` | Request group.
-| `rsp`  | `sub` -> `man` | Response group.
+| `req`  | `req_t` | `man` -> `sub` | Request group.
+| `rsp`  | `req_t` | `sub` -> `man` | Response group.
 |===
 
 While the handshake defines the request transfer,
@@ -243,6 +255,9 @@ the response is always provided `HSK_DLY` clock periods after the handshake tran
 
 === Handshake rules
 
+Handshake rules and reset sequencing are described in details (with source code)
+in a link:../submodules/synthesis-primitives/doc/handshake.adoc[separate document about the VALID/READY handshake].
+
 Handshake signals shall follow the same basic principles as defined for the AMBA AXI family of protocols:
 
 * `vld` shell be inactive during reset.
@@ -251,7 +266,8 @@ Handshake signals shall follow the same basic principles as defined for the AMBA
 * The manager must not wait for `rdy` to be asserted before starting a new cycle by asserting `vld`.
 * The subordinate can assert/remove the `rdy` signal without restrictions.
 * There is no inherent timeout mechanism.
-* TODO: clarify `rdy` behavior if only part of the system is under reset.
+
+TODO: clarify `rdy` behavior if only part of the system is under reset.
 
 This means once a request cycle is initiated, it must be completed with a transfer.
 Since `rdy` can be asserted during reset (`rdy` can be a constant value),
@@ -265,7 +281,7 @@ although it would be possible to place such functionality
 into a module placed between a manager and a subordinate.
 The required additional complexity is not discussed in this document.
 
-=== Transfer and request/response sequence
+==== Transfer and request/response sequence
 
 The manager shall drive a valid _request signal set_ `req` while the `vld` handshake signal is active.
 The subordinate shell sample the _request signal set_ `req` at the rising clock edge while
@@ -277,17 +293,19 @@ in the same clock period as the transfer `trn` is active.
 When the delay parameter is greater then zero (`HSK_DLY>0`),
 the subordinate shall provide the response `rsp` sequentially
 in `HSK_DLY` clock periods after the transfer `trn` is active.
+As a power consumption consideration, the response can remain unchanged
+till a new one becomes active.
 
 image::tcb_handshake.svg[Handshake transfer and request/response]
 
-=== Reset release and assertion sequences
+==== Reset release and assertion sequences
 
 A global system reset `rst` can be asserted at any moment,
 as long as it applies to the entire interconnect and all managers/subordinates connected to it.
 
 TODO: A correct reset assertion sequence for just part of the system
-separated into multiple clock/reset/power domains
-is explained separately in the reference interconnect library documentation.
+separated into multiple clock/reset/power domains is (will be)
+explained separately in the reference interconnect library documentation.
 
 The handshake valid `vld` must be inactive during reset.
 After the reset signal `rst` is released there must be
@@ -320,24 +338,27 @@ It is allowed to use reset capable flipflops only for control signals (handshake
 while address, data and other signals use flipflops without a reset for example to reduce ASIC area.
 While this approach does not affect functionality,
 it affects reproducibility of power consumption tests.
-It might also have some effect on the viability of side channel attacks.
 
-== Memory mapped access protocol
+WARNING: Datapath registers without reset might have some effect on security
+         (the viability of side channel attacks).
+
+== Bus layer
 
 For the protocol to support memories and memory mapped peripherals,
-the request and response signal sets must be further defined
+the request and response signal groups must be further defined
 to contain the read/write control signal, the address, byte enable,
 read/write data busses, and various optional extensions.
 
 === Parameters
 
 All TCB interfaces are parameterized.
-In addition to the base protocol parameter `HSK_DLY` there are parameters for:
+In addition to the handshake layer parameter `HSK_DLY` there are parameters for:
 
-* defining the address/data/... signal widths,
-* defining how data bytes are packed into the data bus.
+* defining the presence of signals specific to individual bus layer features,
+* defining how data bytes are packed into the data bus
+  (documented in packing layer section).
 
-==== Signal width parameters
+==== Feature presence parameters
 
 .Signal width parameters
 [%autowidth]
@@ -366,11 +387,6 @@ Since TCB was designed with 32-bit CPU/SoC/peripherals in mind,
 32-bit is the default data bus width `BUS.DAT` and 4-bit is the default byte enable width `BUS_BEN`.
 Byte enable width `BUS_BEN` is a calculated local parameter,
 it should not be passed across module hierarchy.
-
-==== Data packing parameters
-
-Data packing parameters are listed and described
-in the TODO[data packing section] of the document.
 
 ==== Custom extension signal type parameters
 
@@ -534,197 +550,6 @@ The custom request command also has sensible defaults.
 | `req.cmd.inc` |   `1'b0` | Subordinates can ignore it.
 |===
 
-=== Data packing
-
-A combination of parameters and runtime signals define how
-bytes (smallest data units) are organized inside the read/write data bus,
-and across transfers for multi transfer transactions.
-
-To a degree data packing rules are a generalization of endianness rules.
-
-This section will first document the parameters
-and then provide examples of packing with some parameter configurations.
-
-==== Data packing parameters
-
-NOTE: The current choice of data packing parameters can be confusing.
-      This might remain or change in future TCB standard releases, depending on user feedback.
-
-The following parameters affect data packing.
-
-.Data packing parameters
-[%autowidth]
-|===
-| parameter | type (enumeration) | range (options)          | default      | description
-
-| `BUS.MIN` | `int unsigned`     | `0`~`BUS_MAX`            | `0`          | Minimum transfer logarithmic size.
-| `BUS.OFF` | `int unsigned`     | `0`~`BUS_MAX`            | `0`          | Number of LSB address bits (the offset of unit/byte inside the data bus) tied to zero.
-| `BUS.ALN` | `int unsigned`     | `0`~`BUS_MAX`            | `BUS_MAX`    | Alignment width, number of least significant address bits which are zero.
-| `BUS.MOD` | `tcb_bus_mode_t`   | `LOG_SIZE`/`BYTE_ENA`    | `LOG_SIZE`   | Data size/position mode.
-| `BUS.ORD` | `tcb_bus_order_t`  | `DESCENDING`/`ASCENDING` | `DESCENDING` | Byte order (related to little/big endian systems).
-|===
-
-Only a small subset of all parameter value combinations configurations from all parameter combinations
-results in practical and useful data packing rule (RISC-V RV32/64 access patterns are a large part of the subset).
-The rest are reserved with no intention to be documented and implemented.
-
-.Relevant packing modes
-[%autowidth]
-|===
-| `MOD`      | `ORD`        | `BUS.DAT` | `BUS.MIN`   | `BUS.OFF`   | `BUS.ALN`   | `ndn`   | description
-
-| `LOG_SIZE` | `ASCENDING`  | `32`      | `BUS_MAX=2` | `BUS_MAX=2` | `BUS_MAX=2` | ignored | RISC-V single issue instruction fetch unit without C extension.
-| `LOG_SIZE` | `ASCENDING`  | `32`      |     `1`/`2` |         `1` |         ??? | ignored | RISC-V single issue instruction fetch unit with C extension (details in examples).
-
-| `LOG_SIZE` | `DESCENDING` | `32`/`64` | `0`         | `0`         | 0           | ignored | RISC-V RV32/64 GPR load/store (no sign extension) with misaligned access support.
-| `LOG_SIZE` | `DESCENDING` | `32`/`64` | `0`         | `0`         | `BUS_MAX`   | ignored | RISC-V RV32/64 GPR load/store (no sign extension) with only aligned access support.
-
-| `LOG_SIZE` | `ASCENDING`  | any       | any         | any         | any         | ignored | Reserved (not defined or used).
-
-| `BYTE_ENA` | `DESCENDING` | `32`/`64` | `0`         | `0`         | 0           | both    | RISC-V RV32/64 memory load/store with misaligned access support.
-| `BYTE_ENA` | `DESCENDING` | `32`/`64` | `0`         | `BUS_MAX`   | `BUS_MAX`   | both    | RISC-V RV32/64 memory load/store with only aligned access support.
-
-| `BYTE_ENA` | `DESCENDING` | `32`      | `BUS_MAX=2` | `BUS_MAX=2` | `BUS_MAX=2` | both    | Peripheral bus with only 4-byte (word) aligned access support.
-| `BYTE_ENA` | `DESCENDING` | `64`      | `BUS_MAX=3` | `BUS_MAX=3` | `BUS_MAX=3` | both    | Peripheral bus with only 8-byte (double) aligned accesses support.
-| `BYTE_ENA` | `DESCENDING` | `64`      |         `2` |         `2` | `BUS_MAX=3` | both    | Peripheral bus with mixed 4/8-byte aligned accesses support.
-
-| `BYTE_ENA` | `ASCENDING`  | `32`/`64` | TBD         | TBD         | TBD         | both    | OpenPOWER storage operands (for old peripherals).
-| `BYTE_ENA` | `ASCENDING`  | any other | any other   | any other   | any other   | both    | Reserved (not defined or used).
-|===
-
-
-
-NOTE: The OpenPOWER specific configuration is included for historic compatibility, and completeness.
-
-==== Supported size and alignment checking
-
-Alignment width `ALN` defines what kind of data alignments are supported.
-The values can be between `0` (no alignment requirements)
-and `clog2(BEN)` (full alignment is required).
-Only this two values are documented,
-other values in between can be used for custom implementations.
-
-==== Transfer logarithmic size encoding
-
-Interface signal `siz` encodes the logarithmic size of a transfer.
-The linear size (number of units/bytes) of the transfer is calculated as `2**siz`.
-
-The number bits required to encode sizes from 1 to `BUS_BEN` (unit/byte enable width) is
-`BUS_SIZ = $clog2(BUS_MAX+1)` where the largest transfer logarithmic size is `BUS_MAX`.
-Depending on the data bus width, some logarithmic size values encoded with `BUS_SIZ` bits
-can be invalid and are thus reserved.
-
-.Logarithmic size encoding
-[%autowidth]
-|===
-| `BUS.DAT` | `BUS_BEN` | `$clog2(BUS_BEN) = BUS_MAX =    siz` | `$clog2(BUS_MAX+1) = BUS_SIZ` | comment
-|       `8` |       `1` | `$clog2(      1) =       0 =    'b0` | `$clog2(      0+1) =       0` | The size is a constant, there is no need for `siz`.
-|      `16` |       `2` | `$clog2(      2) =       1 =    'b1` | `$clog2(      1+1) =       1` |
-|      `32` |       `4` | `$clog2(      4) =       2 =   'b10` | `$clog2(      2+1) =       2` |
-|      `64` |       `8` | `$clog2(      8) =       3 =   'b11` | `$clog2(      3+1) =       2` |
-|     `128` |      `16` | `$clog2(     16) =       4 =  'b100` | `$clog2(      4+1) =       3` |
-|     `256` |      `32` | `$clog2(     32) =       5 =  'b101` | `$clog2(      5+1) =       3` |
-|     `512` |      `64` | `$clog2(     64) =       6 =  'b110` | `$clog2(      6+1) =       3` |
-|    `1024` |     `128` | `$clog2(    128) =       7 =  'b111` | `$clog2(      7+1) =       3` |
-|    `2096` |     `256` | `$clog2(    256) =       8 = 'b1000` | `$clog2(      8+1) =       4` |
-|===
-
-NOTE: A linear size mode was initially considered, but later discarded,
-since the logarithmic size covers all functionality (power of 2 sized load/store transfers)
-documented in the RISC-V ISA and similar standards .
-One example of non power of 2 transfer would be 24-bit RGB data.
-A CPU could perform single cycle non aligned 24-bit accesses to memory,
-instead of performing a 32-bit access and masking the data with `0x00ffffff`.
-Another example would be a FIFO with a `BUS.DAT` wide interface accessed with a CPU or DMA.
-When writing/reading an arbitrarily long stream of bytes to/from the FIFO,
-the reminder at the end of the stream can be of a size which is not a power of 2
-(3 bytes o a 32-bit interface, 3/5/6/7 bytes on a 64-bit interface).
-A CPU with only logarithmic sized accesses, must split this reminder into multiple accesses (7=4+2+1).
-The difference in performance due to this overhead is in most use cases
-not worth the additional instruction encoding space in an ISA.
-Users are free to write custom TCB implementations with linear size support.
-
-==== Data position mode
-
-The `MOD` parameter encoding defines the following options.
-
-* `LOG_SIZE`,
-* `BYTE_ENA`.
-
-The name _reference_ is based on the idea,
-that if a monitor was placed on multiple points of a mixed configuration interconnect,
-all data would be translated to a common reference before being compared.
-
-The `BYTE_ENA` mode defines the same data packing scheme as memories.
-
-In byte enable mode the the byte enable signal `ben`
-provides the information about the transfer size,
-which is the number of active bits in the `ben` vector.
-
-The `LOG_SIZE` mode is based on how ISAs define the placement of
-byte/half/word/double into its general purpose registers.
-In registers data of any size is always stored aligned to the right.
-In logarithmic size mode data is always aligned to the right,
-regardless of the address, address alignment, endianness, ...
-
-In logarithmic size mode the transfer size signal `siz`
-provides the information about the transfer size.
-
-The main purpose of this mode is to connect peripherals to the CPU or DMA.
-without the need for byte reordering logic between the two.
-
-Another use case would be a RISV-V instruction fetch interface with C extension support,
-where the instruction is always aligned the same way, regardless on whether
-the instruction is 32-bit or 16-bit aligned in the memory.
-In this case a multiplexer for aligning the instruction would still be needed,
-but it would be placed in the interconnect instead of the CPU.
-
-==== Byte order
-
-The `ORD` parameter encoding defines the following options.
-
-* `DESCENDING`,
-* `ASCENDING`.
-
-Almost all modern standards and HDL/schematic implementations use the `DESCENDING` order.
-Here indexing starts with 0 on the right side and increments to the left side of the vector.
-When writing bit vectors and equivalent packed byte arrays in SystemVerilog:
-
-[source,SystemVerilog]
-----
-logic     [31:0] data_bit_vector;
-logic [3:0][7:0] data_byte_array;
-----
-
-Byte addressing follows the same rules so it increments from the right to the left.
-
-The `ASCENDING` order was prominently used in the OpenPOWER specification
-and its big endian predecessors.
-Here indexing starts with 0 on the left side and increments to the right side of the vector.
-When writing bit vectors and equivalent packed byte arrays in SystemVerilog:
-
-[source,SystemVerilog]
-----
-logic     [0:31] data_bit_vector;
-logic [0:3][0:7] data_byte_array;
-----
-
-Byte addressing follows the same rules so it increments from the left to the right.
-
-Due to the current prevalence of descending indexing order and little-endian ISAs,
-it can be difficult and confusing to understand big endian (bi-endian) compatibility.
-A few reasons that aggravate the confusion:
-
-* while OpenPOWER defines all 64-bit registers with ascending order `[0:63]`,
-  a load/store byte operation would place the byte in the register aligned to the right `[56:63]`,
-* on OpenPOWER the least significant bit of the program counter or address pointer is `[63]`,
-* not all native big-endian ISAs use the ascending order,
-* early bi-endian approaches differ from moderns ones.
-
-Modern OpenPOWER implementations use ascending order in the core to match the specification,
-but use descending order on the system bus, which is usually AMBA AXI based.
-The only practical use case for ascending order would probably be while interfacing with historic hardware.
-
 === Channel configuration
 
 The `CHN` parameter is used to configure channel read/write capabilities.
@@ -795,6 +620,198 @@ The main purpose is to provide full-duplex access to independent addresses.
 One advantage this approach provides is reduced power consumption in peripherals,
 since during a write access the read data decoder and multiplexer are not active and
 during a read access the write data enable decoder is not active.
+
+
+== Data packing layer
+
+A combination of parameters and runtime signals define how
+bytes (smallest data units) are organized inside the read/write data bus,
+and across transfers for multi transfer transactions.
+
+To a degree data packing rules are a generalization of endianness rules.
+
+This section will first document the parameters
+and then provide examples of packing with some parameter configurations.
+
+=== Data packing parameters
+
+NOTE: The current choice of data packing parameters can be confusing.
+      This might remain or change in future TCB standard releases, depending on user feedback.
+
+The following parameters affect data packing.
+
+.Data packing parameters
+[%autowidth]
+|===
+| parameter | type (enumeration) | range (options)          | default      | description
+
+| `BUS.MIN` | `int unsigned`     | `0`~`BUS_MAX`            | `0`          | Minimum transfer logarithmic size.
+| `BUS.OFF` | `int unsigned`     | `0`~`BUS_MAX`            | `0`          | Number of LSB address bits (the offset of unit/byte inside the data bus) tied to zero.
+| `BUS.ALN` | `int unsigned`     | `0`~`BUS_MAX`            | `BUS_MAX`    | Alignment width, number of least significant address bits which are zero.
+| `BUS.MOD` | `tcb_bus_mode_t`   | `LOG_SIZE`/`BYTE_ENA`    | `LOG_SIZE`   | Data size/position mode.
+| `BUS.ORD` | `tcb_bus_order_t`  | `DESCENDING`/`ASCENDING` | `DESCENDING` | Byte order (related to little/big endian systems).
+|===
+
+Only a small subset of all parameter value combinations configurations from all parameter combinations
+results in practical and useful data packing rule (RISC-V RV32/64 access patterns are a large part of the subset).
+The rest are reserved with no intention to be documented and implemented.
+
+.Relevant packing modes
+[%autowidth]
+|===
+| `MOD`      | `ORD`        | `BUS.DAT` | `BUS.MIN`   | `BUS.OFF`   | `BUS.ALN`   | `ndn`   | description
+
+| `LOG_SIZE` | `ASCENDING`  | `32`      | `BUS_MAX=2` | `BUS_MAX=2` | `BUS_MAX=2` | ignored | RISC-V single issue instruction fetch unit without C extension.
+| `LOG_SIZE` | `ASCENDING`  | `32`      |     `1`/`2` |         `1` |         ??? | ignored | RISC-V single issue instruction fetch unit with C extension (details in examples).
+
+| `LOG_SIZE` | `DESCENDING` | `32`/`64` | `0`         | `0`         | 0           | ignored | RISC-V RV32/64 GPR load/store (no sign extension) with misaligned access support.
+| `LOG_SIZE` | `DESCENDING` | `32`/`64` | `0`         | `0`         | `BUS_MAX`   | ignored | RISC-V RV32/64 GPR load/store (no sign extension) with only aligned access support.
+
+| `LOG_SIZE` | `ASCENDING`  | any       | any         | any         | any         | ignored | Reserved (not defined or used).
+
+| `BYTE_ENA` | `DESCENDING` | `32`/`64` | `0`         | `0`         | 0           | both    | RISC-V RV32/64 memory load/store with misaligned access support.
+| `BYTE_ENA` | `DESCENDING` | `32`/`64` | `0`         | `BUS_MAX`   | `BUS_MAX`   | both    | RISC-V RV32/64 memory load/store with only aligned access support.
+
+| `BYTE_ENA` | `DESCENDING` | `32`      | `BUS_MAX=2` | `BUS_MAX=2` | `BUS_MAX=2` | both    | Peripheral bus with only 4-byte (word) aligned access support.
+| `BYTE_ENA` | `DESCENDING` | `64`      | `BUS_MAX=3` | `BUS_MAX=3` | `BUS_MAX=3` | both    | Peripheral bus with only 8-byte (double) aligned accesses support.
+| `BYTE_ENA` | `DESCENDING` | `64`      |         `2` |         `2` | `BUS_MAX=3` | both    | Peripheral bus with mixed 4/8-byte aligned accesses support.
+
+| `BYTE_ENA` | `ASCENDING`  | `32`/`64` | TBD         | TBD         | TBD         | both    | OpenPOWER storage operands (for old peripherals).
+| `BYTE_ENA` | `ASCENDING`  | any other | any other   | any other   | any other   | both    | Reserved (not defined or used).
+|===
+
+
+
+NOTE: The OpenPOWER specific configuration is included for historic compatibility, and completeness.
+
+=== Supported size and alignment checking
+
+Alignment width `ALN` defines what kind of data alignments are supported.
+The values can be between `0` (no alignment requirements)
+and `clog2(BEN)` (full alignment is required).
+Only this two values are documented,
+other values in between can be used for custom implementations.
+
+=== Transfer logarithmic size encoding
+
+Interface signal `siz` encodes the logarithmic size of a transfer.
+The linear size (number of units/bytes) of the transfer is calculated as `2**siz`.
+
+The number bits required to encode sizes from 1 to `BUS_BEN` (unit/byte enable width) is
+`BUS_SIZ = $clog2(BUS_MAX+1)` where the largest transfer logarithmic size is `BUS_MAX`.
+Depending on the data bus width, some logarithmic size values encoded with `BUS_SIZ` bits
+can be invalid and are thus reserved.
+
+.Logarithmic size encoding
+[%autowidth]
+|===
+| `BUS.DAT` | `BUS_BEN` | `$clog2(BUS_BEN) = BUS_MAX =    siz` | `$clog2(BUS_MAX+1) = BUS_SIZ` | comment
+|       `8` |       `1` | `$clog2(      1) =       0 =    'b0` | `$clog2(      0+1) =       0` | The size is a constant, there is no need for `siz`.
+|      `16` |       `2` | `$clog2(      2) =       1 =    'b1` | `$clog2(      1+1) =       1` |
+|      `32` |       `4` | `$clog2(      4) =       2 =   'b10` | `$clog2(      2+1) =       2` |
+|      `64` |       `8` | `$clog2(      8) =       3 =   'b11` | `$clog2(      3+1) =       2` |
+|     `128` |      `16` | `$clog2(     16) =       4 =  'b100` | `$clog2(      4+1) =       3` |
+|     `256` |      `32` | `$clog2(     32) =       5 =  'b101` | `$clog2(      5+1) =       3` |
+|     `512` |      `64` | `$clog2(     64) =       6 =  'b110` | `$clog2(      6+1) =       3` |
+|    `1024` |     `128` | `$clog2(    128) =       7 =  'b111` | `$clog2(      7+1) =       3` |
+|    `2096` |     `256` | `$clog2(    256) =       8 = 'b1000` | `$clog2(      8+1) =       4` |
+|===
+
+NOTE: A linear size mode was initially considered, but later discarded,
+since the logarithmic size covers all functionality (power of 2 sized load/store transfers)
+documented in the RISC-V ISA and similar standards .
+One example of non power of 2 transfer would be 24-bit RGB data.
+A CPU could perform single cycle non aligned 24-bit accesses to memory,
+instead of performing a 32-bit access and masking the data with `0x00ffffff`.
+Another example would be a FIFO with a `BUS.DAT` wide interface accessed with a CPU or DMA.
+When writing/reading an arbitrarily long stream of bytes to/from the FIFO,
+the reminder at the end of the stream can be of a size which is not a power of 2
+(3 bytes o a 32-bit interface, 3/5/6/7 bytes on a 64-bit interface).
+A CPU with only logarithmic sized accesses, must split this reminder into multiple accesses (7=4+2+1).
+The difference in performance due to this overhead is in most use cases
+not worth the additional instruction encoding space in an ISA.
+Users are free to write custom TCB implementations with linear size support.
+
+=== Data position mode
+
+The `MOD` parameter encoding defines the following options.
+
+* `LOG_SIZE`,
+* `BYTE_ENA`.
+
+The name _reference_ is based on the idea,
+that if a monitor was placed on multiple points of a mixed configuration interconnect,
+all data would be translated to a common reference before being compared.
+
+The `BYTE_ENA` mode defines the same data packing scheme as memories.
+
+In byte enable mode the the byte enable signal `ben`
+provides the information about the transfer size,
+which is the number of active bits in the `ben` vector.
+
+The `LOG_SIZE` mode is based on how ISAs define the placement of
+byte/half/word/double into its general purpose registers.
+In registers data of any size is always stored aligned to the right.
+In logarithmic size mode data is always aligned to the right,
+regardless of the address, address alignment, endianness, ...
+
+In logarithmic size mode the transfer size signal `siz`
+provides the information about the transfer size.
+
+The main purpose of this mode is to connect peripherals to the CPU or DMA.
+without the need for byte reordering logic between the two.
+
+Another use case would be a RISV-V instruction fetch interface with C extension support,
+where the instruction is always aligned the same way, regardless on whether
+the instruction is 32-bit or 16-bit aligned in the memory.
+In this case a multiplexer for aligning the instruction would still be needed,
+but it would be placed in the interconnect instead of the CPU.
+
+=== Byte order
+
+The `ORD` parameter encoding defines the following options.
+
+* `DESCENDING`,
+* `ASCENDING`.
+
+Almost all modern standards and HDL/schematic implementations use the `DESCENDING` order.
+Here indexing starts with 0 on the right side and increments to the left side of the vector.
+When writing bit vectors and equivalent packed byte arrays in SystemVerilog:
+
+[source,SystemVerilog]
+----
+logic     [31:0] data_bit_vector;
+logic [3:0][7:0] data_byte_array;
+----
+
+Byte addressing follows the same rules so it increments from the right to the left.
+
+The `ASCENDING` order was prominently used in the OpenPOWER specification
+and its big endian predecessors.
+Here indexing starts with 0 on the left side and increments to the right side of the vector.
+When writing bit vectors and equivalent packed byte arrays in SystemVerilog:
+
+[source,SystemVerilog]
+----
+logic     [0:31] data_bit_vector;
+logic [0:3][0:7] data_byte_array;
+----
+
+Byte addressing follows the same rules so it increments from the left to the right.
+
+Due to the current prevalence of descending indexing order and little-endian ISAs,
+it can be difficult and confusing to understand big endian (bi-endian) compatibility.
+A few reasons that aggravate the confusion:
+
+* while OpenPOWER defines all 64-bit registers with ascending order `[0:63]`,
+  a load/store byte operation would place the byte in the register aligned to the right `[56:63]`,
+* on OpenPOWER the least significant bit of the program counter or address pointer is `[63]`,
+* not all native big-endian ISAs use the ascending order,
+* early bi-endian approaches differ from moderns ones.
+
+Modern OpenPOWER implementations use ascending order in the core to match the specification,
+but use descending order on the system bus, which is usually AMBA AXI based.
+The only practical use case for ascending order would probably be while interfacing with historic hardware.
 
 == Examples
 
