@@ -51,6 +51,83 @@ interface tcb_if
   rsp_t rsp;  // response
 
 ////////////////////////////////////////////////////////////////////////////////
+// parameter validation
+////////////////////////////////////////////////////////////////////////////////
+
+  generate
+    // framing (maximum frame length is FRM+1)
+    if (BUS.FRM > 0) begin
+      // check frame enable bit presence and type
+      initial assert ($bits(req.frm) == 1) else
+        $error("unexpected type(req.frm) = ", $typename(req.frm));
+      // check frame length vector presence and size
+      initial assert ($bits(req.len) == $clog2(BUS.FRM+1)) else
+        $error("unexpected type(req.len) = ", $typename(req.len));
+    end
+    // channel
+    if (BUS.CHN == TCB_CHN_FULL_DUPLEX) begin
+      // read enable signal must be present on full duplex channels
+      initial assert ($bits(req.ren) == 1) else
+        $error("unexpected type(req.ren) = ", $typename(req.ren));
+    end
+    // prefetch
+    if (BUS.PRF == TCB_PRF_ENABLED) begin
+      // prefetch signals rpt/inc must be present
+      initial assert ($bits(req.rpt) == 1) else
+        $error("unexpected type(req.rpt) = ", $typename(req.rpt));
+      initial assert ($bits(req.inc) == 1) else
+        $error("unexpected type(req.inc) = ", $typename(req.inc));
+    end
+    // address and next address
+    initial assert ($bits(req.adr) > 0) else
+      $error("unexpected type(req.adr) = ", $typename(req.adr));
+    if (BUS.NXT == TCB_NXT_ENABLED) begin
+      initial assert ($bits(req.adr) == $bits(req.nxt)) else
+        $error("unexpected type(req.nxt) = ", $typename(req.nxt));
+    end
+    // request/write data bus and data sizing
+    if (BUS.CHN != TCB_CHN_READ_ONLY) begin
+      // check request/write data bus (multiple of 8 and power of 2)
+      initial assert (($bits(req.wdt)%8 == 0) && ($bits(req.wdt) == 2**$clog2($bits(req.wdt)))) else
+        $error("unexpected type(req.wdt) = ", $typename(req.wdt));
+      // check data sizing
+      case (BUS.MOD)
+        TCB_MOD_LOG_SIZE: begin  // logarithmic size
+          initial assert ($bits(req.siz) == $clog2($clog2($bits(req.wdt)/8)+1)) else
+            $error("unexpected type(req.siz) = ", $typename(req.siz));
+        end
+        TCB_MOD_BYTE_ENA: begin  // byte enable
+          initial assert ($bits(req.ben) == $bits(req.wdt)/8) else
+            $error("unexpected type(req.ben) = ", $typename(req.ben));
+        end
+      endcase
+    end
+    // response/read data bus and data sizing
+    if (BUS.CHN != TCB_CHN_READ_ONLY) begin
+      // check response/read data bus (multiple of 8 and power of 2)
+      initial assert (($bits(rsp.rdt)%8 == 0) && ($bits(rsp.rdt) == 2**$clog2($bits(rsp.rdt)))) else
+        $error("unexpected type(rsp.rdt) = ", $typename(rsp.rdt));
+      // check data sizing
+      case (BUS.MOD)
+        TCB_MOD_LOG_SIZE: begin  // logarithmic size
+          initial assert ($bits(req.siz) == $clog2($clog2($bits(rsp.rdt)/8)+1)) else
+            $error("unexpected type(req.siz) = ", $typename(req.siz));
+        end
+        TCB_MOD_BYTE_ENA: begin  // byte enable
+          initial assert ($bits(req.ben) == $bits(rsp.rdt)/8) else
+            $error("unexpected type(req.ben) = ", $typename(req.ben));
+        end
+      endcase
+    end
+    // endianness
+    if (BUS.NDN == TCB_NDN_BI_NDN) begin
+      // bi-endian signal presence
+      initial assert ($bits(req.ndn) == 1) else
+        $error("unexpected type(req.ndn) = ", $typename(req.ndn));
+    end
+  endgenerate
+
+////////////////////////////////////////////////////////////////////////////////
 // local parameters
 ////////////////////////////////////////////////////////////////////////////////
 

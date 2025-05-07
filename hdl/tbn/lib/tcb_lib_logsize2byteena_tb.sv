@@ -34,7 +34,7 @@ module tcb_lib_logsize2byteena_tb
 
   // physical interface parameter default
   localparam tcb_bus_t TCB_BUS_SIZ = '{
-    FRM: TCB_FRM_ENABLED,
+    FRM: TCB_BUS_DEF.FRM,
     CHN: TCB_CHN_HALF_DUPLEX,
     PRF: TCB_PRF_ENABLED,
     NXT: TCB_NXT_ENABLED,
@@ -44,7 +44,7 @@ module tcb_lib_logsize2byteena_tb
 
   // physical interface parameter default
   localparam tcb_bus_t TCB_BUS_BEN = '{
-    FRM: TCB_FRM_ENABLED,
+    FRM: TCB_BUS_DEF.FRM,
     CHN: TCB_CHN_HALF_DUPLEX,
     PRF: TCB_PRF_ENABLED,
     NXT: TCB_NXT_ENABLED,
@@ -197,7 +197,6 @@ module tcb_lib_logsize2byteena_tb
     obj_man.check32(32'h00000020, 32'h76543210, 1'b0);
     obj_man.check32(32'h00000030, 32'h76543210, 1'b0);
 
-/*
     // misaligned write sequence
     $display("misaligned write sequence");
     testname = "misaligned write";
@@ -234,7 +233,7 @@ module tcb_lib_logsize2byteena_tb
       assert (tst_mon[i].req ==? tst_ref[i].req) else $error("\ntst_mon[%0d].req = %p !=? \ntst_ref[%0d].req = %p", i, tst_mon[i].req, i, tst_ref[i].req);
       assert (tst_mon[i].rsp ==? tst_ref[i].rsp) else $error("\ntst_mon[%0d].rsp = %p !=? \ntst_ref[%0d].rsp = %p", i, tst_mon[i].rsp, i, tst_ref[i].rsp);
     end
-*/
+
     // end of test
     repeat (4) @(posedge clk);
     $finish();

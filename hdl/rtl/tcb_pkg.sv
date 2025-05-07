@@ -29,12 +29,6 @@ package tcb_pkg;
 // bus layer (defines which signal subset is used)
 ////////////////////////////////////////////////////////////////////////////////
 
-  // framing configuration
-  typedef enum bit {
-    TCB_FRM_DISABLED = 1'b0,
-    TCB_FRM_ENABLED  = 1'b1
-  } tcb_bus_framing_t;
-
   // channel configuration
   typedef enum bit [2-1:0] {
     // 2 bit value {rd,wr}
@@ -77,7 +71,7 @@ package tcb_pkg;
   `else
   typedef struct {
   `endif
-    tcb_bus_framing_t  FRM;  // framing configuration
+    int unsigned       FRM;  // framing maximum length (if 0 framing is disabled)
     tcb_bus_channel_t  CHN;  // channel configuration
     tcb_bus_prefetch_t PRF;  // prefetch configuration
     tcb_bus_next_t     NXT;  // next address configuration
@@ -87,7 +81,7 @@ package tcb_pkg;
 
   // physical interface parameter default
   localparam tcb_bus_t TCB_BUS_DEF = '{
-    FRM: TCB_FRM_ENABLED,
+    FRM: 15, // frame size of up to FRM+1=16 transfers
     CHN: TCB_CHN_HALF_DUPLEX,
     PRF: TCB_PRF_ENABLED,
     NXT: TCB_NXT_ENABLED,
@@ -135,38 +129,46 @@ package tcb_pkg;
 // default structures containing all optional signals
 ////////////////////////////////////////////////////////////////////////////////
 
+  // default signal widths
+  localparam DEF_LEN = $clog2(TCB_BUS_DEF.FRM+1);
+  localparam DEF_ADR = 32;
+  localparam DEF_DAT = 32;
+  localparam DEF_BEN = DEF_DAT/8;
+  localparam DEF_MAX = $clog2(DEF_BEN);
+  localparam DEF_SIZ = $clog2(DEF_MAX+1);
+
+  // request
+  typedef struct packed {
+    // framing
+    logic                      frm;  // frame
+    logic [DEF_LEN-1:0]        len;  // frame length
+    // channel
+    logic                      wen;  // write enable
+    logic                      ren;  // read enable
+    // prefetch
+    logic                      rpt;  // repeated address
+    logic                      inc;  // incremented address
+    // address and next address
+    logic [DEF_ADR-1:0]        adr;  // current address
+    logic [DEF_ADR-1:0]        nxt;  // next address
+    // data sizing
+    logic [DEF_SIZ-1:0]        siz;  // logarithmic transfer size
+    logic [DEF_BEN-1:0]        ben;  // byte enable
+    // endianness
+    logic                      ndn;  // endianness
+    // data
+    logic [DEF_BEN-1:0][8-1:0] wdt;  // write data
+  } tcb_req_t;
+
   // status
   typedef struct packed {
     logic err;  // error response
   } tcb_rsp_sts_t;
 
-  // request
-  typedef struct packed {
-    // framing
-    logic                frm;  // frame
-    logic                len;  // frame length
-    // channel
-    logic                wen;  // write enable
-    logic                ren;  // read enable
-    // prefetch
-    logic                inc;  // incremented address
-    logic                rpt;  // repeated address
-    // address and next address
-    logic       [32-1:0] adr;  // current address
-    logic       [32-1:0] nxt;  // next address
-    // data sizing
-    logic        [2-1:0] siz;  // logarithmic transfer size
-    logic        [4-1:0] ben;  // byte enable
-    // endianness
-    logic                ndn;  // endianness
-    // data
-    logic [4-1:0][8-1:0] wdt;  // write data
-  } tcb_req_t;
-
   // response
   typedef struct packed {
-    logic [4-1:0][8-1:0] rdt;  // read data
-    tcb_rsp_sts_t        sts;  // status
+    logic [DEF_BEN-1:0][8-1:0] rdt;  // read data
+    tcb_rsp_sts_t              sts;  // status
   } tcb_rsp_t;
 
 ////////////////////////////////////////////////////////////////////////////////
