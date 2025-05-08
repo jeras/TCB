@@ -20,7 +20,7 @@ module tcb_lib_logsize2byteena
   import tcb_pkg::*;
 #(
   // The ALIGNED implementation should be better optimized for FPGA synthesis
-  parameter bit ALIGNED = 1'b1
+  parameter bit ALIGNED = 1'b0
 )(
   // interfaces
   tcb_if.sub sub,    // TCB subordinate port (manager     device connects here)
@@ -143,6 +143,8 @@ module tcb_lib_logsize2byteena
       man.req.ben[i] = (req_off & req_msk) == (i[BUS_MAX-1:0] & req_msk);
     end
 
+    // TODO: add big endian support, maybe ASCENDING also
+
     if (sub.BUS.CHN != TCB_CHN_READ_ONLY) begin: write
       // write access
       always_comb
@@ -177,6 +179,7 @@ module tcb_lib_logsize2byteena
       unique case (sub.req.ndn)
         TCB_LITTLE:  man.req.ben[i] = sub_req_ben[(        (i-req_off)) % BUS_BEN];
         TCB_BIG   :  man.req.ben[i] = sub_req_ben[(BUS_BEN-(i-req_off)) % BUS_BEN];
+        default   :  man.req.ben[i] = 'x;
       endcase
     end: ben
 
@@ -187,6 +190,7 @@ module tcb_lib_logsize2byteena
         unique case (sub.req.ndn)
           TCB_LITTLE:  man.req.wdt[i] = sub.req.wdt[(        (i-req_off)) % BUS_BEN];
           TCB_BIG   :  man.req.wdt[i] = sub.req.wdt[(BUS_BEN-(i-req_off)) % BUS_BEN];
+          default   :  man.req.wdt[i] = '{default: 8'hxx};
         endcase
       end: wdt
     end: write
@@ -198,6 +202,7 @@ module tcb_lib_logsize2byteena
         unique case (sub.req_dly[sub.HSK_DLY].ndn)
           TCB_LITTLE:  sub.rsp.rdt[i] = man.rsp.rdt[(        (i+rsp_off)) % BUS_BEN];
           TCB_BIG   :  sub.rsp.rdt[i] = man.rsp.rdt[(BUS_BEN-(i+rsp_off)) % BUS_BEN];
+          default   :  sub.rsp.rdt[i] = '{default: 8'hxx};
         endcase
       end: rdt
     end: read
