@@ -143,17 +143,21 @@ module tcb_lib_logsize2byteena
       man.req.ben[i] = (req_off & req_msk) == (i[BUS_MAX-1:0] & req_msk);
     end
 
-    // write access
-    always_comb
-    for (int unsigned i=0; i<BUS_BEN; i++) begin
-      man.req.wdt[i] = sub.req.wdt[i[BUS_MAX-1:0] & ~req_msk];
-    end
+    if (sub.BUS.CHN != TCB_CHN_READ_ONLY) begin: write
+      // write access
+      always_comb
+      for (int unsigned i=0; i<BUS_BEN; i++) begin
+        man.req.wdt[i] = sub.req.wdt[i[BUS_MAX-1:0] & ~req_msk];
+      end
+    end: write
 
-    // read access
-    always_comb
-    for (int unsigned i=0; i<BUS_BEN; i++) begin
-      sub.rsp.rdt[i] = man.rsp.rdt[(~prefix_or(i[BUS_MAX-1:0]) & rsp_off) | i[BUS_MAX-1:0]];
-    end
+    if (sub.BUS.CHN != TCB_CHN_WRITE_ONLY) begin: read
+      // read access
+      always_comb
+      for (int unsigned i=0; i<BUS_BEN; i++) begin
+        sub.rsp.rdt[i] = man.rsp.rdt[(~prefix_or(i[BUS_MAX-1:0]) & rsp_off) | i[BUS_MAX-1:0]];
+      end
+    end: read
 
   end: aligned
   else begin: unaligned
@@ -176,23 +180,27 @@ module tcb_lib_logsize2byteena
       endcase
     end: ben
 
-    // write data
-    always_comb
-    for (int unsigned i=0; i<BUS_BEN; i++) begin: wdt
-      unique case (sub.req.ndn)
-        TCB_LITTLE:  man.req.wdt[i] = sub.req.wdt[(        (i-req_off)) % BUS_BEN];
-        TCB_BIG   :  man.req.wdt[i] = sub.req.wdt[(BUS_BEN-(i-req_off)) % BUS_BEN];
-      endcase
-    end: wdt
+    if (sub.BUS.CHN != TCB_CHN_READ_ONLY) begin: write
+      // write data
+      always_comb
+      for (int unsigned i=0; i<BUS_BEN; i++) begin: wdt
+        unique case (sub.req.ndn)
+          TCB_LITTLE:  man.req.wdt[i] = sub.req.wdt[(        (i-req_off)) % BUS_BEN];
+          TCB_BIG   :  man.req.wdt[i] = sub.req.wdt[(BUS_BEN-(i-req_off)) % BUS_BEN];
+        endcase
+      end: wdt
+    end: write
 
-    // read data
-    always_comb
-    for (int unsigned i=0; i<BUS_BEN; i++) begin: rdt
-      unique case (sub.req_dly[sub.HSK_DLY].ndn)
-        TCB_LITTLE:  sub.rsp.rdt[i] = man.rsp.rdt[(        (i+rsp_off)) % BUS_BEN];
-        TCB_BIG   :  sub.rsp.rdt[i] = man.rsp.rdt[(BUS_BEN-(i+rsp_off)) % BUS_BEN];
-      endcase
-    end: rdt
+    if (sub.BUS.CHN != TCB_CHN_WRITE_ONLY) begin: read
+      // read data
+      always_comb
+      for (int unsigned i=0; i<BUS_BEN; i++) begin: rdt
+        unique case (sub.req_dly[sub.HSK_DLY].ndn)
+          TCB_LITTLE:  sub.rsp.rdt[i] = man.rsp.rdt[(        (i+rsp_off)) % BUS_BEN];
+          TCB_BIG   :  sub.rsp.rdt[i] = man.rsp.rdt[(BUS_BEN-(i+rsp_off)) % BUS_BEN];
+        endcase
+      end: rdt
+    end: read
 
   end: unaligned
   endgenerate
@@ -201,7 +209,7 @@ module tcb_lib_logsize2byteena
 // response
 ////////////////////////////////////////////////////////////////////////////////
 
-  // error
+  // status error
   assign sub.rsp.sts = man.rsp.sts;
 
   // handshake
