@@ -19,6 +19,7 @@
 module tcb_lib_logsize2byteena
   import tcb_pkg::*;
 #(
+  // The ALIGNED implementation should be better optimized for FPGA synthesis
   parameter bit ALIGNED = 1'b1
 )(
   // interfaces
@@ -31,6 +32,10 @@ module tcb_lib_logsize2byteena
 ////////////////////////////////////////////////////////////////////////////////
 
   initial begin
+    // data sizing mode
+    assert (sub.BUS.MOD == TCB_MOD_LOG_SIZE) else $error("mismatch (sub.BUS.MOD = %0s) != TCB_MOD_LOG_SIZE", sub.BUS.MOD.name());
+    assert (man.BUS.MOD == TCB_MOD_BYTE_ENA) else $error("mismatch (man.BUS.MOD = %0s) != TCB_MOD_BYTE_ENA", man.BUS.MOD.name());
+    // other parameters
     assert (      sub.BUS.FRM  ==       man.BUS.FRM ) else $error("mismatch (      sub.BUS.FRM  = %0d) != (      man.BUS.FRM  = %0d)",       sub.BUS.FRM       ,       man.BUS.FRM       );
     assert (      sub.BUS.CHN  ==       man.BUS.CHN ) else $error("mismatch (      sub.BUS.CHN  = %0s) != (      man.BUS.CHN  = %0s)",       sub.BUS.CHN.name(),       man.BUS.CHN.name());
     assert (      sub.BUS.PRF  ==       man.BUS.PRF ) else $error("mismatch (      sub.BUS.PRF  = %0s) != (      man.BUS.PRF  = %0s)",       sub.BUS.PRF.name(),       man.BUS.PRF.name());
@@ -38,7 +43,16 @@ module tcb_lib_logsize2byteena
     assert (      sub.BUS.NXT  ==       man.BUS.NXT ) else $error("mismatch (      sub.BUS.NXT  = %0s) != (      man.BUS.NXT  = %0s)",       sub.BUS.NXT.name(),       man.BUS.NXT.name());
     assert (      sub.BUS.NDN  ==       man.BUS.NDN ) else $error("mismatch (      sub.BUS.NDN  = %0s) != (      man.BUS.NDN  = %0s)",       sub.BUS.NDN.name(),       man.BUS.NDN.name());
   end
-  
+
+  generate
+    if (sub.BUS.CHN != TCB_CHN_READ_ONLY) begin
+      initial assert ($bits(sub.req.wdt) == $bits(man.req.wdt)) else $error("mismatch ($bits(sub.req.wdt) = %0d) != ($bits(man.req.wdt) = %0d)", $bits(sub.req.wdt), $bits(man.req.wdt));
+    end
+    if (sub.BUS.CHN != TCB_CHN_WRITE_ONLY) begin
+      initial assert ($bits(sub.rsp.rdt) == $bits(man.rsp.rdt)) else $error("mismatch ($bits(sub.rsp.rdt) = %0d) != ($bits(man.rsp.rdt) = %0d)", $bits(sub.rsp.rdt), $bits(man.rsp.rdt));
+    end
+  endgenerate
+
 // TODO: this file need a proper testbench and a serious cleanup
 
   // local parameters derived from the byte enable side (manager)
@@ -89,18 +103,11 @@ module tcb_lib_logsize2byteena
   endgenerate
 
 ////////////////////////////////////////////////////////////////////////////////
-// write/read data
+// local signals
 ////////////////////////////////////////////////////////////////////////////////
-
-  // byte enable
-  logic [BUS_BEN-1:0] sub_req_ben;
 
   // request/response address segment, mask
   logic [BUS_MAX-1:0] req_off, rsp_off;
-  logic [BUS_MAX-1:0] req_msk;
-
-  // request/response endianness
-  logic               req_ndn, rsp_ndn;
 
   // prefix OR operation
   function automatic [BUS_MAX-1:0] prefix_or (logic [BUS_MAX-1:0] val);
@@ -110,30 +117,19 @@ module tcb_lib_logsize2byteena
     end
   endfunction: prefix_or
 
-////////////////////////////////////////////////////////////////////////////////
-// local signals
-////////////////////////////////////////////////////////////////////////////////
-
   // request/response address segment
   assign req_off = sub.req_dly[0          ].adr[BUS_MAX-1:0];
   assign rsp_off = sub.req_dly[sub.HSK_DLY].adr[BUS_MAX-1:0];
-
-  // request/response endianness
-  assign req_ndn = sub.req                 .ndn;
-  assign rsp_ndn = sub.req_dly[sub.HSK_DLY].ndn;
-
-  // logarithmic size mode (subordinate interface) byte enable
-  always_comb
-  for (int unsigned i=0; i<BUS_BEN; i++) begin: logsize2byteena
-    sub_req_ben[i] = (i < 2**sub.req.siz) ? 1'b1 : 1'b0;
-  end: logsize2byteena
 
 ////////////////////////////////////////////////////////////////////////////////
 // multiplexers
 ////////////////////////////////////////////////////////////////////////////////
 
   generate
-  if (ALIGNED) begin
+  if (ALIGNED) begin: aligned
+
+    // offset mask
+    logic [BUS_MAX-1:0] req_msk;
 
     // offset mask
     always_comb
@@ -158,8 +154,18 @@ module tcb_lib_logsize2byteena
     for (int unsigned i=0; i<BUS_BEN; i++) begin
       sub.rsp.rdt[i] = man.rsp.rdt[(~prefix_or(i[BUS_MAX-1:0]) & rsp_off) | i[BUS_MAX-1:0]];
     end
-  
-  end else begin
+
+  end: aligned
+  else begin: unaligned
+
+    // byte enable
+    logic [BUS_BEN-1:0] sub_req_ben;
+
+    // logarithmic size mode (subordinate interface) byte enable
+    always_comb
+    for (int unsigned i=0; i<BUS_BEN; i++) begin: logsize2byteena
+      sub_req_ben[i] = (i < 2**sub.req.siz) ? 1'b1 : 1'b0;
+    end: logsize2byteena
 
     // byte enable
     always_comb
@@ -182,14 +188,14 @@ module tcb_lib_logsize2byteena
     // read data
     always_comb
     for (int unsigned i=0; i<BUS_BEN; i++) begin: rdt
-      unique case (sub.req.ndn)
+      unique case (sub.req_dly[sub.HSK_DLY].ndn)
         TCB_LITTLE:  sub.rsp.rdt[i] = man.rsp.rdt[(        (i+rsp_off)) % BUS_BEN];
         TCB_BIG   :  sub.rsp.rdt[i] = man.rsp.rdt[(BUS_BEN-(i+rsp_off)) % BUS_BEN];
       endcase
     end: rdt
 
-end
-endgenerate
+  end: unaligned
+  endgenerate
 
 ////////////////////////////////////////////////////////////////////////////////
 // response
