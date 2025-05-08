@@ -30,26 +30,15 @@ module tcb_lib_logsize2byteena
 // parameter validation
 ////////////////////////////////////////////////////////////////////////////////
 
-`ifndef ALTERA_RESERVED_QIS
-`else
-  // comparing subordinate and manager interface parameters
-  initial
-  begin
-    tcb_bus_match_t match = '{MOD: 1'b0, default: 1'b1};
-    // validate TCB BUS.MOD parameter
-    assert (sub.BUS.MOD == TCB_LOG_SIZE)
-      $fatal("ERROR: %m parameter (sub.BUS.MOD = %s) != TCB_LOG_SIZE", sub.BUS.MOD.name());
-    assert (man.BUS.MOD == TCB_BYTE_ENA)
-      $fatal("ERROR: %m parameter (sub.BUS.MOD = %s) != TCB_LOG_SIZE", man.BUS.MOD.name());
-    // TCB BUS.ORD ASCENDING byte order is not supported
-    assert (sub.BUS.MOD != TCB_DESCENDING)
-      $fatal("ERROR: %m parameter (sub.BUS.ORD = %s) != TCB_DESCENDING", sub.BUS.ORD.name());
-    // validate remaining TCB BUS parameters
-    assert tcb_bus_match(sub.BUS, man.BUS, match)
-      $fatal("ERROR: %m parameter (sub.BUS = %p) != (man.BUS = %p)", sub.BUS, man.BUS);
+  initial begin
+    assert (      sub.BUS.FRM  ==       man.BUS.FRM ) else $error("mismatch (      sub.BUS.FRM  = %0d) != (      man.BUS.FRM  = %0d)",       sub.BUS.FRM       ,       man.BUS.FRM       );
+    assert (      sub.BUS.CHN  ==       man.BUS.CHN ) else $error("mismatch (      sub.BUS.CHN  = %0s) != (      man.BUS.CHN  = %0s)",       sub.BUS.CHN.name(),       man.BUS.CHN.name());
+    assert (      sub.BUS.PRF  ==       man.BUS.PRF ) else $error("mismatch (      sub.BUS.PRF  = %0s) != (      man.BUS.PRF  = %0s)",       sub.BUS.PRF.name(),       man.BUS.PRF.name());
+    assert ($bits(sub.req.adr) == $bits(man.req.adr)) else $error("mismatch ($bits(sub.req.adr) = %0d) != ($bits(man.req.adr) = %0d)", $bits(sub.req.adr)      , $bits(man.req.adr)      );
+    assert (      sub.BUS.NXT  ==       man.BUS.NXT ) else $error("mismatch (      sub.BUS.NXT  = %0s) != (      man.BUS.NXT  = %0s)",       sub.BUS.NXT.name(),       man.BUS.NXT.name());
+    assert (      sub.BUS.NDN  ==       man.BUS.NDN ) else $error("mismatch (      sub.BUS.NDN  = %0s) != (      man.BUS.NDN  = %0s)",       sub.BUS.NDN.name(),       man.BUS.NDN.name());
   end
-`endif
-
+  
 // TODO: this file need a proper testbench and a serious cleanup
 
   // local parameters derived from the byte enable side (manager)
@@ -64,9 +53,40 @@ module tcb_lib_logsize2byteena
   assign man.vld = sub.vld;
 
   // request
-  assign man.req.frm = sub.req.frm;
-  assign man.req.wen = sub.req.wen;
-  assign man.req.ndn = sub.req.ndn;
+  generate
+    // framing
+    if (man.BUS.FRM > 0) begin
+      assign man.req.frm = sub.req.frm;
+      assign man.req.len = sub.req.len;
+    end
+    // channel
+    if (man.BUS.CHN inside {TCB_CHN_FULL_DUPLEX, TCB_CHN_HALF_DUPLEX}) begin
+      assign man.req.wen = sub.req.wen;
+    end
+    if (man.BUS.CHN inside {TCB_CHN_FULL_DUPLEX}) begin
+      assign man.req.ren = sub.req.ren;
+    end
+    // prefetch
+    if (man.BUS.PRF == TCB_PRF_ENABLED) begin
+      assign man.req.rpt = sub.req.rpt;
+      assign man.req.inc = sub.req.inc;
+    end
+    // address and next address
+    assign man.req.adr = sub.req.adr;
+    if (man.BUS.NXT == TCB_NXT_ENABLED) begin
+      assign man.req.nxt = sub.req.nxt;
+    end
+    // request/write data bus
+    if (man.BUS.CHN != TCB_CHN_READ_ONLY) begin
+    end
+    // response/read data bus and data sizing
+    if (man.BUS.CHN != TCB_CHN_READ_ONLY) begin
+    end
+    // endianness
+    if (man.BUS.NDN == TCB_NDN_BI_NDN) begin
+      assign man.req.ndn = sub.req.ndn;
+    end
+  endgenerate
 
 ////////////////////////////////////////////////////////////////////////////////
 // write/read data
@@ -77,32 +97,26 @@ module tcb_lib_logsize2byteena
 
   // request/response address segment, mask
   logic [BUS_MAX-1:0] req_off, rsp_off;
-  logic [BUS_MAX-1:0] req_msk, rsp_msk;
+  logic [BUS_MAX-1:0] req_msk;
 
   // request/response endianness
   logic               req_ndn, rsp_ndn;
 
   // prefix OR operation
   function automatic [BUS_MAX-1:0] prefix_or (logic [BUS_MAX-1:0] val);
-    for (int unsigned i=0; i<BUS_MAX; i++) begin
-      // TODO
+    prefix_or[BUS_MAX-1] = val[BUS_MAX-1];
+    for (int unsigned i=BUS_MAX-1; i>0; i--) begin
+      prefix_or[i-1] = prefix_or[i] | val[i-1];
     end
   endfunction: prefix_or
 
 ////////////////////////////////////////////////////////////////////////////////
-// address alignment
+// local signals
 ////////////////////////////////////////////////////////////////////////////////
 
   // request/response address segment
   assign req_off = sub.req_dly[0          ].adr[BUS_MAX-1:0];
   assign rsp_off = sub.req_dly[sub.HSK_DLY].adr[BUS_MAX-1:0];
-
-  // copy address
-  assign man.req.adr = sub.req.adr;
-
-////////////////////////////////////////////////////////////////////////////////
-// multiplexers
-////////////////////////////////////////////////////////////////////////////////
 
   // request/response endianness
   assign req_ndn = sub.req                 .ndn;
@@ -114,10 +128,12 @@ module tcb_lib_logsize2byteena
     sub_req_ben[i] = (i < 2**sub.req.siz) ? 1'b1 : 1'b0;
   end: logsize2byteena
 
+////////////////////////////////////////////////////////////////////////////////
+// multiplexers
+////////////////////////////////////////////////////////////////////////////////
 
-
-generate
-if (ALIGNED) begin
+  generate
+  if (ALIGNED) begin
 
     // offset mask
     always_comb
@@ -140,20 +156,9 @@ if (ALIGNED) begin
     // read access
     always_comb
     for (int unsigned i=0; i<BUS_BEN; i++) begin
-      man.req.wdt[i] = sub.req.wdt[$clog2(i)[BUS_MAX-1:0] & rsp_off];
+      sub.rsp.rdt[i] = man.rsp.rdt[(~prefix_or(i[BUS_MAX-1:0]) & rsp_off) | i[BUS_MAX-1:0]];
     end
-
-    logic [4-1:0][8-1:0] tmp_dtw;  // data word
-    logic [2-1:0][8-1:0] tmp_dth;  // data half
-    logic [1-1:0][8-1:0] tmp_dtb;  // data byte
-
-    // read data multiplexer
-    assign tmp_dtw = man.rsp.rdt;
-    assign tmp_dth = rsp_off[1] ? tmp_dtw[3:2] : tmp_dtw[1:0];
-    assign tmp_dtb = rsp_off[0] ? tmp_dth[1:1] : tmp_dth[0:0];
-    // read data multiplexer
-    assign sub.rsp.rdt = {tmp_dtw[3:2], tmp_dth[1], tmp_dtb[0]};
-
+  
   end else begin
 
     // byte enable
