@@ -8,7 +8,7 @@ DOC + LIB + VIP + PERI
 # TCB
 
 This project provides the following parts:
-- Tightly Coupled Bus [documentation](doc/TCB.md),
+- Tightly Coupled Bus [documentation](doc/TCB.adoc),
 - reference interconnect library,
 - reference verification library (VIP),
 - reference peripherals.
