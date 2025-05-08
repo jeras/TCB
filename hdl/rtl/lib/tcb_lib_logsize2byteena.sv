@@ -82,6 +82,13 @@ module tcb_lib_logsize2byteena
   // request/response endianness
   logic               req_ndn, rsp_ndn;
 
+  // prefix OR operation
+  function automatic [BUS_MAX-1:0] prefix_or (logic [BUS_MAX-1:0] val);
+    for (int unsigned i=0; i<BUS_MAX; i++) begin
+      // TODO
+    end
+  endfunction: prefix_or
+
 ////////////////////////////////////////////////////////////////////////////////
 // address alignment
 ////////////////////////////////////////////////////////////////////////////////
@@ -107,6 +114,8 @@ module tcb_lib_logsize2byteena
     sub_req_ben[i] = (i < 2**sub.req.siz) ? 1'b1 : 1'b0;
   end: logsize2byteena
 
+
+
 generate
 if (ALIGNED) begin
 
@@ -128,11 +137,11 @@ if (ALIGNED) begin
       man.req.wdt[i] = sub.req.wdt[i[BUS_MAX-1:0] & ~req_msk];
     end
 
-//    // read access
-//    always_comb
-//    for (int unsigned i=0; i<BUS_BEN; i++) begin
-//      man.req.wdt[i] = sub.req.wdt[$clog2(i)[BUS_MAX-1:0] & rsp_off];
-//    end
+    // read access
+    always_comb
+    for (int unsigned i=0; i<BUS_BEN; i++) begin
+      man.req.wdt[i] = sub.req.wdt[$clog2(i)[BUS_MAX-1:0] & rsp_off];
+    end
 
     logic [4-1:0][8-1:0] tmp_dtw;  // data word
     logic [2-1:0][8-1:0] tmp_dth;  // data half
