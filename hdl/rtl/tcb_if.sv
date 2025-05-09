@@ -133,11 +133,9 @@ interface tcb_if
 
   // local parameters are calculated from the request
   // TODO: request data might not be available in read only channel configuration
-  localparam int unsigned BUS_ADR = $bits(req.adr);
-  localparam int unsigned BUS_DAT = $bits(req.wdt);
-  localparam int unsigned BUS_BEN = $bits(req.ben);
-  localparam int unsigned BUS_SIZ = $bits(req.siz);
+  localparam int unsigned BUS_BEN = BUS.DAT/8;
   localparam int unsigned BUS_MAX = $clog2(BUS_BEN);
+  localparam int unsigned BUS_SIZ = $clog2(DEF_MAX+1);
 
 ////////////////////////////////////////////////////////////////////////////////
 // helper functions

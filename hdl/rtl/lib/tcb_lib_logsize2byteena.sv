@@ -53,12 +53,6 @@ module tcb_lib_logsize2byteena
     end
   endgenerate
 
-// TODO: this file need a proper testbench and a serious cleanup
-
-  // local parameters derived from the byte enable side (manager)
-  localparam BUS_BEN = $bits(man.req.ben);
-  localparam BUS_MAX = $clog2(BUS_BEN);
-
 ////////////////////////////////////////////////////////////////////////////////
 // request
 ////////////////////////////////////////////////////////////////////////////////
@@ -107,19 +101,19 @@ module tcb_lib_logsize2byteena
 ////////////////////////////////////////////////////////////////////////////////
 
   // request/response address segment, mask
-  logic [BUS_MAX-1:0] req_off, rsp_off;
+  logic [sub.BUS.MAX-1:0] req_off, rsp_off;
 
   // prefix OR operation
-  function automatic [BUS_MAX-1:0] prefix_or (logic [BUS_MAX-1:0] val);
-    prefix_or[BUS_MAX-1] = val[BUS_MAX-1];
-    for (int unsigned i=BUS_MAX-1; i>0; i--) begin
+  function automatic [sub.BUS.MAX-1:0] prefix_or (logic [sub.BUS.MAX-1:0] val);
+    prefix_or[sub.BUS.MAX-1] = val[sub.BUS.MAX-1];
+    for (int unsigned i=sub.BUS.MAX-1; i>0; i--) begin
       prefix_or[i-1] = prefix_or[i] | val[i-1];
     end
   endfunction: prefix_or
 
   // request/response address segment
-  assign req_off = sub.req_dly[0          ].adr[BUS_MAX-1:0];
-  assign rsp_off = sub.req_dly[sub.HSK_DLY].adr[BUS_MAX-1:0];
+  assign req_off = sub.req_dly[0          ].adr[sub.BUS.MAX-1:0];
+  assign rsp_off = sub.req_dly[sub.HSK_DLY].adr[sub.BUS.MAX-1:0];
 
 ////////////////////////////////////////////////////////////////////////////////
 // multiplexers
@@ -129,18 +123,18 @@ module tcb_lib_logsize2byteena
   if (ALIGNED) begin: aligned
 
     // offset mask
-    logic [BUS_MAX-1:0] req_msk;
+    logic [sub.BUS.MAX-1:0] req_msk;
 
     // offset mask
     always_comb
-    for (int unsigned i=0; i<BUS_MAX; i++) begin
+    for (int unsigned i=0; i<sub.BUS.MAX; i++) begin
       req_msk[i] = (i >= sub.req.siz);
     end
 
     // byte enable
     always_comb
-    for (int unsigned i=0; i<BUS_BEN; i++) begin
-      man.req.ben[i] = (req_off & req_msk) == (i[BUS_MAX-1:0] & req_msk);
+    for (int unsigned i=0; i<sub.BUS.BEN; i++) begin
+      man.req.ben[i] = (req_off & req_msk) == (i[sub.BUS.MAX-1:0] & req_msk);
     end
 
     // TODO: add big endian support, maybe ASCENDING also
@@ -148,16 +142,16 @@ module tcb_lib_logsize2byteena
     if (sub.BUS.CHN != TCB_CHN_READ_ONLY) begin: write
       // write access
       always_comb
-      for (int unsigned i=0; i<BUS_BEN; i++) begin
-        man.req.wdt[i] = sub.req.wdt[i[BUS_MAX-1:0] & ~req_msk];
+      for (int unsigned i=0; i<sub.BUS.BEN; i++) begin
+        man.req.wdt[i] = sub.req.wdt[i[sub.BUS.MAX-1:0] & ~req_msk];
       end
     end: write
 
     if (sub.BUS.CHN != TCB_CHN_WRITE_ONLY) begin: read
       // read access
       always_comb
-      for (int unsigned i=0; i<BUS_BEN; i++) begin
-        sub.rsp.rdt[i] = man.rsp.rdt[(~prefix_or(i[BUS_MAX-1:0]) & rsp_off) | i[BUS_MAX-1:0]];
+      for (int unsigned i=0; i<sub.BUS.BEN; i++) begin
+        sub.rsp.rdt[i] = man.rsp.rdt[(~prefix_or(i[sub.BUS.MAX-1:0]) & rsp_off) | i[sub.BUS.MAX-1:0]];
       end
     end: read
 
@@ -165,20 +159,20 @@ module tcb_lib_logsize2byteena
   else begin: unaligned
 
     // byte enable
-    logic [BUS_BEN-1:0] sub_req_ben;
+    logic [sub.BUS.BEN-1:0] sub_req_ben;
 
     // logarithmic size mode (subordinate interface) byte enable
     always_comb
-    for (int unsigned i=0; i<BUS_BEN; i++) begin: logsize2byteena
+    for (int unsigned i=0; i<sub.BUS.BEN; i++) begin: logsize2byteena
       sub_req_ben[i] = (i < 2**sub.req.siz) ? 1'b1 : 1'b0;
     end: logsize2byteena
 
     // byte enable
     always_comb
-    for (int unsigned i=0; i<BUS_BEN; i++) begin: ben
+    for (int unsigned i=0; i<sub.BUS.BEN; i++) begin: ben
       unique case (sub.req.ndn)
-        TCB_LITTLE:  man.req.ben[i] = sub_req_ben[(        (i-req_off)) % BUS_BEN];
-        TCB_BIG   :  man.req.ben[i] = sub_req_ben[(BUS_BEN-(i-req_off)) % BUS_BEN];
+        TCB_LITTLE:  man.req.ben[i] = sub_req_ben[(            (i-req_off)) % sub.BUS.BEN];
+        TCB_BIG   :  man.req.ben[i] = sub_req_ben[(sub.BUS.BEN-(i-req_off)) % sub.BUS.BEN];
         default   :  man.req.ben[i] = 'x;
       endcase
     end: ben
@@ -186,10 +180,10 @@ module tcb_lib_logsize2byteena
     if (sub.BUS.CHN != TCB_CHN_READ_ONLY) begin: write
       // write data
       always_comb
-      for (int unsigned i=0; i<BUS_BEN; i++) begin: wdt
+      for (int unsigned i=0; i<sub.BUS.BEN; i++) begin: wdt
         unique case (sub.req.ndn)
-          TCB_LITTLE:  man.req.wdt[i] = sub.req.wdt[(        (i-req_off)) % BUS_BEN];
-          TCB_BIG   :  man.req.wdt[i] = sub.req.wdt[(BUS_BEN-(i-req_off)) % BUS_BEN];
+          TCB_LITTLE:  man.req.wdt[i] = sub.req.wdt[(            (i-req_off)) % sub.BUS.BEN];
+          TCB_BIG   :  man.req.wdt[i] = sub.req.wdt[(sub.BUS.BEN-(i-req_off)) % sub.BUS.BEN];
           default   :  man.req.wdt[i] = '{default: 8'hxx};
         endcase
       end: wdt
@@ -198,10 +192,10 @@ module tcb_lib_logsize2byteena
     if (sub.BUS.CHN != TCB_CHN_WRITE_ONLY) begin: read
       // read data
       always_comb
-      for (int unsigned i=0; i<BUS_BEN; i++) begin: rdt
+      for (int unsigned i=0; i<sub.BUS.BEN; i++) begin: rdt
         unique case (sub.req_dly[sub.HSK_DLY].ndn)
-          TCB_LITTLE:  sub.rsp.rdt[i] = man.rsp.rdt[(        (i+rsp_off)) % BUS_BEN];
-          TCB_BIG   :  sub.rsp.rdt[i] = man.rsp.rdt[(BUS_BEN-(i+rsp_off)) % BUS_BEN];
+          TCB_LITTLE:  sub.rsp.rdt[i] = man.rsp.rdt[(            (i+rsp_off)) % sub.BUS.BEN];
+          TCB_BIG   :  sub.rsp.rdt[i] = man.rsp.rdt[(sub.BUS.BEN-(i+rsp_off)) % sub.BUS.BEN];
           default   :  sub.rsp.rdt[i] = '{default: 8'hxx};
         endcase
       end: rdt

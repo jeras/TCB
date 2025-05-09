@@ -71,6 +71,8 @@ package tcb_pkg;
   `else
   typedef struct {
   `endif
+    int unsigned       ADR;  // address width
+    int unsigned       DAT;  // data width
     int unsigned       FRM;  // framing maximum length (if 0 framing is disabled)
     tcb_bus_channel_t  CHN;  // channel configuration
     tcb_bus_prefetch_t PRF;  // prefetch configuration
@@ -81,6 +83,8 @@ package tcb_pkg;
 
   // physical interface parameter default
   localparam tcb_bus_t TCB_BUS_DEF = '{
+    ADR: 32,
+    DAT: 32,
     FRM: 15, // frame size of up to FRM+1=16 transfers
     CHN: TCB_CHN_HALF_DUPLEX,
     PRF: TCB_PRF_ENABLED,
@@ -177,45 +181,43 @@ package tcb_pkg;
 ////////////////////////////////////////////////////////////////////////////////
 
   virtual class tcb_c #(
-    parameter  int unsigned ADR = 32,
-    parameter  int unsigned DAT = 32,
     parameter  int unsigned DLY = TCB_HSK_DEF,
     parameter  tcb_bus_t    BUS = TCB_BUS_DEF,
     parameter  tcb_pck_t    PCK = TCB_PCK_DEF
   );
     // signal widths
-    localparam LEN = $clog2(BUS.FRM+1);
-    localparam BEN = DAT/8;
-    localparam MAX = $clog2(BEN);
-    localparam SIZ = $clog2(MAX+1);
+    localparam BUS_LEN = $clog2(BUS.FRM+1);
+    localparam BUS_BEN = BUS.DAT/8;
+    localparam BUS_MAX = $clog2(BUS_BEN);
+    localparam BUS_SIZ = $clog2(BUS_MAX+1);
 
     // request
     typedef struct packed {
       // framing
-      logic                  frm;  // frame
-      logic [LEN-1:0]        len;  // frame length
+      logic                      frm;  // frame
+      logic [BUS_LEN-1:0]        len;  // frame length
       // channel
-      logic                  wen;  // write enable
-      logic                  ren;  // read enable
+      logic                      wen;  // write enable
+      logic                      ren;  // read enable
       // prefetch
-      logic                  rpt;  // repeated address
-      logic                  inc;  // incremented address
+      logic                      rpt;  // repeated address
+      logic                      inc;  // incremented address
       // address and next address
-      logic [ADR-1:0]        adr;  // current address
-      logic [ADR-1:0]        nxt;  // next address
+      logic [BUS.ADR-1:0]        adr;  // current address
+      logic [BUS.ADR-1:0]        nxt;  // next address
       // data sizing
-      logic [SIZ-1:0]        siz;  // logarithmic transfer size
-      logic [BEN-1:0]        ben;  // byte enable
+      logic [BUS_SIZ-1:0]        siz;  // logarithmic transfer size
+      logic [BUS_BEN-1:0]        ben;  // byte enable
       // endianness
-      logic                  ndn;  // endianness
+      logic                      ndn;  // endianness
       // data
-      logic [BEN-1:0][8-1:0] wdt;  // write data
+      logic [BUS_BEN-1:0][8-1:0] wdt;  // write data
     } req_t;
-  
+
     // response
     typedef struct packed {
-      logic [BEN-1:0][8-1:0] rdt;  // read data
-      tcb_rsp_sts_t          sts;  // status
+      logic [BUS_BEN-1:0][8-1:0] rdt;  // read data
+      tcb_rsp_sts_t              sts;  // status
     } rsp_t;
   endclass: tcb_c
 

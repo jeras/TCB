@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// TCB (Tightly Coupled Bus) VIP (Verification IP) transaction PacKaGe
+// TCB (Tightly Coupled Bus) VIP (Verification IP) transaction package
 ////////////////////////////////////////////////////////////////////////////////
 // Copyright 2022 Iztok Jeras
 //
@@ -73,11 +73,10 @@ package tcb_vip_transaction_pkg;
     req_t dummy_req;
 
     // local parameters
-    localparam int unsigned BUS_ADR = $bits(dummy_req.adr);
-    localparam int unsigned BUS_DAT = $bits(dummy_req.wdt);
-    localparam int unsigned BUS_BEN = BUS_DAT/8;
-    localparam int unsigned BUS_SIZ = $bits(dummy_req.siz);
+    localparam int unsigned BUS_ADR = BUS.ADR;  // TODO: this is only needed by VCS
+    localparam int unsigned BUS_BEN = BUS.DAT/8;
     localparam int unsigned BUS_MAX = $clog2(BUS_BEN);
+    localparam int unsigned BUS_SIZ = $clog2(BUS_MAX+1);
 
     // TCB transaction request structure
     typedef struct {

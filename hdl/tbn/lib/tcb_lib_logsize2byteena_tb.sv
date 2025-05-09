@@ -34,8 +34,13 @@ module tcb_lib_logsize2byteena_tb
   parameter  bit ALIGNED = 1'b1
 );
 
-  // physical interface parameter default
+  // handshake parameter
+  localparam int unsigned HSK = TCB_HSK_DEF;
+
+  // bus parameter
   localparam tcb_bus_t BUS_SIZ = '{
+    ADR: TCB_BUS_DEF.ADR,
+    DAT: TCB_BUS_DEF.DAT,
     FRM: TCB_BUS_DEF.FRM,
     CHN: TCB_CHN_HALF_DUPLEX,
     PRF: TCB_PRF_ENABLED,
@@ -44,8 +49,10 @@ module tcb_lib_logsize2byteena_tb
     NDN: TCB_NDN_BI_NDN
   };
 
-  // physical interface parameter default
+  // bus parameter
   localparam tcb_bus_t BUS_BEN = '{
+    ADR: TCB_BUS_DEF.ADR,
+    DAT: TCB_BUS_DEF.DAT,
     FRM: TCB_BUS_DEF.FRM,
     CHN: TCB_CHN_HALF_DUPLEX,
     PRF: TCB_PRF_ENABLED,
@@ -65,8 +72,8 @@ module tcb_lib_logsize2byteena_tb
   localparam int unsigned ADR = 32;
   localparam int unsigned DAT = 32;
 
-  typedef tcb_c #(.ADR (ADR), .DAT (DAT))::req_t req_t;
-  typedef tcb_c #(.ADR (ADR), .DAT (DAT))::rsp_t rsp_t;
+  typedef tcb_c #(HSK, BUS_SIZ, PCK)::req_t req_t;
+  typedef tcb_c #(HSK, BUS_SIZ, PCK)::rsp_t rsp_t;
 
   // local request/response types are copies of packaged defaults
 //  typedef tcb_req_t req_t;
@@ -81,13 +88,13 @@ module tcb_lib_logsize2byteena_tb
   logic rst = 1'b1;  // reset
 
   // TCB interfaces
-  tcb_if #(HSK_DLY, tcb_bus_t, BUS_SIZ, tcb_pck_t, PCK, req_t, rsp_t) tcb_man       (.clk (clk), .rst (rst));
-  tcb_if #(HSK_DLY, tcb_bus_t, BUS_BEN, tcb_pck_t, PCK, req_t, rsp_t) tcb_sub       (.clk (clk), .rst (rst));
-  tcb_if #(HSK_DLY, tcb_bus_t, BUS_BEN, tcb_pck_t, PCK, req_t, rsp_t) tcb_mem [0:0] (.clk (clk), .rst (rst));
+  tcb_if #(HSK, tcb_bus_t, BUS_SIZ, tcb_pck_t, PCK, req_t, rsp_t) tcb_man       (.clk (clk), .rst (rst));
+  tcb_if #(HSK, tcb_bus_t, BUS_BEN, tcb_pck_t, PCK, req_t, rsp_t) tcb_sub       (.clk (clk), .rst (rst));
+  tcb_if #(HSK, tcb_bus_t, BUS_BEN, tcb_pck_t, PCK, req_t, rsp_t) tcb_mem [0:0] (.clk (clk), .rst (rst));
 
   // parameterized class specialization
-  typedef tcb_vip_blocking_c #(HSK_DLY, tcb_bus_t, BUS_SIZ, tcb_pck_t, PCK, req_t, rsp_t) tcb_vip_siz_s;
-  typedef tcb_vip_blocking_c #(HSK_DLY, tcb_bus_t, BUS_BEN, tcb_pck_t, PCK, req_t, rsp_t) tcb_vip_ben_s;
+  typedef tcb_vip_blocking_c #(HSK, tcb_bus_t, BUS_SIZ, tcb_pck_t, PCK, req_t, rsp_t) tcb_vip_siz_s;
+  typedef tcb_vip_blocking_c #(HSK, tcb_bus_t, BUS_BEN, tcb_pck_t, PCK, req_t, rsp_t) tcb_vip_ben_s;
 
   // TCB class objects
   tcb_vip_siz_s obj_man = new(tcb_man, "MAN");
