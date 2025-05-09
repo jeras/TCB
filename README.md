@@ -77,3 +77,5 @@ for the rest of the code.
 1. TileLink [1.8.0](https://github.com/chipsalliance/omnixtend/blob/c192bb6862846a24535b3808dc2f8612d44f2ff8/OmniXtend-1.0.3/spec/TileLink-1.8.0.pdf),
 [1.8.1](https://starfivetech.com/uploads/tilelink_spec_1.8.1.pdf)
 1. OpenTitan [TileLink IP](https://docs.opentitan.org/hw/ip/tlul/doc/)
+1. https://github.com/pulp-platform/obi?tab=readme-ov-file
+1. https://github.com/openhwgroup/obi/blob/072d9173c1f2d79471d6f2a10eae59ee387d4c6f/OBI-v1.6.0.pdf
