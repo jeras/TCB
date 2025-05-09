@@ -131,12 +131,27 @@ interface tcb_if
 // local parameters
 ////////////////////////////////////////////////////////////////////////////////
 
-  // TODO: rethink whether this fits here, since it depends on req_t
+  // local parameters are calculated from the request
+  // TODO: request data might not be available in read only channel configuration
   localparam int unsigned BUS_ADR = $bits(req.adr);
   localparam int unsigned BUS_DAT = $bits(req.wdt);
   localparam int unsigned BUS_BEN = $bits(req.ben);
   localparam int unsigned BUS_SIZ = $bits(req.siz);
   localparam int unsigned BUS_MAX = $clog2(BUS_BEN);
+
+////////////////////////////////////////////////////////////////////////////////
+// helper functions
+////////////////////////////////////////////////////////////////////////////////
+
+  // TODO: rethink this functionality
+  // logarithmic size mode (subordinate interface) byte enable
+  function automatic logic [BUS_BEN-1:0] logsize2byteena (
+    input logic [BUS_SIZ-1:0] siz
+  );
+    for (int unsigned i=0; i<BUS_BEN; i++) begin
+      logsize2byteena[i] = (i < 2**siz) ? 1'b1 : 1'b0;
+    end
+  endfunction: logsize2byteena
 
 ////////////////////////////////////////////////////////////////////////////////
 // transaction handshake and misalignment logic
