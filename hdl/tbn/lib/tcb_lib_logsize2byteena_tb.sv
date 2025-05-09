@@ -31,7 +31,7 @@ module tcb_lib_logsize2byteena_tb
 //  parameter  int unsigned      BUS_OFF = TCB_BUS_DEF.OFF,  // TODO
 //  parameter  tcb_pck_order_t   PCK_ORD = TCB_BUS_DEF.ORD   // manager     byte order
   // DUT specific
-  parameter  bit ALIGNED = 1'b0
+  parameter  bit ALIGNED = 1'b1
 );
 
   // physical interface parameter default
@@ -61,6 +61,12 @@ module tcb_lib_logsize2byteena_tb
     OFF: 0,
     ORD: TCB_ORD_DESCENDING
   };
+
+//  localparam int unsigned ADR = 32;
+//  localparam int unsigned DAT = 32;
+
+//  typedef tcb_c #(.ADR (ADR), .DAT (DAT))::req_t tcb_req_t;
+//  typedef tcb_c #(.ADR (ADR), .DAT (DAT))::rsp_t tcb_rsp_t;
 
 ////////////////////////////////////////////////////////////////////////////////
 // local signals
@@ -114,6 +120,8 @@ module tcb_lib_logsize2byteena_tb
     // write sequence
     $display("write sequence");
     testname = "write";
+    tst_mon.delete();
+    tst_ref.delete();
     fork
       // manager (blocking API)
       begin: fork_man_write
@@ -135,7 +143,7 @@ module tcb_lib_logsize2byteena_tb
     disable fork;
     // reference transfer queue
     sts = '0;
-    //                                                   ndn       , wen , adr         , wdt                           ,        rdt
+    // append reference transfers to queue               ndn       , wen , adr         , wdt                           ,        rdt
     tst_ref = {tst_ref, obj_sub.set_transaction('{req: '{TCB_LITTLE, 1'b1, 32'h00000010, '{8'h10                     }}, rsp: '{nul, sts}, default: 'x})};
     tst_ref = {tst_ref, obj_sub.set_transaction('{req: '{TCB_LITTLE, 1'b1, 32'h00000011, '{       8'h32              }}, rsp: '{nul, sts}, default: 'x})};
     tst_ref = {tst_ref, obj_sub.set_transaction('{req: '{TCB_LITTLE, 1'b1, 32'h00000012, '{              8'h54       }}, rsp: '{nul, sts}, default: 'x})};
@@ -144,14 +152,22 @@ module tcb_lib_logsize2byteena_tb
     tst_ref = {tst_ref, obj_sub.set_transaction('{req: '{TCB_LITTLE, 1'b1, 32'h00000022, '{              8'h54, 8'h76}}, rsp: '{nul, sts}, default: 'x})};
     tst_ref = {tst_ref, obj_sub.set_transaction('{req: '{TCB_LITTLE, 1'b1, 32'h00000030, '{8'h10, 8'h32, 8'h54, 8'h76}}, rsp: '{nul, sts}, default: 'x})};
     // compare transfers from monitor to reference
+    // wildcard operator is used to ignore data byte comparison, when the reference data is 8'hxx
     foreach(tst_ref[i]) begin
       assert (tst_mon[i].req ==? tst_ref[i].req) else $error("\ntst_mon[%0d].req = %p !=? \ntst_ref[%0d].req = %p", i, tst_mon[i].req, i, tst_ref[i].req);
       assert (tst_mon[i].rsp ==? tst_ref[i].rsp) else $error("\ntst_mon[%0d].rsp = %p !=? \ntst_ref[%0d].rsp = %p", i, tst_mon[i].rsp, i, tst_ref[i].rsp);
     end
+//    // printout transfer queue for debugging purposes
+//    foreach (tst_ref[i]) begin
+//      $display("DEBUG: tst_mon[%0d] = %p", i, tst_mon[i]);
+//      $display("DEBUG: tst_ref[%0d] = %p", i, tst_ref[i]);
+//    end
 
     // read sequence
     $display("read sequence");
     testname = "read";
+    tst_mon.delete();
+    tst_ref.delete();
     fork
       // manager (blocking API)
       begin: fork_man_read
@@ -173,7 +189,7 @@ module tcb_lib_logsize2byteena_tb
     disable fork;
     // reference transfer queue
     sts = '0;
-    //                                                   ndn       , wen , adr         , wdt ,        rdt
+    // append reference transfers to queue               ndn       , wen , adr         , wdt ,        rdt
     tst_ref = {tst_ref, obj_sub.set_transaction('{req: '{TCB_LITTLE, 1'b0, 32'h00000010, nul}, rsp: '{'{8'h10                     }, sts}, default: 'x})};
     tst_ref = {tst_ref, obj_sub.set_transaction('{req: '{TCB_LITTLE, 1'b0, 32'h00000011, nul}, rsp: '{'{       8'h32              }, sts}, default: 'x})};
     tst_ref = {tst_ref, obj_sub.set_transaction('{req: '{TCB_LITTLE, 1'b0, 32'h00000012, nul}, rsp: '{'{              8'h54       }, sts}, default: 'x})};
@@ -181,6 +197,8 @@ module tcb_lib_logsize2byteena_tb
     tst_ref = {tst_ref, obj_sub.set_transaction('{req: '{TCB_LITTLE, 1'b0, 32'h00000020, nul}, rsp: '{'{8'h10, 8'h32              }, sts}, default: 'x})};
     tst_ref = {tst_ref, obj_sub.set_transaction('{req: '{TCB_LITTLE, 1'b0, 32'h00000022, nul}, rsp: '{'{              8'h54, 8'h76}, sts}, default: 'x})};
     tst_ref = {tst_ref, obj_sub.set_transaction('{req: '{TCB_LITTLE, 1'b0, 32'h00000030, nul}, rsp: '{'{8'h10, 8'h32, 8'h54, 8'h76}, sts}, default: 'x})};
+    // compare transfers from monitor to reference
+    // wildcard operator is used to ignore data byte comparison, when the reference data is 8'hxx
     foreach(tst_ref[i]) begin
       assert (tst_mon[i].req ==? tst_ref[i].req) else $error("\ntst_mon[%0d].req = %p !=? \ntst_ref[%0d].req = %p", i, tst_mon[i].req, i, tst_ref[i].req);
       assert (tst_mon[i].rsp ==? tst_ref[i].rsp) else $error("\ntst_mon[%0d].rsp = %p !=? \ntst_ref[%0d].rsp = %p", i, tst_mon[i].rsp, i, tst_ref[i].rsp);
@@ -200,11 +218,14 @@ module tcb_lib_logsize2byteena_tb
     obj_man.check32(32'h00000030, 32'h76543210, 1'b0);
 
     if (!ALIGNED) begin
+      // clear memory
+      mem.mem = '{default: 'x};
+
       // misaligned write sequence
       $display("misaligned write sequence");
       testname = "misaligned write";
-      // clear memory
-      mem.mem = '{default: 'x};
+      tst_mon.delete();
+      tst_ref.delete();
       // test sequence
       fork
         // manager (blocking API)
@@ -225,18 +246,61 @@ module tcb_lib_logsize2byteena_tb
       disable fork;
       // reference transfer queue
       sts = '0;
-      //                                                   ndn       , wen , adr         , wdt                           ,        rdt
+      // append reference transfers to queue               ndn       , wen , adr         , wdt                           ,        rdt
       tst_ref = {tst_ref, obj_sub.set_transaction('{req: '{TCB_LITTLE, 1'b1, 32'h00000011, '{8'h10, 8'h32              }}, rsp: '{nul, sts}, default: 'x})};
       tst_ref = {tst_ref, obj_sub.set_transaction('{req: '{TCB_LITTLE, 1'b1, 32'h00000023, '{8'h54, 8'h76              }}, rsp: '{nul, sts}, default: 'x})};
       tst_ref = {tst_ref, obj_sub.set_transaction('{req: '{TCB_LITTLE, 1'b1, 32'h00000031, '{8'h10, 8'h32, 8'h54, 8'h76}}, rsp: '{nul, sts}, default: 'x})};
       tst_ref = {tst_ref, obj_sub.set_transaction('{req: '{TCB_LITTLE, 1'b1, 32'h00000042, '{8'h10, 8'h32, 8'h54, 8'h76}}, rsp: '{nul, sts}, default: 'x})};
       tst_ref = {tst_ref, obj_sub.set_transaction('{req: '{TCB_LITTLE, 1'b1, 32'h00000053, '{8'h10, 8'h32, 8'h54, 8'h76}}, rsp: '{nul, sts}, default: 'x})};
       // compare transfers from monitor to reference
+      // wildcard operator is used to ignore data byte comparison, when the reference data is 8'hxx
+      foreach (tst_ref[i]) begin
+        assert (tst_mon[i].req ==? tst_ref[i].req) else $error("\ntst_mon[%0d].req = %p !=? \ntst_ref[%0d].req = %p", i, tst_mon[i].req, i, tst_ref[i].req);
+        assert (tst_mon[i].rsp ==? tst_ref[i].rsp) else $error("\ntst_mon[%0d].rsp = %p !=? \ntst_ref[%0d].rsp = %p", i, tst_mon[i].rsp, i, tst_ref[i].rsp);
+      end
+
+      // misaligned read/check sequence
+      $display("misaligned read/check sequence");
+      testname = "misaligned read/check";
+      tst_mon.delete();
+      tst_ref.delete();
+      // test sequence
+      fork
+        // manager (blocking API)
+        begin: fork_man_misaligned_read
+          obj_man.check16(32'h00000011, 16'h3210    , sts);
+          obj_man.check16(32'h00000023, 16'h7654    , sts);
+          obj_man.check32(32'h00000031, 32'h76543210, sts);
+          obj_man.check32(32'h00000042, 32'h76543210, sts);
+          obj_man.check32(32'h00000053, 32'h76543210, sts);
+        end: fork_man_misaligned_read
+        // subordinate (monitor)
+        begin: fork_mon_misaligned_read
+          obj_sub.transfer_monitor(tst_mon);
+        end: fork_mon_misaligned_read
+      join_any
+      // disable transfer monitor
+      @(posedge clk);
+      disable fork;
+      // reference transfer queue
+      sts = '0;
+      // append reference transfers to queue               ndn       , wen , adr         , wdt ,        rdt
+      tst_ref = {tst_ref, obj_sub.set_transaction('{req: '{TCB_LITTLE, 1'b0, 32'h00000011, nul}, rsp: '{'{8'h10, 8'h32              }, sts}, default: 'x})};
+      tst_ref = {tst_ref, obj_sub.set_transaction('{req: '{TCB_LITTLE, 1'b0, 32'h00000023, nul}, rsp: '{'{8'h54, 8'h76              }, sts}, default: 'x})};
+      tst_ref = {tst_ref, obj_sub.set_transaction('{req: '{TCB_LITTLE, 1'b0, 32'h00000031, nul}, rsp: '{'{8'h10, 8'h32, 8'h54, 8'h76}, sts}, default: 'x})};
+      tst_ref = {tst_ref, obj_sub.set_transaction('{req: '{TCB_LITTLE, 1'b0, 32'h00000042, nul}, rsp: '{'{8'h10, 8'h32, 8'h54, 8'h76}, sts}, default: 'x})};
+      tst_ref = {tst_ref, obj_sub.set_transaction('{req: '{TCB_LITTLE, 1'b0, 32'h00000053, nul}, rsp: '{'{8'h10, 8'h32, 8'h54, 8'h76}, sts}, default: 'x})};
+      //
+      // compare transfers from monitor to reference
+      // wildcard operator is used to ignore data byte comparison, when the reference data is 8'hxx
       foreach(tst_ref[i]) begin
         assert (tst_mon[i].req ==? tst_ref[i].req) else $error("\ntst_mon[%0d].req = %p !=? \ntst_ref[%0d].req = %p", i, tst_mon[i].req, i, tst_ref[i].req);
         assert (tst_mon[i].rsp ==? tst_ref[i].rsp) else $error("\ntst_mon[%0d].rsp = %p !=? \ntst_ref[%0d].rsp = %p", i, tst_mon[i].rsp, i, tst_ref[i].rsp);
       end
     end
+
+    // parameterized tests
+
 
     // end of test
     repeat (4) @(posedge clk);
