@@ -35,7 +35,7 @@ module tcb_lib_logsize2byteena_tb
 );
 
   // physical interface parameter default
-  localparam tcb_bus_t TCB_BUS_SIZ = '{
+  localparam tcb_bus_t BUS_SIZ = '{
     FRM: TCB_BUS_DEF.FRM,
     CHN: TCB_CHN_HALF_DUPLEX,
     PRF: TCB_PRF_ENABLED,
@@ -45,7 +45,7 @@ module tcb_lib_logsize2byteena_tb
   };
 
   // physical interface parameter default
-  localparam tcb_bus_t TCB_BUS_BEN = '{
+  localparam tcb_bus_t BUS_BEN = '{
     FRM: TCB_BUS_DEF.FRM,
     CHN: TCB_CHN_HALF_DUPLEX,
     PRF: TCB_PRF_ENABLED,
@@ -55,7 +55,7 @@ module tcb_lib_logsize2byteena_tb
   };
 
   // physical interface parameter default
-  localparam tcb_pck_t TCB_PCK = '{
+  localparam tcb_pck_t PCK = '{
     ALN: 2,
     MIN: 0,
     OFF: 0,
@@ -77,13 +77,13 @@ module tcb_lib_logsize2byteena_tb
   logic rst = 1'b1;  // reset
 
   // TCB interfaces
-  tcb_if #(HSK_DLY, tcb_bus_t, TCB_BUS_SIZ, tcb_pck_t, TCB_PCK, tcb_req_t, tcb_rsp_t) tcb_man       (.clk (clk), .rst (rst));
-  tcb_if #(HSK_DLY, tcb_bus_t, TCB_BUS_BEN, tcb_pck_t, TCB_PCK, tcb_req_t, tcb_rsp_t) tcb_sub       (.clk (clk), .rst (rst));
-  tcb_if #(HSK_DLY, tcb_bus_t, TCB_BUS_BEN, tcb_pck_t, TCB_PCK, tcb_req_t, tcb_rsp_t) tcb_mem [0:0] (.clk (clk), .rst (rst));
+  tcb_if #(HSK_DLY, tcb_bus_t, BUS_SIZ, tcb_pck_t, PCK, tcb_req_t, tcb_rsp_t) tcb_man       (.clk (clk), .rst (rst));
+  tcb_if #(HSK_DLY, tcb_bus_t, BUS_BEN, tcb_pck_t, PCK, tcb_req_t, tcb_rsp_t) tcb_sub       (.clk (clk), .rst (rst));
+  tcb_if #(HSK_DLY, tcb_bus_t, BUS_BEN, tcb_pck_t, PCK, tcb_req_t, tcb_rsp_t) tcb_mem [0:0] (.clk (clk), .rst (rst));
 
   // parameterized class specialization
-  typedef tcb_vip_blocking_c #(HSK_DLY, tcb_bus_t, TCB_BUS_SIZ, tcb_pck_t, TCB_PCK, tcb_req_t, tcb_rsp_t) tcb_vip_siz_s;
-  typedef tcb_vip_blocking_c #(HSK_DLY, tcb_bus_t, TCB_BUS_BEN, tcb_pck_t, TCB_PCK, tcb_req_t, tcb_rsp_t) tcb_vip_ben_s;
+  typedef tcb_vip_blocking_c #(HSK_DLY, tcb_bus_t, BUS_SIZ, tcb_pck_t, PCK, tcb_req_t, tcb_rsp_t) tcb_vip_siz_s;
+  typedef tcb_vip_blocking_c #(HSK_DLY, tcb_bus_t, BUS_BEN, tcb_pck_t, PCK, tcb_req_t, tcb_rsp_t) tcb_vip_ben_s;
 
   // TCB class objects
   tcb_vip_siz_s obj_man = new(tcb_man, "MAN");
