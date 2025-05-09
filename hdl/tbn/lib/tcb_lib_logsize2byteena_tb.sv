@@ -62,11 +62,15 @@ module tcb_lib_logsize2byteena_tb
     ORD: TCB_ORD_DESCENDING
   };
 
-//  localparam int unsigned ADR = 32;
-//  localparam int unsigned DAT = 32;
+  localparam int unsigned ADR = 32;
+  localparam int unsigned DAT = 32;
 
-//  typedef tcb_c #(.ADR (ADR), .DAT (DAT))::req_t tcb_req_t;
-//  typedef tcb_c #(.ADR (ADR), .DAT (DAT))::rsp_t tcb_rsp_t;
+  typedef tcb_c #(.ADR (ADR), .DAT (DAT))::req_t req_t;
+  typedef tcb_c #(.ADR (ADR), .DAT (DAT))::rsp_t rsp_t;
+
+  // local request/response types are copies of packaged defaults
+//  typedef tcb_req_t req_t;
+//  typedef tcb_rsp_t rsp_t;
 
 ////////////////////////////////////////////////////////////////////////////////
 // local signals
@@ -77,13 +81,13 @@ module tcb_lib_logsize2byteena_tb
   logic rst = 1'b1;  // reset
 
   // TCB interfaces
-  tcb_if #(HSK_DLY, tcb_bus_t, BUS_SIZ, tcb_pck_t, PCK, tcb_req_t, tcb_rsp_t) tcb_man       (.clk (clk), .rst (rst));
-  tcb_if #(HSK_DLY, tcb_bus_t, BUS_BEN, tcb_pck_t, PCK, tcb_req_t, tcb_rsp_t) tcb_sub       (.clk (clk), .rst (rst));
-  tcb_if #(HSK_DLY, tcb_bus_t, BUS_BEN, tcb_pck_t, PCK, tcb_req_t, tcb_rsp_t) tcb_mem [0:0] (.clk (clk), .rst (rst));
+  tcb_if #(HSK_DLY, tcb_bus_t, BUS_SIZ, tcb_pck_t, PCK, req_t, rsp_t) tcb_man       (.clk (clk), .rst (rst));
+  tcb_if #(HSK_DLY, tcb_bus_t, BUS_BEN, tcb_pck_t, PCK, req_t, rsp_t) tcb_sub       (.clk (clk), .rst (rst));
+  tcb_if #(HSK_DLY, tcb_bus_t, BUS_BEN, tcb_pck_t, PCK, req_t, rsp_t) tcb_mem [0:0] (.clk (clk), .rst (rst));
 
   // parameterized class specialization
-  typedef tcb_vip_blocking_c #(HSK_DLY, tcb_bus_t, BUS_SIZ, tcb_pck_t, PCK, tcb_req_t, tcb_rsp_t) tcb_vip_siz_s;
-  typedef tcb_vip_blocking_c #(HSK_DLY, tcb_bus_t, BUS_BEN, tcb_pck_t, PCK, tcb_req_t, tcb_rsp_t) tcb_vip_ben_s;
+  typedef tcb_vip_blocking_c #(HSK_DLY, tcb_bus_t, BUS_SIZ, tcb_pck_t, PCK, req_t, rsp_t) tcb_vip_siz_s;
+  typedef tcb_vip_blocking_c #(HSK_DLY, tcb_bus_t, BUS_BEN, tcb_pck_t, PCK, req_t, rsp_t) tcb_vip_ben_s;
 
   // TCB class objects
   tcb_vip_siz_s obj_man = new(tcb_man, "MAN");

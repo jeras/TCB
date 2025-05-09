@@ -5,18 +5,19 @@
 # source files
 include ../filelist.mk
 
-
 # top level module
 TOP ?= tcb_vip_tb
+TESTBENCH ?= ../../hdl/tbn/lib/tcb_lib_logsize2byteena_tb.sv
 
-TOP ?= ../tbn/vip/tcb_vip_tb.sv
+# remove tetbench TOP from HDL list of files
+DESIGN = $(filter-out ${TESTBENCH},${HDL})
 
 ################################################################################
 # targets
 ################################################################################
 
-all: concat
-
-concat: ${HDL}
-	cat ${HDL} > design.sv
-	cat ${TOP} > testbench.sv
+concat:
+	echo ${DESIGN}
+	echo ${TESTBENCH}
+	cat ${DESIGN} > design.sv
+	cat ${TESTBENCH} > testbench.sv
