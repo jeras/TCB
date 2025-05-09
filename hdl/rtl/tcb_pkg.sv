@@ -129,6 +129,12 @@ package tcb_pkg;
 // default structures containing all optional signals
 ////////////////////////////////////////////////////////////////////////////////
 
+  // TODO: rethink the response status
+  // status
+  typedef struct packed {
+    logic err;  // error response
+  } tcb_rsp_sts_t;
+
   // default signal widths
   localparam DEF_LEN = $clog2(TCB_BUS_DEF.FRM+1);
   localparam DEF_ADR = 32;
@@ -160,16 +166,65 @@ package tcb_pkg;
     logic [DEF_BEN-1:0][8-1:0] wdt;  // write data
   } tcb_req_t;
 
-  // status
-  typedef struct packed {
-    logic err;  // error response
-  } tcb_rsp_sts_t;
-
   // response
   typedef struct packed {
     logic [DEF_BEN-1:0][8-1:0] rdt;  // read data
     tcb_rsp_sts_t              sts;  // status
   } tcb_rsp_t;
+
+////////////////////////////////////////////////////////////////////////////////
+// perameterized types
+////////////////////////////////////////////////////////////////////////////////
+
+  virtual class tcb_c #(
+    parameter  int unsigned ADR = 32,
+    parameter  int unsigned DAT = 32,
+    parameter  int unsigned DLY = TCB_HSK_DEF,
+    parameter  tcb_bus_t    BUS = TCB_BUS_DEF,
+    parameter  tcb_pck_t    PCK = TCB_PCK_DEF
+  );
+    // signal widths
+    localparam LEN = $clog2(BUS.FRM+1);
+    localparam BEN = DAT/8;
+    localparam MAX = $clog2(BEN);
+    localparam SIZ = $clog2(MAX+1);
+
+    // request
+    typedef struct packed {
+      // framing
+      logic                  frm;  // frame
+      logic [LEN-1:0]        len;  // frame length
+      // channel
+      logic                  wen;  // write enable
+      logic                  ren;  // read enable
+      // prefetch
+      logic                  rpt;  // repeated address
+      logic                  inc;  // incremented address
+      // address and next address
+      logic [ADR-1:0]        adr;  // current address
+      logic [ADR-1:0]        nxt;  // next address
+      // data sizing
+      logic [SIZ-1:0]        siz;  // logarithmic transfer size
+      logic [BEN-1:0]        ben;  // byte enable
+      // endianness
+      logic                  ndn;  // endianness
+      // data
+      logic [BEN-1:0][8-1:0] wdt;  // write data
+    } req_t;
+  
+    // response
+    typedef struct packed {
+      logic [BEN-1:0][8-1:0] rdt;  // read data
+      tcb_rsp_sts_t          sts;  // status
+    } rsp_t;
+  endclass: tcb_c
+
+////////////////////////////////////////////////////////////////////////////////
+// default types
+////////////////////////////////////////////////////////////////////////////////
+
+//  typedef tcb_c #(.ADR (32), .DAT (32))::req_t tcb_req_t;  // request
+//  typedef tcb_c #(.ADR (32), .DAT (32))::req_t tcb_rsp_t;  // response
 
 ////////////////////////////////////////////////////////////////////////////////
 // miscellaneous
