@@ -129,8 +129,9 @@ package tcb_vip_transaction_pkg;
 
     // read/write request transaction of power of 2 size
     static function automatic transfer_queue_t set_transaction (
-      input transaction_t transaction,
-      input string      id = ""
+      input transaction_t    transaction,
+      ref   transfer_queue_t transfer_queue,
+      input string           id = ""
     );
       // write/read data linear size
       int unsigned wdt_size;
@@ -142,7 +143,6 @@ package tcb_vip_transaction_pkg;
       int unsigned siz;  // transaction side (units/bytes)
       int unsigned len;  // transaction length (transfers)
       // return transfer queue
-      transfer_queue_t transfer_queue;
 
       // write/read data linear size
       wdt_size = transaction.req.wdt.size();
@@ -258,20 +258,19 @@ package tcb_vip_transaction_pkg;
     endfunction: set_transaction
 
   //////////////////////////////////////////////////////////////////////////////
-  // get transaction transfer array
+  // get transaction from transfer array
   //////////////////////////////////////////////////////////////////////////////
 
     // read/write response transaction of power of 2 size
-    static function automatic transaction_t get_transaction (
-      ref transfer_array_t transfer_array
+    static function automatic int unsigned get_transaction (
+      output transaction_t    transaction,
+      ref    transfer_array_t transfer_array
     );
       // transaction response
       int unsigned siz;  // transaction side (units/bytes)
       int unsigned len;  // transaction length (transfers)
       // loop index
       int unsigned i;
-      // return transaction response
-      transaction_t transaction;
 
       // transaction length (number of transfer items)
       len = transfer_array.size();
@@ -333,7 +332,7 @@ package tcb_vip_transaction_pkg;
       end
 
       //      $display("DEBUG: transaction.rsp.rdt = %p", transaction.rsp.rdt);
-      return(transaction);
+      return(len);
     endfunction: get_transaction
 
   endclass: tcb_vip_transaction_c

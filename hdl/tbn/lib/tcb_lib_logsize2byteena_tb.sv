@@ -69,15 +69,12 @@ module tcb_lib_logsize2byteena_tb
     ORD: TCB_ORD_DESCENDING
   };
 
-  localparam int unsigned ADR = 32;
-  localparam int unsigned DAT = 32;
-
-  typedef tcb_c #(HSK, BUS_SIZ, PCK)::req_t req_t;
-  typedef tcb_c #(HSK, BUS_SIZ, PCK)::rsp_t rsp_t;
+//  typedef tcb_c #(HSK, BUS_SIZ, PCK)::req_t req_t;
+//  typedef tcb_c #(HSK, BUS_SIZ, PCK)::rsp_t rsp_t;
 
   // local request/response types are copies of packaged defaults
-//  typedef tcb_req_t req_t;
-//  typedef tcb_rsp_t rsp_t;
+  typedef tcb_req_t req_t;
+  typedef tcb_rsp_t rsp_t;
 
 ////////////////////////////////////////////////////////////////////////////////
 // local signals
@@ -311,6 +308,8 @@ module tcb_lib_logsize2byteena_tb
     end
 
     // parameterized tests
+    for (int unsigned siz=0; siz<=tcb_man.BUS_MAX; siz++) begin
+    end
 
 
     // end of test
