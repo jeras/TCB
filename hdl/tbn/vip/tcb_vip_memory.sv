@@ -23,7 +23,7 @@ module tcb_vip_memory
   // memory file name
   parameter  string        MFN = "",
   // memory size
-  parameter  int unsigned  SIZ,
+  parameter  int unsigned  SIZ = 2**8,
   // slave interface number
   parameter  int unsigned  SPN = 1,
   // write mask (which interfaces are allowed write access)
@@ -51,7 +51,7 @@ module tcb_vip_memory
   // load memory at initial if a file is provided as parameter
   initial
   begin
-    if (MFN) begin
+    if (MFN.len()) begin
       void'(read_bin(MFN));
     end
   end
@@ -149,6 +149,9 @@ module tcb_vip_memory
     end: write_mask
 
     // combinational read data
+    // TODO: some simulator might detect multiple drivers even if there is a single interface
+    //       but at least on Questa always_comb provides faster execution
+    //always @(*)
     always_comb
     if (tcb[i].trn) begin
       if (~tcb[i].req.wen) begin: read
