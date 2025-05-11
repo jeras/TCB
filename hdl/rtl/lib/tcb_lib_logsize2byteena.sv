@@ -18,10 +18,7 @@
 
 module tcb_lib_logsize2byteena
   import tcb_pkg::*;
-#(
-  // The ALIGNED implementation should be better optimized for FPGA synthesis
-  parameter bit ALIGNED = 1'b0
-)(
+(
   // interfaces
   tcb_if.sub sub,    // TCB subordinate port (manager     device connects here)
   tcb_if.man man     // TCB manager     port (subordinate device connects here)
@@ -31,6 +28,7 @@ module tcb_lib_logsize2byteena
 // parameter validation
 ////////////////////////////////////////////////////////////////////////////////
 
+  // BUS parameters
   initial begin
     // data sizing mode
     assert (sub.BUS.MOD == TCB_MOD_LOG_SIZE) else $error("mismatch (sub.BUS.MOD = %0s) != TCB_MOD_LOG_SIZE", sub.BUS.MOD.name());
@@ -41,6 +39,7 @@ module tcb_lib_logsize2byteena
     assert (      sub.BUS.PRF  ==       man.BUS.PRF ) else $error("mismatch (      sub.BUS.PRF  = %0s) != (      man.BUS.PRF  = %0s)",       sub.BUS.PRF.name(),       man.BUS.PRF.name());
     assert ($bits(sub.req.adr) == $bits(man.req.adr)) else $error("mismatch ($bits(sub.req.adr) = %0d) != ($bits(man.req.adr) = %0d)", $bits(sub.req.adr)      , $bits(man.req.adr)      );
     assert (      sub.BUS.NXT  ==       man.BUS.NXT ) else $error("mismatch (      sub.BUS.NXT  = %0s) != (      man.BUS.NXT  = %0s)",       sub.BUS.NXT.name(),       man.BUS.NXT.name());
+    assert (      sub.BUS.ORD  ==       man.BUS.ORD ) else $error("mismatch (      sub.BUS.ORD  = %0s) != (      man.BUS.ORD  = %0s)",       sub.BUS.ORD.name(),       man.BUS.ORD.name());
     assert (      sub.BUS.NDN  ==       man.BUS.NDN ) else $error("mismatch (      sub.BUS.NDN  = %0s) != (      man.BUS.NDN  = %0s)",       sub.BUS.NDN.name(),       man.BUS.NDN.name());
   end
 
@@ -52,6 +51,13 @@ module tcb_lib_logsize2byteena
       initial assert ($bits(sub.rsp.rdt) == $bits(man.rsp.rdt)) else $error("mismatch ($bits(sub.rsp.rdt) = %0d) != ($bits(man.rsp.rdt) = %0d)", $bits(sub.rsp.rdt), $bits(man.rsp.rdt));
     end
   endgenerate
+
+  // packeting parameters
+  initial begin
+    assert (sub.PCK.MIN == man.PCK.MIN) else $error("mismatch (sub.PCK.MIN = %0d) != (man.PCK.MIN = %0d)", sub.PCK.MIN, man.PCK.MIN);
+    assert (sub.PCK.OFF == man.PCK.OFF) else $error("mismatch (sub.PCK.OFF = %0d) != (man.PCK.OFF = %0d)", sub.PCK.OFF, man.PCK.OFF);
+    assert (sub.PCK.ALN == man.PCK.ALN) else $error("mismatch (sub.PCK.ALN = %0d) != (man.PCK.ALN = %0d)", sub.PCK.ALN, man.PCK.ALN);
+  end
 
 ////////////////////////////////////////////////////////////////////////////////
 // request
@@ -103,8 +109,13 @@ module tcb_lib_logsize2byteena
   // request/response address segment, mask
   logic [sub.BUS_MAX-1:0] req_off, rsp_off;
 
+  // endianness
+  tcb_endian_t            req_ndn, rsp_ndn;
+
   // prefix OR operation
-  function automatic [sub.BUS_MAX-1:0] prefix_or (logic [sub.BUS_MAX-1:0] val);
+  function automatic [sub.BUS_MAX-1:0] prefix_or (
+    input logic [sub.BUS_MAX-1:0] val
+  );
     prefix_or[sub.BUS_MAX-1] = val[sub.BUS_MAX-1];
     for (int unsigned i=sub.BUS_MAX-1; i>0; i--) begin
       prefix_or[i-1] = prefix_or[i] | val[i-1];
@@ -115,12 +126,36 @@ module tcb_lib_logsize2byteena
   assign req_off = sub.req_dly[0          ].adr[sub.BUS_MAX-1:0];
   assign rsp_off = sub.req_dly[sub.HSK_DLY].adr[sub.BUS_MAX-1:0];
 
+  // endianness
+  generate
+    case (man.BUS.NDN)
+      BCB_NDN_DEFAULT: begin
+        assign req_ndn = tcb_endian_t'(man.BUS.ORD);
+        assign rsp_ndn = tcb_endian_t'(man.BUS.ORD);
+      end
+      TCB_NDN_LITTLE :  begin
+        assign req_ndn = TCB_LITTLE;
+        assign rsp_ndn = TCB_LITTLE;
+      end
+      TCB_NDN_BIG    :  begin
+        assign req_ndn = TCB_BIG;
+        assign rsp_ndn = TCB_BIG;
+      end
+      TCB_NDN_BI_NDN :  begin
+        assign req_ndn = sub.req.                 ndn;
+        assign rsp_ndn = sub.req_dly[sub.HSK_DLY].ndn;
+      end
+    endcase
+  endgenerate
+  
+
 ////////////////////////////////////////////////////////////////////////////////
 // multiplexers
 ////////////////////////////////////////////////////////////////////////////////
 
+
   generate
-  if (ALIGNED) begin: aligned
+  if (sub.PCK.ALN == sub.BUS_MAX) begin: aligned
 
     // offset mask
     logic [sub.BUS_MAX-1:0] req_msk;
@@ -170,7 +205,7 @@ module tcb_lib_logsize2byteena
     // byte enable
     always_comb
     for (int unsigned i=0; i<sub.BUS_BEN; i++) begin: ben
-      unique case (sub.req.ndn)
+      unique case (req_ndn)
         TCB_LITTLE:  man.req.ben[i] = sub_req_ben[(            (i-req_off)) % sub.BUS_BEN];
         TCB_BIG   :  man.req.ben[i] = sub_req_ben[(sub.BUS_BEN-(i-req_off)) % sub.BUS_BEN];
         default   :  man.req.ben[i] = 'x;
@@ -181,7 +216,7 @@ module tcb_lib_logsize2byteena
       // write data
       always_comb
       for (int unsigned i=0; i<sub.BUS_BEN; i++) begin: wdt
-        unique case (sub.req.ndn)
+        unique case (req_ndn)
           TCB_LITTLE:  man.req.wdt[i] = sub.req.wdt[(            (i-req_off)) % sub.BUS_BEN];
           TCB_BIG   :  man.req.wdt[i] = sub.req.wdt[(sub.BUS_BEN-(i-req_off)) % sub.BUS_BEN];
           default   :  man.req.wdt[i] = '{default: 8'hxx};
@@ -193,7 +228,7 @@ module tcb_lib_logsize2byteena
       // read data
       always_comb
       for (int unsigned i=0; i<sub.BUS_BEN; i++) begin: rdt
-        unique case (sub.req_dly[sub.HSK_DLY].ndn)
+        unique case (rsp_ndn)
           TCB_LITTLE:  sub.rsp.rdt[i] = man.rsp.rdt[(            (i+rsp_off)) % sub.BUS_BEN];
           TCB_BIG   :  sub.rsp.rdt[i] = man.rsp.rdt[(sub.BUS_BEN-(i+rsp_off)) % sub.BUS_BEN];
           default   :  sub.rsp.rdt[i] = '{default: 8'hxx};

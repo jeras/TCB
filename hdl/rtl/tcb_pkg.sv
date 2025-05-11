@@ -38,20 +38,6 @@ package tcb_pkg;
     TCB_CHN_READ_ONLY   = 2'b10   // read  only channel (wen/ren are both ignored)
   } tcb_bus_channel_t;
 
-  // data sizing mode
-  typedef enum bit {
-    TCB_MOD_LOG_SIZE = 1'b0,  // logarithmic size
-    TCB_MOD_BYTE_ENA = 1'b1   // byte enable
-  } tcb_bus_mode_t;
-
-  // endianness configuration
-  typedef enum bit [2-1:0] {
-    TCB_NDN_LITTLE = 2'b00,  // little endian only
-    TCB_NDN_BIG    = 2'b01,  // big    endian only
-    TCB_NDN_BI_NDN = 2'b10   // bi-    endian support
-  //BCB_NDN_RSV    = 2'b11   // reserved
-  } tcb_bus_endian_t;
-
   // prefetch configuration
   typedef enum bit {
     TCB_PRF_DISABLED = 1'b0,  //
@@ -63,6 +49,26 @@ package tcb_pkg;
     TCB_NXT_DISABLED = 1'b0,  //
     TCB_NXT_ENABLED  = 1'b1   // enable prefetch signals
   } tcb_bus_next_t;
+
+  // data sizing mode
+  typedef enum bit {
+    TCB_MOD_LOG_SIZE = 1'b0,  // logarithmic size
+    TCB_MOD_BYTE_ENA = 1'b1   // byte enable
+  } tcb_bus_mode_t;
+
+  // byte order
+  typedef enum bit {
+    TCB_ORD_DESCENDING = 1'b0,  // descending order
+    TCB_ORD_ASCENDING  = 1'b1   //  ascending order
+  } tcb_bus_order_t;
+
+  // endianness configuration
+  typedef enum bit [2-1:0] {
+    BCB_NDN_DEFAULT = 2'b11,  // default derived from byte order
+    TCB_NDN_LITTLE  = 2'b01,  // little endian only (default for TCB_ORD_DESCENDING order)
+    TCB_NDN_BIG     = 2'b10,  // big    endian only (default for TCB_ORD_ASCENDING  order)
+    TCB_NDN_BI_NDN  = 2'b11   // bi-    endian support
+  } tcb_bus_endian_t;
 
   // bus layer parameter structure
   // TODO: the structure is packed to workaround a Verilator bug
@@ -78,6 +84,7 @@ package tcb_pkg;
     tcb_bus_prefetch_t PRF;  // prefetch configuration
     tcb_bus_next_t     NXT;  // next address configuration
     tcb_bus_mode_t     MOD;  // data sizing mode
+    tcb_bus_order_t    ORD;  // byte order
     tcb_bus_endian_t   NDN;  // endianness configuration
   } tcb_bus_t;
 
@@ -97,30 +104,22 @@ package tcb_pkg;
 // packing layer (defines the relations between bus signals)
 ////////////////////////////////////////////////////////////////////////////////
 
-  // byte order
-  typedef enum bit {
-    TCB_ORD_DESCENDING = 1'b0,  // descending order
-    TCB_ORD_ASCENDING  = 1'b1   //  ascending order
-  } tcb_pck_order_t;
-
   // bus parameter structure
   `ifdef VERILATOR
   typedef struct packed {
   `else
   typedef struct {
   `endif
-    int unsigned      ALN;  // alignment (number of aligned address bits)
     int unsigned      MIN;  // minimum transfer logarithmic size
     int unsigned      OFF;  // number of zeroed offset bits
-    tcb_pck_order_t   ORD;  // byte order
+    int unsigned      ALN;  // alignment (number of aligned address bits)
   } tcb_pck_t;
 
   // physical interface parameter default
   localparam tcb_pck_t TCB_PCK_DEF = '{
-    ALN: 0,   // maximum $clog2(BUS_DAT/8)
     MIN: 0,   // maximum $clog2(BUS_DAT/8)
     OFF: 0,   // maximum $clog2(BUS_DAT/8)
-    ORD: TCB_ORD_DESCENDING
+    ALN: 0    // maximum $clog2(BUS_DAT/8)
   };
 
   // endianness packing (used for runtime signal values)
@@ -138,6 +137,67 @@ package tcb_pkg;
   typedef struct packed {
     logic err;  // error response
   } tcb_rsp_sts_t;
+
+////////////////////////////////////////////////////////////////////////////////
+// perameterized types
+////////////////////////////////////////////////////////////////////////////////
+
+  virtual class tcb_c #(
+    parameter  int unsigned DLY = TCB_HSK_DEF,
+    parameter  tcb_bus_t    BUS = TCB_BUS_DEF,
+    parameter  tcb_pck_t    PCK = TCB_PCK_DEF
+  );
+    // signal widths
+    localparam BUS_LEN = $clog2(BUS.FRM+1);
+    localparam BUS_BEN = BUS.DAT/8;
+    localparam BUS_MAX = $clog2(BUS_BEN);
+    localparam BUS_SIZ = $clog2(BUS_MAX+1);
+
+    localparam int unsigned LEFT  = (BUS.ORD == TCB_ORD_DESCENDING) ? BUS_BEN-1 : 0;
+    localparam int unsigned RIGHT = (BUS.ORD == TCB_ORD_DESCENDING) ? 0 : BUS_BEN-1;
+
+    typedef logic [LEFT:RIGHT][8-1:0] dat_t;
+
+    // request
+    typedef struct packed {
+      // framing
+      logic               frm;  // frame
+      logic [BUS_LEN-1:0] len;  // frame length
+      // channel
+      logic               wen;  // write enable
+      logic               ren;  // read enable
+      // prefetch
+      logic               rpt;  // repeated address
+      logic               inc;  // incremented address
+      // address and next address
+      logic [BUS.ADR-1:0] adr;  // current address
+      logic [BUS.ADR-1:0] nxt;  // next address
+      // data sizing
+      logic [BUS_SIZ-1:0] siz;  // logarithmic transfer size
+      logic [BUS_BEN-1:0] ben;  // byte enable
+      // endianness
+      tcb_endian_t        ndn;  // endianness
+      // data
+      dat_t               wdt;  // write data
+    } req_t;
+
+    // response
+    typedef struct packed {
+      dat_t               rdt;  // read data
+      tcb_rsp_sts_t       sts;  // status
+    } rsp_t;
+  endclass: tcb_c
+
+////////////////////////////////////////////////////////////////////////////////
+// predefined types
+////////////////////////////////////////////////////////////////////////////////
+
+//  typedef tcb_c #(.ADR (32), .DAT (32))::req_t tcb_req_t;  // request
+//  typedef tcb_c #(.ADR (32), .DAT (32))::req_t tcb_rsp_t;  // response
+
+////////////////////////////////////////////////////////////////////////////////
+// predefined types
+////////////////////////////////////////////////////////////////////////////////
 
   // default signal widths
   localparam DEF_LEN = $clog2(TCB_BUS_DEF.FRM+1);
@@ -165,7 +225,7 @@ package tcb_pkg;
     logic [DEF_SIZ-1:0]        siz;  // logarithmic transfer size
     logic [DEF_BEN-1:0]        ben;  // byte enable
     // endianness
-    logic                      ndn;  // endianness
+    tcb_endian_t               ndn;  // endianness
     // data
     logic [DEF_BEN-1:0][8-1:0] wdt;  // write data
   } tcb_req_t;
@@ -175,58 +235,6 @@ package tcb_pkg;
     logic [DEF_BEN-1:0][8-1:0] rdt;  // read data
     tcb_rsp_sts_t              sts;  // status
   } tcb_rsp_t;
-
-////////////////////////////////////////////////////////////////////////////////
-// perameterized types
-////////////////////////////////////////////////////////////////////////////////
-
-  virtual class tcb_c #(
-    parameter  int unsigned DLY = TCB_HSK_DEF,
-    parameter  tcb_bus_t    BUS = TCB_BUS_DEF,
-    parameter  tcb_pck_t    PCK = TCB_PCK_DEF
-  );
-    // signal widths
-    localparam BUS_LEN = $clog2(BUS.FRM+1);
-    localparam BUS_BEN = BUS.DAT/8;
-    localparam BUS_MAX = $clog2(BUS_BEN);
-    localparam BUS_SIZ = $clog2(BUS_MAX+1);
-
-    // request
-    typedef struct packed {
-      // framing
-      logic                      frm;  // frame
-      logic [BUS_LEN-1:0]        len;  // frame length
-      // channel
-      logic                      wen;  // write enable
-      logic                      ren;  // read enable
-      // prefetch
-      logic                      rpt;  // repeated address
-      logic                      inc;  // incremented address
-      // address and next address
-      logic [BUS.ADR-1:0]        adr;  // current address
-      logic [BUS.ADR-1:0]        nxt;  // next address
-      // data sizing
-      logic [BUS_SIZ-1:0]        siz;  // logarithmic transfer size
-      logic [BUS_BEN-1:0]        ben;  // byte enable
-      // endianness
-      logic                      ndn;  // endianness
-      // data
-      logic [BUS_BEN-1:0][8-1:0] wdt;  // write data
-    } req_t;
-
-    // response
-    typedef struct packed {
-      logic [BUS_BEN-1:0][8-1:0] rdt;  // read data
-      tcb_rsp_sts_t              sts;  // status
-    } rsp_t;
-  endclass: tcb_c
-
-////////////////////////////////////////////////////////////////////////////////
-// default types
-////////////////////////////////////////////////////////////////////////////////
-
-//  typedef tcb_c #(.ADR (32), .DAT (32))::req_t tcb_req_t;  // request
-//  typedef tcb_c #(.ADR (32), .DAT (32))::req_t tcb_rsp_t;  // response
 
 ////////////////////////////////////////////////////////////////////////////////
 // miscellaneous

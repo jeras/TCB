@@ -29,9 +29,7 @@ module tcb_lib_logsize2byteena_tb
 //  parameter  int unsigned      BUS_ALN = TCB_BUS_DEF.ALN,  // TODO
 //  parameter  int unsigned      BUS_MIN = TCB_BUS_DEF.MIN,  // TODO
 //  parameter  int unsigned      BUS_OFF = TCB_BUS_DEF.OFF,  // TODO
-//  parameter  tcb_pck_order_t   PCK_ORD = TCB_BUS_DEF.ORD   // manager     byte order
-  // DUT specific
-  parameter  bit ALIGNED = 1'b1
+//  parameter  tcb_bus_order_t   PCK_ORD = TCB_BUS_DEF.ORD   // manager     byte order
 );
 
   // handshake parameter
@@ -46,6 +44,7 @@ module tcb_lib_logsize2byteena_tb
     PRF: TCB_PRF_ENABLED,
     NXT: TCB_NXT_ENABLED,
     MOD: TCB_MOD_LOG_SIZE,
+    ORD: TCB_ORD_DESCENDING,
     NDN: TCB_NDN_BI_NDN
   };
 
@@ -58,15 +57,15 @@ module tcb_lib_logsize2byteena_tb
     PRF: TCB_PRF_ENABLED,
     NXT: TCB_NXT_ENABLED,
     MOD: TCB_MOD_BYTE_ENA,
+    ORD: TCB_ORD_DESCENDING,
     NDN: TCB_NDN_BI_NDN
   };
 
   // physical interface parameter default
   localparam tcb_pck_t PCK = '{
-    ALN: 2,
     MIN: 0,
     OFF: 0,
-    ORD: TCB_ORD_DESCENDING
+    ALN: 2
   };
 
 //  typedef tcb_c #(HSK, BUS_SIZ, PCK)::req_t req_t;
@@ -225,7 +224,8 @@ module tcb_lib_logsize2byteena_tb
     obj_man.check32(32'h00000020, 32'h76543210, 1'b0);
     obj_man.check32(32'h00000030, 32'h76543210, 1'b0);
 
-    if (!ALIGNED) begin
+    // test unaligned accesses
+    if (PCK.ALN != tcb_man.BUS_MAX) begin
       // clear memory
       mem.mem = '{default: 'x};
 

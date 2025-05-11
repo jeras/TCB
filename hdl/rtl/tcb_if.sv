@@ -120,11 +120,22 @@ interface tcb_if
       endcase
     end
     // endianness
-    if (BUS.NDN == TCB_NDN_BI_NDN) begin
-      // bi-endian signal presence
-      initial assert ($bits(req.ndn) == 1) else
-        $error("unexpected type(req.ndn) = ", $typename(req.ndn));
-    end
+    case (BUS.NDN)
+    //BCB_NDN_DEFAULT:
+          TCB_ORD_DESCENDING: begin
+            initial assert ()
+          end
+          TCB_ORD_ASCENDING : begin
+          end
+        endcase
+      TCB_NDN_LITTLE ,
+      TCB_NDN_BIG    ,
+      TCB_NDN_BI_NDN: begin
+        // bi-endian signal presence
+        initial assert ($bits(req.ndn) == 1) else
+          $error("unexpected type(req.ndn) = ", $typename(req.ndn));
+      end
+    endcase
   endgenerate
 
 ////////////////////////////////////////////////////////////////////////////////
