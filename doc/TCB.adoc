@@ -1000,14 +1000,26 @@ logic      [2:0] off = adr[2:0];
 ===== Full data width, aligned address
 
 It is common to only allow full data bus width and aligned transfers when accessing peripherals.
+Only the default endianness for the given byte order is allowed
+(little endian for descending byte order, big-endian for ascending byte order).
+
 This case would specify the following parameter values and signal restrictions:
 
-* logarithmic size mode `MOD=LOG_SIZE`,
-* 
-* full alignment required `ALN=clog2(BEN)`
-* transfer size equal to data bus width `siz==$clog2(ALN)`,  TODO
-* aligned address to data bus width `adr[ALN-1:0]=='0`,
-* the transfer endianness `ndn` is ignored.
+.Full data width, aligned address parameters
+[%autowidth]
+|===
+| parameter | 32-bit    | 64-bit    | description
+
+| `BUS.DAT` |      `32` |      `64` |
+| `BUS_BEN` |       `4` |       `8` | `$clog2(BUS.DAT)`
+| `BUS_MAX` |       `2` |       `3` | `$clog2(BUS_BEN)`
+| `BUS_SIZ` |       `2` |       `2` | `$clog2(BUS_MAX+1)`
+| `BUS.NDN` | `TCB_NDN_DEFAULT`     | Endianness should be matching the default for the given byte order (BUS.ORD parameter).
+
+| `PCK.MIN` | `BUS_MAX` | `BUS_MAX` | Minimum transfer size is equal to maximum.
+| `PCK.OFF` | `BUS_MAX` | `BUS_MAX` | Entire address offset must be zero (`BUS_MAX` LSB of address).
+| `PCK.ALN` | `BUS_MAX` | `BUS_MAX` | Entire address offset must be aligned to transfer size (already covered by previous parameters).
+|===
 
 The following table lists such transfers for a 32-bit data bus.
 
@@ -1025,6 +1037,28 @@ The following table lists such transfers for a 32-bit data bus.
 | size | `off`  | `siz`  | dat
 
 | word | `3'd0` | `2'd3` | `{[7],[6],[5],[4],[3],[2],[1],[0]}`
+|===
+
+===== Variable data width, zero offset
+
+.32-bit variable data width, zero offset
+[%autowidth]
+|===
+| size | `off`  | `siz`  | `dat`
+
+| byte | `3'd0` | `2'd0` | `{   ,    ,    , [0]}`
+| half | `3'd0` | `2'd1` | `{   ,    , [1], [0]}`
+| word | `3'd0` | `2'd2` | `{[3], [2], [1], [0]}`
+|===
+
+.64-bit variable data width, zero offset
+[%autowidth]
+|===
+| size   | `off`  | `siz`  | `dat`
+| byte   | `3'd0` | `2'd0` | `{   ,   ,   ,   ,   ,   ,   ,[0]}`
+| half   | `3'd0` | `2'd1` | `{   ,   ,   ,   ,   ,   ,[1],[0]}`
+| word   | `3'd0` | `2'd2` | `{   ,   ,   ,   ,[3],[2],[1],[0]}`
+| double | `3'd0` | `2'd3` | `{[7],[6],[5],[4],[3],[2],[1],[0]}`
 |===
 
 ===== Variable data width, aligned address
