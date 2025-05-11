@@ -1206,25 +1206,134 @@ logic [0:7]      ben;
 logic      [2:0] off = adr[2:0];
 ----
 
-===== Little endian (ascending byte order)
+===== Big-endian (ascending byte order)
 
-.32-bit little endian data alignment  (ascending byte order)
+.32-bit big-endian data alignment (ascending byte order)
 [%autowidth]
 |===
 | size | alignment  | `off`  | `ben`     | `dat`
 
-| byte |    aligned | `2'd0`     | `4'b1000`  | `{[0],   ,   ,   }`
-| byte |    aligned | `2'd1`     | `4'b0100`  | `{   ,[0],   ,   }`
-| byte |    aligned | `2'd2`     | `4'b0010`  | `{   ,   ,[0],   }`
-| byte |    aligned | `2'd3`     | `4'b0001`  | `{   ,   ,   ,[0]}`
-| half |    aligned | `2'd0`     | `4'b1100`  | `{[0],[0],   ,   }`
-| half | misaligned | `2'd1`     | `4'b0110`  | `{   ,[0],[0],   }`
-| half |    aligned | `2'd2`     | `4'b0011`  | `{   ,   ,[0],[0]}`
-| half | misaligned | `2'd3`     | `4'b1001`  | `{[0],   ,   ,[0]}`
-| word |    aligned | `2'd0`     | `4'b1111`  | `{[0],[0],[1],[2]}`
-| word | misaligned | `2'd1`     | `4'b1111`  | `{[2],[0],[0],[1]}`
-| word | misaligned | `2'd2`     | `4'b1111`  | `{[1],[2],[0],[0]}`
-| word | misaligned | `2'd3`     | `4'b1111`  | `{[0],[1],[2],[0]}`
+| byte |    aligned | `2'd0` | `4'b1000` | `{[0],   ,   ,   }`
+| byte |    aligned | `2'd1` | `4'b0100` | `{   ,[0],   ,   }`
+| byte |    aligned | `2'd2` | `4'b0010` | `{   ,   ,[0],   }`
+| byte |    aligned | `2'd3` | `4'b0001` | `{   ,   ,   ,[0]}`
+
+| half |    aligned | `2'd0` | `4'b1100` | `{[1],[0],   ,   }`
+| half | misaligned | `2'd1` | `4'b0110` | `{   ,[1],[0],   }`
+| half |    aligned | `2'd2` | `4'b0011` | `{   ,   ,[1],[0]}`
+| half | misaligned | `2'd3` | `4'b1001` | `{[0],   ,   ,[1]}`
+
+| word |    aligned | `2'd0` | `4'b1111` | `{[3],[2],[1],[0]}`
+| word | misaligned | `2'd1` | `4'b1111` | `{[0],[3],[2],[1]}`
+| word | misaligned | `2'd2` | `4'b1111` | `{[1],[0],[3],[2]}`
+| word | misaligned | `2'd3` | `4'b1111` | `{[2],[1],[0],[3]}`
+|===
+
+.64-bit big-endian data alignment (ascending byte order)
+[%autowidth]
+|===
+| size   | alignment  | `off`  | `ben`         | `dat`
+
+| byte   |    aligned | `3'd0` | `8'b10000000` | `{[0],   ,   ,   ,   ,   ,   ,   }`
+| byte   |    aligned | `3'd1` | `8'b01000000` | `{   ,[0],   ,   ,   ,   ,   ,   }`
+| byte   |    aligned | `3'd2` | `8'b00100000` | `{   ,   ,[0],   ,   ,   ,   ,   }`
+| byte   |    aligned | `3'd3` | `8'b00010000` | `{   ,   ,   ,[0],   ,   ,   ,   }`
+| byte   |    aligned | `3'd4` | `8'b00001000` | `{   ,   ,   ,   ,[0],   ,   ,   }`
+| byte   |    aligned | `3'd5` | `8'b00000100` | `{   ,   ,   ,   ,   ,[0],   ,   }`
+| byte   |    aligned | `3'd6` | `8'b00000010` | `{   ,   ,   ,   ,   ,   ,[0],   }`
+| byte   |    aligned | `3'd7` | `8'b00000001` | `{   ,   ,   ,   ,   ,   ,   ,[0]}`
+
+| half   |    aligned | `3'd0` | `4'b11000000` | `{[1],[0],   ,   ,   ,   ,   ,   }`
+| half   | misaligned | `3'd1` | `4'b01100000` | `{   ,[1],[0],   ,   ,   ,   ,   }`
+| half   |    aligned | `3'd2` | `4'b00110000` | `{   ,   ,[1],[0],   ,   ,   ,   }`
+| half   | misaligned | `3'd3` | `4'b00011000` | `{   ,   ,   ,[1],[0],   ,   ,   }`
+| half   |    aligned | `3'd4` | `4'b00001100` | `{   ,   ,   ,   ,[1],[0],   ,   }`
+| half   | misaligned | `3'd5` | `4'b00000110` | `{   ,   ,   ,   ,   ,[1],[0],   }`
+| half   |    aligned | `3'd6` | `4'b00000011` | `{   ,   ,   ,   ,   ,   ,[1],[0]}`
+| half   | misaligned | `3'd7` | `4'b10000001` | `{[0],   ,   ,   ,   ,   ,   ,[1]}`
+
+| word   |    aligned | `3'd0` | `4'b11110000` | `{[3],[2],[1],[0],   ,   ,   ,   }`
+| word   | misaligned | `3'd1` | `4'b01111000` | `{   ,[3],[2],[1],[0],   ,   ,   }`
+| word   | misaligned | `3'd2` | `4'b00111100` | `{   ,   ,[3],[2],[1],[0],   ,   }`
+| word   | misaligned | `3'd3` | `4'b00011110` | `{   ,   ,   ,[3],[2],[1],[0],   }`
+| word   |    aligned | `3'd4` | `4'b00001111` | `{   ,   ,   ,   ,[3],[2],[1],[0]}`
+| word   | misaligned | `3'd5` | `4'b10000111` | `{[0],   ,   ,   ,   ,[3],[2],[1]}`
+| word   | misaligned | `3'd6` | `4'b11000011` | `{[1],[0],   ,   ,   ,   ,[3],[2]}`
+| word   | misaligned | `3'd7` | `4'b11100001` | `{[2],[1],[0],   ,   ,   ,   ,[3]}`
+
+| double |    aligned | `3'd0` | `4'b11111111` | `{[7],[6],[5],[4],[3],[2],[1],[0]}`
+| double | misaligned | `3'd1` | `4'b11111111` | `{[0],[7],[6],[5],[4],[3],[2],[1]}`
+| double | misaligned | `3'd2` | `4'b11111111` | `{[1],[0],[7],[6],[5],[4],[3],[2]}`
+| double | misaligned | `3'd3` | `4'b11111111` | `{[2],[1],[0],[7],[6],[5],[4],[3]}`
+| double | misaligned | `3'd4` | `4'b11111111` | `{[3],[2],[1],[0],[7],[6],[5],[4]}`
+| double | misaligned | `3'd5` | `4'b11111111` | `{[4],[3],[2],[1],[0],[7],[6],[5]}`
+| double | misaligned | `3'd6` | `4'b11111111` | `{[5],[4],[3],[2],[1],[0],[7],[6]}`
+| double | misaligned | `3'd7` | `4'b11111111` | `{[6],[5],[4],[3],[2],[1],[0],[7]}`
+|===
+
+===== Little-endian (ascending byte order)
+
+.32-bit little-endian data alignment (ascending byte order)
+[%autowidth]
+|===
+| size | alignment  | `off`  | `ben`     | `dat`
+
+| byte |    aligned | `2'd0` | `4'b1000` | `{[0],   ,   ,   }`
+| byte |    aligned | `2'd1` | `4'b0100` | `{   ,[0],   ,   }`
+| byte |    aligned | `2'd2` | `4'b0010` | `{   ,   ,[0],   }`
+| byte |    aligned | `2'd3` | `4'b0001` | `{   ,   ,   ,[0]}`
+
+| half |    aligned | `2'd0` | `4'b1100` | `{[0],[1],   ,   }`
+| half | misaligned | `2'd1` | `4'b0110` | `{   ,[0],[1],   }`
+| half |    aligned | `2'd2` | `4'b0011` | `{   ,   ,[0],[1]}`
+| half | misaligned | `2'd3` | `4'b1001` | `{[1],   ,   ,[0]}`
+
+| word |    aligned | `2'd0` | `4'b1111` | `{[0],[1],[2],[3]}`
+| word | misaligned | `2'd1` | `4'b1111` | `{[3],[0],[1],[2]}`
+| word | misaligned | `2'd2` | `4'b1111` | `{[2],[3],[0],[1]}`
+| word | misaligned | `2'd3` | `4'b1111` | `{[1],[2],[3],[0]}`
+|===
+
+.64-bit little-endian data alignment (ascending byte order)
+[%autowidth]
+|===
+| size   | alignment  | `off`  | `ben`         | `dat`
+
+| byte   |    aligned | `3'd0` | `8'b10000000` | `{[0],   ,   ,   ,   ,   ,   ,   }`
+| byte   |    aligned | `3'd1` | `8'b01000000` | `{   ,[0],   ,   ,   ,   ,   ,   }`
+| byte   |    aligned | `3'd2` | `8'b00100000` | `{   ,   ,[0],   ,   ,   ,   ,   }`
+| byte   |    aligned | `3'd3` | `8'b00010000` | `{   ,   ,   ,[0],   ,   ,   ,   }`
+| byte   |    aligned | `3'd4` | `8'b00001000` | `{   ,   ,   ,   ,[0],   ,   ,   }`
+| byte   |    aligned | `3'd5` | `8'b00000100` | `{   ,   ,   ,   ,   ,[0],   ,   }`
+| byte   |    aligned | `3'd6` | `8'b00000010` | `{   ,   ,   ,   ,   ,   ,[0],   }`
+| byte   |    aligned | `3'd7` | `8'b00000001` | `{   ,   ,   ,   ,   ,   ,   ,[0]}`
+
+| half   |    aligned | `3'd0` | `4'b11000000` | `{[0],[1],   ,   ,   ,   ,   ,   }`
+| half   | misaligned | `3'd1` | `4'b01100000` | `{   ,[0],[1],   ,   ,   ,   ,   }`
+| half   |    aligned | `3'd2` | `4'b00110000` | `{   ,   ,[0],[1],   ,   ,   ,   }`
+| half   | misaligned | `3'd3` | `4'b00011000` | `{   ,   ,   ,[0],[1],   ,   ,   }`
+| half   |    aligned | `3'd4` | `4'b00001100` | `{   ,   ,   ,   ,[0],[1],   ,   }`
+| half   | misaligned | `3'd5` | `4'b00000110` | `{   ,   ,   ,   ,   ,[0],[1],   }`
+| half   |    aligned | `3'd6` | `4'b00000011` | `{   ,   ,   ,   ,   ,   ,[0],[1]}`
+| half   | misaligned | `3'd7` | `4'b10000001` | `{[1],   ,   ,   ,   ,   ,   ,[0]}`
+
+| word   |    aligned | `3'd0` | `4'b11110000` | `{[0],[1],[2],[3],   ,   ,   ,   }`
+| word   | misaligned | `3'd1` | `4'b01111000` | `{   ,[0],[1],[2],[3],   ,   ,   }`
+| word   | misaligned | `3'd2` | `4'b00111100` | `{   ,   ,[0],[1],[2],[3],   ,   }`
+| word   | misaligned | `3'd3` | `4'b00011110` | `{   ,   ,   ,[0],[1],[2],[3],   }`
+| word   |    aligned | `3'd4` | `4'b00001111` | `{   ,   ,   ,   ,[0],[1],[2],[3]}`
+| word   | misaligned | `3'd5` | `4'b10000111` | `{[3],   ,   ,   ,   ,[0],[1],[2]}`
+| word   | misaligned | `3'd6` | `4'b11000011` | `{[2],[3],   ,   ,   ,   ,[0],[1]}`
+| word   | misaligned | `3'd7` | `4'b11100001` | `{[1],[2],[3],   ,   ,   ,   ,[0]}`
+
+| double |    aligned | `3'd0` | `4'b11111111` | `{[0],[1],[2],[3],[4],[5],[6],[7]}`
+| double | misaligned | `3'd1` | `4'b11111111` | `{[7],[0],[1],[2],[3],[4],[5],[6]}`
+| double | misaligned | `3'd2` | `4'b11111111` | `{[6],[7],[0],[1],[2],[3],[4],[5]}`
+| double | misaligned | `3'd3` | `4'b11111111` | `{[5],[6],[7],[0],[1],[2],[3],[4]}`
+| double | misaligned | `3'd4` | `4'b11111111` | `{[4],[5],[6],[7],[0],[1],[2],[3]}`
+| double | misaligned | `3'd5` | `4'b11111111` | `{[3],[4],[5],[6],[7],[0],[1],[2]}`
+| double | misaligned | `3'd6` | `4'b11111111` | `{[2],[3],[4],[5],[6],[7],[0],[1]}`
+| double | misaligned | `3'd7` | `4'b11111111` | `{[1],[2],[3],[4],[5],[6],[7],[0]}`
 |===
 
 ==== Misalignment handler
