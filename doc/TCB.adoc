@@ -1,5 +1,6 @@
 = Tightly Coupled Bus
 :toc:
+:toclevels: 5
 
 Tightly Coupled Bus is a simple general purpose system bus based on FPGA/ASIC SRAM memory interfaces.
 
@@ -827,6 +828,35 @@ The examples list all supported read/write transfers in a table.
 Unsupported transfers can be handled by ignoring the request and responding with an error.
 Alternatively unsupported transfers can just cause undefined behavior.
 
+==== RISC-V with C extension instruction fetch
+
+This case would specify the following parameter values and signal restrictions:
+
+* logarithmic size mode `MOD=LOG_SIZE`,
+* relaxed alignment `ALN=1`
+* always attempt to fetch a 32-bit instruction `siz=2'd2`,
+* address aligned to transfer size `adr[0]==1'b0`,
+* only little endian support `ndn=1'b0`.
+
+.32-bit instruction bus vector
+[source,SystemVerilog]
+----
+logic [3:0][7:0] dat;
+logic      [2:0] siz;
+logic      [1:0] off = adr[1:0];
+----
+
+The following table lists such transfers.
+
+.TODO
+[%autowidth]
+|===
+| size | alignment  | `off`  | `siz`  | `dat`
+
+| word |    aligned | `2'd0` | `2'd2` | `{[3],[2],[1],[0]}`
+| word | misaligned | `2'd2` | `2'd2` | `{[3],[2],[1],[0]}`
+|===
+
 ==== Logarithmic size mode
 
 Examples for the following logarithmic size mode configurations are provided:
@@ -835,6 +865,22 @@ Examples for the following logarithmic size mode configurations are provided:
 * any size transfers with size aligned address,
 * any size transfers with no address alignment restrictions,
 * instruction fetch for RISC-V with C extension.
+
+.32-bit data bus vector
+[source,SystemVerilog]
+----
+logic [3:0][7:0] dat;
+logic      [2:0] siz;
+logic      [1:0] off = adr[1:0];
+----
+
+.64-bit data bus vector
+[source,SystemVerilog]
+----
+logic [7:0][7:0] dat;
+logic      [2:0] siz;
+logic      [2:0] off = adr[2:0];
+----
 
 ===== Full data width, aligned address
 
@@ -850,15 +896,23 @@ This case would specify the following parameter values and signal restrictions:
 
 The following table lists such transfers for a 32-bit data bus.
 
-.TODO
+.32-bit full data width, aligned address
 [%autowidth]
 |===
-| size | `adr[1:0]` | `siz[1:0]` | `wdt[31:00]`/`rdt[31:00]`
+| size | `off`  | `siz`  | dat
 
-| word | `2'd0`     | `2'd2`     | `{[31:24], [23:16], [15:08], [07:00]}`
+| word | `2'd0` | `2'd2` | `{[3],[2],[1],[0]}`
 |===
 
-===== Variable data width, aligned
+.64-bit full data width, aligned address
+[%autowidth]
+|===
+| size | `off`  | `siz`  | dat
+
+| word | `3'd0` | `2'd3` | `{[7],[6],[5],[4],[3],[2],[1],[0]}`
+|===
+
+===== Variable data width, aligned address
 
 If transfer size restrictions are relaxed down to a single byte,
 small registers can be arranged into a more compact structure,
@@ -873,45 +927,45 @@ This case would specify the following parameter values and signal restrictions:
 
 The following table lists such transfers for a 32-bit data bus.
 
-.TODO
+.32-bit variable data width, aligned address
 [%autowidth]
 |===
-| `siz`  | `off`  | `wdt[31:00]`/`rdt[31:00]`
+| size | `off`  | `siz`  | `dat`
 
-| `2'd0` | `3'd0` | `{       ,        ,        , [07:00]}`
-| `2'd0` | `3'd1` | `{       ,        ,        , [07:00]}`
-| `2'd0` | `3'd2` | `{       ,        ,        , [07:00]}`
-| `2'd0` | `3'd3` | `{       ,        ,        , [07:00]}`
-| `2'd0` | `3'd4` | `{       ,        ,        , [07:00]}`
-| `2'd0` | `3'd5` | `{       ,        ,        , [07:00]}`
-| `2'd0` | `3'd6` | `{       ,        ,        , [07:00]}`
-| `2'd0` | `3'd7` | `{       ,        ,        , [07:00]}`
-| `2'd1` | `3'd0` | `{       ,        , [15:08], [07:00]}`
-| `2'd1` | `3'd2` | `{       ,        , [15:08], [07:00]}`
-| `2'd1` | `3'd4` | `{       ,        , [15:08], [07:00]}`
-| `2'd1` | `3'd6` | `{       ,        , [15:08], [07:00]}`
-| `2'd2` | `3'd0` | `{       , [31:16], [15:08], [07:00]}`
-| `2'd2` | `3'd4` | `{       , [31:16], [15:08], [07:00]}`
-| `2'd3` | `3'd0` | `{[63:32], [31:16], [15:08], [07:00]}`
+| byte | `3'd0` | `2'd0` | `{   ,    ,    , [0]}`
+| byte | `3'd1` | `2'd0` | `{   ,    ,    , [0]}`
+| byte | `3'd2` | `2'd0` | `{   ,    ,    , [0]}`
+| byte | `3'd3` | `2'd0` | `{   ,    ,    , [0]}`
+
+| half | `3'd0` | `2'd1` | `{   ,    , [1], [0]}`
+| half | `3'd2` | `2'd1` | `{   ,    , [1], [0]}`
+
+| word | `3'd0` | `2'd2` | `{[3], [2], [1], [0]}`
 |===
 
-TODO: define the offset somewhere.
-The offset is `off = adr[BUS_OFF-1:0]`.
-
-.TODO
+.64-bit variable data width, aligned address
 [%autowidth]
 |===
-| size | `off`  | `siz`  | mapping
+| size   | `off`  | `siz`  | `dat`
+| byte   | `3'd0` | `2'd0` | `{   ,   ,   ,   ,   ,   ,   ,[0]}`
+| byte   | `3'd1` | `2'd0` | `{   ,   ,   ,   ,   ,   ,   ,[0]}`
+| byte   | `3'd2` | `2'd0` | `{   ,   ,   ,   ,   ,   ,   ,[0]}`
+| byte   | `3'd3` | `2'd0` | `{   ,   ,   ,   ,   ,   ,   ,[0]}`
+| byte   | `3'd4` | `2'd0` | `{   ,   ,   ,   ,   ,   ,   ,[0]}`
+| byte   | `3'd5` | `2'd0` | `{   ,   ,   ,   ,   ,   ,   ,[0]}`
+| byte   | `3'd6` | `2'd0` | `{   ,   ,   ,   ,   ,   ,   ,[0]}`
+| byte   | `3'd7` | `2'd0` | `{   ,   ,   ,   ,   ,   ,   ,[0]}`
 
-| byte | `3'd0` | `2'd0` | `{    ,     ,     , 3'd0}`
-| byte | `3'd1` | `2'd0` | `{    ,     ,     , 3'd0}`
-| byte | `3'd2` | `2'd0` | `{    ,     ,     , 3'd0}`
-| byte | `3'd3` | `2'd0` | `{    ,     ,     , 3'd0}`
-| half | `3'd0` | `2'd1` | `{    ,     , 3'd1, 3'd0}`
-| half | `3'd2` | `2'd1` | `{    ,     , 3'd1, 3'd0}`
-| word | `3'd0` | `2'd2` | `{3'd3, 3'd2, 3'd1, 3'd0}`
+| half   | `3'd0` | `2'd1` | `{   ,   ,   ,   ,   ,   ,[1],[0]}`
+| half   | `3'd2` | `2'd1` | `{   ,   ,   ,   ,   ,   ,[1],[0]}`
+| half   | `3'd4` | `2'd1` | `{   ,   ,   ,   ,   ,   ,[1],[0]}`
+| half   | `3'd6` | `2'd1` | `{   ,   ,   ,   ,   ,   ,[1],[0]}`
+
+| word   | `3'd0` | `2'd2` | `{   ,   ,   ,   ,[3],[2],[1],[0]}`
+| word   | `3'd4` | `2'd2` | `{   ,   ,   ,   ,[3],[2],[1],[0]}`
+
+| double | `3'd0` | `2'd3` | `{[7],[6],[5],[4],[3],[2],[1],[0]}`
 |===
-
 
 Such a configuration is also appropriate for a load/store CPU interface,
 since it covers all aligned memory accesses.
@@ -932,46 +986,67 @@ This case would specify the following parameter values and signal restrictions:
 * address aligned to transfer size `adr[siz-1:0]=='0`,
 * the transfer endianness `ndn` is ignored.
 
-The following table lists such transfers for a 32-bit data bus.
-
-.TODO
+.32-bit variable data width, misalignment support
 [%autowidth]
 |===
-| size | alignment  | `adr[1:0]` | `siz[1:0]` | `wdt[31:00]`/`rdt[31:00]`
+| size | alignment  | `off`  | `siz`  | `dat`
 
-| byte |    aligned | `2'd0`     | `2'd0`     | `{       ,        ,        , [07:00]}`
-| byte |    aligned | `2'd1`     | `2'd0`     | `{       ,        ,        , [07:00]}`
-| byte |    aligned | `2'd2`     | `2'd0`     | `{       ,        ,        , [07:00]}`
-| byte |    aligned | `2'd3`     | `2'd0`     | `{       ,        ,        , [07:00]}`
-| half |    aligned | `2'd0`     | `2'd1`     | `{       ,        , [15:08], [07:00]}`
-| half | misaligned | `2'd1`     | `2'd1`     | `{       ,        , [15:08], [07:00]}`
-| half |    aligned | `2'd2`     | `2'd1`     | `{       ,        , [15:08], [07:00]}`
-| half | misaligned | `2'd3`     | `2'd1`     | `{       ,        , [15:08], [07:00]}`
-| word |    aligned | `2'd0`     | `2'd2`     | `{[31:24], [23:16], [15:08], [07:00]}`
-| word | misaligned | `2'd1`     | `2'd2`     | `{[31:24], [23:16], [15:08], [07:00]}`
-| word | misaligned | `2'd2`     | `2'd2`     | `{[31:24], [23:16], [15:08], [07:00]}`
-| word | misaligned | `2'd3`     | `2'd2`     | `{[31:24], [23:16], [15:08], [07:00]}`
+| byte |    aligned | `2'd0` | `2'd0` | `{   ,   ,   ,[0]}`
+| byte |    aligned | `2'd1` | `2'd0` | `{   ,   ,   ,[0]}`
+| byte |    aligned | `2'd2` | `2'd0` | `{   ,   ,   ,[0]}`
+| byte |    aligned | `2'd3` | `2'd0` | `{   ,   ,   ,[0]}`
+
+| half |    aligned | `2'd0` | `2'd1` | `{   ,   ,[1],[0]}`
+| half | misaligned | `2'd1` | `2'd1` | `{   ,   ,[1],[0]}`
+| half |    aligned | `2'd2` | `2'd1` | `{   ,   ,[1],[0]}`
+| half | misaligned | `2'd3` | `2'd1` | `{   ,   ,[1],[0]}`
+
+| word |    aligned | `2'd0` | `2'd2` | `{[3],[2],[1],[0]}`
+| word | misaligned | `2'd1` | `2'd2` | `{[3],[2],[1],[0]}`
+| word | misaligned | `2'd2` | `2'd2` | `{[3],[2],[1],[0]}`
+| word | misaligned | `2'd3` | `2'd2` | `{[3],[2],[1],[0]}`
 |===
 
-===== RISC-V with C extension instruction fetch
-
-This case would specify the following parameter values and signal restrictions:
-
-* logarithmic size mode `MOD=LOG_SIZE`,
-* relaxed alignment `ALN=1`
-* always attempt to fetch a 32-bit instruction `siz=2'd2`,
-* address aligned to transfer size `adr[0]==1'b0`,
-* only little endian support `ndn=1'b0`.
-
-The following table lists such transfers.
-
-.TODO
+.64-bit variable data width, misalignment support
 [%autowidth]
 |===
-| size | alignment  | `adr[1:0]` | `siz[1:0]` | `wdt[31:00]`/`rdt[31:00]`
+| size   | alignment  | `off`  | `siz`  | `dat`
 
-| word |    aligned | `2'd0`     | `2'd2`     | `{[31:24], [23:16], [15:08], [07:00]}`
-| word | misaligned | `2'd2`     | `2'd2`     | `{[31:24], [23:16], [15:08], [07:00]}`
+| byte   |    aligned | `3'd0` | `2'd0` | `{   ,   ,   ,   ,   ,   ,   ,[0]}`
+| byte   |    aligned | `3'd1` | `2'd0` | `{   ,   ,   ,   ,   ,   ,   ,[0]}`
+| byte   |    aligned | `3'd2` | `2'd0` | `{   ,   ,   ,   ,   ,   ,   ,[0]}`
+| byte   |    aligned | `3'd3` | `2'd0` | `{   ,   ,   ,   ,   ,   ,   ,[0]}`
+| byte   |    aligned | `3'd4` | `2'd0` | `{   ,   ,   ,   ,   ,   ,   ,[0]}`
+| byte   |    aligned | `3'd5` | `2'd0` | `{   ,   ,   ,   ,   ,   ,   ,[0]}`
+| byte   |    aligned | `3'd6` | `2'd0` | `{   ,   ,   ,   ,   ,   ,   ,[0]}`
+| byte   |    aligned | `3'd7` | `2'd0` | `{   ,   ,   ,   ,   ,   ,   ,[0]}`
+
+| half   |    aligned | `3'd0` | `2'd1` | `{   ,   ,   ,   ,   ,   ,[1],[0]}`
+| half   | misaligned | `3'd1` | `2'd1` | `{   ,   ,   ,   ,   ,   ,[1],[0]}`
+| half   |    aligned | `3'd2` | `2'd1` | `{   ,   ,   ,   ,   ,   ,[1],[0]}`
+| half   | misaligned | `3'd3` | `2'd1` | `{   ,   ,   ,   ,   ,   ,[1],[0]}`
+| half   |    aligned | `3'd4` | `2'd1` | `{   ,   ,   ,   ,   ,   ,[1],[0]}`
+| half   | misaligned | `3'd5` | `2'd1` | `{   ,   ,   ,   ,   ,   ,[1],[0]}`
+| half   |    aligned | `3'd6` | `2'd1` | `{   ,   ,   ,   ,   ,   ,[1],[0]}`
+| half   | misaligned | `3'd7` | `2'd1` | `{   ,   ,   ,   ,   ,   ,[1],[0]}`
+
+| word   |    aligned | `3'd0` | `2'd2` | `{   ,   ,   ,   ,[3],[2],[1],[0]}`
+| word   | misaligned | `3'd1` | `2'd2` | `{   ,   ,   ,   ,[3],[2],[1],[0]}`
+| word   | misaligned | `3'd2` | `2'd2` | `{   ,   ,   ,   ,[3],[2],[1],[0]}`
+| word   | misaligned | `3'd3` | `2'd2` | `{   ,   ,   ,   ,[3],[2],[1],[0]}`
+| word   |    aligned | `3'd4` | `2'd2` | `{   ,   ,   ,   ,[3],[2],[1],[0]}`
+| word   | misaligned | `3'd5` | `2'd2` | `{   ,   ,   ,   ,[3],[2],[1],[0]}`
+| word   | misaligned | `3'd6` | `2'd2` | `{   ,   ,   ,   ,[3],[2],[1],[0]}`
+| word   | misaligned | `3'd7` | `2'd2` | `{   ,   ,   ,   ,[3],[2],[1],[0]}`
+
+| double |    aligned | `3'd0` | `2'd3` | `{[7],[6],[5],[4],[3],[2],[1],[0]}`
+| double | misaligned | `3'd1` | `2'd3` | `{[7],[6],[5],[4],[3],[2],[1],[0]}`
+| double | misaligned | `3'd2` | `2'd3` | `{[7],[6],[5],[4],[3],[2],[1],[0]}`
+| double | misaligned | `3'd3` | `2'd3` | `{[7],[6],[5],[4],[3],[2],[1],[0]}`
+| double | misaligned | `3'd4` | `2'd3` | `{[7],[6],[5],[4],[3],[2],[1],[0]}`
+| double | misaligned | `3'd5` | `2'd3` | `{[7],[6],[5],[4],[3],[2],[1],[0]}`
+| double | misaligned | `3'd6` | `2'd3` | `{[7],[6],[5],[4],[3],[2],[1],[0]}`
+| double | misaligned | `3'd7` | `2'd3` | `{[7],[6],[5],[4],[3],[2],[1],[0]}`
 |===
 
 ==== Byte enable mode
