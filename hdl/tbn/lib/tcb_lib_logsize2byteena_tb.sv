@@ -351,9 +351,9 @@ module tcb_lib_logsize2byteena_tb
         tcb_vip_siz_s::transaction_t transaction_mon_w;  // monitor   write transaction
         tcb_vip_siz_s::transaction_t transaction_mon_r;  // monitor   read  transaction
         // local transfers
-        tcb_vip_siz_s::transfer_queue_t transfer_man;  // manager     transfer queue
-        tcb_vip_siz_s::transfer_queue_t transfer_sub;  // subordinate transfer queue
-        tcb_vip_siz_s::transfer_queue_t transfer_mon;  // monitor     transfer queue
+        automatic tcb_vip_siz_s::transfer_queue_t transfer_man = '{};  // manager     transfer queue
+        automatic tcb_vip_siz_s::transfer_queue_t transfer_sub = '{};  // subordinate transfer queue
+        automatic tcb_vip_siz_s::transfer_queue_t transfer_mon = '{};  // monitor     transfer queue
 
         // ID
         id = $sformatf("siz=%0d off=%0d", siz, off);
