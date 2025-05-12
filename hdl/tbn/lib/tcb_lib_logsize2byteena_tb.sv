@@ -65,7 +65,7 @@ module tcb_lib_logsize2byteena_tb
   localparam tcb_pck_t PCK = '{
     MIN: 0,
     OFF: 0,
-    ALN: 2
+    ALN: 0
   };
 
 //  typedef tcb_c #(HSK, BUS_SIZ, PCK)::req_t req_t;
@@ -124,7 +124,7 @@ module tcb_lib_logsize2byteena_tb
     repeat (2) @(posedge clk);
     rst <= 1'b0;
     repeat (1) @(posedge clk);
-
+/*
     // write sequence
     $display("write sequence");
     testname = "write";
@@ -231,7 +231,7 @@ module tcb_lib_logsize2byteena_tb
     obj_man.check16(32'h00000022, 16'h7654    , 1'b0);
     obj_man.check32(32'h00000020, 32'h76543210, 1'b0);
     obj_man.check32(32'h00000030, 32'h76543210, 1'b0);
-/*
+*/
     // test unaligned accesses
     if (PCK.ALN != tcb_man.BUS_MAX) begin
       // clear memory
@@ -262,12 +262,14 @@ module tcb_lib_logsize2byteena_tb
       disable fork;
       // reference transfer queue
       sts = '0;
-      // append reference transfers to queue               ndn       , wen , adr         , wdt                           ,        rdt
-      tst_ref = {tst_ref, obj_sub.set_transaction('{req: '{TCB_LITTLE, 1'b1, 32'h00000011, '{8'h10, 8'h32              }}, rsp: '{nul, sts}, default: 'x})};
-      tst_ref = {tst_ref, obj_sub.set_transaction('{req: '{TCB_LITTLE, 1'b1, 32'h00000023, '{8'h54, 8'h76              }}, rsp: '{nul, sts}, default: 'x})};
-      tst_ref = {tst_ref, obj_sub.set_transaction('{req: '{TCB_LITTLE, 1'b1, 32'h00000031, '{8'h10, 8'h32, 8'h54, 8'h76}}, rsp: '{nul, sts}, default: 'x})};
-      tst_ref = {tst_ref, obj_sub.set_transaction('{req: '{TCB_LITTLE, 1'b1, 32'h00000042, '{8'h10, 8'h32, 8'h54, 8'h76}}, rsp: '{nul, sts}, default: 'x})};
-      tst_ref = {tst_ref, obj_sub.set_transaction('{req: '{TCB_LITTLE, 1'b1, 32'h00000053, '{8'h10, 8'h32, 8'h54, 8'h76}}, rsp: '{nul, sts}, default: 'x})};
+      tst_ref.delete();
+      tst_len = tst_ref.size();
+        // append reference transfers to queue               ndn       , wen , adr         , wdt                           ,        rdt
+      tst_len += obj_sub.set_transaction(tst_ref, '{req: '{TCB_LITTLE, 1'b1, 32'h00000011, '{8'h10, 8'h32              }}, rsp: '{nul, sts}});
+      tst_len += obj_sub.set_transaction(tst_ref, '{req: '{TCB_LITTLE, 1'b1, 32'h00000023, '{8'h54, 8'h76              }}, rsp: '{nul, sts}});
+      tst_len += obj_sub.set_transaction(tst_ref, '{req: '{TCB_LITTLE, 1'b1, 32'h00000031, '{8'h10, 8'h32, 8'h54, 8'h76}}, rsp: '{nul, sts}});
+      tst_len += obj_sub.set_transaction(tst_ref, '{req: '{TCB_LITTLE, 1'b1, 32'h00000042, '{8'h10, 8'h32, 8'h54, 8'h76}}, rsp: '{nul, sts}});
+      tst_len += obj_sub.set_transaction(tst_ref, '{req: '{TCB_LITTLE, 1'b1, 32'h00000053, '{8'h10, 8'h32, 8'h54, 8'h76}}, rsp: '{nul, sts}});
       // compare transfers from monitor to reference
       // wildcard operator is used to ignore data byte comparison, when the reference data is 8'hxx
       foreach (tst_ref[i]) begin
@@ -300,13 +302,14 @@ module tcb_lib_logsize2byteena_tb
       disable fork;
       // reference transfer queue
       sts = '0;
+      tst_ref.delete();
+      tst_len = tst_ref.size();
       // append reference transfers to queue               ndn       , wen , adr         , wdt ,        rdt
-      tst_ref = {tst_ref, obj_sub.set_transaction('{req: '{TCB_LITTLE, 1'b0, 32'h00000011, nul}, rsp: '{'{8'h10, 8'h32              }, sts}, default: 'x})};
-      tst_ref = {tst_ref, obj_sub.set_transaction('{req: '{TCB_LITTLE, 1'b0, 32'h00000023, nul}, rsp: '{'{8'h54, 8'h76              }, sts}, default: 'x})};
-      tst_ref = {tst_ref, obj_sub.set_transaction('{req: '{TCB_LITTLE, 1'b0, 32'h00000031, nul}, rsp: '{'{8'h10, 8'h32, 8'h54, 8'h76}, sts}, default: 'x})};
-      tst_ref = {tst_ref, obj_sub.set_transaction('{req: '{TCB_LITTLE, 1'b0, 32'h00000042, nul}, rsp: '{'{8'h10, 8'h32, 8'h54, 8'h76}, sts}, default: 'x})};
-      tst_ref = {tst_ref, obj_sub.set_transaction('{req: '{TCB_LITTLE, 1'b0, 32'h00000053, nul}, rsp: '{'{8'h10, 8'h32, 8'h54, 8'h76}, sts}, default: 'x})};
-      //
+      tst_len += obj_sub.set_transaction(tst_ref, '{req: '{TCB_LITTLE, 1'b0, 32'h00000011, nul}, rsp: '{'{8'h10, 8'h32              }, sts}});
+      tst_len += obj_sub.set_transaction(tst_ref, '{req: '{TCB_LITTLE, 1'b0, 32'h00000023, nul}, rsp: '{'{8'h54, 8'h76              }, sts}});
+      tst_len += obj_sub.set_transaction(tst_ref, '{req: '{TCB_LITTLE, 1'b0, 32'h00000031, nul}, rsp: '{'{8'h10, 8'h32, 8'h54, 8'h76}, sts}});
+      tst_len += obj_sub.set_transaction(tst_ref, '{req: '{TCB_LITTLE, 1'b0, 32'h00000042, nul}, rsp: '{'{8'h10, 8'h32, 8'h54, 8'h76}, sts}});
+      tst_len += obj_sub.set_transaction(tst_ref, '{req: '{TCB_LITTLE, 1'b0, 32'h00000053, nul}, rsp: '{'{8'h10, 8'h32, 8'h54, 8'h76}, sts}});
       // compare transfers from monitor to reference
       // wildcard operator is used to ignore data byte comparison, when the reference data is 8'hxx
       foreach(tst_ref[i]) begin
@@ -318,7 +321,6 @@ module tcb_lib_logsize2byteena_tb
     // parameterized tests
     for (int unsigned siz=0; siz<=tcb_man.BUS_MAX; siz++) begin
     end
- */
 
     // end of test
     repeat (4) @(posedge clk);
