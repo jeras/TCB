@@ -64,7 +64,7 @@ package tcb_pkg;
 
   // endianness configuration
   typedef enum bit [2-1:0] {
-    BCB_NDN_DEFAULT = 2'b11,  // default derived from byte order
+    BCB_NDN_DEFAULT = 2'b00,  // default derived from byte order
     TCB_NDN_LITTLE  = 2'b01,  // little endian only (default for TCB_ORD_DESCENDING order)
     TCB_NDN_BIG     = 2'b10,  // big    endian only (default for TCB_ORD_ASCENDING  order)
     TCB_NDN_BI_NDN  = 2'b11   // bi-    endian support
@@ -97,6 +97,7 @@ package tcb_pkg;
     PRF: TCB_PRF_ENABLED,
     NXT: TCB_NXT_ENABLED,
     MOD: TCB_MOD_BYTE_ENA,
+    ORD: TCB_ORD_DESCENDING,
     NDN: TCB_NDN_BI_NDN
   };
 
@@ -156,6 +157,7 @@ package tcb_pkg;
     localparam int unsigned LEFT  = (BUS.ORD == TCB_ORD_DESCENDING) ? BUS_BEN-1 : 0;
     localparam int unsigned RIGHT = (BUS.ORD == TCB_ORD_DESCENDING) ? 0 : BUS_BEN-1;
 
+    typedef logic [LEFT:RIGHT]        ben_t;
     typedef logic [LEFT:RIGHT][8-1:0] dat_t;
 
     // request
@@ -174,9 +176,9 @@ package tcb_pkg;
       logic [BUS.ADR-1:0] nxt;  // next address
       // data sizing
       logic [BUS_SIZ-1:0] siz;  // logarithmic transfer size
-      logic [BUS_BEN-1:0] ben;  // byte enable
+      ben_t               ben;  // byte enable
       // endianness
-      tcb_endian_t        ndn;  // endianness
+      logic               ndn;  // endianness
       // data
       dat_t               wdt;  // write data
     } req_t;
@@ -225,7 +227,7 @@ package tcb_pkg;
     logic [DEF_SIZ-1:0]        siz;  // logarithmic transfer size
     logic [DEF_BEN-1:0]        ben;  // byte enable
     // endianness
-    tcb_endian_t               ndn;  // endianness
+    logic                      ndn;  // endianness
     // data
     logic [DEF_BEN-1:0][8-1:0] wdt;  // write data
   } tcb_req_t;

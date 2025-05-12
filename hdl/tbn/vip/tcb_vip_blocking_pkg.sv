@@ -91,19 +91,19 @@ package tcb_vip_blocking_pkg;
       input  string        id = ""
     );
       int unsigned len;
-      transfer_array_t transfer_array;
+      transfer_queue_t transfer_queue;
       transaction_t transaction;
       // request
       transaction = '{req: '{ndn: ndn, wen: wen, adr: adr, wdt: wdt}, rsp: '{rdt: rdt, sts: sts}};
-      len = set_transaction(transaction, transfer_array, id);
+      len = set_transaction(transfer_queue, transaction, id);
       // transaction
-//      $display("DEBUG: swq-: transfer_array = %p", transfer_array);
-      transfer_sequencer(transfer_array);
-//      $display("DEBUG: swq+: transfer_array = %p", transfer_array);
+//      $display("DEBUG: swq-: transfer_queue = %p", transfer_queue);
+      transfer_sequencer(transfer_queue);
+//      $display("DEBUG: swq+: transfer_queue = %p", transfer_queue);
       // response
-      len = get_transaction(transaction, transfer_array);
+      len = get_transaction(transfer_queue, transaction);
       // cleanup
-      transfer_array.delete();
+      transfer_queue.delete();
       // outputs
       rdt = transaction.rsp.rdt;
       sts = transaction.rsp.sts;

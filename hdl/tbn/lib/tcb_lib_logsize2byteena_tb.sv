@@ -21,7 +21,7 @@ module tcb_lib_logsize2byteena_tb
   import tcb_vip_blocking_pkg::*;
 #(
   // handshake parameter
-  parameter  int unsigned      HSK_DLY = TCB_HSK_DEF,      // response delay
+  parameter  int unsigned      HSK_DLY = TCB_HSK_DEF      // response delay
 //  // bus parameters
 //  parameter  tcb_bus_channel_t BUS_CHN = TCB_BUS_DEF.CHN,  // channel configuration
 //  parameter  tcb_bus_mode_t    BUS_MOD = TCB_BUS_DEF.MOD,  // manager     data position mode
@@ -99,6 +99,7 @@ module tcb_lib_logsize2byteena_tb
   // transfer reference/monitor array
   tcb_vip_ben_s::transfer_queue_t tst_ref;
   tcb_vip_ben_s::transfer_queue_t tst_mon;
+  int unsigned                    tst_len;
 
   // empty array
   logic [8-1:0] nul [];
@@ -149,27 +150,28 @@ module tcb_lib_logsize2byteena_tb
     @(posedge clk);
     disable fork;
     // reference transfer queue
+    tst_len = 0;
     sts = '0;
     // append reference transfers to queue               ndn       , wen , adr         , wdt                           ,        rdt
-    tst_ref = {tst_ref, obj_sub.set_transaction('{req: '{TCB_LITTLE, 1'b1, 32'h00000010, '{8'h10                     }}, rsp: '{nul, sts}, default: 'x})};
-    tst_ref = {tst_ref, obj_sub.set_transaction('{req: '{TCB_LITTLE, 1'b1, 32'h00000011, '{       8'h32              }}, rsp: '{nul, sts}, default: 'x})};
-    tst_ref = {tst_ref, obj_sub.set_transaction('{req: '{TCB_LITTLE, 1'b1, 32'h00000012, '{              8'h54       }}, rsp: '{nul, sts}, default: 'x})};
-    tst_ref = {tst_ref, obj_sub.set_transaction('{req: '{TCB_LITTLE, 1'b1, 32'h00000013, '{                     8'h76}}, rsp: '{nul, sts}, default: 'x})};
-    tst_ref = {tst_ref, obj_sub.set_transaction('{req: '{TCB_LITTLE, 1'b1, 32'h00000020, '{8'h10, 8'h32              }}, rsp: '{nul, sts}, default: 'x})};
-    tst_ref = {tst_ref, obj_sub.set_transaction('{req: '{TCB_LITTLE, 1'b1, 32'h00000022, '{              8'h54, 8'h76}}, rsp: '{nul, sts}, default: 'x})};
-    tst_ref = {tst_ref, obj_sub.set_transaction('{req: '{TCB_LITTLE, 1'b1, 32'h00000030, '{8'h10, 8'h32, 8'h54, 8'h76}}, rsp: '{nul, sts}, default: 'x})};
+    tst_len += obj_sub.set_transaction(tst_ref, '{req: '{TCB_LITTLE, 1'b1, 32'h00000010, '{8'h10                     }}, rsp: '{nul, sts}, default: 'x});
+    tst_len += obj_sub.set_transaction(tst_ref, '{req: '{TCB_LITTLE, 1'b1, 32'h00000011, '{       8'h32              }}, rsp: '{nul, sts}, default: 'x});
+    tst_len += obj_sub.set_transaction(tst_ref, '{req: '{TCB_LITTLE, 1'b1, 32'h00000012, '{              8'h54       }}, rsp: '{nul, sts}, default: 'x});
+    tst_len += obj_sub.set_transaction(tst_ref, '{req: '{TCB_LITTLE, 1'b1, 32'h00000013, '{                     8'h76}}, rsp: '{nul, sts}, default: 'x});
+    tst_len += obj_sub.set_transaction(tst_ref, '{req: '{TCB_LITTLE, 1'b1, 32'h00000020, '{8'h10, 8'h32              }}, rsp: '{nul, sts}, default: 'x});
+    tst_len += obj_sub.set_transaction(tst_ref, '{req: '{TCB_LITTLE, 1'b1, 32'h00000022, '{              8'h54, 8'h76}}, rsp: '{nul, sts}, default: 'x});
+    tst_len += obj_sub.set_transaction(tst_ref, '{req: '{TCB_LITTLE, 1'b1, 32'h00000030, '{8'h10, 8'h32, 8'h54, 8'h76}}, rsp: '{nul, sts}, default: 'x});
     // compare transfers from monitor to reference
     // wildcard operator is used to ignore data byte comparison, when the reference data is 8'hxx
     foreach(tst_ref[i]) begin
       assert (tst_mon[i].req ==? tst_ref[i].req) else $error("\ntst_mon[%0d].req = %p !=? \ntst_ref[%0d].req = %p", i, tst_mon[i].req, i, tst_ref[i].req);
       assert (tst_mon[i].rsp ==? tst_ref[i].rsp) else $error("\ntst_mon[%0d].rsp = %p !=? \ntst_ref[%0d].rsp = %p", i, tst_mon[i].rsp, i, tst_ref[i].rsp);
     end
-//    // printout transfer queue for debugging purposes
-//    foreach (tst_ref[i]) begin
-//      $display("DEBUG: tst_mon[%0d] = %p", i, tst_mon[i]);
-//      $display("DEBUG: tst_ref[%0d] = %p", i, tst_ref[i]);
-//    end
-
+    // printout transfer queue for debugging purposes
+    foreach (tst_ref[i]) begin
+      $display("DEBUG: tst_mon[%0d] = %p", i, tst_mon[i]);
+      $display("DEBUG: tst_ref[%0d] = %p", i, tst_ref[i]);
+    end
+/*
     // read sequence
     $display("read sequence");
     testname = "read";
@@ -310,7 +312,7 @@ module tcb_lib_logsize2byteena_tb
     // parameterized tests
     for (int unsigned siz=0; siz<=tcb_man.BUS_MAX; siz++) begin
     end
-
+ */
 
     // end of test
     repeat (4) @(posedge clk);
@@ -338,9 +340,7 @@ module tcb_lib_logsize2byteena_tb
 // DUT instance
 ////////////////////////////////////////////////////////////////////////////////
 
-  tcb_lib_logsize2byteena #(
-    .ALIGNED (ALIGNED)
-  ) dut (
+  tcb_lib_logsize2byteena dut (
     .sub  (tcb_man),
     .man  (tcb_sub)
   );
