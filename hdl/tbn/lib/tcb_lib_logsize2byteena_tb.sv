@@ -276,6 +276,11 @@ module tcb_lib_logsize2byteena_tb
         assert (tst_mon[i].req ==? tst_ref[i].req) else $error("\ntst_mon[%0d].req = %p !=? \ntst_ref[%0d].req = %p", i, tst_mon[i].req, i, tst_ref[i].req);
         assert (tst_mon[i].rsp ==? tst_ref[i].rsp) else $error("\ntst_mon[%0d].rsp = %p !=? \ntst_ref[%0d].rsp = %p", i, tst_mon[i].rsp, i, tst_ref[i].rsp);
       end
+//      // printout transfer queue for debugging purposes
+//      foreach (tst_ref[i]) begin
+//        $display("DEBUG: tst_mon[%0d] = %p", i, tst_mon[i]);
+//        $display("DEBUG: tst_ref[%0d] = %p", i, tst_ref[i]);
+//      end
 
       // misaligned read/check sequence
       $display("misaligned read/check sequence");
@@ -312,14 +317,100 @@ module tcb_lib_logsize2byteena_tb
       tst_len += obj_sub.set_transaction(tst_ref, '{req: '{TCB_LITTLE, 1'b0, 32'h00000053, nul}, rsp: '{'{8'h10, 8'h32, 8'h54, 8'h76}, sts}});
       // compare transfers from monitor to reference
       // wildcard operator is used to ignore data byte comparison, when the reference data is 8'hxx
-      foreach(tst_ref[i]) begin
+      foreach (tst_ref[i]) begin
         assert (tst_mon[i].req ==? tst_ref[i].req) else $error("\ntst_mon[%0d].req = %p !=? \ntst_ref[%0d].req = %p", i, tst_mon[i].req, i, tst_ref[i].req);
         assert (tst_mon[i].rsp ==? tst_ref[i].rsp) else $error("\ntst_mon[%0d].rsp = %p !=? \ntst_ref[%0d].rsp = %p", i, tst_mon[i].rsp, i, tst_ref[i].rsp);
       end
+//      // printout transfer queue for debugging purposes
+//      foreach (tst_ref[i]) begin
+//        $display("DEBUG: tst_mon[%0d] = %p", i, tst_mon[i]);
+//        $display("DEBUG: tst_ref[%0d] = %p", i, tst_ref[i]);
+//      end
     end
 
     // parameterized tests
+    $display("parameterized tests");
+    testname = "parameterized tests";
     for (int unsigned siz=0; siz<=tcb_man.BUS_MAX; siz++) begin
+      for (int unsigned off=0; off<tcb_man.BUS_BEN; off++) begin
+        // local variables
+        string       id;
+        int unsigned size;
+        int unsigned len;
+        // address
+        logic [tcb_man.BUS.ADR-1:0] adr;
+        // local data arrays
+        logic [8-1:0] dat [];  // pattern   data array
+        logic [8-1:0] tmp [];  // temporary data array
+        logic [8-1:0] nul [];  // empty     data array
+        // local response
+        tcb_rsp_sts_t sts;  // response status
+        // local transactions
+        tcb_vip_siz_s::transaction_t transaction_ref_w;  // reference write transaction
+        tcb_vip_siz_s::transaction_t transaction_ref_r;  // reference read  transaction
+        tcb_vip_siz_s::transaction_t transaction_mon_w;  // monitor   write transaction
+        tcb_vip_siz_s::transaction_t transaction_mon_r;  // monitor   read  transaction
+        // local transfers
+        tcb_vip_siz_s::transfer_queue_t transfer_man;  // manager     transfer queue
+        tcb_vip_siz_s::transfer_queue_t transfer_sub;  // subordinate transfer queue
+        tcb_vip_siz_s::transfer_queue_t transfer_mon;  // monitor     transfer queue
+
+        // ID
+        id = $sformatf("siz=%0d off=%0d", siz, off);
+        $display("DEBUG: ID = '%s'", id);
+        // address (stride is twice BUS_BEN, to accommodate unaligned accesses)
+        adr = siz * tcb_man.BUS_BEN * 2;
+        // prepare data array
+        size = 2**siz;
+        dat = new[size];
+        for (int unsigned i=0; i<size; i++) begin
+          // each byte within a transfer has an unique value
+          dat[i] = {siz[4-1:0], off[4-1:0] + i[4-1:0]};
+        end
+        sts = '0;
+        // write/read transaction
+        transaction_ref_w = '{req: '{TCB_LITTLE, 1'b1, adr+off, dat}, rsp: '{nul, sts}};
+        transaction_ref_r = '{req: '{TCB_LITTLE, 1'b0, adr+off, nul}, rsp: '{dat, sts}};
+        // manager transfer queue
+        len  = 0;
+        len += obj_man.set_transaction(transfer_man, transaction_ref_w, id);
+        len += obj_man.set_transaction(transfer_man, transaction_ref_r, id);
+        // subordinate transfer queue
+        len  = 0;
+        len += obj_sub.set_transaction(transfer_sub, transaction_ref_w);
+        len += obj_sub.set_transaction(transfer_sub, transaction_ref_r);
+        fork
+          // drive manager bus
+          begin: parameterized_test_man
+            obj_man.transfer_sequencer(transfer_man);
+          end: parameterized_test_man
+          // monitor subordinate bus
+          begin: parameterized_test_mon
+            obj_sub.transfer_monitor(transfer_mon);
+          end: parameterized_test_mon
+        join_any
+        // disable transfer monitor
+        @(posedge clk);
+        disable fork;
+        // parse manager transfer queues into transactions
+        len  = 0;
+        len += obj_man.get_transaction(transfer_man, transaction_mon_w);
+        len += obj_man.get_transaction(transfer_man, transaction_mon_r);
+        // compare read data against write data
+        assert (transaction_mon_r.rsp.rdt == dat) else $error("Read data not matching previously written data (id = '%s')", id);
+        // compare subordinate reference and monitored transaction queue
+        foreach (transfer_sub[i]) begin
+          assert (transfer_mon[i].req ==? transfer_sub[i].req) else $error("\ntransfer_mon[%0d].req = %p !=? \ntransfer_ref[%0d].req = %p", i, transfer_mon[i].req, i, transfer_sub[i].req);
+          assert (transfer_mon[i].rsp ==? transfer_sub[i].rsp) else $error("\ntransfer_mon[%0d].rsp = %p !=? \ntransfer_ref[%0d].rsp = %p", i, transfer_mon[i].rsp, i, transfer_sub[i].rsp);
+        end
+        // parse subordinate monitor transfer queues into transactions
+        len  = 0;
+        len += obj_sub.get_transaction(transfer_mon, transaction_mon_w);
+        len += obj_sub.get_transaction(transfer_mon, transaction_mon_r);
+        // compare subordinate reference and monitor transactions
+        assert (transaction_mon_w == transaction_ref_w) else $error("\ntransaction_mon_w = %p != \ntransaction_ref_w = %p", transaction_mon_w, transaction_ref_w);
+        assert (transaction_mon_r == transaction_ref_r) else $error("\ntransaction_mon_r = %p != \ntransaction_ref_r = %p", transaction_mon_r, transaction_ref_r);
+      end
     end
 
     // end of test

@@ -110,15 +110,16 @@ package tcb_vip_transaction_pkg;
       input transaction_t    transaction,
       input string           id = ""
     );
+      // write/read enable
+      bit          wen;
+      bit          ren;
       // write/read data linear size
       int unsigned wdt_size;
       int unsigned rdt_size;
       int unsigned     size;
-      // request/response logarithmic siz
+      // write/read data array logarithmic siz
       int unsigned wdt_siz;
       int unsigned rdt_siz;
-
-      int unsigned len;  // transaction length (transfers)
 
       // transfer counter
       int unsigned cnt = 0;
@@ -126,43 +127,53 @@ package tcb_vip_transaction_pkg;
 
 //      $display("DEBUG: get_transaction: %p", transaction);
 
-      // write/read data linear size
+      // write/read data array linear size
       wdt_size = transaction.req.wdt.size();
       rdt_size = transaction.rsp.rdt.size();
-      // request/response logarithmic siz
+      // write/read data array logarithmic siz
       wdt_siz = $clog2(wdt_size);
       rdt_siz = $clog2(rdt_size);
 
-      // write access
-      if (BUS.CHN == TCB_CHN_WRITE_ONLY) begin
-        size = wdt_size;
-        assert (wdt_size == 2**wdt_siz) else $error("Write data array size is not a power of 2.");
-        assert (transaction.req.wen == 1'b1) else $error("Attempt to create read transaction on write only bus.");
-      end
-      // read access
-      if (BUS.CHN == TCB_CHN_READ_ONLY) begin
-        size = rdt_size;
-        assert (rdt_size == 2**rdt_siz) else $error("Read data array size is not a power of 2.");
-        assert (transaction.req.wen == 1'b0) else $error("Attempt to create write transaction on read only bus.");
-      end
-      // full duplex access
-      if ((BUS.CHN == TCB_CHN_FULL_DUPLEX) || (BUS.CHN == TCB_CHN_HALF_DUPLEX)) begin
-        // write access
-        if (transaction.req.wen == 1'b1) begin
+      case (BUS.CHN)
+        TCB_CHN_HALF_DUPLEX: begin
+          if (transaction.req.wen == 1'b1)  size = wdt_size;
+          else                              size = rdt_size;
+          wen =  transaction.req.wen;
+          ren = ~transaction.req.wen;
+        end
+        TCB_CHN_FULL_DUPLEX: begin
+          if (transaction.req.wen == 1'b0)  size = rdt_size;
+          else                              size = wdt_size;
+          if (transaction.req.wen === 1'bx) begin
+            // swap operation
+            assert (wdt_size == rdt_size) else $error("Swap operation write/read data size mismatch.");
+            wen = 1'b1;
+            ren = 1'b1;
+          end else begin
+            // normal read/write access
+            wen =  transaction.req.wen;
+            ren = ~transaction.req.wen;
+          end
+        end
+        TCB_CHN_WRITE_ONLY : begin
           size = wdt_size;
-          assert (wdt_size == 2**wdt_siz) else $error("Write data array size is not a power of 2.");
+          assert (transaction.req.wen == 1'b1) else $error("Attempt to create read transaction on write only bus.");
+          wen = 1'b1;
+          ren = 1'b0;
         end
-        // read access
-        if (transaction.req.wen == 1'b0) begin
+        TCB_CHN_READ_ONLY  : begin
           size = rdt_size;
-          assert (rdt_size == 2**rdt_siz) else $error("Read data array size is not a power of 2.");
+          assert (transaction.req.wen == 1'b0) else $error("Attempt to create write transaction on read only bus.");
+          wen = 1'b0;
+          ren = 1'b1;
         end
-      end
-//      $display("DEBUG: size=%0d", size);
+      endcase
 
-      // transaction length (number of transfer items)
-      if (size < BUS_BEN)  len = 1;
-      else                 len = size / BUS_BEN;
+      // check whether data array sizes are power of 2
+      if (wen) assert (wdt_size == 2**wdt_siz) else $error("Write data array size is not a power of 2.");
+      if (ren) assert (rdt_size == 2**rdt_siz) else $error("Read data array size is not a power of 2.");
+
+//      $display("DEBUG: size=%0d", size);
 
       // alignment check
       // TODO: implement this later
@@ -193,9 +204,9 @@ package tcb_vip_transaction_pkg;
         if (transaction.req.ndn ~^ BUS.ORD)  idx =        i    ;
         else                                 idx = size - i - 1;
         // request
-        if (idx < transaction.req.wdt.size()) tmp.req.wdt[byt] = transaction.req.wdt[idx];
-        if (idx < transaction.rsp.rdt.size()) tmp.rsp.rdt[byt] = transaction.rsp.rdt[idx];
-                                              tmp.req.ben[byt] = 1'b1;
+        if (wen) tmp.req.wdt[byt] = transaction.req.wdt[idx];
+        if (ren) tmp.rsp.rdt[byt] = transaction.rsp.rdt[idx];
+                 tmp.req.ben[byt] = 1'b1;
         // last byte in current transfer or entire transaction
         if ((byt == BUS_BEN) || (i == size-1)) begin
           // request signals
@@ -239,6 +250,9 @@ package tcb_vip_transaction_pkg;
       // transaction data size
       int unsigned size = 0;  // transaction side (units/bytes)
 
+      // write/read enable
+      bit           wen;
+      bit           ren;
       // write/read data queue
       logic [8-1:0] wdt [$];
       logic [8-1:0] rdt [$];
@@ -266,6 +280,11 @@ package tcb_vip_transaction_pkg;
         // response status
         transaction.rsp.sts |= tmp.rsp.sts;
 
+        // TODO: generalize for other channel configurations
+        // TODO: RISC-V atomic operations are a mix of read and write transfers
+        wen =  tmp.req.wen;
+        ren = ~tmp.req.wen;
+
         // mode logarithmic size vs. byte enable
         case (BUS.MOD)
           TCB_MOD_LOG_SIZE: begin
@@ -273,8 +292,8 @@ package tcb_vip_transaction_pkg;
             // data signals
             for (int unsigned i=0; i<2**siz; i++) begin
               int unsigned byt = i;
-              wdt.push_back(tmp.req.wdt[byt]);
-              rdt.push_back(tmp.rsp.rdt[byt]);
+              if (wen) wdt.push_back(tmp.req.wdt[byt]);
+              if (ren) rdt.push_back(tmp.rsp.rdt[byt]);
             end
             size += 2**siz;
           end
@@ -283,15 +302,13 @@ package tcb_vip_transaction_pkg;
             for (int unsigned i=0; i<BUS_BEN; i++) begin
               int unsigned byt = (i + tmp.req.adr[BUS_MAX-1:0]) % BUS_BEN;
               if (tmp.req.ben[byt]) begin
-                // endianness
+                // endianness request/response data
                 if (tmp.req.ndn ~^ BUS.ORD) begin
-                  // request/response
-                  wdt.push_back(tmp.req.wdt[byt]);
-                  rdt.push_back(tmp.rsp.rdt[byt]);
+                  if (wen) wdt.push_back(tmp.req.wdt[byt]);
+                  if (ren) rdt.push_back(tmp.rsp.rdt[byt]);
                 end else begin
-                  // request/response
-                  wdt.push_front(tmp.req.wdt[byt]);
-                  rdt.push_front(tmp.rsp.rdt[byt]);
+                  if (wen) wdt.push_front(tmp.req.wdt[byt]);
+                  if (ren) rdt.push_front(tmp.rsp.rdt[byt]);
                 end
               end
             end
