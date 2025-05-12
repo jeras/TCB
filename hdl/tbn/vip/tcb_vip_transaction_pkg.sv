@@ -81,7 +81,7 @@ package tcb_vip_transaction_pkg;
     // TCB transaction request structure
     typedef struct {
       // request
-      tcb_endian_t        ndn;
+      logic               ndn;
       logic               wen;
       logic [BUS_ADR-1:0] adr;
       logic       [8-1:0] wdt [];
@@ -259,10 +259,8 @@ package tcb_vip_transaction_pkg;
       ref    transfer_queue_t transfer_queue,
       output transaction_t    transaction
     );
-      // transaction response
-      int unsigned size;  // transaction side (units/bytes)
-      // loop index
-      int unsigned i;
+      // transaction data size
+      int unsigned size = 0;  // transaction side (units/bytes)
 
       // write/read data queue
       logic [8-1:0] wdt [$];
@@ -273,9 +271,9 @@ package tcb_vip_transaction_pkg;
       transfer_t tmp;
 
       // request signals (first transfer)
-      transaction.req.wen =              (transfer_queue[0].req.wen);
-      transaction.req.ndn = tcb_endian_t'(transfer_queue[0].req.ndn);
-      transaction.req.adr =              (transfer_queue[0].req.adr);
+      transaction.req.wen = transfer_queue[0].req.wen;
+      transaction.req.ndn = transfer_queue[0].req.ndn;
+      transaction.req.adr = transfer_queue[0].req.adr;
 
       // initialize response
       transaction.rsp.sts = '0;
@@ -283,34 +281,29 @@ package tcb_vip_transaction_pkg;
       size = 0;
       do begin
         tmp = transfer_queue.pop_front();
+        $display("DEBUG: tmp = %p", tmp);
         // request signals
-        assert (tmp.req.wen == transaction.req.wen            ) else $warning("wen mismatch");
-        assert (tmp.req.ndn == transaction.req.ndn            ) else $warning("ndn mismatch");
-        assert (tmp.req.adr == transaction.req.adr + i*BUS_BEN) else $warning("adr mismatch");
+        assert (tmp.req.wen == transaction.req.wen              ) else $warning("wen mismatch %p %p", tmp.req.wen, transaction.req.wen);
+        assert (tmp.req.ndn == transaction.req.ndn              ) else $warning("ndn mismatch");
+        assert (tmp.req.adr == transaction.req.adr + cnt*BUS_BEN) else $warning("adr mismatch");
         // response status
-        transaction.rsp.sts |= transfer_queue[i].rsp.sts;
+        transaction.rsp.sts |= tmp.rsp.sts;
 
         // mode logarithmic size vs. byte enable
         case (BUS.MOD)
           TCB_MOD_LOG_SIZE: begin
+            int unsigned siz = tmp.req.siz;
             // data signals
-            for (int unsigned i=0; i<2**tmp.req.siz; i++) begin
+            for (int unsigned i=0; i<2**siz; i++) begin
               int unsigned byt = i;
-              // endianness
-              if (tmp.req.ndn ^ BUS.ORD) begin
-                // request/response
-                wdt.push_back(tmp.req.wdt[byt]);
-                rdt.push_back(tmp.rsp.rdt[byt]);
-              end else begin
-                // request/response
-                wdt.push_front(tmp.req.wdt[byt]);
-                rdt.push_front(tmp.rsp.rdt[byt]);
-              end
+              wdt.push_back(tmp.req.wdt[byt]);
+              rdt.push_back(tmp.rsp.rdt[byt]);
             end
+            size += 2**siz;
           end
           TCB_MOD_BYTE_ENA: begin
             // data signals
-            for (int unsigned byt=0; byt<BUS_BEN; byt++) begin
+            for (int unsigned i=0; i<BUS_BEN; i++) begin
               int unsigned byt = (i + tmp.req.adr[BUS_MAX-1:0]) % BUS_BEN;
               // endianness
               if (tmp.req.ndn ^ BUS.ORD) begin

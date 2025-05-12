@@ -154,12 +154,19 @@ module tcb_lib_logsize2byteena_tb
     sts = '0;
     // append reference transfers to queue               ndn       , wen , adr         , wdt                           ,        rdt
     tst_len += obj_sub.set_transaction(tst_ref, '{req: '{TCB_LITTLE, 1'b1, 32'h00000010, '{8'h10                     }}, rsp: '{nul, sts}, default: 'x});
+    $display("DEBUG: tst_ref.size() = %0d", tst_ref.size());
     tst_len += obj_sub.set_transaction(tst_ref, '{req: '{TCB_LITTLE, 1'b1, 32'h00000011, '{       8'h32              }}, rsp: '{nul, sts}, default: 'x});
+    $display("DEBUG: tst_ref.size() = %0d", tst_ref.size());
     tst_len += obj_sub.set_transaction(tst_ref, '{req: '{TCB_LITTLE, 1'b1, 32'h00000012, '{              8'h54       }}, rsp: '{nul, sts}, default: 'x});
+    $display("DEBUG: tst_ref.size() = %0d", tst_ref.size());
     tst_len += obj_sub.set_transaction(tst_ref, '{req: '{TCB_LITTLE, 1'b1, 32'h00000013, '{                     8'h76}}, rsp: '{nul, sts}, default: 'x});
+    $display("DEBUG: tst_ref.size() = %0d", tst_ref.size());
     tst_len += obj_sub.set_transaction(tst_ref, '{req: '{TCB_LITTLE, 1'b1, 32'h00000020, '{8'h10, 8'h32              }}, rsp: '{nul, sts}, default: 'x});
+    $display("DEBUG: tst_ref.size() = %0d", tst_ref.size());
     tst_len += obj_sub.set_transaction(tst_ref, '{req: '{TCB_LITTLE, 1'b1, 32'h00000022, '{              8'h54, 8'h76}}, rsp: '{nul, sts}, default: 'x});
+    $display("DEBUG: tst_ref.size() = %0d", tst_ref.size());
     tst_len += obj_sub.set_transaction(tst_ref, '{req: '{TCB_LITTLE, 1'b1, 32'h00000030, '{8'h10, 8'h32, 8'h54, 8'h76}}, rsp: '{nul, sts}, default: 'x});
+    $display("DEBUG: tst_ref.size() = %0d", tst_ref.size());
     // compare transfers from monitor to reference
     // wildcard operator is used to ignore data byte comparison, when the reference data is 8'hxx
     foreach(tst_ref[i]) begin

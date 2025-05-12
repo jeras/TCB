@@ -110,7 +110,7 @@ module tcb_lib_logsize2byteena
   logic [sub.BUS_MAX-1:0] req_off, rsp_off;
 
   // endianness
-  tcb_endian_t            req_ndn, rsp_ndn;
+  logic                   req_ndn, rsp_ndn;
 
   // prefix OR operation
   function automatic [sub.BUS_MAX-1:0] prefix_or (
