@@ -339,6 +339,8 @@ module tcb_lib_logsize2byteena_tb
         int unsigned len;
         // address
         logic [tcb_man.BUS.ADR-1:0] adr;
+        // endianness
+        logic         ndn;
         // local data arrays
         logic [8-1:0] dat [];  // pattern   data array
         logic [8-1:0] tmp [];  // temporary data array
@@ -360,6 +362,8 @@ module tcb_lib_logsize2byteena_tb
         $display("DEBUG: ID = '%s'", id);
         // address (stride is twice BUS_BEN, to accommodate unaligned accesses)
         adr = siz * tcb_man.BUS_BEN * 2;
+        // endianness
+        ndn = TCB_BIG;
         // prepare data array
         size = 2**siz;
         dat = new[size];
@@ -367,10 +371,11 @@ module tcb_lib_logsize2byteena_tb
           // each byte within a transfer has an unique value
           dat[i] = {siz[4-1:0], off[4-1:0] + i[4-1:0]};
         end
+        // expected response status
         sts = '0;
         // write/read transaction
-        transaction_ref_w = '{req: '{TCB_LITTLE, 1'b1, adr+off, dat}, rsp: '{nul, sts}};
-        transaction_ref_r = '{req: '{TCB_LITTLE, 1'b0, adr+off, nul}, rsp: '{dat, sts}};
+        transaction_ref_w = '{req: '{ndn, 1'b1, adr+off, dat}, rsp: '{nul, sts}};
+        transaction_ref_r = '{req: '{ndn, 1'b0, adr+off, nul}, rsp: '{dat, sts}};
         // manager transfer queue
         len  = 0;
         len += obj_man.set_transaction(transfer_man, transaction_ref_w, id);
