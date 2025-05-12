@@ -129,7 +129,6 @@ module tcb_lib_logsize2byteena_tb
     $display("write sequence");
     testname = "write";
     tst_mon.delete();
-    tst_ref.delete();
     fork
       // manager (blocking API)
       begin: fork_man_write
@@ -150,23 +149,17 @@ module tcb_lib_logsize2byteena_tb
     @(posedge clk);
     disable fork;
     // reference transfer queue
-    tst_len = 0;
     sts = '0;
+    tst_ref.delete();
+    tst_len = tst_ref.size();
     // append reference transfers to queue               ndn       , wen , adr         , wdt                           ,        rdt
-    tst_len += obj_sub.set_transaction(tst_ref, '{req: '{TCB_LITTLE, 1'b1, 32'h00000010, '{8'h10                     }}, rsp: '{nul, sts}, default: 'x});
-    $display("DEBUG: tst_ref.size() = %0d", tst_ref.size());
-    tst_len += obj_sub.set_transaction(tst_ref, '{req: '{TCB_LITTLE, 1'b1, 32'h00000011, '{       8'h32              }}, rsp: '{nul, sts}, default: 'x});
-    $display("DEBUG: tst_ref.size() = %0d", tst_ref.size());
-    tst_len += obj_sub.set_transaction(tst_ref, '{req: '{TCB_LITTLE, 1'b1, 32'h00000012, '{              8'h54       }}, rsp: '{nul, sts}, default: 'x});
-    $display("DEBUG: tst_ref.size() = %0d", tst_ref.size());
-    tst_len += obj_sub.set_transaction(tst_ref, '{req: '{TCB_LITTLE, 1'b1, 32'h00000013, '{                     8'h76}}, rsp: '{nul, sts}, default: 'x});
-    $display("DEBUG: tst_ref.size() = %0d", tst_ref.size());
-    tst_len += obj_sub.set_transaction(tst_ref, '{req: '{TCB_LITTLE, 1'b1, 32'h00000020, '{8'h10, 8'h32              }}, rsp: '{nul, sts}, default: 'x});
-    $display("DEBUG: tst_ref.size() = %0d", tst_ref.size());
-    tst_len += obj_sub.set_transaction(tst_ref, '{req: '{TCB_LITTLE, 1'b1, 32'h00000022, '{              8'h54, 8'h76}}, rsp: '{nul, sts}, default: 'x});
-    $display("DEBUG: tst_ref.size() = %0d", tst_ref.size());
-    tst_len += obj_sub.set_transaction(tst_ref, '{req: '{TCB_LITTLE, 1'b1, 32'h00000030, '{8'h10, 8'h32, 8'h54, 8'h76}}, rsp: '{nul, sts}, default: 'x});
-    $display("DEBUG: tst_ref.size() = %0d", tst_ref.size());
+    tst_len += obj_sub.set_transaction(tst_ref, '{req: '{TCB_LITTLE, 1'b1, 32'h00000010, '{8'h10                     }}, rsp: '{nul, sts}});  //$display("DEBUG: tst_ref.size() = %0d", tst_ref.size());
+    tst_len += obj_sub.set_transaction(tst_ref, '{req: '{TCB_LITTLE, 1'b1, 32'h00000011, '{       8'h32              }}, rsp: '{nul, sts}});  //$display("DEBUG: tst_ref.size() = %0d", tst_ref.size());
+    tst_len += obj_sub.set_transaction(tst_ref, '{req: '{TCB_LITTLE, 1'b1, 32'h00000012, '{              8'h54       }}, rsp: '{nul, sts}});  //$display("DEBUG: tst_ref.size() = %0d", tst_ref.size());
+    tst_len += obj_sub.set_transaction(tst_ref, '{req: '{TCB_LITTLE, 1'b1, 32'h00000013, '{                     8'h76}}, rsp: '{nul, sts}});  //$display("DEBUG: tst_ref.size() = %0d", tst_ref.size());
+    tst_len += obj_sub.set_transaction(tst_ref, '{req: '{TCB_LITTLE, 1'b1, 32'h00000020, '{8'h10, 8'h32              }}, rsp: '{nul, sts}});  //$display("DEBUG: tst_ref.size() = %0d", tst_ref.size());
+    tst_len += obj_sub.set_transaction(tst_ref, '{req: '{TCB_LITTLE, 1'b1, 32'h00000022, '{              8'h54, 8'h76}}, rsp: '{nul, sts}});  //$display("DEBUG: tst_ref.size() = %0d", tst_ref.size());
+    tst_len += obj_sub.set_transaction(tst_ref, '{req: '{TCB_LITTLE, 1'b1, 32'h00000030, '{8'h10, 8'h32, 8'h54, 8'h76}}, rsp: '{nul, sts}});  //$display("DEBUG: tst_ref.size() = %0d", tst_ref.size());
     // compare transfers from monitor to reference
     // wildcard operator is used to ignore data byte comparison, when the reference data is 8'hxx
     foreach(tst_ref[i]) begin
@@ -174,16 +167,15 @@ module tcb_lib_logsize2byteena_tb
       assert (tst_mon[i].rsp ==? tst_ref[i].rsp) else $error("\ntst_mon[%0d].rsp = %p !=? \ntst_ref[%0d].rsp = %p", i, tst_mon[i].rsp, i, tst_ref[i].rsp);
     end
     // printout transfer queue for debugging purposes
-    foreach (tst_ref[i]) begin
-      $display("DEBUG: tst_mon[%0d] = %p", i, tst_mon[i]);
-      $display("DEBUG: tst_ref[%0d] = %p", i, tst_ref[i]);
-    end
-/*
+//    foreach (tst_ref[i]) begin
+//      $display("DEBUG: tst_mon[%0d] = %p", i, tst_mon[i]);
+//      $display("DEBUG: tst_ref[%0d] = %p", i, tst_ref[i]);
+//    end
+
     // read sequence
     $display("read sequence");
     testname = "read";
     tst_mon.delete();
-    tst_ref.delete();
     fork
       // manager (blocking API)
       begin: fork_man_read
@@ -205,20 +197,27 @@ module tcb_lib_logsize2byteena_tb
     disable fork;
     // reference transfer queue
     sts = '0;
+    tst_ref.delete();
+    tst_len = tst_ref.size();
     // append reference transfers to queue               ndn       , wen , adr         , wdt ,        rdt
-    tst_ref = {tst_ref, obj_sub.set_transaction('{req: '{TCB_LITTLE, 1'b0, 32'h00000010, nul}, rsp: '{'{8'h10                     }, sts}, default: 'x})};
-    tst_ref = {tst_ref, obj_sub.set_transaction('{req: '{TCB_LITTLE, 1'b0, 32'h00000011, nul}, rsp: '{'{       8'h32              }, sts}, default: 'x})};
-    tst_ref = {tst_ref, obj_sub.set_transaction('{req: '{TCB_LITTLE, 1'b0, 32'h00000012, nul}, rsp: '{'{              8'h54       }, sts}, default: 'x})};
-    tst_ref = {tst_ref, obj_sub.set_transaction('{req: '{TCB_LITTLE, 1'b0, 32'h00000013, nul}, rsp: '{'{                     8'h76}, sts}, default: 'x})};
-    tst_ref = {tst_ref, obj_sub.set_transaction('{req: '{TCB_LITTLE, 1'b0, 32'h00000020, nul}, rsp: '{'{8'h10, 8'h32              }, sts}, default: 'x})};
-    tst_ref = {tst_ref, obj_sub.set_transaction('{req: '{TCB_LITTLE, 1'b0, 32'h00000022, nul}, rsp: '{'{              8'h54, 8'h76}, sts}, default: 'x})};
-    tst_ref = {tst_ref, obj_sub.set_transaction('{req: '{TCB_LITTLE, 1'b0, 32'h00000030, nul}, rsp: '{'{8'h10, 8'h32, 8'h54, 8'h76}, sts}, default: 'x})};
+    tst_len += {obj_sub.set_transaction(tst_ref, '{req: '{TCB_LITTLE, 1'b0, 32'h00000010, nul}, rsp: '{'{8'h10                     }, sts}})};  //$display("DEBUG: tst_ref.size() = %0d", tst_ref.size());
+    tst_len += {obj_sub.set_transaction(tst_ref, '{req: '{TCB_LITTLE, 1'b0, 32'h00000011, nul}, rsp: '{'{       8'h32              }, sts}})};  //$display("DEBUG: tst_ref.size() = %0d", tst_ref.size());
+    tst_len += {obj_sub.set_transaction(tst_ref, '{req: '{TCB_LITTLE, 1'b0, 32'h00000012, nul}, rsp: '{'{              8'h54       }, sts}})};  //$display("DEBUG: tst_ref.size() = %0d", tst_ref.size());
+    tst_len += {obj_sub.set_transaction(tst_ref, '{req: '{TCB_LITTLE, 1'b0, 32'h00000013, nul}, rsp: '{'{                     8'h76}, sts}})};  //$display("DEBUG: tst_ref.size() = %0d", tst_ref.size());
+    tst_len += {obj_sub.set_transaction(tst_ref, '{req: '{TCB_LITTLE, 1'b0, 32'h00000020, nul}, rsp: '{'{8'h10, 8'h32              }, sts}})};  //$display("DEBUG: tst_ref.size() = %0d", tst_ref.size());
+    tst_len += {obj_sub.set_transaction(tst_ref, '{req: '{TCB_LITTLE, 1'b0, 32'h00000022, nul}, rsp: '{'{              8'h54, 8'h76}, sts}})};  //$display("DEBUG: tst_ref.size() = %0d", tst_ref.size());
+    tst_len += {obj_sub.set_transaction(tst_ref, '{req: '{TCB_LITTLE, 1'b0, 32'h00000030, nul}, rsp: '{'{8'h10, 8'h32, 8'h54, 8'h76}, sts}})};  //$display("DEBUG: tst_ref.size() = %0d", tst_ref.size());
     // compare transfers from monitor to reference
     // wildcard operator is used to ignore data byte comparison, when the reference data is 8'hxx
     foreach(tst_ref[i]) begin
       assert (tst_mon[i].req ==? tst_ref[i].req) else $error("\ntst_mon[%0d].req = %p !=? \ntst_ref[%0d].req = %p", i, tst_mon[i].req, i, tst_ref[i].req);
       assert (tst_mon[i].rsp ==? tst_ref[i].rsp) else $error("\ntst_mon[%0d].rsp = %p !=? \ntst_ref[%0d].rsp = %p", i, tst_mon[i].rsp, i, tst_ref[i].rsp);
     end
+//    // printout transfer queue for debugging purposes
+//    foreach (tst_ref[i]) begin
+//      $display("DEBUG: tst_mon[%0d] = %p", i, tst_mon[i]);
+//      $display("DEBUG: tst_ref[%0d] = %p", i, tst_ref[i]);
+//    end
 
     // check sequence
     $display("check sequence");
@@ -232,7 +231,7 @@ module tcb_lib_logsize2byteena_tb
     obj_man.check16(32'h00000022, 16'h7654    , 1'b0);
     obj_man.check32(32'h00000020, 32'h76543210, 1'b0);
     obj_man.check32(32'h00000030, 32'h76543210, 1'b0);
-
+/*
     // test unaligned accesses
     if (PCK.ALN != tcb_man.BUS_MAX) begin
       // clear memory

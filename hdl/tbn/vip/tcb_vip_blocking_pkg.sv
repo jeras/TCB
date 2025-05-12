@@ -96,15 +96,15 @@ package tcb_vip_blocking_pkg;
       // request
       transaction = '{req: '{ndn: ndn, wen: wen, adr: adr, wdt: wdt}, rsp: '{rdt: rdt, sts: sts}};
       len = set_transaction(transfer_queue, transaction, id);
-      $display("DEBUG: set_transaction transfer_queue.size() = %0d", transfer_queue.size());
+//      $display("DEBUG: set_transaction transfer_queue.size() = %0d", transfer_queue.size());
       // sequence transfer queue
-      $display("DEBUG: swq-: transfer_queue = %p", transfer_queue);
+//      $display("DEBUG: swq-: transfer_queue = %p", transfer_queue);
       transfer_sequencer(transfer_queue);
-      $display("DEBUG: swq+: transfer_queue = %p", transfer_queue);
+//      $display("DEBUG: swq+: transfer_queue = %p", transfer_queue);
       // response
       len = get_transaction(transfer_queue, transaction);
-      $display("DEBUG: get_transaction transfer_queue.size() = %0d", transfer_queue.size());
-      $display("\n\n");
+//      $display("DEBUG: get_transaction transfer_queue.size() = %0d", transfer_queue.size());
+//      $display("\n\n");
       // cleanup
       transfer_queue.delete();
       // outputs
