@@ -90,12 +90,6 @@ module tcb_lib_logsize2byteena
     if (man.BUS.NXT == TCB_NXT_ENABLED) begin
       assign man.req.nxt = sub.req.nxt;
     end
-    // request/write data bus
-    if (man.BUS.CHN != TCB_CHN_READ_ONLY) begin
-    end
-    // response/read data bus and data sizing
-    if (man.BUS.CHN != TCB_CHN_READ_ONLY) begin
-    end
     // endianness
     if (man.BUS.NDN == TCB_NDN_BI_NDN) begin
       assign man.req.ndn = sub.req.ndn;
@@ -150,12 +144,10 @@ module tcb_lib_logsize2byteena
       end
     endcase
   endgenerate
-  
 
 ////////////////////////////////////////////////////////////////////////////////
 // multiplexers
 ////////////////////////////////////////////////////////////////////////////////
-
 
   generate
   if (sub.PCK.ALN == sub.BUS_MAX) begin: aligned
