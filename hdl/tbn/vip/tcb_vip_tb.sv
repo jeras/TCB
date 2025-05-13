@@ -204,7 +204,7 @@ module tcb_vip_tb
     test_nonblocking;
     repeat (2) @(posedge clk);
 
-    if (errorcnt>0)  $display("FAILURE: there were %d errorcnts.", errorcnt);
+    if (errorcnt>0)  $display("FAILURE: there were %d errors.", errorcnt);
     else             $display("SUCCESS.");
     $finish();
   end

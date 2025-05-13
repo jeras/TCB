@@ -41,8 +41,8 @@ module tcb_lib_logsize2byteena_tb
     DAT: TCB_BUS_DEF.DAT,
     FRM: TCB_BUS_DEF.FRM,
     CHN: TCB_CHN_HALF_DUPLEX,
-    PRF: TCB_PRF_ENABLED,
-    NXT: TCB_NXT_ENABLED,
+    PRF: TCB_PRF_DISABLED,
+    NXT: TCB_NXT_DISABLED,
     MOD: TCB_MOD_LOG_SIZE,
     ORD: TCB_ORD_DESCENDING,
     NDN: TCB_NDN_BI_NDN
@@ -54,8 +54,8 @@ module tcb_lib_logsize2byteena_tb
     DAT: TCB_BUS_DEF.DAT,
     FRM: TCB_BUS_DEF.FRM,
     CHN: TCB_CHN_HALF_DUPLEX,
-    PRF: TCB_PRF_ENABLED,
-    NXT: TCB_NXT_ENABLED,
+    PRF: TCB_PRF_DISABLED,
+    NXT: TCB_NXT_DISABLED,
     MOD: TCB_MOD_BYTE_ENA,
     ORD: TCB_ORD_DESCENDING,
     NDN: TCB_NDN_BI_NDN
@@ -457,6 +457,14 @@ module tcb_lib_logsize2byteena_tb
   tcb_lib_passthrough pas [0:0] (
     .sub (tcb_sub),
     .man (tcb_mem)
+  );
+
+  tcb_vip_protocol_checker chk_man (
+    .tcb (tcb_man)
+  );
+
+  tcb_vip_protocol_checker chk_sub (
+    .tcb (tcb_sub)
   );
 
   // memory model subordinate

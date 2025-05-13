@@ -99,6 +99,7 @@ TCB terminology and syntax is mostly based on:
                  in it read data and error status are driven by a subordinate and sampled by a manager.
                  Future versions of the protocol might have responses encompassing multiple clock periods.
 | backpressure | A subordinate can delay the transfer by driving the ready signal low.
+| stall        | Manager provides a valid request, while the subordinate is not yet ready to accept it.
 | back-to-back | Performing transfers continuously in each clock period, without idling the bus by waiting the for a response before issuing e new request.
 |===
 
@@ -115,8 +116,9 @@ The following words can be used to describe a transaction.
 | write      | Used for CPU store operations.
 | read       | Used for CPU load operations.
 | aligned    | Address and transaction size or byte enable signals follow CPU ISA alignment rules.
-| misaligned | A misaligned transaction can be a single misaligned transfer or be split into multiple aligned transfers.
-| split      | A transaction with a size exceeding the data bus width can be split into multiple transfers.
+| misaligned | Transfer/transaction not following alignment rules (term used by the RISC-V ISA standards).
+| unaligned  | Synonim for misaligned (term used by the AMBA standards).
+| split      | A misaligned transaction or transaction with a size exceeding the data bus width can be split into multiple transfers.
 | atomic     | In addition to CPU ISA atomic instructions, atomicity is desired in split transactions.
 | burst      | Bursts are intended for communication between cache levels and high latency memories.
 |===

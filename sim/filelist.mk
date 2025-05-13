@@ -33,6 +33,7 @@ TBN+=${PATH_HDL}/tbn/vip/tcb_vip_transfer_pkg.sv
 TBN+=${PATH_HDL}/tbn/vip/tcb_vip_transaction_pkg.sv
 TBN+=${PATH_HDL}/tbn/vip/tcb_vip_nonblocking_pkg.sv
 TBN+=${PATH_HDL}/tbn/vip/tcb_vip_blocking_pkg.sv
+TBN+=${PATH_HDL}/tbn/vip/tcb_vip_protocol_checker.sv
 TBN+=${PATH_HDL}/tbn/vip/tcb_vip_memory.sv
 #TBN+=${PATH_HDL}/tbn/vip/tcb_vip_tb.sv
 # LIBrary
