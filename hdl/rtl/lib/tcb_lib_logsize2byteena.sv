@@ -218,8 +218,8 @@ module tcb_lib_logsize2byteena
       always_comb
       for (int unsigned i=0; i<sub.BUS_BEN; i++) begin: wdt
         unique case (req_ndn)
-          TCB_LITTLE:  man.req.wdt[(i+req_off) % sub.BUS_BEN] = sub.req.wdt[             i];
-          TCB_BIG   :  man.req.wdt[(i+req_off) % sub.BUS_BEN] = sub.req.wdt[2**req_siz-1-i];
+          TCB_LITTLE:  man.req.wdt[i] = sub.req.wdt[(             i-req_off) % sub.BUS_BEN];
+          TCB_BIG   :  man.req.wdt[i] = sub.req.wdt[(2**req_siz-1-i+req_off) % sub.BUS_BEN];
           default   :  man.req.wdt[i] = '{default: 8'hxx};
         endcase
       end: wdt
