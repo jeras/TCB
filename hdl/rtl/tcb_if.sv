@@ -241,6 +241,7 @@ endgenerate
     output req,
     input  rsp,
     // delayed request/response
+    input  trn_dly,
     input  req_dly,
     input  rsp_dly
   );
@@ -261,6 +262,7 @@ endgenerate
     input  req,
     input  rsp,
     // delayed request/response
+    input  trn_dly,
     input  req_dly,
     input  rsp_dly
   );
@@ -281,6 +283,7 @@ endgenerate
     input  req,
     output rsp,
     // delayed request/response
+    input  trn_dly,
     input  req_dly,
     input  rsp_dly
   );
