@@ -800,6 +800,23 @@ The rest are reserved with no intention to be documented and implemented.
 
 NOTE: The OpenPOWER specific configuration is included for historic compatibility, and completeness.
 
+TODO: Boundary
+
+* `PCK.BND` = 0
+  There are no boundaries, any transfer can cross any boundary.
+* `PCK.BND` = BUS_MAX
+  Transfer must be within the data bus width, otherwise it must be split.
+* `PCK.BND` = BUS_MAX + 1
+  For example a 32-bit CPU with a TCB `BUS.DAT=32`` (`BUS_MAX=2``).
+  Connected to a 64-bit wide memory controller,
+  TCB can realign transfers not crossing the 64-bit boundary,
+  transfers crossing it must be split. So `PCK.BND=3`.
+* `PCK.BND` = $clog2(64) = 6
+  Accessing a cache with line size of 64 bytes.
+  Crossing the cache line boundary requires a split.
+* `PCK.BND` = $clog2(4k) = 12
+  Crossing the 4k page boundary (ARM).
+
 === Supported size and alignment checking
 
 Alignment width `ALN` defines what kind of data alignments are supported.

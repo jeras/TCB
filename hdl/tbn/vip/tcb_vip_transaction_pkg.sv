@@ -195,20 +195,24 @@ package tcb_vip_transaction_pkg;
         // temporary variables
         int unsigned byt;  // transfer byte index
         int unsigned idx;  // transaction byte index
+        int unsigned edg;  // edge byte inside data bus
+        // endianness
+        if (transaction.req.ndn)  idx = size-1-i;  //    big-endian (start with MSB end)
+        else                      idx =        i;  // little-endian (start with LSB end)
         // mode logarithmic size vs. byte enable
         case (BUS.MOD)
-          TCB_MOD_LOG_SIZE:  byt =  i                                     % BUS_BEN;  // all data bytes are LSB aligned
+          TCB_MOD_LOG_SIZE:  byt =  idx                                   % BUS_BEN;  // all data bytes are LSB aligned
           TCB_MOD_BYTE_ENA:  byt = (i + transaction.req.adr[BUS_MAX-1:0]) % BUS_BEN;
         endcase
-        // endianness
-        if (transaction.req.ndn ~^ BUS.ORD)  idx =        i    ;
-        else                                 idx = size - i - 1;
         // request
         if (wen) tmp.req.wdt[byt] = transaction.req.wdt[idx];
         if (ren) tmp.rsp.rdt[byt] = transaction.rsp.rdt[idx];
                  tmp.req.ben[byt] = 1'b1;
+        // edge byte inside data bus
+        if (PCK.BND == 0)  edg = (i == BUS_BEN-1);
+        else               edg = BUS_BEN-1;  // TODO: use actual boundary
         // last byte in current transfer or entire transaction
-        if ((byt == BUS_BEN) || (i == size-1)) begin
+        if (edg || (i == size-1)) begin
           // request signals
           tmp.req.frm = (i == size-1) ? 1'b0 : 1'b1;
           tmp.req.wen = transaction.req.wen;
@@ -234,7 +238,8 @@ package tcb_vip_transaction_pkg;
           tmp = '{req: '{ben: '0, default: 'x}, rsp: '{default: 'x}, id: "", default: 0};
         end
       end
-//      $display("DEBUG: inside: transfer_queue = %p", transfer_queue);
+//      foreach (transfer_queue[i])
+//      $display("DEBUG: inside: transfer_queue[%0d] = %p", i, transfer_queue[i]);
       return(cnt);
     endfunction: set_transaction
 

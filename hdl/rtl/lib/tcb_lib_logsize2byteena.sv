@@ -106,8 +106,9 @@ module tcb_lib_logsize2byteena
 // local signals
 ////////////////////////////////////////////////////////////////////////////////
 
-  // request/response address segment, mask
+  // request/response address offset, logarithmic size
   logic [sub.BUS_MAX-1:0] req_off, rsp_off;
+  logic [sub.BUS_SIZ-1:0] req_siz, rsp_siz;
 
   // endianness
   logic                   req_ndn, rsp_ndn;
@@ -122,9 +123,11 @@ module tcb_lib_logsize2byteena
     end
   endfunction: prefix_or
 
-  // request/response address segment
+  // request/response address offset, logarithmic size
   assign req_off = sub.req_dly[0          ].adr[sub.BUS_MAX-1:0];
   assign rsp_off = sub.req_dly[sub.HSK_DLY].adr[sub.BUS_MAX-1:0];
+  assign req_siz = sub.req_dly[0          ].siz;
+  assign rsp_siz = sub.req_dly[sub.HSK_DLY].siz;
 
   // endianness
   generate
@@ -205,20 +208,18 @@ module tcb_lib_logsize2byteena
     // byte enable
     always_comb
     for (int unsigned i=0; i<sub.BUS_BEN; i++) begin: ben
-      unique case (req_ndn)
-        TCB_LITTLE:  man.req.ben[i] = sub_req_ben[(            (i-req_off)) % sub.BUS_BEN];
-        TCB_BIG   :  man.req.ben[i] = sub_req_ben[(sub.BUS_BEN-(i-req_off)) % sub.BUS_BEN];
-        default   :  man.req.ben[i] = 'x;
-      endcase
+      man.req.ben[i] = sub_req_ben[(i-req_off) % sub.BUS_BEN];
     end: ben
+
+    // TODO: I do not like the left-hand side index to be an equation, will cause synthesis issues
 
     if (sub.BUS.CHN != TCB_CHN_READ_ONLY) begin: write
       // write data
       always_comb
       for (int unsigned i=0; i<sub.BUS_BEN; i++) begin: wdt
         unique case (req_ndn)
-          TCB_LITTLE:  man.req.wdt[i] = sub.req.wdt[(            (i-req_off)) % sub.BUS_BEN];
-          TCB_BIG   :  man.req.wdt[i] = sub.req.wdt[(sub.BUS_BEN-(i-req_off)) % sub.BUS_BEN];
+          TCB_LITTLE:  man.req.wdt[(i+req_off) % sub.BUS_BEN] = sub.req.wdt[             i];
+          TCB_BIG   :  man.req.wdt[(i+req_off) % sub.BUS_BEN] = sub.req.wdt[2**req_siz-1-i];
           default   :  man.req.wdt[i] = '{default: 8'hxx};
         endcase
       end: wdt
@@ -229,8 +230,8 @@ module tcb_lib_logsize2byteena
       always_comb
       for (int unsigned i=0; i<sub.BUS_BEN; i++) begin: rdt
         unique case (rsp_ndn)
-          TCB_LITTLE:  sub.rsp.rdt[i] = man.rsp.rdt[(            (i+rsp_off)) % sub.BUS_BEN];
-          TCB_BIG   :  sub.rsp.rdt[i] = man.rsp.rdt[(sub.BUS_BEN-(i+rsp_off)) % sub.BUS_BEN];
+          TCB_LITTLE:  sub.rsp.rdt[i] = man.rsp.rdt[(             i+rsp_off) % sub.BUS_BEN];
+          TCB_BIG   :  sub.rsp.rdt[i] = man.rsp.rdt[(2**rsp_siz-1-i+rsp_off) % sub.BUS_BEN];
           default   :  sub.rsp.rdt[i] = '{default: 8'hxx};
         endcase
       end: rdt

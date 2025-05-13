@@ -111,16 +111,18 @@ package tcb_pkg;
   `else
   typedef struct {
   `endif
-    int unsigned      MIN;  // minimum transfer logarithmic size
-    int unsigned      OFF;  // number of zeroed offset bits
-    int unsigned      ALN;  // alignment (number of aligned address bits)
+    int unsigned MIN;  // minimum transfer logarithmic size
+    int unsigned OFF;  // number of zeroed offset bits
+    int unsigned ALN;  // alignment (number of aligned address bits)
+    int unsigned BND;  // transaction boundary address bit index
   } tcb_pck_t;
 
   // physical interface parameter default
   localparam tcb_pck_t TCB_PCK_DEF = '{
     MIN: 0,   // maximum $clog2(BUS_DAT/8)
     OFF: 0,   // maximum $clog2(BUS_DAT/8)
-    ALN: 0    // maximum $clog2(BUS_DAT/8)
+    ALN: 0,   // maximum $clog2(BUS_DAT/8)
+    BND: 0    // no boundary
   };
 
   // endianness packing (used for runtime signal values)
