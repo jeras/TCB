@@ -440,8 +440,8 @@ module tcb_lib_logsize2byteena_tb
     rst <= 1'b0;
     repeat (1) @(posedge clk);
 
-//    test_aligned;
-//    test_unaligned;
+    test_aligned;
+    test_unaligned;
     test_parameterized;
 
     // end of test
