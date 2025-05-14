@@ -209,9 +209,7 @@ module tcb_lib_logsize2byteena_tb
 //      $display("DEBUG: tst_mon[%0d] = %p", i, tst_mon[i]);
 //      $display("DEBUG: tst_ref[%0d] = %p", i, tst_ref[i]);
 //    end
-  endtask: test_aligned
 
-  task test_unaligned ();
     // check sequence
     $display("check sequence");
     testname = "check";
@@ -224,7 +222,9 @@ module tcb_lib_logsize2byteena_tb
     obj_man.check16(32'h00000022, 16'h7654    , 1'b0);
     obj_man.check32(32'h00000020, 32'h76543210, 1'b0);
     obj_man.check32(32'h00000030, 32'h76543210, 1'b0);
+  endtask: test_aligned
 
+  task test_unaligned ();
     // test unaligned accesses
     if (PCK.ALN != tcb_man.BUS_MAX) begin
       // clear memory
