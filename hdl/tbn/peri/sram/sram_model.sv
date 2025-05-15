@@ -17,8 +17,8 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 module sram_model #(
-  parameter  int unsigned DAT = 8,  // data bus width
   parameter  int unsigned ADR = 8,  // address bus width
+  parameter  int unsigned DAT = 8,  // data bus width
   parameter  int unsigned SIZ = 2**ADR  // memory size
 )(
   input  logic           clk,  // clock
