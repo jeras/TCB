@@ -136,6 +136,8 @@ interface tcb_if
 //          $error("unexpected type(req.ndn) = ", $typename(req.ndn));
 //      end
 //    endcase
+
+// TODO: in BYTE_ENA mode, NDN must be bi-endian, but the signal is not driven
   endgenerate
 
 ////////////////////////////////////////////////////////////////////////////////
