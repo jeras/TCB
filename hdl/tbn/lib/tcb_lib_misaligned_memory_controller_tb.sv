@@ -82,10 +82,6 @@ module tcb_lib_misaligned_memory_controller_tb
   // TCB class objects
   tcb_vip_s obj = new(tcb, "MAN");
   
-  // transfer reference/monitor array
-  tcb_vip_s::transfer_queue_t tst_ref;
-  int unsigned                tst_len;
-
   // empty array
   logic [8-1:0] nul [];
 
@@ -93,15 +89,19 @@ module tcb_lib_misaligned_memory_controller_tb
   logic [tcb.BUS_BEN-1:0][8-1:0] rdt;  // read data
   tcb_rsp_sts_t                  sts;  // status response
 
-  localparam int unsigned SRAM_ADR = 12;
-  localparam int unsigned SRAM_DAT = 32;
+  // local parameters
+  localparam int unsigned BUS_BEN = BUS.DAT/8;
+  localparam int unsigned BUS_MAX = $clog2(BUS_BEN);
+  localparam int unsigned MEM_CEN = BUS_BEN/(2**PCK.OFF);
+  localparam int unsigned MEM_ADR = BUS.ADR-BUS_MAX;
+  localparam int unsigned MEM_DAT = BUS.DAT/MEM_CEN;
 
   // SRAM model
-  logic                sram_cen;  // chip enable
-  logic                sram_wen;  // write enable
-  logic [SRAM_ADR-1:0] sram_adr;  // address
-  logic [SRAM_DAT-1:0] sram_wdt;  // write data
-  logic [SRAM_DAT-1:0] sram_rdt;  // read data
+  logic [MEM_CEN-1:0]              mem_cen;  // chip enable
+  logic                            mem_wen;  // write enable
+  logic [MEM_CEN-1:0][MEM_ADR-1:0] mem_adr;  // address
+  logic [MEM_CEN-1:0][MEM_DAT-1:0] mem_wdt;  // write data
+  logic [MEM_CEN-1:0][MEM_DAT-1:0] mem_rdt;  // read data
 
 ////////////////////////////////////////////////////////////////////////////////
 // tests
@@ -111,20 +111,18 @@ module tcb_lib_misaligned_memory_controller_tb
     // write sequence
     $display("write sequence");
     testname = "write";
-    tst_ref.delete();
     // manager (blocking API)
     obj.write8 (32'h00000010,        8'h10, sts);
     obj.write8 (32'h00000011,      8'h32  , sts);
     obj.write8 (32'h00000012,    8'h54    , sts);
     obj.write8 (32'h00000013,  8'h76      , sts);
-    obj.write16(32'h00000020,     16'h3210, sts);
-    obj.write16(32'h00000022, 16'h7654    , sts);
+    obj.write16(32'h00000020,     16'hba98, sts);
+    obj.write16(32'h00000022, 16'hfedc    , sts);
     obj.write32(32'h00000030, 32'h76543210, sts);
 
     // read sequence
     $display("read sequence");
     testname = "read";
-    tst_mon.delete();
     // manager (blocking API)
     obj.read8  (32'h00000010, rdt[1-1:0], sts);
     obj.read8  (32'h00000011, rdt[1-1:0], sts);
@@ -134,10 +132,6 @@ module tcb_lib_misaligned_memory_controller_tb
     obj.read16 (32'h00000022, rdt[2-1:0], sts);
     obj.read32 (32'h00000030, rdt[4-1:0], sts);
 
-    // reference transfer queue
-    sts = '0;
-    tst_ref.delete();
-    tst_len = tst_ref.size();
     // check sequence
     $display("check sequence");
     testname = "check";
@@ -146,151 +140,101 @@ module tcb_lib_misaligned_memory_controller_tb
     obj.check8 (32'h00000012,    8'h54    , 1'b0);
     obj.check8 (32'h00000013,  8'h76      , 1'b0);
     obj.check32(32'h00000010, 32'h76543210, 1'b0);
-    obj.check16(32'h00000020,     16'h3210, 1'b0);
-    obj.check16(32'h00000022, 16'h7654    , 1'b0);
-    obj.check32(32'h00000020, 32'h76543210, 1'b0);
+    obj.check16(32'h00000020,     16'hba98, 1'b0);
+    obj.check16(32'h00000022, 16'hfedc    , 1'b0);
+    obj.check32(32'h00000020, 32'hfedcba98, 1'b0);
     obj.check32(32'h00000030, 32'h76543210, 1'b0);
   endtask: test_aligned
 
-  task test_unaligned ();
-    // test unaligned accesses
-    if (PCK.ALN != tcb.BUS_MAX) begin
-      // clear memory
-      mem.mem = '{default: 'x};
+  task test_misaligned ();
+    // misaligned write sequence
+    $display("misaligned write sequence");
+    testname = "misaligned write";
+    // test sequence
+    obj.write16(32'h00000091, 16'h3210    , sts);
+    obj.write16(32'h000000a3, 16'h7654    , sts);
+    obj.write32(32'h000000b1, 32'h76543210, sts);
+    obj.write32(32'h000000c2, 32'h76543210, sts);
+    obj.write32(32'h000000d3, 32'h76543210, sts);
 
-      // misaligned write sequence
-      $display("misaligned write sequence");
-      testname = "misaligned write";
-      tst_mon.delete();
-      tst_ref.delete();
-      // test sequence
-      obj.write16(32'h00000011, 16'h3210    , sts);
-      obj.write16(32'h00000023, 16'h7654    , sts);
-      obj.write32(32'h00000031, 32'h76543210, sts);
-      obj.write32(32'h00000042, 32'h76543210, sts);
-      obj.write32(32'h00000053, 32'h76543210, sts);
-      // reference transfer queue
-      sts = '0;
-      tst_ref.delete();
-      tst_len = tst_ref.size();
+    // misaligned read/check sequence
+    $display("misaligned read/check sequence");
+    testname = "misaligned read/check";
+    // test sequence
+    obj.check16(32'h00000091, 16'h3210    , sts);
+    obj.check16(32'h000000a3, 16'h7654    , sts);
+    obj.check32(32'h000000b1, 32'h76543210, sts);
+    obj.check32(32'h000000c2, 32'h76543210, sts);
+    obj.check32(32'h000000d3, 32'h76543210, sts);
+  endtask: test_misaligned
 
-      // misaligned read/check sequence
-      $display("misaligned read/check sequence");
-      testname = "misaligned read/check";
-      tst_mon.delete();
-      tst_ref.delete();
-      // test sequence
-      obj.check16(32'h00000011, 16'h3210    , sts);
-      obj.check16(32'h00000023, 16'h7654    , sts);
-      obj.check32(32'h00000031, 32'h76543210, sts);
-      obj.check32(32'h00000042, 32'h76543210, sts);
-      obj.check32(32'h00000053, 32'h76543210, sts);
-    end
-  endtask: test_unaligned
-/*
   task test_parameterized();
-    static bit ndn_list [2] = '{TCB_LITTLE, TCB_BIG};
-//    static bit ndn_list [1] = '{TCB_BIG};
     // parameterized tests
     $display("parameterized tests");
     testname = "parameterized tests";
-    foreach (ndn_list[i]) begin
-      for (int unsigned siz=tcb_man.PCK.MIN; siz<=tcb_man.BUS_MAX; siz++) begin
-//      begin
-//        static int unsigned siz=1;
-//        for (int unsigned off=0; off<tcb_man.BUS_BEN; off+=2) begin
-        for (int unsigned off=0; off<tcb_man.BUS_BEN; off+=2**tcb_man.PCK.OFF) begin
-          // local variables
-          string       id;
-          int unsigned size;
-          int unsigned len;
-          // address
-          logic [tcb_man.BUS.ADR-1:0] adr;
-          // endianness
-          logic         ndn;
-          // local data arrays
-          logic [8-1:0] dat [];  // pattern   data array
-          logic [8-1:0] tmp [];  // temporary data array
-          logic [8-1:0] nul [];  // empty     data array
-          // local response
-          tcb_rsp_sts_t sts;  // response status
-          // local transactions
-          tcb_vip_siz_s::transaction_t transaction_ref_w;  // reference write transaction
-          tcb_vip_siz_s::transaction_t transaction_ref_r;  // reference read  transaction
-          tcb_vip_siz_s::transaction_t transaction_mon_w;  // monitor   write transaction
-          tcb_vip_siz_s::transaction_t transaction_mon_r;  // monitor   read  transaction
-          // local transfers
-          automatic tcb_vip_siz_s::transfer_queue_t transfer_man = '{};  // manager     transfer queue
-          automatic tcb_vip_siz_s::transfer_queue_t transfer_sub = '{};  // subordinate transfer queue
-          automatic tcb_vip_siz_s::transfer_queue_t transfer_mon = '{};  // monitor     transfer queue
+    for (int unsigned siz=tcb.PCK.MIN; siz<=tcb.BUS_MAX; siz++) begin
+//    begin
+//      static int unsigned siz=1;
+//      for (int unsigned off=0; off<tcb.BUS_BEN; off+=2) begin
+      for (int unsigned off=0; off<tcb.BUS_BEN; off+=2**tcb.PCK.OFF) begin
+        // local variables
+        string       id;
+        int unsigned size;
+        int unsigned len;
+        // address
+        logic [tcb.BUS.ADR-1:0] adr;
+        // endianness
+        logic         ndn;
+        // local data arrays
+        logic [8-1:0] dat [];  // pattern   data array
+        logic [8-1:0] tmp [];  // temporary data array
+        logic [8-1:0] nul [];  // empty     data array
+        // local response
+        tcb_rsp_sts_t sts;  // response status
+        // local transactions
+        tcb_vip_s::transaction_t transaction_w;  // reference write transaction
+        tcb_vip_s::transaction_t transaction_r;  // reference read  transaction
+        // local transfers
+        automatic tcb_vip_s::transfer_queue_t transfer = '{};  // manager transfer queue
 
-          // endianness
-          ndn = ndn_list[i];
-          // ID
-          id = $sformatf("ndn=%0d siz=%0d off=%0d", ndn, siz, off);
-          $display("DEBUG: ID = '%s'", id);
-          // address (stride is twice BUS_BEN, to accommodate unaligned accesses)
-          adr = siz * tcb_man.BUS_BEN * 2;
-          // prepare data array
-          size = 2**siz;
-          dat = new[size];
-          for (int unsigned i=0; i<size; i++) begin
-            // each byte within a transfer has an unique value
-            dat[i] = {siz[4-1:0], off[4-1:0] + i[4-1:0]};
-          end
-          // expected response status
-          sts = '0;
-
-          // write/read transaction
-          transaction_ref_w = '{req: '{ndn, 1'b1, adr+off, dat}, rsp: '{nul, sts}};
-          transaction_ref_r = '{req: '{ndn, 1'b0, adr+off, nul}, rsp: '{dat, sts}};
-          // manager transfer queue
-          len  = 0;
-          len += obj_man.set_transaction(transfer_man, transaction_ref_w, id);
-          len += obj_man.set_transaction(transfer_man, transaction_ref_r, id);
-          // subordinate transfer queue
-          len  = 0;
-          len += obj_sub.set_transaction(transfer_sub, transaction_ref_w);
-          len += obj_sub.set_transaction(transfer_sub, transaction_ref_r);
-
-          // play/monitor transfers
-          fork
-            // drive manager bus
-            begin: parameterized_test_man
-              obj_man.transfer_sequencer(transfer_man);
-            end: parameterized_test_man
-            // monitor subordinate bus
-            begin: parameterized_test_mon
-              obj_sub.transfer_monitor(transfer_mon);
-            end: parameterized_test_mon
-          join_any
-          // disable transfer monitor
-          @(posedge clk);
-          disable fork;
-
-          // parse manager transfer queues into transactions
-          len  = 0;
-          len += obj_man.get_transaction(transfer_man, transaction_mon_w);
-          len += obj_man.get_transaction(transfer_man, transaction_mon_r);
-          // compare read data against write data
-          assert (transaction_mon_r.rsp.rdt == dat) else $error("Read data not matching previously written data (id = '%s')", id);
-          // compare subordinate reference and monitored transaction queue
-          foreach (transfer_sub[i]) begin
-            assert (transfer_mon[i].req ==? transfer_sub[i].req) else $error("\ntransfer_mon[%0d].req = %p !=? \ntransfer_ref[%0d].req = %p", i, transfer_mon[i].req, i, transfer_sub[i].req);
-            assert (transfer_mon[i].rsp ==? transfer_sub[i].rsp) else $error("\ntransfer_mon[%0d].rsp = %p !=? \ntransfer_ref[%0d].rsp = %p", i, transfer_mon[i].rsp, i, transfer_sub[i].rsp);
-          end
-          // parse subordinate monitor transfer queues into transactions
-          len  = 0;
-          len += obj_sub.get_transaction(transfer_mon, transaction_mon_w);
-          len += obj_sub.get_transaction(transfer_mon, transaction_mon_r);
-          // compare subordinate reference and monitor transactions
-          assert (transaction_mon_w == transaction_ref_w) else $error("\ntransaction_mon_w = %p != \ntransaction_ref_w = %p", transaction_mon_w, transaction_ref_w);
-          assert (transaction_mon_r == transaction_ref_r) else $error("\ntransaction_mon_r = %p != \ntransaction_ref_r = %p", transaction_mon_r, transaction_ref_r);
+        // ID
+        id = $sformatf("siz=%0d off=%0d", siz, off);
+        $display("DEBUG: ID = '%s'", id);
+        // address (stride is twice BUS_BEN, to accommodate unaligned accesses)
+        adr = siz * tcb.BUS_BEN * 2;
+        // prepare data array
+        size = 2**siz;
+        dat = new[size];
+        for (int unsigned i=0; i<size; i++) begin
+          // each byte within a transfer has an unique value
+          dat[i] = {siz[4-1:0], off[4-1:0] + i[4-1:0]};
         end
+        // expected response status
+        sts = '0;
+
+        // write/read transaction
+        transaction_w = '{req: '{1'b0, 1'b1, adr+off, dat}, rsp: '{nul, sts}};
+        transaction_r = '{req: '{1'b0, 1'b0, adr+off, nul}, rsp: '{dat, sts}};
+        // manager transfer queue
+        len  = 0;
+        len += obj.set_transaction(transfer, transaction_w, id);
+        len += obj.set_transaction(transfer, transaction_r, id);
+
+        // drive manager bus
+        begin: parameterized_test_man
+          obj.transfer_sequencer(transfer);
+        end: parameterized_test_man
+
+        // parse manager transfer queues into transactions
+        len  = 0;
+        len += obj.get_transaction(transfer, transaction_w);
+        len += obj.get_transaction(transfer, transaction_r);
+        // compare read data against write data
+        assert (transaction_r.rsp.rdt == dat) else $error("Read data not matching previously written data (id = '%s')", id);
       end
     end
   endtask: test_parameterized
-*/
+
 ////////////////////////////////////////////////////////////////////////////////
 // test sequence
 ////////////////////////////////////////////////////////////////////////////////
@@ -307,8 +251,10 @@ module tcb_lib_misaligned_memory_controller_tb
     repeat (1) @(posedge clk);
 
     test_aligned;
-//    test_unaligned;
-//    test_parameterized;
+    if (PCK.ALN != tcb.BUS_MAX) begin
+      test_misaligned;
+    end
+    test_parameterized;
 
     // end of test
     repeat (4) @(posedge clk);
@@ -325,30 +271,34 @@ module tcb_lib_misaligned_memory_controller_tb
 
   // SDRAM memory model subordinate
   sram_model #(
-    .DAT (tcb.BUS.DAT),
-    .ADR (tcb.BUS.ADR)
-  ) mem (
+    .ADR  (MEM_ADR),
+    .DAT  (MEM_DAT)
+  ) mem [MEM_CEN-1:0] (
     .clk  (clk),
-    .cen  (sram_cen),
-    .wen  (sram_wen),
-    .adr  (sram_adr),
-    .wdt  (sram_wdt),
-    .rdt  (sram_rdt)
+    .cen  (mem_cen),
+    .wen  (mem_wen),
+    .adr  (mem_adr),
+    .wdt  (mem_wdt),
+    .rdt  (mem_rdt)
   );
 
 ////////////////////////////////////////////////////////////////////////////////
 // DUT instance
 ////////////////////////////////////////////////////////////////////////////////
 
-  tcb_lib_misaligned_memory_controller dut (
+  tcb_lib_misaligned_memory_controller #(
+    .HSK_DLY (HSK_DLY),
+    .BUS     (BUS    ),
+    .PCK     (PCK    )
+  ) dut (
     // TCB interface
-    .tcb  (tcb),
+    .tcb      (tcb),
     // SRAM interface
-    .cen  (sram_cen),
-    .wen  (sram_wen),
-    .adr  (sram_adr),
-    .wdt  (sram_wdt),
-    .rdt  (sram_rdt)
+    .mem_cen  (mem_cen),
+    .mem_wen  (mem_wen),
+    .mem_adr  (mem_adr),
+    .mem_wdt  (mem_wdt),
+    .mem_rdt  (mem_rdt)
   );
 
 ////////////////////////////////////////////////////////////////////////////////

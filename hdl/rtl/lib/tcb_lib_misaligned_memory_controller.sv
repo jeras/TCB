@@ -19,48 +19,53 @@
 module tcb_lib_misaligned_memory_controller
   import tcb_pkg::*;
 #(
-  parameter  int unsigned DAT = 8,
-  parameter  int unsigned ADR = 8,
-  parameter  int unsigned CEN = 4
+  // handshake parameter
+  parameter  int unsigned HSK_DLY = TCB_HSK_DEF,  // response delay
+  // bus parameters (combined into a structure)
+  parameter  type bus_t = tcb_bus_t,  // bus parameter type
+  parameter  bus_t BUS = TCB_BUS_DEF,
+  // packing parameters
+  parameter  type pck_t = tcb_pck_t,  // packing parameter type
+  parameter  pck_t PCK = TCB_PCK_DEF,
+  // local parameters
+  localparam int unsigned BUS_BEN = BUS.DAT/8,
+  localparam int unsigned BUS_MAX = $clog2(BUS_BEN),
+  localparam int unsigned MEM_CEN = BUS_BEN/(2**PCK.OFF),
+  localparam int unsigned MEM_ADR = BUS.ADR-BUS_MAX,
+  localparam int unsigned MEM_DAT = BUS.DAT/MEM_CEN
+  // byte order
+  // TODO
 )(
   // TCB interface
   tcb_if.sub tcb,  // TCB subordinate port (manager device connects here)
   // SRAM interface
-  output logic [CEN-1:0]          cen,  // chip enable
-  output logic                    wen,  // write enable
-  output logic [CEN-1:0][ADR-1:0] adr,  // address
-  output logic [CEN-1:0][DAT-1:0] wdt,  // write data
-  input  logic [CEN-1:0][DAT-1:0] rdt   // read data
+  output logic [MEM_CEN-1:0]              mem_cen,  // chip enable
+  output logic                            mem_wen,  // write enable
+  output logic [MEM_CEN-1:0][MEM_ADR-1:0] mem_adr,  // address
+  output logic [MEM_CEN-1:0][MEM_DAT-1:0] mem_wdt,  // write data
+  input  logic [MEM_CEN-1:0][MEM_DAT-1:0] mem_rdt   // read data
 );
 
 ////////////////////////////////////////////////////////////////////////////////
 // parameter validation
 ////////////////////////////////////////////////////////////////////////////////
 
-//  // BUS parameters
-//  initial begin
-//    // data sizing mode
-//    assert (sub.BUS.MOD == TCB_MOD_LOG_SIZE) else $error("mismatch (sub.BUS.MOD = %0s) != TCB_MOD_LOG_SIZE", sub.BUS.MOD.name());
-//    assert (man.BUS.MOD == TCB_MOD_BYTE_ENA) else $error("mismatch (man.BUS.MOD = %0s) != TCB_MOD_BYTE_ENA", man.BUS.MOD.name());
-//    // other parameters
+  // BUS parameters
+  initial begin
+    // channel configuration
+    assert (tcb.BUS.CHN != TCB_CHN_FULL_DUPLEX) else $error("unsupported (tcb.BUS.CHN = %0s) == TCB_CHN_FULL_DUPLEX", tcb.BUS.CHN.name());
+    // data sizing mode
+    assert (tcb.BUS.MOD == TCB_MOD_BYTE_ENA)    else $error("unsupported (tcb.BUS.MOD = %0s) != TCB_MOD_BYTE_ENA", tcb.BUS.MOD.name());
+    // other parameters
 //    assert (      sub.BUS.FRM  ==       man.BUS.FRM ) else $error("mismatch (      sub.BUS.FRM  = %0d) != (      man.BUS.FRM  = %0d)",       sub.BUS.FRM       ,       man.BUS.FRM       );
-//    assert (      sub.BUS.CHN  ==       man.BUS.CHN ) else $error("mismatch (      sub.BUS.CHN  = %0s) != (      man.BUS.CHN  = %0s)",       sub.BUS.CHN.name(),       man.BUS.CHN.name());
 //    assert (      sub.BUS.PRF  ==       man.BUS.PRF ) else $error("mismatch (      sub.BUS.PRF  = %0s) != (      man.BUS.PRF  = %0s)",       sub.BUS.PRF.name(),       man.BUS.PRF.name());
 //    assert ($bits(sub.req.adr) == $bits(man.req.adr)) else $error("mismatch ($bits(sub.req.adr) = %0d) != ($bits(man.req.adr) = %0d)", $bits(sub.req.adr)      , $bits(man.req.adr)      );
 //    assert (      sub.BUS.NXT  ==       man.BUS.NXT ) else $error("mismatch (      sub.BUS.NXT  = %0s) != (      man.BUS.NXT  = %0s)",       sub.BUS.NXT.name(),       man.BUS.NXT.name());
 //    assert (      sub.BUS.ORD  ==       man.BUS.ORD ) else $error("mismatch (      sub.BUS.ORD  = %0s) != (      man.BUS.ORD  = %0s)",       sub.BUS.ORD.name(),       man.BUS.ORD.name());
 //    assert (      sub.BUS.NDN  ==       man.BUS.NDN ) else $error("mismatch (      sub.BUS.NDN  = %0s) != (      man.BUS.NDN  = %0s)",       sub.BUS.NDN.name(),       man.BUS.NDN.name());
-//  end
-//
-//  generate
-//    if (sub.BUS.CHN != TCB_CHN_READ_ONLY) begin
-//      initial assert ($bits(sub.req.wdt) == $bits(man.req.wdt)) else $error("mismatch ($bits(sub.req.wdt) = %0d) != ($bits(man.req.wdt) = %0d)", $bits(sub.req.wdt), $bits(man.req.wdt));
-//    end
-//    if (sub.BUS.CHN != TCB_CHN_WRITE_ONLY) begin
-//      initial assert ($bits(sub.rsp.rdt) == $bits(man.rsp.rdt)) else $error("mismatch ($bits(sub.rsp.rdt) = %0d) != ($bits(man.rsp.rdt) = %0d)", $bits(sub.rsp.rdt), $bits(man.rsp.rdt));
-//    end
-//  endgenerate
-//
+  end
+
+
 //  // packeting parameters
 //  initial begin
 //    assert (sub.PCK.MIN == man.PCK.MIN) else $error("mismatch (sub.PCK.MIN = %0d) != (man.PCK.MIN = %0d)", sub.PCK.MIN, man.PCK.MIN);
@@ -74,11 +79,6 @@ module tcb_lib_misaligned_memory_controller
 
 //  // request
 //  generate
-//    // framing
-//    if (man.BUS.FRM > 0) begin
-//      assign man.req.frm = sub.req.frm;
-//      assign man.req.len = sub.req.len;
-//    end
 //    // channel
 //    if (man.BUS.CHN inside {TCB_CHN_FULL_DUPLEX, TCB_CHN_HALF_DUPLEX}) begin
 //      assign man.req.wen = sub.req.wen;
@@ -91,19 +91,6 @@ module tcb_lib_misaligned_memory_controller
 //      assign man.req.rpt = sub.req.rpt;
 //      assign man.req.inc = sub.req.inc;
 //    end
-//    // address and next address
-//    assign man.req.adr = sub.req.adr;
-//    if (man.BUS.NXT == TCB_NXT_ENABLED) begin
-//      assign man.req.nxt = sub.req.nxt;
-//    end
-//    // endianness
-//    if (man.BUS.NDN == TCB_NDN_BI_NDN) begin
-//      assign man.req.ndn = sub.req.ndn;
-//    end
-//  endgenerate
-
-  localparam SRAM_CEN = tcb.BUS.DAT/8/(2**tcn.PCK.off);
-  localparam SRAM_ADR = tcb.BUS.ADR - tcb.BUS_MAX;
 
 ////////////////////////////////////////////////////////////////////////////////
 // local signals
@@ -131,39 +118,49 @@ module tcb_lib_misaligned_memory_controller
 //  assign rsp_off = sub.req_dly[sub.HSK_DLY].adr[sub.BUS_MAX-1:0];
 //  assign req_siz = sub.req_dly[0          ].siz;
 //  assign rsp_siz = sub.req_dly[sub.HSK_DLY].siz;
-//
-//  // endianness
-//  generate
-//    case (man.BUS.NDN)
-//      BCB_NDN_DEFAULT: begin
-//        assign req_ndn = tcb_endian_t'(man.BUS.ORD);
-//        assign rsp_ndn = tcb_endian_t'(man.BUS.ORD);
-//      end
-//      TCB_NDN_LITTLE :  begin
-//        assign req_ndn = TCB_LITTLE;
-//        assign rsp_ndn = TCB_LITTLE;
-//      end
-//      TCB_NDN_BIG    :  begin
-//        assign req_ndn = TCB_BIG;
-//        assign rsp_ndn = TCB_BIG;
-//      end
-//      TCB_NDN_BI_NDN :  begin
-//        assign req_ndn = sub.req.                 ndn;
-//        assign rsp_ndn = sub.req_dly[sub.HSK_DLY].ndn;
-//      end
-//    endcase
-//  endgenerate
 
 ////////////////////////////////////////////////////////////////////////////////
 // multiplexers
 ////////////////////////////////////////////////////////////////////////////////
 
-  assign cen = {CEN{tcb.vld    }};
-  assign wen =      tcb.req.wen  ;
-  assign adr = {CEN{tcb.req.adr}};
-  assign wdt =      tcb.req.wdt  ;
+  // address and next address
+  logic [MEM_ADR-1:0] adr;
+  logic [MEM_ADR-1:0] nxt;
+  // offset
+  logic [BUS_MAX-1:0] off;
 
-  assign tcb.req.rdt = rdt;
+  assign mem_cen = {MEM_CEN{tcb.vld    }}
+                 &          tcb.req.ben  ;
+  assign mem_wen =          tcb.req.wen  ;
+
+  // address
+  assign adr = tcb.req.adr[BUS_MAX+:MEM_ADR];
+  // offset
+  assign off = tcb.req.adr[BUS_MAX-1:0];
+
+  generate
+    // next address
+    if (tcb.BUS.NXT == TCB_NXT_ENABLED) begin
+      assign nxt = tcb.req.nxt[BUS_MAX+:MEM_ADR];
+    end else begin
+      assign nxt = adr + 1;
+    end
+
+    // address or next address
+    for (genvar i=0; i<BUS_BEN; i++) begin
+      assign mem_adr[i] = (i < off) ? nxt : adr;
+    end
+  endgenerate
+
+  // request/response data
+  generate
+    if (tcb.BUS.CHN != TCB_CHN_READ_ONLY) begin
+      assign mem_wdt = tcb.req.wdt;
+    end
+    if (tcb.BUS.CHN != TCB_CHN_WRITE_ONLY) begin
+      assign tcb.rsp.rdt = mem_rdt;
+    end
+  endgenerate
 
 ////////////////////////////////////////////////////////////////////////////////
 // response
