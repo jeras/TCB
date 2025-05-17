@@ -80,12 +80,9 @@ package tcb_vip_blocking_pkg;
   //////////////////////////////////////////////////////////////////////////////
 
     task automatic transaction (
-      // request
       input  logic         wen,
       input  adr_t         adr,
-      ref    logic [8-1:0] wdt [],
-      // response
-      ref    logic [8-1:0] rdt [],
+      ref    logic [8-1:0] dat [],
       output tcb_rsp_sts_t sts,
       // identification
       input  string        id = ""
@@ -93,8 +90,10 @@ package tcb_vip_blocking_pkg;
       int unsigned len;
       transfer_queue_t transfer_queue;
       transaction_t transaction;
+      logic [8-1:0] nul [];
       // request
-      transaction = '{req: '{ndn: ndn, wen: wen, adr: adr, wdt: wdt}, rsp: '{rdt: rdt, sts: sts}};
+      if (wen)  transaction = '{req: '{ndn: ndn, adr: adr, wdt: dat}, rsp: '{rdt: nul, sts: sts}};
+      else      transaction = '{req: '{ndn: ndn, adr: adr, wdt: nul}, rsp: '{rdt: dat, sts: sts}};
       len = set_transaction(transfer_queue, transaction, id);
 //      $display("DEBUG: set_transaction transfer_queue.size() = %0d", transfer_queue.size());
       // sequence transfer queue
@@ -108,7 +107,7 @@ package tcb_vip_blocking_pkg;
       // cleanup
       transfer_queue.delete();
       // outputs
-      rdt = transaction.rsp.rdt;
+      dat = transaction.rsp.rdt;
       sts = transaction.rsp.sts;
     endtask: transaction
 
@@ -122,10 +121,9 @@ package tcb_vip_blocking_pkg;
       output tcb_rsp_sts_t        sts,
       input  string               id = ""
     );
-      logic [8-1:0] tmp_wdt [] = new[1]('{default: 'x});
-      logic [8-1:0] tmp_rdt [] = new[1];
-      tmp_wdt = {<<8{type(tmp_wdt)'(wdt)}};  // reversed unit/byte order
-      transaction(1'b1, adr, tmp_wdt, tmp_rdt, sts, id);
+      logic [8-1:0] dat [] = new[1]('{default: 'x});
+      dat = {<<8{type(dat)'(wdt)}};  // reversed unit/byte order
+      transaction(1'b1, adr, dat, sts, id);
     endtask: write8
 
     task read8 (
@@ -134,10 +132,9 @@ package tcb_vip_blocking_pkg;
       output tcb_rsp_sts_t        sts,
       input  string               id = ""
     );
-      logic [8-1:0] tmp_wdt [] = new[1]('{default: 'x});
-      logic [8-1:0] tmp_rdt [] = new[1];
-      transaction(1'b0, adr, tmp_wdt, tmp_rdt, sts, id);
-      rdt = type(rdt)'({<<8{tmp_rdt[0:1-1]}});  // crop and reverse byte order
+      logic [8-1:0] dat [] = new[1];
+      transaction(1'b0, adr, dat, sts, id);
+      rdt = type(rdt)'({<<8{dat[0:1-1]}});  // crop and reverse byte order
     endtask: read8
 
     task check8 (
@@ -159,10 +156,9 @@ package tcb_vip_blocking_pkg;
       output tcb_rsp_sts_t        sts,
       input  string               id = ""
     );
-      logic [8-1:0] tmp_wdt [] = new[2]('{default: 'x});
-      logic [8-1:0] tmp_rdt [] = new[2];
-      tmp_wdt = {<<8{type(tmp_wdt)'(wdt)}};  // reversed unit/byte order
-      transaction(1'b1, adr, tmp_wdt, tmp_rdt, sts, id);
+      logic [8-1:0] dat [] = new[2]('{default: 'x});
+      dat = {<<8{type(dat)'(wdt)}};  // reversed unit/byte order
+      transaction(1'b1, adr, dat, sts, id);
     endtask: write16
 
     task read16 (
@@ -171,10 +167,9 @@ package tcb_vip_blocking_pkg;
       output tcb_rsp_sts_t        sts,
       input  string               id = ""
     );
-      logic [8-1:0] tmp_wdt [] = new[2]('{default: 'x});
-      logic [8-1:0] tmp_rdt [] = new[2];
-      transaction(1'b0, adr, tmp_wdt, tmp_rdt, sts, id);
-      rdt = type(rdt)'({<<8{tmp_rdt[0:2-1]}});  // crop and reverse byte order
+      logic [8-1:0] dat [] = new[2];
+      transaction(1'b0, adr, dat, sts, id);
+      rdt = type(rdt)'({<<8{dat[0:2-1]}});  // crop and reverse byte order
     endtask: read16
 
     task check16 (
@@ -196,10 +191,9 @@ package tcb_vip_blocking_pkg;
       output tcb_rsp_sts_t        sts,
       input  string               id = ""
     );
-      logic [8-1:0] tmp_wdt [] = new[4]('{default: 'x});
-      logic [8-1:0] tmp_rdt [] = new[4];
-      tmp_wdt = {<<8{type(tmp_wdt)'(wdt)}};  // reversed unit/byte order
-      transaction(1'b1, adr, tmp_wdt, tmp_rdt, sts, id);
+      logic [8-1:0] dat [] = new[4]('{default: 'x});
+      dat = {<<8{type(dat)'(wdt)}};  // reversed unit/byte order
+      transaction(1'b1, adr, dat, sts, id);
     endtask: write32
 
     task read32 (
@@ -208,10 +202,9 @@ package tcb_vip_blocking_pkg;
       output tcb_rsp_sts_t        sts,
       input  string               id = ""
     );
-      logic [8-1:0] tmp_wdt [] = new[4]('{default: 'x});
-      logic [8-1:0] tmp_rdt [] = new[4];
-      transaction(1'b0, adr, tmp_wdt, tmp_rdt, sts, id);
-      rdt = type(rdt)'({<<8{tmp_rdt[0:4-1]}});  // crop and reverse byte order
+      logic [8-1:0] dat [] = new[4];
+      transaction(1'b0, adr, dat, sts, id);
+      rdt = type(rdt)'({<<8{dat[0:4-1]}});  // crop and reverse byte order
     endtask: read32
 
     task check32 (
@@ -233,10 +226,9 @@ package tcb_vip_blocking_pkg;
       output tcb_rsp_sts_t        sts,
       input  string               id = ""
     );
-      logic [8-1:0] tmp_wdt [] = new[8]('{default: 'x});
-      logic [8-1:0] tmp_rdt [] = new[8];
-      tmp_wdt = {<<8{type(tmp_wdt)'(wdt)}};  // reversed unit/byte order
-      transaction(1'b1, adr, tmp_wdt, tmp_rdt, sts, id);
+      logic [8-1:0] dat [] = new[8]('{default: 'x});
+      dat = {<<8{type(dat)'(wdt)}};  // reversed unit/byte order
+      transaction(1'b1, adr, dat, sts, id);
     endtask: write64
 
     task read64 (
@@ -245,10 +237,9 @@ package tcb_vip_blocking_pkg;
       output tcb_rsp_sts_t        sts,
       input  string               id = ""
     );
-      logic [8-1:0] tmp_wdt [] = new[8]('{default: 'x});
-      logic [8-1:0] tmp_rdt [] = new[8];
-      transaction(1'b0, adr, tmp_wdt, tmp_rdt, sts, id);
-      rdt = type(rdt)'({<<8{tmp_rdt[0:8-1]}});  // crop and reverse byte order
+      logic [8-1:0] dat [] = new[8];
+      transaction(1'b0, adr, dat, sts, id);
+      rdt = type(rdt)'({<<8{dat[0:8-1]}});  // crop and reverse byte order
     endtask: read64
 
     task check64 (
@@ -270,10 +261,9 @@ package tcb_vip_blocking_pkg;
       output tcb_rsp_sts_t         sts,
       input  string                id = ""
     );
-      logic [8-1:0] tmp_wdt [] = new[16]('{default: 'x});
-      logic [8-1:0] tmp_rdt [] = new[16];
-      tmp_wdt = {<<8{type(tmp_wdt)'(wdt)}};  // reversed unit/byte order
-      transaction(1'b1, adr, tmp_wdt, tmp_rdt, sts, id);
+      logic [8-1:0] dat [] = new[16]('{default: 'x});
+      dat = {<<8{type(dat)'(wdt)}};  // reversed unit/byte order
+      transaction(1'b1, adr, dat, sts, id);
     endtask: write128
  
     task read128 (
@@ -282,10 +272,9 @@ package tcb_vip_blocking_pkg;
       output tcb_rsp_sts_t         sts,
       input  string                id = ""
     );
-      logic [8-1:0] tmp_wdt [] = new[16]('{default: 'x});
-      logic [8-1:0] tmp_rdt [] = new[16];
-      transaction(1'b0, adr, tmp_wdt, tmp_rdt, sts, id);
-      rdt = type(rdt)'({<<8{tmp_rdt[0:16-1]}});  // crop and reverse byte order
+      logic [8-1:0] dat [] = new[16];
+      transaction(1'b0, adr, dat, sts, id);
+      rdt = type(rdt)'({<<8{dat[0:16-1]}});  // crop and reverse byte order
     endtask: read128
  
     task check128 (

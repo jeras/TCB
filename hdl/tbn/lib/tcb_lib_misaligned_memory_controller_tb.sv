@@ -213,8 +213,9 @@ module tcb_lib_misaligned_memory_controller_tb
         sts = '0;
 
         // write/read transaction
-        transaction_w = '{req: '{1'b0, 1'b1, adr+off, dat}, rsp: '{nul, sts}};
-        transaction_r = '{req: '{1'b0, 1'b0, adr+off, nul}, rsp: '{dat, sts}};
+        //                       ndn , adr    , wdt          rdt, sts
+        transaction_w = '{req: '{1'b0, adr+off, dat}, rsp: '{nul, sts}};
+        transaction_r = '{req: '{1'b0, adr+off, nul}, rsp: '{dat, sts}};
         // manager transfer queue
         len  = 0;
         len += obj.set_transaction(transfer, transaction_w, id);

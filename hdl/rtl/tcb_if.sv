@@ -164,6 +164,54 @@ interface tcb_if
     end
   endfunction: logsize2byteena
 
+  // endianness
+  // NOTE: If the bus endianness is hardcoded, the transaction endianness must:
+  //       - match the hardcoded bus endianness OR,
+  //       - be undefined (x/z).
+  function automatic logic endianness (
+    input logic ndn
+  );
+    case (BUS.NDN)
+      BCB_NDN_DEFAULT: begin
+        endianness = BUS.ORD;
+        assert (endianness ==? ndn) else $error("Transaction endianness does not match BUS.NDN");
+      end
+      TCB_NDN_BI_NDN :  begin
+        endianness = ndn;
+      end
+      TCB_NDN_LITTLE ,
+      TCB_NDN_BIG    :  begin
+        endianness = BUS.NDN[0];
+        assert (endianness ==? ndn) else $error("Transaction endianness does not match BUS.NDN");
+      end
+    endcase
+  endfunction: endianness
+
+  // write enable
+  function automatic logic write (
+    input logic wen
+  );
+    case (BUS.CHN)
+      TCB_CHN_HALF_DUPLEX:  write =  wen;
+      TCB_CHN_FULL_DUPLEX:  write =  wen;
+      TCB_CHN_WRITE_ONLY :  write = 1'b1;
+      TCB_CHN_READ_ONLY  :  write = 1'b0;
+    endcase
+  endfunction: write
+
+  // read enable
+  function automatic logic read (
+    input logic wen,
+    input logic ren
+  );
+    case (BUS.CHN)
+      TCB_CHN_HALF_DUPLEX:  read = ~wen;
+      TCB_CHN_FULL_DUPLEX:  read =  ren;
+      TCB_CHN_WRITE_ONLY :  read = 1'b0;
+      TCB_CHN_READ_ONLY  :  read = 1'b1;
+    endcase
+  endfunction: read
+
 ////////////////////////////////////////////////////////////////////////////////
 // transaction handshake and misalignment logic
 ////////////////////////////////////////////////////////////////////////////////
@@ -245,7 +293,10 @@ endgenerate
     // delayed request/response
     input  trn_dly,
     input  req_dly,
-    input  rsp_dly
+    input  rsp_dly,
+    // functions
+    import endianness,
+    import write, read
   );
 
   // monitor
@@ -266,7 +317,10 @@ endgenerate
     // delayed request/response
     input  trn_dly,
     input  req_dly,
-    input  rsp_dly
+    input  rsp_dly,
+    // functions
+    import endianness,
+    import write, read
   );
 
   // subordinate
@@ -287,7 +341,10 @@ endgenerate
     // delayed request/response
     input  trn_dly,
     input  req_dly,
-    input  rsp_dly
+    input  rsp_dly,
+    // functions
+    import endianness,
+    import write, read
   );
 
 endinterface: tcb_if

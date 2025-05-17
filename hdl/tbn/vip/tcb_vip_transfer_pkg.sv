@@ -110,17 +110,6 @@ package tcb_vip_transfer_pkg;
     typedef transfer_t transfer_array_t [];
     typedef transfer_t transfer_queue_t [$];
 
-    // constants
-    static const transfer_t TRANSFER_INIT = '{
-      req: '{default: 'x},  // request
-      rsp: '{default: 'x},  // response
-      // timing idle/backpressure
-      idl: 0,
-      bpr: 0,
-      // transfer ID
-      id: ""
-    };
-
   //////////////////////////////////////////////////////////////////////////////
   // transfer manager/subordinate/monitor handshake
   //////////////////////////////////////////////////////////////////////////////

@@ -82,7 +82,6 @@ package tcb_vip_transaction_pkg;
     typedef struct {
       // request
       logic               ndn;
-      logic               wen;
       logic [BUS_ADR-1:0] adr;
       logic       [8-1:0] wdt [];
     } transaction_req_t;
@@ -105,7 +104,7 @@ package tcb_vip_transaction_pkg;
   //////////////////////////////////////////////////////////////////////////////
 
     // read/write request transaction of power of 2 size
-    static function automatic int unsigned set_transaction (
+    function automatic int unsigned set_transaction (
       ref   transfer_queue_t transfer_queue,
       input transaction_t    transaction,
       input string           id = ""
@@ -120,12 +119,14 @@ package tcb_vip_transaction_pkg;
       // write/read data array logarithmic siz
       int unsigned wdt_siz;
       int unsigned rdt_siz;
+      // endianness
+      int unsigned ndn;
 
       // transfer counter
       int unsigned cnt = 0;
       transfer_t tmp;
 
-//      $display("DEBUG: get_transaction: %p", transaction);
+//      $display("DEBUG: transaction: %p", transaction);
 
       // write/read data array linear size
       wdt_size = transaction.req.wdt.size();
@@ -134,44 +135,46 @@ package tcb_vip_transaction_pkg;
       wdt_siz = $clog2(wdt_size);
       rdt_siz = $clog2(rdt_size);
 
-      case (BUS.CHN)
-        TCB_CHN_HALF_DUPLEX: begin
-          if (transaction.req.wen == 1'b1)  size = wdt_size;
-          else                              size = rdt_size;
-          wen =  transaction.req.wen;
-          ren = ~transaction.req.wen;
-        end
-        TCB_CHN_FULL_DUPLEX: begin
-          if (transaction.req.wen == 1'b0)  size = rdt_size;
-          else                              size = wdt_size;
-          if (transaction.req.wen === 1'bx) begin
-            // swap operation
-            assert (wdt_size == rdt_size) else $error("Swap operation write/read data size mismatch.");
-            wen = 1'b1;
-            ren = 1'b1;
-          end else begin
-            // normal read/write access
-            wen =  transaction.req.wen;
-            ren = ~transaction.req.wen;
-          end
-        end
-        TCB_CHN_WRITE_ONLY : begin
-          size = wdt_size;
-          assert (transaction.req.wen == 1'b1) else $error("Attempt to create read transaction on write only bus.");
-          wen = 1'b1;
-          ren = 1'b0;
-        end
-        TCB_CHN_READ_ONLY  : begin
-          size = rdt_size;
-          assert (transaction.req.wen == 1'b0) else $error("Attempt to create write transaction on read only bus.");
-          wen = 1'b0;
-          ren = 1'b1;
-        end
-      endcase
+      // if write/read data is available, write/read is enabled
+      wen = (wdt_size > 0);
+      ren = (rdt_size > 0);
+
+//      $display("DEBUG: transaction.req.wdt.size() = %0d, wen = %0b", wdt_size, wen);
+//      $display("DEBUG: transaction.rsp.rdt.size() = %0d, ren = %0b", rdt_size, ren);
 
       // check whether data array sizes are power of 2
       if (wen) assert (wdt_size == 2**wdt_siz) else $error("Write data array size is not a power of 2.");
-      if (ren) assert (rdt_size == 2**rdt_siz) else $error("Read data array size is not a power of 2.");
+      if (ren) assert (rdt_size == 2**rdt_siz) else $error("Read  data array size is not a power of 2.");
+
+      case (BUS.CHN)
+        TCB_CHN_HALF_DUPLEX: begin
+          assert ((wen & ren) == 1'b0) else $error("Attempt to create swap transaction on half duplex bus.");
+          if (wen)  size = wdt_size;
+          else      size = rdt_size;
+        end
+        TCB_CHN_FULL_DUPLEX: begin
+          if (wen & ren) begin
+            // swap operation
+            assert (wdt_size == rdt_size) else $error("Attempt to create swap transaction with mismatched write/read data size.");
+          end
+          if (wen)  size = wdt_size;
+          else      size = rdt_size;
+        end
+        TCB_CHN_WRITE_ONLY : begin
+          assert ( wen) else $error("Attempt to create write transaction of size 0.");
+          assert (~ren) else $error("Attempt to create read  transaction on write only bus.");
+          size = wdt_size;
+        end
+        TCB_CHN_READ_ONLY  : begin
+          assert (~wen) else $error("Attempt to create write transaction on read only bus.");
+          assert ( ren) else $error("Attempt to create read  transaction of size 0.");
+          size = rdt_size;
+        end
+      endcase
+
+      // endianness
+      ndn = tcb.endianness(transaction.req.ndn);
+
 
 //      $display("DEBUG: size=%0d", size);
 
@@ -196,9 +199,10 @@ package tcb_vip_transaction_pkg;
         int unsigned byt;  // transfer byte index
         int unsigned idx;  // transaction byte index
         int unsigned edg;  // edge byte inside data bus
+
         // endianness
-        if (transaction.req.ndn)  idx = size-1-i;  //    big-endian (start with MSB end)
-        else                      idx =        i;  // little-endian (start with LSB end)
+        if (ndn)  idx = size-1-i;  //    big-endian (start with MSB end)
+        else      idx =        i;  // little-endian (start with LSB end)
         // mode logarithmic size vs. byte enable
         case (BUS.MOD)
           TCB_MOD_LOG_SIZE:  byt =  idx                                   % BUS_BEN;  // all data bytes are LSB aligned
@@ -211,12 +215,21 @@ package tcb_vip_transaction_pkg;
         // edge byte inside data bus
         if (PCK.BND == 0)  edg = (i == BUS_BEN-1);
         else               edg = BUS_BEN-1;  // TODO: use actual boundary
+
         // last byte in current transfer or entire transaction
         if (edg || (i == size-1)) begin
           // request signals
           tmp.req.frm = (i == size-1) ? 1'b0 : 1'b1;
-          tmp.req.wen = transaction.req.wen;
-          tmp.req.ndn = transaction.req.ndn;
+          if (BUS.CHN == TCB_CHN_FULL_DUPLEX) begin
+            tmp.req.wen = wen;
+            tmp.req.ren = ren;
+          end
+          if (BUS.CHN == TCB_CHN_HALF_DUPLEX) begin
+            tmp.req.wen = wen;
+          end
+          if (BUS.NDN == TCB_NDN_BI_NDN) begin
+            tmp.req.ndn = ndn;
+          end
           tmp.req.adr = transaction.req.adr + cnt*BUS_BEN;
           case (BUS.MOD)
             TCB_MOD_LOG_SIZE: begin
@@ -248,7 +261,7 @@ package tcb_vip_transaction_pkg;
   //////////////////////////////////////////////////////////////////////////////
 
     // read/write response transaction of power of 2 size
-    static function automatic int unsigned get_transaction (
+    function automatic int unsigned get_transaction (
       ref    transfer_queue_t transfer_queue,
       output transaction_t    transaction
     );
@@ -261,14 +274,21 @@ package tcb_vip_transaction_pkg;
       // write/read data queue
       logic [8-1:0] wdt [$];
       logic [8-1:0] rdt [$];
+      // endianness
+      logic         ndn;
 
       // transfer counter
       int unsigned cnt = 0;
       transfer_t tmp;
 
+      // write/read enable
+      wen = tcb.write(transfer_queue[0].req.wen);
+      ren = tcb.read (transfer_queue[0].req.wen, transfer_queue[0].req.ren);
+
+      // endianness
+      transaction.req.ndn = tcb.endianness(transfer_queue[0].req.ndn);
+
       // request signals (first transfer)
-      transaction.req.wen = transfer_queue[0].req.wen;
-      transaction.req.ndn = transfer_queue[0].req.ndn;
       transaction.req.adr = transfer_queue[0].req.adr;
 
       // initialize response
@@ -279,16 +299,24 @@ package tcb_vip_transaction_pkg;
         tmp = transfer_queue.pop_front();
 //        $display("DEBUG: tmp = %p", tmp);
         // request signals
-        assert (tmp.req.wen == transaction.req.wen              ) else $warning("wen mismatch %p %p", tmp.req.wen, transaction.req.wen);
-        assert (tmp.req.ndn == transaction.req.ndn              ) else $warning("ndn mismatch");
-        assert (tmp.req.adr == transaction.req.adr + cnt*BUS_BEN) else $warning("adr mismatch");
+        // read/write enable continuity checks
+        case (BUS.CHN)
+          TCB_CHN_HALF_DUPLEX: begin
+            assert (tmp.req.wen == wen) else $error("wen continuity %0b %0b", tmp.req.wen, wen);
+          end
+          TCB_CHN_FULL_DUPLEX: begin
+            assert (tmp.req.wen == wen) else $error("wen continuity %0b %0b", tmp.req.wen, wen);
+            assert (tmp.req.ren == ren) else $error("ren continuity %0b %0b", tmp.req.ren, ren);
+          end
+        endcase
+        // endianness continuity checks
+        if (BUS.NDN == TCB_NDN_BI_NDN) begin
+          assert (tmp.req.ndn == transaction.req.ndn) else $error("ndn continuity %0b %0b", tmp.req.ndn, transaction.req.ndn);
+        end
+        // TODO: address continuity depends on transfer type
+        assert (tmp.req.adr == transaction.req.adr + cnt*BUS_BEN) else $error("adr continuity");
         // response status
         transaction.rsp.sts |= tmp.rsp.sts;
-
-        // TODO: generalize for other channel configurations
-        // TODO: RISC-V atomic operations are a mix of read and write transfers
-        wen =  tmp.req.wen;
-        ren = ~tmp.req.wen;
 
         // mode logarithmic size vs. byte enable
         case (BUS.MOD)

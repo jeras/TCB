@@ -62,12 +62,12 @@ package tcb_pkg;
     TCB_ORD_ASCENDING  = 1'b1   //  ascending order
   } tcb_bus_order_t;
 
-  // endianness configuration
+  // endianness configuration (for LITTLE/BIG endian only the endianness in encoded in NDN[0])
   typedef enum bit [2-1:0] {
     BCB_NDN_DEFAULT = 2'b00,  // default derived from byte order
-    TCB_NDN_LITTLE  = 2'b01,  // little endian only (default for TCB_ORD_DESCENDING order)
-    TCB_NDN_BIG     = 2'b10,  // big    endian only (default for TCB_ORD_ASCENDING  order)
-    TCB_NDN_BI_NDN  = 2'b11   // bi-    endian support
+    TCB_NDN_BI_NDN  = 2'b01,  // bi-    endian support
+    TCB_NDN_LITTLE  = 2'b10,  // little endian only (default for TCB_ORD_DESCENDING order)
+    TCB_NDN_BIG     = 2'b11   // big    endian only (default for TCB_ORD_ASCENDING  order)
   } tcb_bus_endian_t;
 
   // bus layer parameter structure

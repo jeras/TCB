@@ -124,26 +124,8 @@ module tcb_lib_logsize2byteena
   assign rsp_siz = sub.req_dly[sub.HSK_DLY].siz;
 
   // endianness
-  generate
-    case (man.BUS.NDN)
-      BCB_NDN_DEFAULT: begin
-        assign req_ndn = tcb_endian_t'(man.BUS.ORD);
-        assign rsp_ndn = tcb_endian_t'(man.BUS.ORD);
-      end
-      TCB_NDN_LITTLE :  begin
-        assign req_ndn = TCB_LITTLE;
-        assign rsp_ndn = TCB_LITTLE;
-      end
-      TCB_NDN_BIG    :  begin
-        assign req_ndn = TCB_BIG;
-        assign rsp_ndn = TCB_BIG;
-      end
-      TCB_NDN_BI_NDN :  begin
-        assign req_ndn = sub.req.                 ndn;
-        assign rsp_ndn = sub.req_dly[sub.HSK_DLY].ndn;
-      end
-    endcase
-  endgenerate
+  assign req_ndn = man.endianness(sub.req.                 ndn);
+  assign rsp_ndn = man.endianness(sub.req_dly[man.HSK_DLY].ndn);
 
 ////////////////////////////////////////////////////////////////////////////////
 // multiplexers
