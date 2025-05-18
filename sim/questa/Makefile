@@ -79,5 +79,8 @@ all: run
 run: ${HDL}
 	qrun -makelib work -sv ${HDL} -end ${DEF} ${PAR} ${FLAGS} ${ARG} -top ${TOP}
 
+check: run
+	grep "Totals: Errors" qrun.log | awk -F"," '{print $1}' | awk -F":" '{exit $3}'
+
 gui:
 	qrun -makelib work -sv ${HDL} -end ${DEF} ${PAR} ${FLAGS} ${ARG} -top ${TOP} -gui
