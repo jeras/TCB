@@ -36,7 +36,7 @@ module tcb_lib_register_backpressure
     if (sub.BUS.DAT != man.BUS.DAT)  $error("ERROR: %m parameter (sub.DAT = %d) != (man.DAT = %d)", sub.BUS.DAT, man.BUS.DAT);
     if (sub.BUS.UNT != man.BUS.UNT)  $error("ERROR: %m parameter (sub.UNT = %d) != (man.UNT = %d)", sub.BUS.UNT, man.BUS.UNT);
     // response delay
-    if (sub.HSK_DLY != man.HSK_DLY)  $error("ERROR: %m parameter (sub.HSK_DLY = %d) != (man.HSK_DLY = %d)", sub.HSK_DLY, man.HSK_DLY);
+    if (sub.HSK.DLY != man.HSK.DLY)  $error("ERROR: %m parameter (sub.HSK.DLY = %d) != (man.HSK.DLY = %d)", sub.HSK.DLY, man.HSK.DLY);
   endgenerate
 `endif
 

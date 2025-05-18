@@ -50,7 +50,7 @@ module tcb_vip_protocol_checker (
     if (tcb.stl) begin
       assert ($stable(tcb.req)) else $error("TCB: tcb.req is unstable during a stall.");
     end
-    // read data hold (HSK_DLY>1)
+    // read data hold (HSK.DLY>1)
     // TODO
   end
 
@@ -122,16 +122,16 @@ module tcb_vip_protocol_checker (
     end
     // response/read data bus and data sizing
     if (tcb.BUS.CHN != TCB_CHN_WRITE_ONLY) begin
-      if (tcb.trn_dly[tcb.HSK_DLY]) begin
-        if (~tcb.req_dly[tcb.HSK_DLY].wen | (tcb.BUS.CHN == TCB_CHN_READ_ONLY)) begin
+      if (tcb.trn_dly[tcb.HSK.DLY]) begin
+        if (~tcb.req_dly[tcb.HSK.DLY].wen | (tcb.BUS.CHN == TCB_CHN_READ_ONLY)) begin
           if (tcb.BUS.MOD == TCB_MOD_LOG_SIZE) begin
-            for (int unsigned i=0; i<2**tcb.req_dly[tcb.HSK_DLY].siz; i++) begin
+            for (int unsigned i=0; i<2**tcb.req_dly[tcb.HSK.DLY].siz; i++) begin
               assert (!$isunknown(tcb.rsp.rdt[i])) else $error("TCB: tcb.rsp.rdt[%0d] is unknown during a transfer cycle.", i);
             end
           end
           if (tcb.BUS.MOD == TCB_MOD_BYTE_ENA) begin
             for (int unsigned i=0; i<tcb.BUS_BEN; i++) begin
-              if (tcb.req_dly[tcb.HSK_DLY].ben[i]) begin
+              if (tcb.req_dly[tcb.HSK.DLY].ben[i]) begin
                 assert (!$isunknown(tcb.rsp.rdt[i])) else $error("TCB: tcb.rsp.rdt[%0d] is unknown during a transfer cycle.", i);
               end
             end

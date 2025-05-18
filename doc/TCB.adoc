@@ -90,7 +90,7 @@ TCB terminology and syntax is mostly based on:
 | handshake    | Exchange of `valid` and `ready` signals during between manager and subordinate.
 | cycle        | A _request cycle_ is one or more clock periods long exchange between a master and a subordinate
                  governed by a valid/ready handshake, and it ends with a transfer.
-                 A _response cycle_ starts `HSK_DLY` clock periods after the request cycle and has the same length.
+                 A _response cycle_ starts `HSK.DLY` clock periods after the request cycle and has the same length.
 | transfer     | Each access cycle ends in a single clock period long transfer when valid and ready handshake signals are both active.
 | request      | The collective value of signals (address, write enable, byte enable, write data) driven by a manager,
                  while valid is active during an access cycle.
@@ -246,14 +246,14 @@ This signal groups are used to provide transaction type details, addressing and 
 |===
 
 While the handshake defines the request transfer,
-the response is always provided `HSK_DLY` clock periods after the handshake transfer.
+the response is always provided `HSK.DLY` clock periods after the handshake transfer.
 
 .Base protocol parameter
 [%autowidth]
 |===
 | parameter | type           | description
 
-| `HSK_DLY` | `int unsigned` | Response delay.
+| `HSK.DLY` | `int unsigned` | Response delay.
 |===
 
 === Handshake rules
@@ -290,12 +290,12 @@ The manager shall drive a valid _request signal set_ `req` while the `vld` hands
 The subordinate shell sample the _request signal set_ `req` at the rising clock edge while
 both `vld` and `rdy` handshake signals are active indicating a transfer `trn` (local signal).
 
-When the delay parameter is zero (`HSK_DLY=0`),
+When the delay parameter is zero (`HSK.DLY=0`),
 the subordinate shall provide the response `rsp` combinationally
 in the same clock period as the transfer `trn` is active.
-When the delay parameter is greater then zero (`HSK_DLY>0`),
+When the delay parameter is greater then zero (`HSK.DLY>0`),
 the subordinate shall provide the response `rsp` sequentially
-in `HSK_DLY` clock periods after the transfer `trn` is active.
+in `HSK.DLY` clock periods after the transfer `trn` is active.
 As a power consumption consideration, the response can remain unchanged
 till a new one becomes active.
 
@@ -394,7 +394,7 @@ read/write data busses, and various optional extensions.
 === Parameters
 
 All TCB interfaces are parameterized.
-In addition to the handshake layer parameter `HSK_DLY` there are parameters for:
+In addition to the handshake layer parameter `HSK.DLY` there are parameters for:
 
 * defining the presence of signals specific to individual bus layer features,
 * defining how data bytes are packed into the data bus
@@ -665,16 +665,16 @@ during a read access the write data enable decoder is not active.
 
 === Access cycles
 
-Read/write transfer cycles are shown with common response delays (parameter `HSK_DLY`) of 0, 1 and 2 clock periods.
+Read/write transfer cycles are shown with common response delays (parameter `HSK.DLY`) of 0, 1 and 2 clock periods.
 
-* `HSK_DLY=0` is the case with a combinational response to a request.
+* `HSK.DLY=0` is the case with a combinational response to a request.
   This can be used in case multiple simple subordinates are combined into an interconnect segment.
   Such a segment can then be combined with a TCB register slice `tcb_register_slice`
   to break long timing paths at either the request path, response path or both to improve timing.
   Such collections can be used to achieve better area timing compromises,
   compared to using subordinates with integrated registers.
-* `HSK_DLY=1` is the most common delay for subordinates with SRAM as an example, this is also the **HDL default**.
-* `HSK_DLY=2` is the case where a single subordinate or a segment of the interconnect with `HSK_DLY=1`
+* `HSK.DLY=1` is the most common delay for subordinates with SRAM as an example, this is also the **HDL default**.
+* `HSK.DLY=2` is the case where a single subordinate or a segment of the interconnect with `HSK.DLY=1`
   would have an extra register added to the request path (address decoder)
   or response path (read data multiplexer) to improve timing.
 

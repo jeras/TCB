@@ -103,7 +103,7 @@ module tcb_vip_memory
   for (genvar i=0; i<SPN; i++) begin: port
 
     // local copies of TCB BUS parameters
-    localparam HSK_DLY = tcb[i].HSK_DLY;
+    localparam DLY = tcb[i].HSK.DLY;
     localparam BEN = tcb[i].BUS_BEN;
 
     // request address and size (TCB_LOG_SIZE mode)
@@ -112,7 +112,7 @@ module tcb_vip_memory
 
     // read/write data packed arrays
     logic [BEN-1:0][8-1:0] wdt;
-    logic [BEN-1:0][8-1:0] rdt [0:HSK_DLY] = '{default: 'x};
+    logic [BEN-1:0][8-1:0] rdt [0:DLY] = '{default: 'x};
 
     // request address and size
     assign adr =    int'(tcb[i].req.adr);
@@ -180,7 +180,7 @@ module tcb_vip_memory
     // TODO: rethink handling of read data bus when there was no access to a byte
 
     // read data delay pipeline
-    for (genvar d=1; d<=HSK_DLY; d++) begin: delay
+    for (genvar d=1; d<=DLY; d++) begin: delay
       always @(posedge tcb[i].clk)
       begin
         case (tcb[i].BUS.MOD)
@@ -200,7 +200,7 @@ module tcb_vip_memory
     end: delay
 
     // map read data from an unpacked array
-    assign tcb[i].rsp.rdt = rdt[HSK_DLY];
+    assign tcb[i].rsp.rdt = rdt[DLY];
 
     // as a memory model, there is no immediate need for error responses, this feature might be added in the future
     // TODO

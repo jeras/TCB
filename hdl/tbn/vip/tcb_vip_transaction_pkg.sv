@@ -27,14 +27,15 @@ package tcb_vip_transaction_pkg;
 ////////////////////////////////////////////////////////////////////////////////
 
   class tcb_vip_transaction_c #(
-    // handshake parameter
-    parameter  int unsigned HSK_DLY = TCB_HSK_DEF,    // response delay
-    // bus parameters (combined into a structure)
-    parameter  type bus_t = tcb_bus_t,  // bus parameter type
-    parameter  bus_t BUS = TCB_BUS_DEF,
+    // handshake parameters
+    parameter  type hsk_t = tcb_hsk_t,   // handshake parameter type
+    parameter  hsk_t HSK = TCB_HSK_DEF,  // handshake parameter
+    // bus parameters
+    parameter  type bus_t = tcb_bus_t,   // bus parameter type
+    parameter  bus_t BUS = TCB_BUS_DEF,  // bus parameter
     // packing parameters
-    parameter  type pck_t = tcb_pck_t,  // packing parameter type
-    parameter  pck_t PCK = TCB_PCK_DEF,
+    parameter  type pck_t = tcb_pck_t,   // packing parameter type
+    parameter  pck_t PCK = TCB_PCK_DEF,  // packing parameter
     // request/response structure types
     parameter  type req_t = tcb_req_t,  // request
     parameter  type rsp_t = tcb_rsp_t,  // response
@@ -43,7 +44,8 @@ package tcb_vip_transaction_pkg;
     // debugging options
     parameter  bit  DEBUG = 1'b0
   ) extends tcb_vip_transfer_c #(
-    .HSK_DLY (HSK_DLY),
+    .hsk_t   (hsk_t),
+    .HSK     (HSK),
     .bus_t   (bus_t),
     .BUS     (BUS),
     .pck_t   (pck_t),

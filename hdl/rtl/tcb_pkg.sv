@@ -22,8 +22,20 @@ package tcb_pkg;
 // handshake layer (defines the response delay)
 ////////////////////////////////////////////////////////////////////////////////
 
-  // handshake delay (HSK_DLY) default value
-  localparam int unsigned TCB_HSK_DEF = 1;
+  // handshake layer parameter structure
+  // TODO: the structure is packed to workaround a Verilator bug
+  `ifdef VERILATOR
+  typedef struct packed {
+  `else
+  typedef struct {
+  `endif
+    int unsigned DLY;  // response delay
+  } tcb_hsk_t;
+
+  // handshake delay (HSK.DLY) default value
+  localparam tcb_hsk_t TCB_HSK_DEF = '{
+    DLY: 1
+  };
 
 ////////////////////////////////////////////////////////////////////////////////
 // bus layer (defines which signal subset is used)
@@ -146,9 +158,9 @@ package tcb_pkg;
 ////////////////////////////////////////////////////////////////////////////////
 
   virtual class tcb_c #(
-    parameter  int unsigned DLY = TCB_HSK_DEF,
-    parameter  tcb_bus_t    BUS = TCB_BUS_DEF,
-    parameter  tcb_pck_t    PCK = TCB_PCK_DEF
+    parameter  tcb_hsk_t HSK = TCB_HSK_DEF,
+    parameter  tcb_bus_t BUS = TCB_BUS_DEF,
+    parameter  tcb_pck_t PCK = TCB_PCK_DEF
   );
     // signal widths
     localparam BUS_LEN = $clog2(BUS.FRM+1);

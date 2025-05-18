@@ -21,7 +21,7 @@ module tcb_lib_logsize2byteena_tb
   import tcb_vip_blocking_pkg::*;
 #(
   // handshake parameter
-  parameter  int unsigned      HSK_DLY = TCB_HSK_DEF      // response delay
+  parameter  int unsigned      DLY = TCB_HSK_DEF.DLY      // response delay
 //  // bus parameters
 //  parameter  tcb_bus_channel_t BUS_CHN = TCB_BUS_DEF.CHN,  // channel configuration
 //  parameter  tcb_bus_mode_t    BUS_MOD = TCB_BUS_DEF.MOD,  // manager     data position mode
@@ -33,7 +33,7 @@ module tcb_lib_logsize2byteena_tb
 );
 
   // handshake parameter
-  localparam int unsigned HSK = TCB_HSK_DEF;
+  localparam tcb_hsk_t HSK = TCB_HSK_DEF;
 
   // bus parameter
   localparam tcb_bus_t BUS_SIZ = '{
@@ -87,13 +87,13 @@ module tcb_lib_logsize2byteena_tb
   string testname = "none";
 
   // TCB interfaces
-  tcb_if #(HSK, tcb_bus_t, BUS_SIZ, tcb_pck_t, PCK, req_t, rsp_t) tcb_man       (.clk (clk), .rst (rst));
-  tcb_if #(HSK, tcb_bus_t, BUS_BEN, tcb_pck_t, PCK, req_t, rsp_t) tcb_sub       (.clk (clk), .rst (rst));
-  tcb_if #(HSK, tcb_bus_t, BUS_BEN, tcb_pck_t, PCK, req_t, rsp_t) tcb_mem [0:0] (.clk (clk), .rst (rst));
+  tcb_if #(tcb_hsk_t, HSK, tcb_bus_t, BUS_SIZ, tcb_pck_t, PCK, req_t, rsp_t) tcb_man       (.clk (clk), .rst (rst));
+  tcb_if #(tcb_hsk_t, HSK, tcb_bus_t, BUS_BEN, tcb_pck_t, PCK, req_t, rsp_t) tcb_sub       (.clk (clk), .rst (rst));
+  tcb_if #(tcb_hsk_t, HSK, tcb_bus_t, BUS_BEN, tcb_pck_t, PCK, req_t, rsp_t) tcb_mem [0:0] (.clk (clk), .rst (rst));
 
   // parameterized class specialization
-  typedef tcb_vip_blocking_c #(HSK, tcb_bus_t, BUS_SIZ, tcb_pck_t, PCK, req_t, rsp_t) tcb_vip_siz_s;
-  typedef tcb_vip_blocking_c #(HSK, tcb_bus_t, BUS_BEN, tcb_pck_t, PCK, req_t, rsp_t) tcb_vip_ben_s;
+  typedef tcb_vip_blocking_c #(tcb_hsk_t, HSK, tcb_bus_t, BUS_SIZ, tcb_pck_t, PCK, req_t, rsp_t) tcb_vip_siz_s;
+  typedef tcb_vip_blocking_c #(tcb_hsk_t, HSK, tcb_bus_t, BUS_BEN, tcb_pck_t, PCK, req_t, rsp_t) tcb_vip_ben_s;
 
   // TCB class objects
   tcb_vip_siz_s obj_man = new(tcb_man, "MAN");

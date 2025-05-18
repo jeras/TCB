@@ -31,7 +31,7 @@ module tcb_lib_passthrough (
   initial
   begin
     // parameters
-    assert (man.HSK_DLY == sub.HSK_DLY) else $error("Parameter (man.HSK_DLY = %p) != (sub.HSK_DLY = %p)", man.HSK_DLY, sub.HSK_DLY);
+    assert (man.HSK.DLY == sub.HSK.DLY) else $error("Parameter (man.HSK.DLY = %p) != (sub.HSK.DLY = %p)", man.HSK.DLY, sub.HSK.DLY);
     assert (man.BUS     == sub.BUS    ) else $error("Parameter (man.BUS     = %p) != (sub.BUS     = %p)", man.BUS    , sub.BUS    );
     assert (man.PCK     == sub.PCK    ) else $error("Parameter (man.PCK     = %p) != (sub.PCK     = %p)", man.PCK    , sub.PCK    );
     // request/response types

@@ -45,7 +45,7 @@ module tcb_lib_register_response (
     // TODO: only on read enable
     // data granularity
     for (int unsigned i=0; i<man.BUS_BEN; i++) begin
-      if (man.dly[man.HSK_DLY].ben[i]) begin
+      if (man.dly[man.HSK.DLY].ben[i]) begin
         sub.rsp.rdt[man.BUS.UNT*i+:man.BUS.UNT] <= man.rsp.rdt[man.BUS.UNT*i+:man.BUS.UNT];
       end
     end

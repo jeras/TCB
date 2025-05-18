@@ -44,7 +44,7 @@ DEF = -defineall TOOL_QUESTA
 # list of parameter overrides
 
 # protocol
-BUS_PAR += -GBUS_DLY=${HSK_DLY}
+BUS_PAR += -GBUS_DLY=${HSK.DLY}
 # signal widths
 BUS_PAR += -GBUS_UNT=${BUS_UNT}
 BUS_PAR += -GBUS_ADR=${BUS_ADR}

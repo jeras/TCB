@@ -33,7 +33,7 @@ module tcb_gpio_tb
   // physical interface parameter
   localparam tcb_bus_t PHY1 = '{
     // protocol
-    HSK_DLY: 0,
+    HSK.DLY: 0,
     // signal bus widths
     UNT: TCB_PAR_BUS_DEF.UNT,
     ADR: ADR,

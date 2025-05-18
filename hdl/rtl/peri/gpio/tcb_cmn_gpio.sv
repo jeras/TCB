@@ -25,7 +25,7 @@ module tcb_cmn_gpio #(
   int unsigned GW = 32,   // GPIO width
   int unsigned CFG_CDC = 2,     // implement clock domain crossing stages (0 - bypass)
   // TCB parameters
-  bit          CFG_RSP_REG = 1'b1,  // register response path (by default the response is registered giving a HSK_DLY of 1)
+  bit          CFG_RSP_REG = 1'b1,  // register response path (by default the response is registered giving a HSK.DLY of 1)
   bit          CFG_RSP_MIN = 1'b0,  // minimalistic response implementation
   // implementation device (ASIC/FPGA vendor/device)
   string       CHIP = ""
@@ -45,7 +45,7 @@ module tcb_cmn_gpio #(
 `ifdef ALTERA_RESERVED_QIS
 `else
 generate
-  if (tcb.HSK_DLY !=  0)  $error("ERROR: %m parameter HSK_DLY validation failed");
+  if (tcb.HSK.DLY !=  0)  $error("ERROR: %m parameter HSK.DLY validation failed");
   if (tcb.BUS.DAT != 32)  $error("ERROR: %m parameter DAT validation failed");
   if (         GW >  32)  $error("ERROR: %m parameter GW exceeds the data bus width");
 endgenerate

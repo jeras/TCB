@@ -54,7 +54,7 @@ module tcb_lib_common2independent (
   assign tcb_wrc_man.req =  tcb_cmn_sub.req;
   // response
   // TODO: avoid passing read data from write channel
-  assign tcb_cmn_sub.rsp =  tcb_cmn_sub.dly[tcb_cmn_sub.HSK_DLY].ren ? tcb_rdc_man.rsp
+  assign tcb_cmn_sub.rsp =  tcb_cmn_sub.dly[tcb_cmn_sub.HSK.DLY].ren ? tcb_rdc_man.rsp
                                                                      : tcb_wrc_man.rsp;
 
 endmodule: tcb_lib_common2independent

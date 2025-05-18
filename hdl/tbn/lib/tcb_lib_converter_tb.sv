@@ -21,7 +21,7 @@ module tcb_lib_converter_tb
   import tcb_vip_blocking_pkg::*;
 #(
   // protocol
-  parameter  int unsigned      MAN_DLY = TCB_PAR_BUS_DEF.HSK_DLY,  // response delay
+  parameter  int unsigned      MAN_DLY = TCB_PAR_BUS_DEF.HSK.DLY,  // response delay
   // signal widths
   parameter  int unsigned      MAN_UNT = TCB_PAR_BUS_DEF.UNT,  // data unit   width (byte width is 8 by default)
   parameter  int unsigned      MAN_ADR = TCB_PAR_BUS_DEF.ADR,  // address bus width
@@ -35,7 +35,7 @@ module tcb_lib_converter_tb
   parameter  tcb_bus_channel_t MAN_CHN = TCB_PAR_BUS_DEF.CHN,  // channel configuration
 
   // protocol
-  parameter  int unsigned      SUB_DLY = TCB_PAR_BUS_DEF.HSK_DLY,  // response delay
+  parameter  int unsigned      SUB_DLY = TCB_PAR_BUS_DEF.HSK.DLY,  // response delay
   // signal widths
   parameter  int unsigned      SUB_UNT = TCB_PAR_BUS_DEF.UNT,  // data unit   width (byte width is 8 by default)
   parameter  int unsigned      SUB_ADR = TCB_PAR_BUS_DEF.ADR,  // address bus width
@@ -52,7 +52,7 @@ module tcb_lib_converter_tb
   // manager physical interface parameter
   localparam tcb_bus_t MAN_BUS = '{
     // protocol
-    HSK_DLY: MAN_DLY,
+    HSK.DLY: MAN_DLY,
     // signal bus widths
     UNT: MAN_UNT,
     ADR: MAN_ADR,
@@ -69,7 +69,7 @@ module tcb_lib_converter_tb
   // subordinate physical interface parameter
   localparam tcb_bus_t SUB_BUS = '{
     // protocol
-    HSK_DLY: SUB_DLY,
+    HSK.DLY: SUB_DLY,
     // signal bus widths
     UNT: SUB_UNT,
     ADR: SUB_ADR,

@@ -33,7 +33,7 @@ module tcb_ind_uart #(
   bit   CFG_RX_SMP_WEN = 1'b1,  logic [RW-1:0] CFG_RX_SMP_RST = '0,  // RX sample
   bit   CFG_RX_IRQ_WEN = 1'b1,  logic [CW-1:0] CFG_RX_IRQ_RST = '0,  // RX interrupt level
   // TCB parameters
-  bit   CFG_RSP_REG = 1'b1,  // register response path (by default the response is registered giving a HSK_DLY of 1)
+  bit   CFG_RSP_REG = 1'b1,  // register response path (by default the response is registered giving a HSK.DLY of 1)
   bit   CFG_RSP_MIN = 1'b0   // minimalistic response implementation
 )(
   // UART
@@ -54,8 +54,8 @@ module tcb_ind_uart #(
 `ifdef ALTERA_RESERVED_QIS
 `else
 generate
-  if (tcb_rdc.HSK_DLY != 0)  $error("ERROR: %m parameter tcb_rdc.HSK_DLY validation failed");
-  if (tcb_wrc.HSK_DLY != 0)  $error("ERROR: %m parameter tcb_wrc.HSK_DLY validation failed");
+  if (tcb_rdc.HSK.DLY != 0)  $error("ERROR: %m parameter tcb_rdc.HSK.DLY validation failed");
+  if (tcb_wrc.HSK.DLY != 0)  $error("ERROR: %m parameter tcb_wrc.HSK.DLY validation failed");
 endgenerate
 `endif
 

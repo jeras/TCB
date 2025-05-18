@@ -47,7 +47,7 @@ DEF = -d TOOL_VIVADO_SIMULATOR
 # list of parameter overrides
 
 # protocol
-BUS_PAR += -generic_top HSK_DLY=${HSK_DLY}
+BUS_PAR += -generic_top HSK.DLY=${HSK.DLY}
 # signal widths
 BUS_PAR += -generic_top BUS_UNT=${BUS_UNT}
 BUS_PAR += -generic_top BUS_ADR=${BUS_ADR}

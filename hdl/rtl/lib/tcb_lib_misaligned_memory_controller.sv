@@ -19,14 +19,15 @@
 module tcb_lib_misaligned_memory_controller
   import tcb_pkg::*;
 #(
-  // handshake parameter
-  parameter  int unsigned HSK_DLY = TCB_HSK_DEF,  // response delay
-  // bus parameters (combined into a structure)
-  parameter  type bus_t = tcb_bus_t,  // bus parameter type
-  parameter  bus_t BUS = TCB_BUS_DEF,
+  // handshake parameters
+  parameter  type hsk_t = tcb_hsk_t,   // handshake parameter type
+  parameter  hsk_t HSK = TCB_HSK_DEF,  // handshake parameter
+  // bus parameters
+  parameter  type bus_t = tcb_bus_t,   // bus parameter type
+  parameter  bus_t BUS = TCB_BUS_DEF,  // bus parameter
   // packing parameters
-  parameter  type pck_t = tcb_pck_t,  // packing parameter type
-  parameter  pck_t PCK = TCB_PCK_DEF,
+  parameter  type pck_t = tcb_pck_t,   // packing parameter type
+  parameter  pck_t PCK = TCB_PCK_DEF,  // packing parameter
   // local parameters
   localparam int unsigned BUS_BEN = BUS.DAT/8,
   localparam int unsigned BUS_MAX = $clog2(BUS_BEN),
@@ -115,9 +116,9 @@ module tcb_lib_misaligned_memory_controller
 //
 //  // request/response address offset, logarithmic size
 //  assign req_off = sub.req_dly[0          ].adr[sub.BUS_MAX-1:0];
-//  assign rsp_off = sub.req_dly[sub.HSK_DLY].adr[sub.BUS_MAX-1:0];
+//  assign rsp_off = sub.req_dly[sub.HSK.DLY].adr[sub.BUS_MAX-1:0];
 //  assign req_siz = sub.req_dly[0          ].siz;
-//  assign rsp_siz = sub.req_dly[sub.HSK_DLY].siz;
+//  assign rsp_siz = sub.req_dly[sub.HSK.DLY].siz;
 
 ////////////////////////////////////////////////////////////////////////////////
 // multiplexers

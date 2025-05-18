@@ -19,14 +19,15 @@
 interface tcb_if
   import tcb_pkg::*;
 #(
-  // handshake parameter
-  parameter  int unsigned HSK_DLY = TCB_HSK_DEF,  // response delay
-  // bus parameters (combined into a structure)
-  parameter  type bus_t = tcb_bus_t,  // bus parameter type
-  parameter  bus_t BUS = TCB_BUS_DEF,
+  // handshake parameters
+  parameter  type hsk_t = tcb_hsk_t,   // handshake parameter type
+  parameter  hsk_t HSK = TCB_HSK_DEF,  // handshake parameter
+  // bus parameters
+  parameter  type bus_t = tcb_bus_t,   // bus parameter type
+  parameter  bus_t BUS = TCB_BUS_DEF,  // bus parameter
   // packing parameters
-  parameter  type pck_t = tcb_pck_t,  // packing parameter type
-  parameter  pck_t PCK = TCB_PCK_DEF,
+  parameter  type pck_t = tcb_pck_t,   // packing parameter type
+  parameter  pck_t PCK = TCB_PCK_DEF,  // packing parameter
   // request/response structure types
   parameter  type req_t = tcb_req_t,  // request
   parameter  type rsp_t = tcb_rsp_t,  // response
@@ -221,13 +222,13 @@ interface tcb_if
 // request/response delay
 ////////////////////////////////////////////////////////////////////////////////
 
-  logic trn_dly [0:HSK_DLY];
-  req_t req_dly [0:HSK_DLY];
-  rsp_t rsp_dly [0:HSK_DLY];
+  logic trn_dly [0:HSK.DLY];
+  req_t req_dly [0:HSK.DLY];
+  rsp_t rsp_dly [0:HSK.DLY];
 
   generate
     // delay line
-    for (genvar i=0; i<=HSK_DLY; i++) begin: dly
+    for (genvar i=0; i<=HSK.DLY; i++) begin: dly
       // handshake transfer
       if (i==0) begin: dly_0
         // continuous assignment
@@ -248,10 +249,10 @@ interface tcb_if
 
     if (VIP) begin: vip
       // continuous assignment
-      if (HSK_DLY == 0) begin
-        assign rsp = trn ? rsp_dly[HSK_DLY] : '{default: 'x};
+      if (HSK.DLY == 0) begin
+        assign rsp = trn ? rsp_dly[HSK.DLY] : '{default: 'x};
       end else begin
-        assign rsp =       rsp_dly[HSK_DLY];
+        assign rsp =       rsp_dly[HSK.DLY];
       end
     end: vip
 

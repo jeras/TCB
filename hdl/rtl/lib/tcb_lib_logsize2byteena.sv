@@ -119,13 +119,13 @@ module tcb_lib_logsize2byteena
 
   // request/response address offset, logarithmic size
   assign req_off = sub.req_dly[0          ].adr[sub.BUS_MAX-1:0];
-  assign rsp_off = sub.req_dly[sub.HSK_DLY].adr[sub.BUS_MAX-1:0];
+  assign rsp_off = sub.req_dly[sub.HSK.DLY].adr[sub.BUS_MAX-1:0];
   assign req_siz = sub.req_dly[0          ].siz;
-  assign rsp_siz = sub.req_dly[sub.HSK_DLY].siz;
+  assign rsp_siz = sub.req_dly[sub.HSK.DLY].siz;
 
   // endianness
   assign req_ndn = man.endianness(sub.req.                 ndn);
-  assign rsp_ndn = man.endianness(sub.req_dly[man.HSK_DLY].ndn);
+  assign rsp_ndn = man.endianness(sub.req_dly[man.HSK.DLY].ndn);
 
 ////////////////////////////////////////////////////////////////////////////////
 // multiplexers

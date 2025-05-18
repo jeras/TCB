@@ -25,14 +25,15 @@ package tcb_vip_transfer_pkg;
 ////////////////////////////////////////////////////////////////////////////////
 
   class tcb_vip_transfer_c #(
-    // handshake parameter
-    parameter  int unsigned HSK_DLY = TCB_HSK_DEF,    // response delay
-    // bus parameters (combined into a structure)
-    parameter  type bus_t = tcb_bus_t,  // bus parameter type
-    parameter  bus_t BUS = TCB_BUS_DEF,
+    // handshake parameters
+    parameter  type hsk_t = tcb_hsk_t,   // handshake parameter type
+    parameter  hsk_t HSK = TCB_HSK_DEF,  // handshake parameter
+    // bus parameters
+    parameter  type bus_t = tcb_bus_t,   // bus parameter type
+    parameter  bus_t BUS = TCB_BUS_DEF,  // bus parameter
     // packing parameters
-    parameter  type pck_t = tcb_pck_t,  // packing parameter type
-    parameter  pck_t PCK = TCB_PCK_DEF,
+    parameter  type pck_t = tcb_pck_t,   // packing parameter type
+    parameter  pck_t PCK = TCB_PCK_DEF,  // packing parameter
     // request/response structure types
     parameter  type req_t = tcb_req_t,  // request
     parameter  type rsp_t = tcb_rsp_t,  // response
@@ -48,7 +49,8 @@ package tcb_vip_transfer_pkg;
 
     // virtual interface type definition
     typedef virtual tcb_if #(
-      .HSK_DLY (HSK_DLY),
+      .hsk_t   (hsk_t),
+      .HSK     (HSK),
       .bus_t   (bus_t),
       .BUS     (BUS),
       .pck_t   (pck_t),
@@ -200,7 +202,7 @@ package tcb_vip_transfer_pkg;
         @(posedge tcb.clk);
       end while (~tcb.trn);
       // delay
-      repeat (tcb.HSK_DLY) @(posedge tcb.clk);
+      repeat (tcb.HSK.DLY) @(posedge tcb.clk);
       // sample response
       itm.rsp = tcb.rsp;
       if (DEBUG)  $info("DEBUG: %t: handshake_delay end ID = \"%s\".", $realtime, itm.id);
@@ -250,9 +252,9 @@ package tcb_vip_transfer_pkg;
         // wait for delayed transfer
         do begin
           @(posedge tcb.clk);
-        end while (~tcb.trn_dly[tcb.HSK_DLY]);
+        end while (~tcb.trn_dly[tcb.HSK.DLY]);
         // sample delayed request and response
-        transfer_queue.push_back('{req: tcb.req_dly[tcb.HSK_DLY], rsp: tcb.rsp, default: 'x});
+        transfer_queue.push_back('{req: tcb.req_dly[tcb.HSK.DLY], rsp: tcb.rsp, default: 'x});
       end: loop
       if (DEBUG)  $info("DEBUG: %t: transfer_monitor stopped.", $realtime);
     endtask: transfer_monitor

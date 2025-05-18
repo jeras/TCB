@@ -21,7 +21,7 @@ module tcb_lib_demultiplexer_tb
   import tcb_vip_blocking_pkg::*;
 #(
   // response delay
-  parameter  int unsigned HSK_DLY = TCB_PAR_BUS_DEF.HSK_DLY,
+  parameter  int unsigned HSK.DLY = TCB_PAR_BUS_DEF.HSK.DLY,
   // TCB widths
   parameter  int unsigned UNT = TCB_PAR_BUS_DEF.UNT,       // data unit   width
   parameter  int unsigned ADR = TCB_PAR_BUS_DEF.ADR,       // address bus width
@@ -36,7 +36,7 @@ module tcb_lib_demultiplexer_tb
   // TCB physical interface parameters
   localparam tcb_bus_t BUS = '{
     // protocol
-    HSK_DLY: HSK_DLY,
+    HSK.DLY: HSK.DLY,
     // signal bus widths
     UNT: UNT,
     ADR: ADR,

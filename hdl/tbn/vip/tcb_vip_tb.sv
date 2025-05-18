@@ -22,7 +22,7 @@ module tcb_vip_tb
   import tcb_vip_blocking_pkg::*;
 #(
   // response delay
-  parameter  int unsigned HSK_DLY = TCB_HSK_DEF,
+  parameter  int unsigned HSK.DLY = TCB_HSK_DEF,
   // TCB widths
   parameter  int unsigned BUS_ADR = 32,
   parameter  int unsigned BUS_DAT = 32
@@ -73,10 +73,10 @@ module tcb_vip_tb
   int unsigned tcb_cnt;
 
   // TCB interfaces
-  tcb_if #(HSK_DLY, tcb_bus_t, BUS, tcb_pck_t, PCK, tcb_req_t, tcb_rsp_t, VIP) tcb (.clk (clk), .rst (rst));
+  tcb_if #(HSK.DLY, tcb_bus_t, BUS, tcb_pck_t, PCK, tcb_req_t, tcb_rsp_t, VIP) tcb (.clk (clk), .rst (rst));
 
   // parameterized class specialization (non-blocking API)
-  typedef tcb_vip_transfer_c #(HSK_DLY, tcb_bus_t, BUS, tcb_pck_t, PCK, tcb_req_t, tcb_rsp_t, VIP) tcb_transfer_s;
+  typedef tcb_vip_transfer_c #(HSK.DLY, tcb_bus_t, BUS, tcb_pck_t, PCK, tcb_req_t, tcb_rsp_t, VIP) tcb_transfer_s;
 
   // TCB class objects
   tcb_transfer_s obj_man = new(tcb, "MAN");
