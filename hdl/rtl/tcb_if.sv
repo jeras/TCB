@@ -232,8 +232,8 @@ interface tcb_if
       // handshake transfer
       if (i==0) begin: dly_0
         // continuous assignment
-        assign trn_dly[i] = trn;
-        assign req_dly[i] = req;
+        assign trn_dly[0] = trn;
+        assign req_dly[0] = req;
         // response assigned by VIP
       end: dly_0
       else begin: dly_i
@@ -250,7 +250,7 @@ interface tcb_if
     if (VIP) begin: vip
       // continuous assignment
       if (HSK.DLY == 0) begin
-        assign rsp = trn ? rsp_dly[HSK.DLY] : '{default: 'x};
+        assign rsp = trn ? rsp_dly[HSK.DLY] : '{default: 'z};
       end else begin
         assign rsp =       rsp_dly[HSK.DLY];
       end

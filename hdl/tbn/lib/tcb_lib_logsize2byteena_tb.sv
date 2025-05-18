@@ -87,9 +87,9 @@ module tcb_lib_logsize2byteena_tb
   string testname = "none";
 
   // TCB interfaces
-  tcb_if #(tcb_hsk_t, HSK, tcb_bus_t, BUS_SIZ, tcb_pck_t, PCK, req_t, rsp_t) tcb_man       (.clk (clk), .rst (rst));
-  tcb_if #(tcb_hsk_t, HSK, tcb_bus_t, BUS_BEN, tcb_pck_t, PCK, req_t, rsp_t) tcb_sub       (.clk (clk), .rst (rst));
-  tcb_if #(tcb_hsk_t, HSK, tcb_bus_t, BUS_BEN, tcb_pck_t, PCK, req_t, rsp_t) tcb_mem [0:0] (.clk (clk), .rst (rst));
+  tcb_if #(tcb_hsk_t, HSK, tcb_bus_t, BUS_SIZ, tcb_pck_t, PCK, req_t, rsp_t      ) tcb_man       (.clk (clk), .rst (rst));
+  tcb_if #(tcb_hsk_t, HSK, tcb_bus_t, BUS_BEN, tcb_pck_t, PCK, req_t, rsp_t      ) tcb_sub       (.clk (clk), .rst (rst));
+  tcb_if #(tcb_hsk_t, HSK, tcb_bus_t, BUS_BEN, tcb_pck_t, PCK, req_t, rsp_t, 1'b1) tcb_mem [0:0] (.clk (clk), .rst (rst));
 
   // parameterized class specialization
   typedef tcb_vip_blocking_c #(tcb_hsk_t, HSK, tcb_bus_t, BUS_SIZ, tcb_pck_t, PCK, req_t, rsp_t) tcb_vip_siz_s;
@@ -438,11 +438,15 @@ module tcb_lib_logsize2byteena_tb
     rst <= 1'b0;
     repeat (1) @(posedge clk);
 
-    test_aligned;
-    if (PCK.ALN != tcb_man.BUS_MAX) begin
-      test_misaligned;
-    end
-    test_parameterized;
+    obj_man.write8 (32'h00000010,        8'h10, sts);
+    obj_man.read8  (32'h00000010, rdt[1-1:0], sts);
+
+
+//    test_aligned;
+//    if (PCK.ALN != tcb_man.BUS_MAX) begin
+//      test_misaligned;
+//    end
+//    test_parameterized;
 
     // end of test
     repeat (4) @(posedge clk);

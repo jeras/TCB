@@ -34,6 +34,16 @@ module tcb_vip_memory
 );
 
 ////////////////////////////////////////////////////////////////////////////////
+// parameter validation
+////////////////////////////////////////////////////////////////////////////////
+
+  generate
+  for (genvar i=0; i<SPN; i++) begin
+    initial assert (tcb[i].VIP) else $error("VIP parameter must be enabled to support read access.");
+  end
+  endgenerate
+
+////////////////////////////////////////////////////////////////////////////////
 // local signals
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -110,16 +120,9 @@ module tcb_vip_memory
     int unsigned adr;
     int unsigned siz;
 
-    // read/write data packed arrays
-    logic [BEN-1:0][8-1:0] wdt;
-    logic [BEN-1:0][8-1:0] rdt [0:DLY] = '{default: 'x};
-
     // request address and size
     assign adr =    int'(tcb[i].req.adr);
     assign siz = 2**int'(tcb[i].req.siz);
-
-    // map write data to a packed array
-    assign wdt = tcb[i].req.wdt;
 
     // write mask (which interfaces are allowed write access)
     // NOTE: `always_ff` provides better simulator performance than `always`,
@@ -135,11 +138,11 @@ module tcb_vip_memory
             case (tcb[i].BUS.MOD)
               TCB_MOD_LOG_SIZE: begin: log_size
                 // write only transfer size bytes
-                if (b < siz)  mem[(adr+b)%SIZ] <= wdt[b];
+                if (b < siz)  mem[(adr+b)%SIZ] <= tcb[i].req.wdt[b];
               end: log_size
               TCB_MOD_BYTE_ENA: begin: byte_ena
                 // write only enabled bytes
-                if (tcb[i].req.ben[(adr+b)%BEN])  mem[(adr+b)%SIZ] <= wdt[(adr+b)%BEN];
+                if (tcb[i].req.ben[(adr+b)%BEN])  mem[(adr+b)%SIZ] <= tcb[i].req.wdt[(adr+b)%BEN];
               end: byte_ena
             endcase
           end: bytes
@@ -159,52 +162,21 @@ module tcb_vip_memory
           case (tcb[i].BUS.MOD)
             TCB_MOD_LOG_SIZE: begin: log_size
               // read only transfer size bytes, the rest remains undefined
-              if (b < siz)  rdt[0][b] = mem[(adr+b)%SIZ];
-              else          rdt[0][b] = 'x;
+              if (b < siz)  tcb[i].rsp_dly[0].rdt[b] = mem[(adr+b)%SIZ];
+              else          tcb[i].rsp_dly[0].rdt[b] = 'x;
             end: log_size
             TCB_MOD_BYTE_ENA: begin: byte_ena
               // read only enabled bytes, the rest remains undefined
-              if (tcb[i].req.ben[(adr+b)%BEN])  rdt[0][(adr+b)%BEN] = mem[(adr+b)%SIZ];
-              else                              rdt[0][(adr+b)%BEN] = 'x;
+              if (tcb[i].req.ben[(adr+b)%BEN])  tcb[i].rsp_dly[0].rdt[(adr+b)%BEN] = mem[(adr+b)%SIZ];
+              else                              tcb[i].rsp_dly[0].rdt[(adr+b)%BEN] = 'x;
             end: byte_ena
           endcase
         end: bytes
       end: read
-      else begin
-        rdt[0] = 'x;
-      end
-    end else begin
-      rdt[0] = 'x;
+      // as a memory model, there is no immediate need for error responses, this feature might be added in the future
+      // TODO
+      tcb[i].rsp_dly[0].sts = '0; // '{err: 1'b0, default: '0};
     end
-
-    // TODO: rethink handling of read data bus when there was no access to a byte
-
-    // read data delay pipeline
-    for (genvar d=1; d<=DLY; d++) begin: delay
-      always @(posedge tcb[i].clk)
-      begin
-        case (tcb[i].BUS.MOD)
-          TCB_MOD_LOG_SIZE: begin: log_size
-            rdt[d] <= rdt[d-1];
-          end: log_size
-          TCB_MOD_BYTE_ENA: begin: byte_ena
-            for (int unsigned b=0; b<BEN; b++) begin: bytes
-              // TODO
-//              if (tcb[i].dly[d-1].ben[b]) begin
-                rdt[d][b] <= rdt[d-1][b];
-//              end
-            end: bytes
-          end: byte_ena
-        endcase
-      end
-    end: delay
-
-    // map read data from an unpacked array
-    assign tcb[i].rsp.rdt = rdt[DLY];
-
-    // as a memory model, there is no immediate need for error responses, this feature might be added in the future
-    // TODO
-    assign tcb[i].rsp.sts = 1'b0; // '{err: 1'b0, default: '0};
 
     // as a memory model, there is no immediate need for backpressure, this feature might be added in the future
     assign tcb[i].rdy = 1'b1;
