@@ -119,25 +119,12 @@ interface tcb_if
         end
       endcase
     end
-//    // endianness
-//    case (BUS.NDN)
-//    //BCB_NDN_DEFAULT:
-//          TCB_ORD_DESCENDING: begin
-//            initial assert ()
-//          end
-//          TCB_ORD_ASCENDING : begin
-//          end
-//        endcase
-//      TCB_NDN_LITTLE ,
-//      TCB_NDN_BIG    ,
-//      TCB_NDN_BI_NDN: begin
-//        // bi-endian signal presence
-//        initial assert ($bits(req.ndn) == 1) else
-//          $error("unexpected type(req.ndn) = ", $typename(req.ndn));
-//      end
-//    endcase
-
-// TODO: in BYTE_ENA mode, NDN must be bi-endian, but the signal is not driven
+    // endianness
+    if (BUS.NDN == TCB_NDN_BI_NDN) begin
+        // bi-endian signal presence
+        initial assert ($bits(req.ndn) == 1) else
+          $error("unexpected type(req.ndn) = ", $typename(req.ndn));
+    end
   endgenerate
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -145,7 +132,6 @@ interface tcb_if
 ////////////////////////////////////////////////////////////////////////////////
 
   // local parameters are calculated from the request
-  // TODO: request data might not be available in read only channel configuration
   localparam int unsigned BUS_BEN = BUS.DAT/8;
   localparam int unsigned BUS_MAX = $clog2(BUS_BEN);
   localparam int unsigned BUS_SIZ = $clog2(DEF_MAX+1);
