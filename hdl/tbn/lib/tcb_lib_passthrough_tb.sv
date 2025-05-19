@@ -22,71 +22,114 @@ module tcb_lib_passthrough_tb
 #();
 
 ////////////////////////////////////////////////////////////////////////////////
+// local parameters
+////////////////////////////////////////////////////////////////////////////////
+
+  localparam tcb_vip_t VIP = '{
+    DRV: 1'b1,
+    HLD: 1'b0
+  };
+
+////////////////////////////////////////////////////////////////////////////////
 // local signals
 ////////////////////////////////////////////////////////////////////////////////
 
-  // system signals
-  logic clk;  // clock
-  logic rst;  // reset
+  // system signals (initialized)
+  logic clk = 1'b1;  // clock
+  logic rst = 1'b1;  // reset
 
-  // TODO: the above code should be used instead
   // TCB interfaces
-  tcb_if tcb_man (.clk (clk), .rst (rst));
-  tcb_if tcb_sub (.clk (clk), .rst (rst));
+  tcb_if               tcb_man (.clk (clk), .rst (rst));
+  tcb_if #(.VIP (VIP)) tcb_sub (.clk (clk), .rst (rst));
 
   // parameterized class specialization (blocking API)
-  typedef tcb_vip_blocking_c tcb_bla_s;
+  typedef tcb_vip_blocking_c               tcb_man_s;
+  typedef tcb_vip_blocking_c #(.VIP (VIP)) tcb_sub_s;
 
   // TCB class objects
-  tcb_bla_s obj_man;
-  tcb_bla_s obj_sub;
+  tcb_man_s obj_man = new(tcb_man, "MAN");
+  tcb_sub_s obj_sub = new(tcb_sub, "SUB");
 
-////////////////////////////////////////////////////////////////////////////////
-// data checking
-////////////////////////////////////////////////////////////////////////////////
+  // transfer reference/monitor array
+  tcb_man_s::transfer_queue_t tst_man_mon;
+  tcb_sub_s::transfer_queue_t tst_sub_mon;
+  tcb_sub_s::transfer_queue_t tst_ref;
+  int unsigned                tst_len;
+
+  // empty array
+  logic [8-1:0] nul [];
 
   // response
-  logic [ 8-1:0] rdt8 ;  //  8-bit read data
-  logic [16-1:0] rdt16;  // 16-bit read data
-  logic [32-1:0] rdt32;  // 32-bit read data
-  tcb_rsp_sts_t  sts;    // status response
+  logic [tcb_sub.BUS_BEN-1:0][8-1:0] rdt;  // read data
+  tcb_rsp_sts_t                      sts;  // status response
 
 ////////////////////////////////////////////////////////////////////////////////
 // test sequence
 ////////////////////////////////////////////////////////////////////////////////
 
   // clock
-  initial          clk = 1'b1;
   always #(20ns/2) clk = ~clk;
 
   // test sequence
   initial
-  begin
-    // connect virtual interfaces
-    obj_man = new(tcb_man, "MAN");
-    obj_sub = new(tcb_sub, "SUB");
+  begin: test
     // reset sequence
-    rst = 1'b1;
     repeat (2) @(posedge clk);
-    rst = 1'b0;
+    rst <= 1'b0;
     repeat (1) @(posedge clk);
+
     fork
-      begin: req
+      // manager (blocking API)
+      begin: fork_man
         obj_man.write32(32'h01234567, 32'h76543210, sts);
-        obj_man.read32 (32'h89ABCDEF, rdt32       , sts);
-      end: req
-      begin: rsp
-//        obj_sub.rsp(32'hXXXXXXXX, '0);
-//        obj_sub.rsp(32'hFEDCBA98, '0);
-      end: rsp
+        obj_man.read32 (32'h89ABCDEF, rdt         , sts);
+      end: fork_man
+      // subordinate (monitor)
+      begin: fork_man_monitor
+        obj_man.transfer_monitor(tst_man_mon);
+      end: fork_man_monitor
+      begin: fork_sub
+        // subordinate transfer queue
+        sts = '0;
+        tst_ref.delete();
+        tst_len = tst_ref.size();
+        tst_len += {obj_sub.put_transaction(tst_ref, '{req: '{TCB_NATIVE, 32'h01234567, '{8'h10, 8'h32, 8'h54, 8'h76}}, rsp: '{nul, sts}})};
+        tst_len += {obj_sub.put_transaction(tst_ref, '{req: '{TCB_NATIVE, 32'h89ABCDEF, nul}, rsp: '{'{8'h98, 8'hBA, 8'hDC, 8'hFE}, sts}})};
+        obj_man.transfer_sequencer(tst_ref);
+      end: fork_sub
+      // subordinate (monitor)
+      begin: fork_sub_monitor
+        obj_sub.transfer_monitor(tst_sub_mon);
+      end: fork_sub_monitor
     join
-    repeat (8) @(posedge clk);
+
+    foreach(tst_ref[i]) begin
+      assert (tst_man_mon[i].req ==? tst_ref[i].req) else $error("\ntst_man_mon[%0d].req = %p !=? \ntst_ref[%0d].req = %p", i, tst_man_mon[i].req, i, tst_ref[i].req);
+      assert (tst_man_mon[i].rsp ==? tst_ref[i].rsp) else $error("\ntst_man_mon[%0d].rsp = %p !=? \ntst_ref[%0d].rsp = %p", i, tst_man_mon[i].rsp, i, tst_ref[i].rsp);
+      assert (tst_sub_mon[i].req ==? tst_ref[i].req) else $error("\ntst_sub_mon[%0d].req = %p !=? \ntst_ref[%0d].req = %p", i, tst_sub_mon[i].req, i, tst_ref[i].req);
+      assert (tst_sub_mon[i].rsp ==? tst_ref[i].rsp) else $error("\ntst_sub_mon[%0d].rsp = %p !=? \ntst_ref[%0d].rsp = %p", i, tst_sub_mon[i].rsp, i, tst_ref[i].rsp);
+    end
+
+    // printout transfer queue for debugging purposes
+    foreach (tst_ref[i]) begin
+      $display("DEBUG: tst_ref[%0d] = %p", i, tst_ref[i]);
+    end
+
+    repeat (4) @(posedge clk);
     $finish();
-  end
+  end: test
 
 ////////////////////////////////////////////////////////////////////////////////
 // VIP instances
 ////////////////////////////////////////////////////////////////////////////////
+
+  tcb_vip_protocol_checker chk_man (
+    .tcb (tcb_man)
+  );
+
+  tcb_vip_protocol_checker chk_sub (
+    .tcb (tcb_sub)
+  );
 
 ////////////////////////////////////////////////////////////////////////////////
 // DUT instance
@@ -103,7 +146,11 @@ module tcb_lib_passthrough_tb
 
   initial
   begin
+`ifdef VERILATOR
     $dumpfile("test.fst");
+`else
+    $dumpfile("test.vcd");
+`endif
     $dumpvars;
   end
 
