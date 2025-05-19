@@ -44,7 +44,8 @@ package tcb_vip_blocking_pkg;
     // VIP data types
     parameter  type adr_t = int unsigned,  // integer data types (byte/shortint/int/longint)
     // VIP (not to be used in RTL)
-    parameter  bit  VIP = 0, // VIP end node
+    parameter  type vip_t = tcb_vip_t,   // VIP parameter type
+    parameter  vip_t VIP = TCB_VIP_DEF,  // VIP parameter
     // debugging options
     parameter  bit  DEBUG = 1'b0
   ) extends tcb_vip_transaction_c #(
@@ -56,6 +57,7 @@ package tcb_vip_blocking_pkg;
     .PCK     (PCK),
     .req_t   (req_t),
     .rsp_t   (rsp_t),
+    .vip_t   (vip_t),
     .VIP     (VIP),
     .DEBUG   (DEBUG)
   );

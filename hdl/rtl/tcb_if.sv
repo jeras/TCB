@@ -29,10 +29,11 @@ interface tcb_if
   parameter  type pck_t = tcb_pck_t,   // packing parameter type
   parameter  pck_t PCK = TCB_PCK_DEF,  // packing parameter
   // request/response structure types
-  parameter  type req_t = tcb_req_t,  // request
-  parameter  type rsp_t = tcb_rsp_t,  // response
+  parameter  type req_t = tcb_req_t,   // request
+  parameter  type rsp_t = tcb_rsp_t,   // response
   // VIP (not to be used in RTL)
-  parameter  bit  VIP = 1'b0 // VIP end node
+  parameter  type vip_t = tcb_vip_t,   // VIP parameter type
+  parameter  vip_t VIP = TCB_VIP_DEF   // VIP parameter
 )(
   // system signals
   input  logic clk,  // clock
@@ -247,7 +248,8 @@ interface tcb_if
       end: dly_i
     end: dly
 
-    if (VIP) begin: vip
+    // TODO implement hold
+    if (VIP.DRV) begin: vip
       // continuous assignment
       if (HSK.DLY == 0) begin
         assign rsp = trn ? rsp_dly[HSK.DLY] : '{default: 'z};

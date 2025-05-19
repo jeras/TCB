@@ -42,7 +42,8 @@ package tcb_vip_nonblocking_pkg;
     parameter  type req_t = tcb_req_t,  // request
     parameter  type rsp_t = tcb_rsp_t,  // response
     // VIP (not to be used in RTL)
-    parameter  bit  VIP = 0, // VIP end node
+    parameter  type vip_t = tcb_vip_t,   // VIP parameter type
+    parameter  vip_t VIP = TCB_VIP_DEF,  // VIP parameter
     // debugging options
     parameter  bit  DEBUG = 1'b0,
     // VIP data types
@@ -56,6 +57,7 @@ package tcb_vip_nonblocking_pkg;
     .PCK     (PCK),
     .req_t   (req_t),
     .rsp_t   (rsp_t),
+    .vip_t   (vip_t),
     .VIP     (VIP),
     .DEBUG   (DEBUG)
   );

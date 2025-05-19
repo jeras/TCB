@@ -144,6 +144,28 @@ package tcb_pkg;
   } tcb_endian_t;
 
 ////////////////////////////////////////////////////////////////////////////////
+// VIP layer (defines VIP functionality)
+////////////////////////////////////////////////////////////////////////////////
+
+  // VIP layer parameter structure
+  // TODO: the structure is packed to workaround a Verilator bug
+  `ifdef VERILATOR
+  typedef struct packed {
+  `else
+  typedef struct {
+  `endif
+    bit DRV;  // drive response from response delay line
+    bit HLD;  // hold the response till the next access,
+              // response data further till the next read access
+  } tcb_vip_t;
+
+  // VIP default value
+  localparam tcb_vip_t TCB_VIP_DEF = '{
+    DRV: 1'b0,
+    HLD: 1'bx
+  };
+
+////////////////////////////////////////////////////////////////////////////////
 // default structures containing all optional signals
 ////////////////////////////////////////////////////////////////////////////////
 

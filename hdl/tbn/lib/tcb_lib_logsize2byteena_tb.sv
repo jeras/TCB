@@ -69,6 +69,11 @@ module tcb_lib_logsize2byteena_tb
     BND: 0
   };
 
+  localparam tcb_vip_t VIP = '{
+    DRV: 1'b1,
+    HLD: 1'b0
+  };
+
 //  typedef tcb_c #(HSK, BUS_SIZ, PCK)::req_t req_t;
 //  typedef tcb_c #(HSK, BUS_SIZ, PCK)::rsp_t rsp_t;
 
@@ -87,9 +92,9 @@ module tcb_lib_logsize2byteena_tb
   string testname = "none";
 
   // TCB interfaces
-  tcb_if #(tcb_hsk_t, HSK, tcb_bus_t, BUS_SIZ, tcb_pck_t, PCK, req_t, rsp_t      ) tcb_man       (.clk (clk), .rst (rst));
-  tcb_if #(tcb_hsk_t, HSK, tcb_bus_t, BUS_BEN, tcb_pck_t, PCK, req_t, rsp_t      ) tcb_sub       (.clk (clk), .rst (rst));
-  tcb_if #(tcb_hsk_t, HSK, tcb_bus_t, BUS_BEN, tcb_pck_t, PCK, req_t, rsp_t, 1'b1) tcb_mem [0:0] (.clk (clk), .rst (rst));
+  tcb_if #(tcb_hsk_t, HSK, tcb_bus_t, BUS_SIZ, tcb_pck_t, PCK, req_t, rsp_t                ) tcb_man       (.clk (clk), .rst (rst));
+  tcb_if #(tcb_hsk_t, HSK, tcb_bus_t, BUS_BEN, tcb_pck_t, PCK, req_t, rsp_t                ) tcb_sub       (.clk (clk), .rst (rst));
+  tcb_if #(tcb_hsk_t, HSK, tcb_bus_t, BUS_BEN, tcb_pck_t, PCK, req_t, rsp_t, tcb_vip_t, VIP) tcb_mem [0:0] (.clk (clk), .rst (rst));
 
   // parameterized class specialization
   typedef tcb_vip_blocking_c #(tcb_hsk_t, HSK, tcb_bus_t, BUS_SIZ, tcb_pck_t, PCK, req_t, rsp_t) tcb_vip_siz_s;
