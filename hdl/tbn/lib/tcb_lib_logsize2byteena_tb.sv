@@ -32,6 +32,10 @@ module tcb_lib_logsize2byteena_tb
 //  parameter  tcb_bus_order_t   PCK_ORD = TCB_BUS_DEF.ORD   // manager     byte order
 );
 
+////////////////////////////////////////////////////////////////////////////////
+// local parameters
+////////////////////////////////////////////////////////////////////////////////
+
   // handshake parameter
   localparam tcb_hsk_t HSK = TCB_HSK_DEF;
 
@@ -96,7 +100,7 @@ module tcb_lib_logsize2byteena_tb
   tcb_if #(tcb_hsk_t, HSK, tcb_bus_t, BUS_BEN, tcb_pck_t, PCK, req_t, rsp_t                ) tcb_sub       (.clk (clk), .rst (rst));
   tcb_if #(tcb_hsk_t, HSK, tcb_bus_t, BUS_BEN, tcb_pck_t, PCK, req_t, rsp_t, tcb_vip_t, VIP) tcb_mem [0:0] (.clk (clk), .rst (rst));
 
-  // parameterized class specialization
+  // parameterized class specialization (blocking API)
   typedef tcb_vip_blocking_c #(tcb_hsk_t, HSK, tcb_bus_t, BUS_SIZ, tcb_pck_t, PCK, req_t, rsp_t) tcb_vip_siz_s;
   typedef tcb_vip_blocking_c #(tcb_hsk_t, HSK, tcb_bus_t, BUS_BEN, tcb_pck_t, PCK, req_t, rsp_t) tcb_vip_ben_s;
 
@@ -443,15 +447,11 @@ module tcb_lib_logsize2byteena_tb
     rst <= 1'b0;
     repeat (1) @(posedge clk);
 
-    obj_man.write8 (32'h00000010,        8'h10, sts);
-    obj_man.read8  (32'h00000010, rdt[1-1:0], sts);
-
-
-//    test_aligned;
-//    if (PCK.ALN != tcb_man.BUS_MAX) begin
-//      test_misaligned;
-//    end
-//    test_parameterized;
+    test_aligned;
+    if (PCK.ALN != tcb_man.BUS_MAX) begin
+      test_misaligned;
+    end
+    test_parameterized;
 
     // end of test
     repeat (4) @(posedge clk);

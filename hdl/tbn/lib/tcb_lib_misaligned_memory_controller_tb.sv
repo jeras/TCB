@@ -76,7 +76,7 @@ module tcb_lib_misaligned_memory_controller_tb
   // TCB interfaces
   tcb_if #(tcb_hsk_t, HSK, tcb_bus_t, BUS, tcb_pck_t, PCK, req_t, rsp_t) tcb (.clk (clk), .rst (rst));
 
-  // parameterized class specialization
+  // parameterized class specialization (blocking API)
   typedef tcb_vip_blocking_c #(tcb_hsk_t, HSK, tcb_bus_t, BUS, tcb_pck_t, PCK, req_t, rsp_t) tcb_vip_s;
 
   // TCB class objects
@@ -308,7 +308,11 @@ module tcb_lib_misaligned_memory_controller_tb
 
   initial
   begin
+`ifdef VERILATOR
     $dumpfile("test.fst");
+`else
+    $dumpfile("test.vcd");
+`endif
     $dumpvars;
   end
 
