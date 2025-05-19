@@ -156,8 +156,10 @@ interface tcb_if
   // NOTE: If the bus endianness is hardcoded, the transaction endianness must:
   //       - match the hardcoded bus endianness OR,
   //       - be undefined (x/z).
+  // NOTE: If the requested endianness $isunknown, the transaction endianness
+  //       will be set to the native bus endianness.
   function automatic logic endianness (
-    input logic ndn
+    input logic ndn  // requested endianness
   );
     case (BUS.NDN)
       BCB_NDN_DEFAULT: begin
@@ -165,7 +167,11 @@ interface tcb_if
         assert (endianness ==? ndn) else $error("Transaction endianness does not match BUS.NDN");
       end
       TCB_NDN_BI_NDN :  begin
-        endianness = ndn;
+        if ($isunknown(ndn)) begin
+          endianness = BUS.ORD;
+        end else begin
+          endianness = ndn;
+        end
       end
       TCB_NDN_LITTLE ,
       TCB_NDN_BIG    :  begin

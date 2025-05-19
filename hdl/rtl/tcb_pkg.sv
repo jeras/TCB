@@ -140,7 +140,8 @@ package tcb_pkg;
   // endianness packing (used for runtime signal values)
   typedef enum logic {
     TCB_LITTLE = 1'b0,  // little-endian
-    TCB_BIG    = 1'b1   // big-endian
+    TCB_BIG    = 1'b1,  // big-endian
+    TCB_NATIVE = 1'bx   // bus native endianness
   } tcb_endian_t;
 
 ////////////////////////////////////////////////////////////////////////////////
