@@ -98,8 +98,8 @@ package tcb_vip_blocking_pkg;
       // request
       if (wen)  transaction = '{req: '{ndn: ndn, adr: adr, wdt: dat}, rsp: '{rdt: nul, sts: sts}};
       else      transaction = '{req: '{ndn: ndn, adr: adr, wdt: nul}, rsp: '{rdt: dat, sts: sts}};
-      len = set_transaction(transfer_queue, transaction, id);
-//      $display("DEBUG: set_transaction transfer_queue.size() = %0d", transfer_queue.size());
+      len = put_transaction(transfer_queue, transaction, id);
+//      $display("DEBUG: put_transaction transfer_queue.size() = %0d", transfer_queue.size());
       // sequence transfer queue
 //      $display("DEBUG: swq-: transfer_queue = %p", transfer_queue);
       transfer_sequencer(transfer_queue);

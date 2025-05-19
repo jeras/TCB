@@ -218,8 +218,8 @@ module tcb_lib_misaligned_memory_controller_tb
         transaction_r = '{req: '{1'b0, adr+off, nul}, rsp: '{dat, sts}};
         // manager transfer queue
         len  = 0;
-        len += obj.set_transaction(transfer, transaction_w, id);
-        len += obj.set_transaction(transfer, transaction_r, id);
+        len += obj.put_transaction(transfer, transaction_w, id);
+        len += obj.put_transaction(transfer, transaction_r, id);
 
         // drive manager bus
         begin: parameterized_test_man

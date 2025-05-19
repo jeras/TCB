@@ -108,7 +108,7 @@ package tcb_vip_transaction_pkg;
   //////////////////////////////////////////////////////////////////////////////
 
     // read/write request transaction of power of 2 size
-    function automatic int unsigned set_transaction (
+    function automatic int unsigned put_transaction (
       ref   transfer_queue_t transfer_queue,
       input transaction_t    transaction,
       input string           id = ""
@@ -258,7 +258,7 @@ package tcb_vip_transaction_pkg;
 //      foreach (transfer_queue[i])
 //      $display("DEBUG: inside: transfer_queue[%0d] = %p", i, transfer_queue[i]);
       return(cnt);
-    endfunction: set_transaction
+    endfunction: put_transaction
 
   //////////////////////////////////////////////////////////////////////////////
   // get transaction from transfer array
