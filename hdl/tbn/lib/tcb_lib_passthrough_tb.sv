@@ -95,13 +95,16 @@ module tcb_lib_passthrough_tb
         tst_len = tst_ref.size();
         tst_len += {obj_sub.put_transaction(tst_ref, '{req: '{TCB_NATIVE, 32'h01234567, '{8'h10, 8'h32, 8'h54, 8'h76}}, rsp: '{nul, sts}})};
         tst_len += {obj_sub.put_transaction(tst_ref, '{req: '{TCB_NATIVE, 32'h89ABCDEF, nul}, rsp: '{'{8'h98, 8'hBA, 8'hDC, 8'hFE}, sts}})};
-        obj_man.transfer_sequencer(tst_ref);
+        obj_sub.transfer_sequencer(tst_ref);
       end: fork_sub
       // subordinate (monitor)
       begin: fork_sub_monitor
         obj_sub.transfer_monitor(tst_sub_mon);
       end: fork_sub_monitor
-    join
+    join_any
+    // disable transfer monitor
+    @(posedge clk);
+    disable fork;
 
     foreach(tst_ref[i]) begin
       assert (tst_man_mon[i].req ==? tst_ref[i].req) else $error("\ntst_man_mon[%0d].req = %p !=? \ntst_ref[%0d].req = %p", i, tst_man_mon[i].req, i, tst_ref[i].req);
