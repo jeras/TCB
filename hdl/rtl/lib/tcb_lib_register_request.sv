@@ -16,9 +16,7 @@
 // limitations under the License.
 ////////////////////////////////////////////////////////////////////////////////
 
-module tcb_lib_register_request #(
-  int unsigned GRN = 1  // bus hold granularity (byte granularity by default)
-)(
+module tcb_lib_register_request (
   tcb_if.sub sub,  // TCB subordinate port (manager     device connects here)
   tcb_if.man man   // TCB manager     port (subordinate device connects here)
 );
@@ -29,9 +27,19 @@ module tcb_lib_register_request #(
 
 `ifdef ALTERA_RESERVED_QIS
 `else
-  // camparing subordinate and manager interface parameters
+  // comparing subordinate and manager interface parameters
   generate
-    // TODO
+  initial
+  begin
+    // parameters
+    assert (man.HSK.DLY+1 == sub.HSK.DLY) else $error("Parameter (man.HSK.DLY+1 = %p+1) != (sub.HSK.DLY = %p)", man.HSK.DLY, sub.HSK.DLY);
+    assert (man.BUS       == sub.BUS    ) else $error("Parameter (man.BUS       = %p  ) != (sub.BUS     = %p)", man.BUS    , sub.BUS    );
+    assert (man.PCK       == sub.PCK    ) else $error("Parameter (man.PCK       = %p  ) != (sub.PCK     = %p)", man.PCK    , sub.PCK    );
+    // request/response types
+    // TODO: Questa is complaining here
+//    assert (type(man.req_t) == type(sub.req_t)) else $error("Parameter (man.req_t = %s) != (sub.req_t = %s)", $typename(man.req_t), $typename(sub.req_t));
+//    assert (type(man.rsp_t) == type(sub.rsp_t)) else $error("Parameter (man.rsp_t = %s) != (sub.rsp_t = %s)", $typename(man.rsp_t), $typename(sub.rsp_t));
+  end
   endgenerate
 `endif
 
@@ -49,15 +57,11 @@ module tcb_lib_register_request #(
     end
   end
 
+  // request
   always_ff @(posedge sub.clk)
   begin
     man.req <= sub.req;
-//    // data granularity
-//    for (int unsigned i=0; i<sub.BEN; i+=sub.UNT*GRN) begin
-//      if (sub.wen & sub.ben[i]) begin
-//        man.wdt[i+:sub.UNT*GRN] <= sub.wdt[i+:sub.UNT*GRN];
-//      end
-//    end
+    // TODO: implement clock enable for write data
   end
 
   // response

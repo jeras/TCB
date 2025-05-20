@@ -5,6 +5,9 @@ import pprint
 import re
 
 tests = [
+  "tcb_lib_passthrough_tb",
+  "tcb_lib_register_request_tb",
+#  "tcb_lib_register_response_tb",
   "tcb_lib_logsize2byteena_tb",
   "tcb_lib_misaligned_memory_controller_tb"
 ]

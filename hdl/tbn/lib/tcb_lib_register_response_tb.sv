@@ -23,74 +23,132 @@ module tcb_lib_register_response_tb
   // TCB widths
   int unsigned ADR = 32,       // address bus width
   int unsigned DAT = 32,       // data    bus width
-  int unsigned UNT =       8,  // data unit   width
-  int unsigned BEN = DAT/UNT,  // byte enable width
   // response delay
-  int unsigned HSK.DLY = 1,
-  // bus hold granularity (byte granularity by default)
-  int unsigned GRN = 1
+  int unsigned DLY = 1
 );
 
-  localparam DLY_MAN = HSK.DLY+1;
-  localparam DLY_SUB = HSK.DLY;
+////////////////////////////////////////////////////////////////////////////////
+// local parameters
+////////////////////////////////////////////////////////////////////////////////
 
-  // system signals
-  logic clk;  // clock
-  logic rst;  // reset
+  localparam tcb_hsk_t HSK_MAN = '{DLY: DLY+1};
+  localparam tcb_hsk_t HSK_SUB = '{DLY: DLY};
 
-  // response
-  logic [DAT-1:0] rdt;  // read data
-  logic           err;  // error response
+  // VIP parameters
+  localparam tcb_vip_t VIP = '{
+    DRV: 1'b1,
+    HLD: 1'b0
+  };
 
 ////////////////////////////////////////////////////////////////////////////////
 // local signals
 ////////////////////////////////////////////////////////////////////////////////
 
-  tcb_if #(.ADR (ADR), .DAT (DAT), .HSK.DLY (DLY_MAN)) tcb_man       (.clk (clk), .rst (rst));
-  tcb_if #(.ADR (ADR), .DAT (DAT), .HSK.DLY (DLY_SUB)) tcb_sub       (.clk (clk), .rst (rst));
-  tcb_if #(.ADR (ADR), .DAT (DAT), .HSK.DLY (DLY_SUB)) tcb_mem [0:0] (.clk (clk), .rst (rst));
+  // system signals (initialized)
+  logic clk = 1'b1;  // clock
+  logic rst = 1'b1;  // reset
+
+  // TCB interfaces
+  tcb_if #(.HSK (HSK_MAN)            ) tcb_man (.clk (clk), .rst (rst));
+  tcb_if #(.HSK (HSK_SUB), .VIP (VIP)) tcb_sub (.clk (clk), .rst (rst));
+
+  // parameterized class specialization (blocking API)
+  typedef tcb_vip_blocking_c #(.HSK (HSK_MAN)            ) tcb_man_s;
+  typedef tcb_vip_blocking_c #(.HSK (HSK_SUB), .VIP (VIP)) tcb_sub_s;
+
+  // TCB class objects
+  tcb_man_s obj_man = new(tcb_man, "MAN");
+  tcb_sub_s obj_sub = new(tcb_sub, "SUB");
+
+  // transfer reference/monitor array
+  tcb_man_s::transfer_queue_t tst_man_mon;
+  tcb_sub_s::transfer_queue_t tst_sub_mon;
+  tcb_sub_s::transfer_queue_t tst_ref;
+  int unsigned                tst_len;
+
+  // empty array
+  logic [8-1:0] nul [];
+
+  // response
+  logic [tcb_sub.BUS_BEN-1:0][8-1:0] rdt;  // read data
+  tcb_rsp_sts_t                      sts;  // status response
 
 ////////////////////////////////////////////////////////////////////////////////
 // test sequence
 ////////////////////////////////////////////////////////////////////////////////
 
   // clock
-  initial          clk = 1'b1;
   always #(20ns/2) clk = ~clk;
 
   // test sequence
   initial
-  begin
+  begin: test
     // reset sequence
-    rst = 1'b1;
     repeat (2) @(posedge clk);
-    rst = 1'b0;
+    rst <= 1'b0;
     repeat (1) @(posedge clk);
-    man.write(32'h00000010, 64'h01234567, err);
-    man.read (32'h00000010, rdt         , err);
+
+    fork
+      // manager (blocking API)
+      begin: fork_man
+        obj_man.write32(32'h01234567, 32'h76543210, sts);
+        obj_man.read32 (32'h89ABCDEF, rdt         , sts);
+      end: fork_man
+      // subordinate (monitor)
+      begin: fork_man_monitor
+        obj_man.transfer_monitor(tst_man_mon);
+      end: fork_man_monitor
+      begin: fork_sub
+        // subordinate transfer queue
+        sts = '0;
+        tst_ref.delete();
+        tst_len = tst_ref.size();
+        tst_len += {obj_sub.put_transaction(tst_ref, '{req: '{TCB_NATIVE, 32'h01234567, '{8'h10, 8'h32, 8'h54, 8'h76}}, rsp: '{nul, sts}})};
+        tst_len += {obj_sub.put_transaction(tst_ref, '{req: '{TCB_NATIVE, 32'h89ABCDEF, nul}, rsp: '{'{8'h98, 8'hBA, 8'hDC, 8'hFE}, sts}})};
+        obj_sub.transfer_sequencer(tst_ref);
+      end: fork_sub
+      // subordinate (monitor)
+      begin: fork_sub_monitor
+        obj_sub.transfer_monitor(tst_sub_mon);
+      end: fork_sub_monitor
+    join_any
+    // disable transfer monitor
+    @(posedge clk);
+    disable fork;
+
+    foreach(tst_ref[i]) begin
+      assert (tst_man_mon[i].req ==? tst_ref[i].req) else $error("\ntst_man_mon[%0d].req = %p !=? \ntst_ref[%0d].req = %p", i, tst_man_mon[i].req, i, tst_ref[i].req);
+      assert (tst_man_mon[i].rsp ==? tst_ref[i].rsp) else $error("\ntst_man_mon[%0d].rsp = %p !=? \ntst_ref[%0d].rsp = %p", i, tst_man_mon[i].rsp, i, tst_ref[i].rsp);
+      assert (tst_sub_mon[i].req ==? tst_ref[i].req) else $error("\ntst_sub_mon[%0d].req = %p !=? \ntst_ref[%0d].req = %p", i, tst_sub_mon[i].req, i, tst_ref[i].req);
+      assert (tst_sub_mon[i].rsp ==? tst_ref[i].rsp) else $error("\ntst_sub_mon[%0d].rsp = %p !=? \ntst_ref[%0d].rsp = %p", i, tst_sub_mon[i].rsp, i, tst_ref[i].rsp);
+    end
+
+    // printout transfer queue for debugging purposes
+    foreach (tst_ref[i]) begin
+      $display("DEBUG: tst_ref[%0d] = %p", i, tst_ref[i]);
+    end
+
     repeat (4) @(posedge clk);
     $finish();
-  end
+  end: test
 
 ////////////////////////////////////////////////////////////////////////////////
 // VIP instances
 ////////////////////////////////////////////////////////////////////////////////
 
-  tcb_vip_dev    #("MAN") man     (.tcb (tcb_man));  // manager
-  tcb_vip_dev    #("MON") mon_man (.tcb (tcb_man));  // manager monitor
-  tcb_vip_dev    #("MON") mon_sub (.tcb (tcb_sub));  // subordinate monitor
-  tcb_vip_memory          mem     (.tcb (tcb_mem));  // subordinate
+  tcb_vip_protocol_checker chk_man (
+    .tcb (tcb_man)
+  );
 
-  // connect interfaces to interface array
-  tcb_lib_passthrough pas [0:0] (.sub (tcb_sub), .man (tcb_mem));
+  tcb_vip_protocol_checker chk_sub (
+    .tcb (tcb_sub)
+  );
 
 ////////////////////////////////////////////////////////////////////////////////
 // DUT instance
 ////////////////////////////////////////////////////////////////////////////////
 
-  tcb_lib_register_response #(
-    .GRN  (GRN)
-  ) dut (
+  tcb_lib_register_response dut (
     .sub  (tcb_man),
     .man  (tcb_sub)
   );
@@ -101,7 +159,11 @@ module tcb_lib_register_response_tb
 
   initial
   begin
+`ifdef VERILATOR
     $dumpfile("test.fst");
+`else
+    $dumpfile("test.vcd");
+`endif
     $dumpvars;
   end
 
