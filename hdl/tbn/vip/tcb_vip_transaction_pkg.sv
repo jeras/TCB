@@ -222,7 +222,7 @@ package tcb_vip_transaction_pkg;
 
         // last byte in current transfer or entire transaction
         if (edg || (i == size-1)) begin
-          // request signals
+          // write/read enable
           tmp.req.frm = (i == size-1) ? 1'b0 : 1'b1;
           if (BUS.CHN == TCB_CHN_FULL_DUPLEX) begin
             tmp.req.wen = wen;
@@ -231,10 +231,17 @@ package tcb_vip_transaction_pkg;
           if (BUS.CHN == TCB_CHN_HALF_DUPLEX) begin
             tmp.req.wen = wen;
           end
-          if (BUS.NDN == TCB_NDN_BI_NDN) begin
-            tmp.req.ndn = ndn;
+          // prefetch TODO
+          if (BUS.PRF == TCB_PRF_ENABLED) begin
+             tmp.req.rpt = 1'b0;
+             tmp.req.inc = 1'b0;
           end
+          // address
           tmp.req.adr = transaction.req.adr + cnt*BUS_BEN;
+          if (BUS.NXT == TCB_NXT_ENABLED) begin
+             tmp.req.nxt = tmp.req.adr + BUS_BEN;
+          end
+          // size
           case (BUS.MOD)
             TCB_MOD_LOG_SIZE: begin
               tmp.req.siz = (size < BUS_BEN) ? $clog2(size) : BUS_MAX;
@@ -244,6 +251,10 @@ package tcb_vip_transaction_pkg;
               tmp.req.siz = 'x;
             end
           endcase
+          // endianness
+          if (BUS.NDN == TCB_NDN_BI_NDN) begin
+            tmp.req.ndn = ndn;
+          end
           // response
           tmp.rsp.sts = transaction.rsp.sts;
           // ID
