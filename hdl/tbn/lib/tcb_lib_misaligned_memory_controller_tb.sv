@@ -41,6 +41,7 @@ module tcb_lib_misaligned_memory_controller_tb
     DAT: TCB_BUS_DEF.DAT,
     FRM: TCB_BUS_DEF.FRM,
     CHN: TCB_CHN_HALF_DUPLEX,
+    AMO: TCB_AMO_DISABLED,
     PRF: TCB_PRF_DISABLED,
     NXT: TCB_NXT_DISABLED,
     MOD: TCB_MOD_BYTE_ENA,

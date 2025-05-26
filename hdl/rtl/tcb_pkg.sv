@@ -50,6 +50,12 @@ package tcb_pkg;
     TCB_CHN_READ_ONLY   = 2'b10   // read  only channel (wen/ren are both ignored)
   } tcb_bus_channel_t;
 
+  // atomic configuration
+  typedef enum bit {
+    TCB_AMO_DISABLED = 1'b0,
+    TCB_AMO_ENABLED  = 1'b1
+  } tcb_bus_atomic_t;
+
   // prefetch configuration
   typedef enum bit {
     TCB_PRF_DISABLED = 1'b0,  //
@@ -93,6 +99,7 @@ package tcb_pkg;
     int unsigned       DAT;  // data width
     int unsigned       FRM;  // framing maximum length (if 0 framing is disabled)
     tcb_bus_channel_t  CHN;  // channel configuration
+    tcb_bus_atomic_t   AMO;  // atomic configuration
     tcb_bus_prefetch_t PRF;  // prefetch configuration
     tcb_bus_next_t     NXT;  // next address configuration
     tcb_bus_mode_t     MOD;  // data sizing mode
@@ -106,6 +113,7 @@ package tcb_pkg;
     DAT: 32,
     FRM: 15, // frame size of up to FRM+1=16 transfers
     CHN: TCB_CHN_HALF_DUPLEX,
+    AMO: TCB_AMO_ENABLED,
     PRF: TCB_PRF_ENABLED,
     NXT: TCB_NXT_ENABLED,
     MOD: TCB_MOD_BYTE_ENA,
@@ -137,12 +145,37 @@ package tcb_pkg;
     BND: 0    // no boundary
   };
 
-  // endianness packing (used for runtime signal values)
-  typedef enum logic {
-    TCB_LITTLE = 1'b0,  // little-endian
-    TCB_BIG    = 1'b1,  // big-endian
-    TCB_NATIVE = 1'bx   // bus native endianness
-  } tcb_endian_t;
+////////////////////////////////////////////////////////////////////////////////
+// PMA layer (physical memory attributes)
+// TODO: none of the PMA are used yet
+////////////////////////////////////////////////////////////////////////////////
+
+  // AMO PMA
+  typedef enum logic [2-1:0] {
+  //AMO class               // supported operations
+    AMONone       = 2'b00,  // none
+    AMOSwap       = 2'b01,  // amoswap
+    AMOLogical    = 2'b10,  // amoswap + amoand/amoor/amoxor
+    AMOArithmetic = 2'b11   // amoswap + amoand/amoor/amoxor + amoadd/amomin/amomax/amominu/amomaxu
+  } tcb_pma_amo_t;
+
+  // reservability PMA
+  typedef enum logic [2-1:0] {
+    RsrvNone        = 2'b00,
+    RsrvNonEventual = 2'b01,
+    RsrvEventual    = 2'b10
+  } tcb_pma_rsrv_t;
+
+  // PMA parameter structure
+  `ifdef VERILATOR
+  typedef struct packed {
+  `else
+  typedef struct {
+  `endif
+    tcb_pma_amo_t  AMO;   // AMO PMA
+    tcb_pma_rsrv_t RSRV;  // reservability PMA
+    int unsigned   MAG;   // Misaligned Atomicity Granule PMA (logarithmic scale)
+  } tcb_pma_t;
 
 ////////////////////////////////////////////////////////////////////////////////
 // VIP layer (defines VIP functionality)
@@ -169,6 +202,28 @@ package tcb_pkg;
 ////////////////////////////////////////////////////////////////////////////////
 // default structures containing all optional signals
 ////////////////////////////////////////////////////////////////////////////////
+
+  // atomic encoding
+  typedef enum logic [5-1:0] {
+    LR      = 5'b00010,
+    SC      = 5'b00011,
+    AMOSWAP = 5'b00001,
+    AMOADD  = 5'b00000,
+    AMOXOR  = 5'b00100,
+    AMOAND  = 5'b01100,
+    AMOOR   = 5'b01000,
+    AMOMIN  = 5'b10000,
+    AMOMAX  = 5'b10100,
+    AMOMINU = 5'b11000,
+    AMOMAXU = 5'b11100
+  } tcb_amo_t;
+
+  // endianness packing (used for runtime signal values)
+  typedef enum logic {
+    TCB_LITTLE = 1'b0,  // little-endian
+    TCB_BIG    = 1'b1,  // big-endian
+    TCB_NATIVE = 1'bx   // bus native endianness
+  } tcb_endian_t;
 
   // TODO: rethink the response status
   // status
@@ -205,6 +260,8 @@ package tcb_pkg;
       // channel
       logic               wen;  // write enable
       logic               ren;  // read enable
+      // atomic
+      logic       [5-1:0] amo;  // atomic instruction code (RISC-V ISA)
       // prefetch
       logic               rpt;  // repeated address
       logic               inc;  // incremented address
@@ -254,6 +311,8 @@ package tcb_pkg;
     // channel
     logic                      wen;  // write enable
     logic                      ren;  // read enable
+    // atomic
+    logic       [5-1:0]        amo;  // atomic instruction code (RISC-V ISA)
     // prefetch
     logic                      rpt;  // repeated address
     logic                      inc;  // incremented address
@@ -287,6 +346,6 @@ package tcb_pkg;
     TCB_DBLE = 3,  //  64-bit double-word
     TCB_QUAD = 4,  // 128-bit quad-word
     TCB_OCTA = 8   // 256-bit octa-word
-  } tcb_size_t;
+  } tcb_siz_t;
 
 endpackage: tcb_pkg

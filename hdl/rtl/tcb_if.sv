@@ -33,7 +33,9 @@ interface tcb_if
   parameter  type rsp_t = tcb_rsp_t,   // response
   // VIP (not to be used in RTL)
   parameter  type vip_t = tcb_vip_t,   // VIP parameter type
-  parameter  vip_t VIP = TCB_VIP_DEF   // VIP parameter
+  parameter  vip_t VIP = TCB_VIP_DEF,  // VIP parameter
+  // partial address decoding mask
+  parameter  logic [BUS.ADR-1:0] MSK = '1
 )(
   // system signals
   input  logic clk,  // clock
