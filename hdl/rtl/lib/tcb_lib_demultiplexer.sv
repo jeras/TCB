@@ -52,14 +52,15 @@ module tcb_lib_demultiplexer
   logic [IFL-1:0] sub_sel;
   logic [IFL-1:0] man_sel;
 
-  // TODO: remove once simulators support access to types inside interfaces
-  // response
-  typedef struct packed {
-    logic [sub.BUS.DAT-1:0] rdt;  // read data
-    tcb_rsp_sts_def_t       sts;  // status (optional)
-  } sub_rsp_t;
+//  // TODO: remove once simulators support access to types inside interfaces
+//  // response
+//  typedef struct packed {
+//    logic [sub.BUS.DAT-1:0] rdt;  // read data
+//    tcb_rsp_sts_t           sts;  // status (optional)
+//  } sub_rsp_t;
 
-//sub.rsp_t       tmp_rsp [IFN-1:0];  // response
+  typedef sub.rsp_t sub_rsp_t;
+
   sub_rsp_t       tmp_rsp [IFN-1:0];  // response
   logic           tmp_rdy [IFN-1:0];  // handshake
 
