@@ -19,15 +19,15 @@
 module tcb_lib_multiplexer
   import tcb_pkg::*;
 #(
-  // interconnect parameters (subordinate port number and logarithm)
-  parameter  int unsigned SPN = 2,
-  localparam int unsigned SPL = $clog2(SPN)
+  // interconnect parameters (subordinate interface number and logarithm)
+  parameter  int unsigned IFN = 2,
+  localparam int unsigned IFL = $clog2(IFN)
 )(
   // control
-  input  logic [SPL-1:0] sel,  // select
+  input  logic [IFL-1:0] sel,  // select
   // TCB interfaces
-  tcb_if.sub sub[SPN-1:0],  // TCB subordinate ports (manager     devices connect here)
-  tcb_if.man man            // TCB manager     port  (subordinate device connects here)
+  tcb_if.sub sub[IFN-1:0],  // TCB subordinate interfaces (manager     devices connect here)
+  tcb_if.man man            // TCB manager     interface  (subordinate device connects here)
 );
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -38,7 +38,7 @@ module tcb_lib_multiplexer
 `else
   // camparing subordinate and manager interface parameters
   generate
-  for (genvar i=0; i<SPN; i++) begin: param
+  for (genvar i=0; i<IFN; i++) begin: param
     // TODO
   end: param
   endgenerate
@@ -49,8 +49,8 @@ module tcb_lib_multiplexer
 ////////////////////////////////////////////////////////////////////////////////
 
   // multiplexer select
-  logic [SPL-1:0] sub_sel;
-  logic [SPL-1:0] man_sel;
+  logic [IFL-1:0] sub_sel;
+  logic [IFL-1:0] man_sel;
 
   // TODO: remove once simulators support access to types inside interfaces
   // request
@@ -65,9 +65,9 @@ module tcb_lib_multiplexer
     logic [man.BUS.DAT-1:0] wdt;  // write data
   } man_req_t;
 
-  logic           tmp_vld [SPN-1:0];  // handshake
-  man_req_t       tmp_req [SPN-1:0];  // request
-//man.req_t       tmp_req [SPN-1:0];  // request
+  logic           tmp_vld [IFN-1:0];  // handshake
+  man_req_t       tmp_req [IFN-1:0];  // request
+//man.req_t       tmp_req [IFN-1:0];  // request
 
 ////////////////////////////////////////////////////////////////////////////////
 // control
@@ -91,7 +91,7 @@ module tcb_lib_multiplexer
   // organize request signals into indexable array
   // since a dynamix index can't be used on an array of interfaces
   generate
-  for (genvar i=0; i<SPN; i++) begin: gen_req
+  for (genvar i=0; i<IFN; i++) begin: gen_req
     assign tmp_vld[i] = sub[i].vld;  // handshake
     assign tmp_req[i] = sub[i].req;  // request
   end: gen_req
@@ -107,9 +107,9 @@ module tcb_lib_multiplexer
 
   // replicate response signals
   generate
-  for (genvar i=0; i<SPN; i++) begin: gen_rsp
-    assign sub[i].rsp = (man_sel == i[SPL-1:0]) ? man.rsp : 'x;  // response
-    assign sub[i].rdy = (sub_sel == i[SPL-1:0]) ? man.rdy : '0;  // handshake
+  for (genvar i=0; i<IFN; i++) begin: gen_rsp
+    assign sub[i].rsp = (man_sel == i[IFL-1:0]) ? man.rsp : 'x;  // response
+    assign sub[i].rdy = (sub_sel == i[IFL-1:0]) ? man.rdy : '0;  // handshake
   end: gen_rsp
   endgenerate
 

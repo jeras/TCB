@@ -21,33 +21,33 @@ module tcb_lib_demultiplexer_tb
   import tcb_vip_blocking_pkg::*;
 #(
   // response delay
-  parameter  int unsigned HSK.DLY = TCB_PAR_BUS_DEF.HSK.DLY,
+  parameter  int unsigned DLY = TCB_HSK_DEF.DLY,
   // TCB widths
-  parameter  int unsigned UNT = TCB_PAR_BUS_DEF.UNT,       // data unit   width
-  parameter  int unsigned ADR = TCB_PAR_BUS_DEF.ADR,       // address bus width
-  parameter  int unsigned DAT = TCB_PAR_BUS_DEF.DAT,       // data    bus width
-  // interconnect parameters
-  parameter  int unsigned MPN = 3,        // port number
-  parameter  int unsigned MPL = $clog2(MPN),
+  parameter  int unsigned UNT = TCB_BUS_DEF.UNT,       // data unit   width
+  parameter  int unsigned ADR = TCB_BUS_DEF.ADR,       // address bus width
+  parameter  int unsigned DAT = TCB_BUS_DEF.DAT,       // data    bus width
+  // interconnect parameters (interface number)
+  parameter  int unsigned IFN = 3,
+  parameter  int unsigned IFL = $clog2(IFN),
   // decoder address and mask array
-  parameter  logic [ADR-1:0] DAM [MPN-1:0] = '{MPN{ADR'('x)}}
+  parameter  logic [ADR-1:0] DAM [IFN-1:0] = '{IFN{ADR'('x)}}
 );
 
   // TCB physical interface parameters
   localparam tcb_bus_t BUS = '{
     // protocol
-    HSK.DLY: HSK.DLY,
+    HSK: HSK,
     // signal bus widths
     UNT: UNT,
     ADR: ADR,
     DAT: DAT,
     // size/mode/order parameters
-    ALN: TCB_PAR_BUS_DEF.ALN,
-    MIN: TCB_PAR_BUS_DEF.MIN,
-    MOD: TCB_PAR_BUS_DEF.MOD,
-    ORD: TCB_PAR_BUS_DEF.ORD,
+    ALN: TCB_BUS_DEF.ALN,
+    MIN: TCB_BUS_DEF.MIN,
+    MOD: TCB_BUS_DEF.MOD,
+    ORD: TCB_BUS_DEF.ORD,
     // channel configuration
-    CHN: TCB_PAR_BUS_DEF.CHN
+    CHN: TCB_BUS_DEF.CHN
   };
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -63,14 +63,14 @@ module tcb_lib_demultiplexer_tb
   logic           err;  // error response
 
   // control
-  logic [MPL-1:0] sel;  // select
+  logic [IFL-1:0] sel;  // select
 
 ////////////////////////////////////////////////////////////////////////////////
 // local signals
 ////////////////////////////////////////////////////////////////////////////////
 
   tcb_if #(.BUS (BUS)) tcb_man            (.clk (clk), .rst (rst));
-  tcb_if #(.BUS (BUS)) tcb_sub  [MPN-1:0] (.clk (clk), .rst (rst));
+  tcb_if #(.BUS (BUS)) tcb_sub  [IFN-1:0] (.clk (clk), .rst (rst));
 
 ////////////////////////////////////////////////////////////////////////////////
 // test sequence
@@ -128,8 +128,8 @@ module tcb_lib_demultiplexer_tb
 
   tcb_vip_dev #("MAN") man               (.tcb (tcb_man));  // manager
   tcb_vip_dev #("MON") mon_man           (.tcb (tcb_man));  // manager monitor
-  tcb_vip_dev #("MON") mon_sub [MPN-1:0] (.tcb (tcb_sub));  // subordinate monitor
-  tcb_vip_dev #("SUB") sub     [MPN-1:0] (.tcb (tcb_sub));  // subordinate
+  tcb_vip_dev #("MON") mon_sub [IFN-1:0] (.tcb (tcb_sub));  // subordinate monitor
+  tcb_vip_dev #("SUB") sub     [IFN-1:0] (.tcb (tcb_sub));  // subordinate
 
 ////////////////////////////////////////////////////////////////////////////////
 // DUT instances
@@ -138,7 +138,7 @@ module tcb_lib_demultiplexer_tb
   // RTL decoder DUT
   tcb_lib_decoder #(
     // interconnect parameters
-    .MPN  (MPN),
+    .IFN  (IFN),
     // decoder address and mask array
     .DAM  (DAM)
   ) arb (
@@ -149,7 +149,7 @@ module tcb_lib_demultiplexer_tb
   // RTL demultiplexer DUT
   tcb_lib_demultiplexer #(
     // interconnect parameters
-    .MPN   (MPN)
+    .IFN   (IFN)
   ) dut (
     // control
     .sel  (sel),

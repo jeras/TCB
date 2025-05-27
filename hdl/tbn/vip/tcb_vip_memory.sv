@@ -25,12 +25,12 @@ module tcb_vip_memory
   // memory size
   parameter  int unsigned  SIZ = 2**8,
   // slave interface number
-  parameter  int unsigned  SPN = 1,
+  parameter  int unsigned  IFN = 1,
   // write mask (which interfaces are allowed write access)
-  parameter  bit [SPN-1:0] WRM = '1
+  parameter  bit [IFN-1:0] WRM = '1
 )(
   // TCB interface
-  tcb_if.sub tcb [SPN-1:0]
+  tcb_if.sub tcb [IFN-1:0]
 );
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -38,7 +38,7 @@ module tcb_vip_memory
 ////////////////////////////////////////////////////////////////////////////////
 
   generate
-  for (genvar i=0; i<SPN; i++) begin
+  for (genvar i=0; i<IFN; i++) begin
     initial assert (tcb[i].VIP) else $error("VIP parameter must be enabled to support read access.");
   end
   endgenerate
@@ -110,7 +110,7 @@ module tcb_vip_memory
 ////////////////////////////////////////////////////////////////////////////////
 
   generate
-  for (genvar i=0; i<SPN; i++) begin: port
+  for (genvar i=0; i<IFN; i++) begin: port
 
     // local copies of TCB BUS parameters
     localparam DLY = tcb[i].HSK.DLY;

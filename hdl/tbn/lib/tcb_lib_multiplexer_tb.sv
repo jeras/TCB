@@ -21,22 +21,22 @@ module tcb_lib_multiplexer_tb
   import tcb_vip_blocking_pkg::*;
 #(
   // response delay
-  parameter  int unsigned HSK.DLY = TCB_PAR_BUS_DEF.HSK.DLY,
+  parameter  int unsigned DLY = TCB_HSK_DEF.DLY,
   // TCB widths
-  parameter  int unsigned UNT = TCB_PAR_BUS_DEF.UNT,       // data unit   width
-  parameter  int unsigned ADR = TCB_PAR_BUS_DEF.ADR,       // address bus width
-  parameter  int unsigned DAT = TCB_PAR_BUS_DEF.DAT,       // data    bus width
-  // interconnect parameters
-  parameter  int unsigned SPN = 3,      // port number
-  parameter  int unsigned SPL = $clog2(SPN),
+  parameter  int unsigned UNT = TCB_BUS_DEF.UNT,       // data unit   width
+  parameter  int unsigned ADR = TCB_BUS_DEF.ADR,       // address bus width
+  parameter  int unsigned DAT = TCB_BUS_DEF.DAT,       // data    bus width
+  // interconnect parameters (interface number)
+  parameter  int unsigned IFN = 3,
+  parameter  int unsigned IFL = $clog2(IFN),
   // port priorities (lower number is higher priority)
-  parameter  int unsigned PRI [SPN-1:0] = '{2, 1, 0}
+  parameter  int unsigned PRI [IFN-1:0] = '{2, 1, 0}
 );
 
   // TCB physical interface parameters
   localparam tcb_bus_t BUS = '{
     // protocol
-    HSK.DLY: HSK.DLY,
+    HSK: HSK,
     // signal bus widths
     UNT: UNT,
     ADR: ADR,
@@ -59,19 +59,19 @@ module tcb_lib_multiplexer_tb
   logic rst;  // reset
 
   // response
-  //logic [DAT-1:0] rdt [SPN-1:0];  // read data
-  //logic           err [SPN-1:0];  // error response
+  //logic [DAT-1:0] rdt [IFN-1:0];  // read data
+  //logic           err [IFN-1:0];  // error response
   logic [DAT-1:0] rdt;  // read data
   logic           err;  // error response
 
   // control
-  logic  [SPL-1:0] sel;  // select
+  logic  [IFL-1:0] sel;  // select
 
 ////////////////////////////////////////////////////////////////////////////////
 // local signals
 ////////////////////////////////////////////////////////////////////////////////
 
-  tcb_if #(.BUS (BUS)) tcb_man  [SPN-1:0] (.clk (clk), .rst (rst));
+  tcb_if #(.BUS (BUS)) tcb_man  [IFN-1:0] (.clk (clk), .rst (rst));
   tcb_if #(.BUS (BUS)) tcb_sub            (.clk (clk), .rst (rst));
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -93,7 +93,7 @@ module tcb_lib_multiplexer_tb
     #1;
     fork
       begin: req
-//        for (int unsigned i=0; i<SPN; i++) begin
+//        for (int unsigned i=0; i<IFN; i++) begin
 //          man[i].write(32'h01234567, 4'b1111, 32'h89ABCDEF, err);
 //          man[i].read (32'h76543210, 4'b1111, rdt         , err);
 //        end
@@ -139,8 +139,8 @@ module tcb_lib_multiplexer_tb
 // VIP component instances
 ////////////////////////////////////////////////////////////////////////////////
 
-  tcb_vip_dev #("MAN") man     [SPN-1:0] (.tcb (tcb_man));  // manager
-  tcb_vip_dev #("MON") mon_man [SPN-1:0] (.tcb (tcb_man));  // manager monitor
+  tcb_vip_dev #("MAN") man     [IFN-1:0] (.tcb (tcb_man));  // manager
+  tcb_vip_dev #("MON") mon_man [IFN-1:0] (.tcb (tcb_man));  // manager monitor
   tcb_vip_dev #("MON") mon_sub           (.tcb (tcb_sub));  // subordinate monitor
   tcb_vip_dev #("SUB") sub               (.tcb (tcb_sub));  // subordinate
 
@@ -153,7 +153,7 @@ module tcb_lib_multiplexer_tb
     // arbitration priority mode
 //  .MD   (),
     // interconnect parameters
-    .SPN   (SPN),
+    .IFN   (IFN),
     // port priorities (lower number is higher priority)
     .PRI  (PRI)
   ) arb (
@@ -164,7 +164,7 @@ module tcb_lib_multiplexer_tb
   // RTL multiplexer DUT
   tcb_lib_multiplexer #(
     // interconnect parameters
-    .SPN   (SPN)
+    .IFN   (IFN)
   ) dut (
     // control
     .sel  (sel),

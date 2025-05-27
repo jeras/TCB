@@ -19,15 +19,15 @@
 module tcb_lib_demultiplexer
   import tcb_pkg::*;
 #(
-  // interconnect parameters (manager port number and logarithm)
-  parameter  int unsigned MPN = 2,
-  localparam int unsigned MPL = $clog2(MPN)
+  // interconnect parameters (manager interface number and logarithm)
+  parameter  int unsigned IFN = 2,
+  localparam int unsigned IFL = $clog2(IFN)
 )(
   // select
-  input  logic [MPL-1:0] sel,
+  input  logic [IFL-1:0] sel,
   // TCB interfaces
-  tcb_if.sub sub         ,  // TCB subordinate port  (manager     device connects here)
-  tcb_if.man man[MPN-1:0]   // TCB manager     ports (subordinate devices connect here)
+  tcb_if.sub sub         ,  // TCB subordinate interface  (manager     device connects here)
+  tcb_if.man man[IFN-1:0]   // TCB manager     interfaces (subordinate devices connect here)
 );
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -38,7 +38,7 @@ module tcb_lib_demultiplexer
 `else
   // camparing subordinate and manager interface parameters
   generate
-  for (genvar i=0; i<MPN; i++) begin: param
+  for (genvar i=0; i<IFN; i++) begin: param
     // TODO
   end: param
   endgenerate
@@ -49,8 +49,8 @@ module tcb_lib_demultiplexer
 ////////////////////////////////////////////////////////////////////////////////
 
   // demultiplexer signals
-  logic [MPL-1:0] sub_sel;
-  logic [MPL-1:0] man_sel;
+  logic [IFL-1:0] sub_sel;
+  logic [IFL-1:0] man_sel;
 
   // TODO: remove once simulators support access to types inside interfaces
   // response
@@ -59,9 +59,9 @@ module tcb_lib_demultiplexer
     tcb_rsp_sts_def_t       sts;  // status (optional)
   } sub_rsp_t;
 
-//sub.rsp_t       tmp_rsp [MPN-1:0];  // response
-  sub_rsp_t       tmp_rsp [MPN-1:0];  // response
-  logic           tmp_rdy [MPN-1:0];  // handshake
+//sub.rsp_t       tmp_rsp [IFN-1:0];  // response
+  sub_rsp_t       tmp_rsp [IFN-1:0];  // response
+  logic           tmp_rdy [IFN-1:0];  // handshake
 
 ////////////////////////////////////////////////////////////////////////////////
 // control
@@ -84,7 +84,7 @@ module tcb_lib_demultiplexer
 
   // replicate request signals
   generate
-  for (genvar i=0; i<MPN; i++) begin: gen_req
+  for (genvar i=0; i<IFN; i++) begin: gen_req
     assign man[i].vld = (sub_sel == i) ? sub.vld : 1'b0;  // handshake
     assign man[i].req = (sub_sel == i) ? sub.req :   'x;  // request
   end: gen_req
@@ -97,7 +97,7 @@ module tcb_lib_demultiplexer
   // organize response signals into indexable array
   // since a dynamic index can't be used on an array of interfaces
   generate
-  for (genvar i=0; i<MPN; i++) begin: gen_rsp
+  for (genvar i=0; i<IFN; i++) begin: gen_rsp
     assign tmp_rsp[i] = man[i].rsp;  // response
     assign tmp_rdy[i] = man[i].rdy;  // handshake
   end: gen_rsp

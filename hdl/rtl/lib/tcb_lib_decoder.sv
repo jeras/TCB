@@ -20,17 +20,17 @@ module tcb_lib_decoder
   import tcb_pkg::*;
 #(
   // TCB parameters (contains address width)
-  parameter  tcb_bus_t BUS = TCB_PAR_BUS_DEF,
-  // interconnect parameters (subordinate port number and logarithm)
-  parameter  int unsigned SPN = 2,
-  localparam int unsigned SPL = $clog2(SPN),
+  parameter  tcb_bus_t BUS = TCB_BUS_DEF,
+  // interconnect parameters (subordinate interface number and logarithm)
+  parameter  int unsigned IFN = 2,
+  localparam int unsigned IFL = $clog2(IFN),
   // decoder address and mask array
-  parameter  logic [BUS.ADR-1:0] DAM [SPN-1:0] = '{default: 'x}
+  parameter  logic [BUS.ADR-1:0] DAM [IFN-1:0] = '{default: 'x}
 )(
   // TCB interfaces
-  tcb_if.sub tcb,  // TCB subordinate port (manager device connects here)
+  tcb_if.sub tcb,  // TCB subordinate interface (manager device connects here)
   // select
-  output logic [SPL-1:0] sel
+  output logic [IFL-1:0] sel
 );
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -54,30 +54,30 @@ module tcb_lib_decoder
 ////////////////////////////////////////////////////////////////////////////////
 
 //  // match
-//  function [SPN-1:0] match (
+//  function [IFN-1:0] match (
 //    logic [BUS.ADR-1:0] val,           // input
-//    logic [BUS.ADR-1:0] mch [SPN-1:0]   // matching reference
+//    logic [BUS.ADR-1:0] mch [IFN-1:0]   // matching reference
 //  );
-//    for (int unsigned i=0; i<SPN; i++) begin
+//    for (int unsigned i=0; i<IFN; i++) begin
 //      assign match[i] = val ==? mch[i];
 //    end
 //  endfunction: match
 
   // match
-  logic mch [SPN-1:0];
+  logic mch [IFN-1:0];
 
   // match
   generate
-    for (genvar i=0; i<SPN; i++) begin
+    for (genvar i=0; i<IFN; i++) begin
       assign mch[i] = adr ==? DAM[i];
     end
   endgenerate
 
   // encode
-  function logic [SPL-1:0] encode (logic val [SPN-1:0]);
+  function logic [IFL-1:0] encode (logic val [IFN-1:0]);
     encode = 'x;  // optimization of undefined encodings
-    for (int i=SPN; i>=0; i--) begin
-      if (val[i])  encode = i[SPL-1:0];
+    for (int i=IFN; i>=0; i--) begin
+      if (val[i])  encode = i[IFL-1:0];
     end
   endfunction: encode
 
