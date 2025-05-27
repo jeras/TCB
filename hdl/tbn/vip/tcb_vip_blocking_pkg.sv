@@ -41,11 +41,11 @@ package tcb_vip_blocking_pkg;
     // request/response structure types
     parameter  type req_t = tcb_req_t,  // request
     parameter  type rsp_t = tcb_rsp_t,  // response
-    // VIP data types
-    parameter  type adr_t = int unsigned,  // integer data types (byte/shortint/int/longint)
     // VIP (not to be used in RTL)
     parameter  type vip_t = tcb_vip_t,   // VIP parameter type
     parameter  vip_t VIP = TCB_VIP_DEF,  // VIP parameter
+    // VIP data types
+    parameter  type adr_t = int unsigned,  // integer data types (byte/shortint/int/longint)
     // debugging options
     parameter  bit  DEBUG = 1'b0
   ) extends tcb_vip_transaction_c #(
