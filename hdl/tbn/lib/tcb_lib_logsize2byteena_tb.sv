@@ -202,13 +202,13 @@ module tcb_lib_logsize2byteena_tb
     tst_ref.delete();
     tst_len = tst_ref.size();
     // append reference transfers to queue               ndn        , adr         , wdt ,        rdt
-    tst_len += {obj_sub.put_transaction(tst_ref, '{req: '{TCB_LITTLE, 32'h00000010, nul}, rsp: '{'{8'h10                     }, sts}})};  //$display("DEBUG: tst_ref.size() = %0d", tst_ref.size());
-    tst_len += {obj_sub.put_transaction(tst_ref, '{req: '{TCB_LITTLE, 32'h00000011, nul}, rsp: '{'{       8'h32              }, sts}})};  //$display("DEBUG: tst_ref.size() = %0d", tst_ref.size());
-    tst_len += {obj_sub.put_transaction(tst_ref, '{req: '{TCB_LITTLE, 32'h00000012, nul}, rsp: '{'{              8'h54       }, sts}})};  //$display("DEBUG: tst_ref.size() = %0d", tst_ref.size());
-    tst_len += {obj_sub.put_transaction(tst_ref, '{req: '{TCB_LITTLE, 32'h00000013, nul}, rsp: '{'{                     8'h76}, sts}})};  //$display("DEBUG: tst_ref.size() = %0d", tst_ref.size());
-    tst_len += {obj_sub.put_transaction(tst_ref, '{req: '{TCB_LITTLE, 32'h00000020, nul}, rsp: '{'{8'h10, 8'h32              }, sts}})};  //$display("DEBUG: tst_ref.size() = %0d", tst_ref.size());
-    tst_len += {obj_sub.put_transaction(tst_ref, '{req: '{TCB_LITTLE, 32'h00000022, nul}, rsp: '{'{              8'h54, 8'h76}, sts}})};  //$display("DEBUG: tst_ref.size() = %0d", tst_ref.size());
-    tst_len += {obj_sub.put_transaction(tst_ref, '{req: '{TCB_LITTLE, 32'h00000030, nul}, rsp: '{'{8'h10, 8'h32, 8'h54, 8'h76}, sts}})};  //$display("DEBUG: tst_ref.size() = %0d", tst_ref.size());
+    tst_len += obj_sub.put_transaction(tst_ref, '{req: '{TCB_LITTLE, 32'h00000010, nul}, rsp: '{'{8'h10                     }, sts}});
+    tst_len += obj_sub.put_transaction(tst_ref, '{req: '{TCB_LITTLE, 32'h00000011, nul}, rsp: '{'{       8'h32              }, sts}});
+    tst_len += obj_sub.put_transaction(tst_ref, '{req: '{TCB_LITTLE, 32'h00000012, nul}, rsp: '{'{              8'h54       }, sts}});
+    tst_len += obj_sub.put_transaction(tst_ref, '{req: '{TCB_LITTLE, 32'h00000013, nul}, rsp: '{'{                     8'h76}, sts}});
+    tst_len += obj_sub.put_transaction(tst_ref, '{req: '{TCB_LITTLE, 32'h00000020, nul}, rsp: '{'{8'h10, 8'h32              }, sts}});
+    tst_len += obj_sub.put_transaction(tst_ref, '{req: '{TCB_LITTLE, 32'h00000022, nul}, rsp: '{'{              8'h54, 8'h76}, sts}});
+    tst_len += obj_sub.put_transaction(tst_ref, '{req: '{TCB_LITTLE, 32'h00000030, nul}, rsp: '{'{8'h10, 8'h32, 8'h54, 8'h76}, sts}});
     // compare transfers from monitor to reference
     // wildcard operator is used to ignore data byte comparison, when the reference data is 8'hxx
     foreach(tst_ref[i]) begin
