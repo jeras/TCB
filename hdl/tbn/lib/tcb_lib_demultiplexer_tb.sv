@@ -27,14 +27,19 @@ module tcb_lib_demultiplexer_tb
   parameter  int unsigned DAT = TCB_BUS_DEF.DAT,       // data    bus width
   // interconnect parameters (interface number)
   parameter  int unsigned IFN = 3,
-  parameter  int unsigned IFL = $clog2(IFN),
-  // decoder address and mask array
-  parameter  logic [ADR-1:0] DAM [IFN-1:0] = '{IFN{ADR'('x)}}
+  parameter  int unsigned IFL = $clog2(IFN)
 );
 
 ////////////////////////////////////////////////////////////////////////////////
 // local parameters
 ////////////////////////////////////////////////////////////////////////////////
+
+  // decoder address and mask array
+  localparam logic [ADR-1:0] DAM [IFN-1:0] = '{
+    ADR'({14'bx, 2'b1x, 16'hxxxx}),
+    ADR'({14'bx, 2'b01, 16'hxxxx}),
+    ADR'({14'bx, 2'b00, 16'hxxxx})
+  };
 
   // handshake parameter
   localparam tcb_hsk_t HSK = TCB_HSK_DEF;
@@ -85,7 +90,7 @@ module tcb_lib_demultiplexer_tb
 
   // TCB interfaces
   tcb_if #(tcb_hsk_t, HSK, tcb_bus_t, BUS, tcb_pck_t, PCK, req_t, rsp_t                ) tcb_man           (.clk (clk), .rst (rst));
-  tcb_if #(tcb_hsk_t, HSK, tcb_bus_t, BUS, tcb_pck_t, PCK, req_t, rsp_t, tcb_vip_t, VIP) tcb_sub [0:IFN-1] (.clk (clk), .rst (rst));
+  tcb_if #(tcb_hsk_t, HSK, tcb_bus_t, BUS, tcb_pck_t, PCK, req_t, rsp_t, tcb_vip_t, VIP) tcb_sub [IFN-1:0] (.clk (clk), .rst (rst));
 
   // parameterized class specialization (blocking API)
   typedef tcb_vip_blocking_c #(tcb_hsk_t, HSK, tcb_bus_t, BUS, tcb_pck_t, PCK, req_t, rsp_t                ) tcb_man_s;
@@ -93,11 +98,9 @@ module tcb_lib_demultiplexer_tb
 
   // TCB class objects
   tcb_man_s obj_man = new(tcb_man, "MAN");
-  tcb_sub_s obj_mon [IFN];
   tcb_sub_s obj_sub [IFN];
 
   // transfer reference/monitor array
-  tcb_sub_s::transfer_queue_t tst_man;
   tcb_sub_s::transfer_queue_t tst_sub [IFN];
   tcb_sub_s::transfer_queue_t tst_mon [IFN];
   int unsigned                tst_len;
@@ -121,23 +124,39 @@ module tcb_lib_demultiplexer_tb
     $display("write sequence");
     testname = "write";
     for (int i=0; i<IFN; i++) begin
+      tst_sub[i].delete();
       tst_mon[i].delete();
     end
     fork
       // manager (blocking API)
       begin: fork_man
-        for (int i=0; i<IFN; i++) begin
-          obj_man.write32(i<<16 + 32'h00000000, 32'h76543210, sts);
-          obj_man.write32(i<<16 + 32'h00000020, 32'hfedcba98, sts);
-          obj_man.read32 (i<<16 + 32'h00000000, rdt[4-1:0], sts);
-          obj_man.read32 (i<<16 + 32'h00000020, rdt[4-1:0], sts);
+        for (int unsigned i=0; i<IFN; i++) begin
+          obj_man.write32((i<<16) + 32'h00000000, 32'h76543210, sts);
+          obj_man.write32((i<<16) + 32'h00000020, 32'hfedcba98, sts);
+          obj_man.read32 ((i<<16) + 32'h00000000, rdt[4-1:0], sts);
+          obj_man.read32 ((i<<16) + 32'h00000020, rdt[4-1:0], sts);
         end
       end: fork_man
+      // subordinate (driver)
+      for (int unsigned i=0; i<IFN; i++)
+      begin: fork_sub_driver
+        sts[i] = '0;
+        tst_len[i] = tst_sub[i].size();
+        // append reference transfers to queue               ndn       , adr         , wdt                           ,        rdt
+        tst_len[i] += obj_sub[i].put_transaction(tst_sub[i], '{req: '{TCB_LITTLE, 32'h00000000, '{8'h10, 8'h32, 8'h54, 8'h76}}, rsp: '{nul, sts}});
+        tst_len[i] += obj_sub[i].put_transaction(tst_sub[i], '{req: '{TCB_LITTLE, 32'h00000020, '{8'h98, 8'hba, 8'hdc, 8'hfe}}, rsp: '{nul, sts}});
+        tst_len[i] += obj_sub[i].put_transaction(tst_sub[i], '{req: '{TCB_LITTLE, 32'h00000000, nul}, rsp: '{'{8'h10, 8'h32, 8'h54, 8'h76}, sts}});
+        tst_len[i] += obj_sub[i].put_transaction(tst_sub[i], '{req: '{TCB_LITTLE, 32'h00000020, nul}, rsp: '{'{8'h98, 8'hba, 8'hdc, 8'hfe}, sts}});
+//        for (int unsigned j=0; j<tst_sub[i].size(); j++) begin
+//          $display("DEBUG: tst_sub[%0d][%0d] = %p", i, j, tst_sub[i][j]);
+//        end
+        obj_sub[i].transfer_sequencer(tst_sub[i]);
+      end: fork_sub_driver
       // subordinate (monitor)
       for (int unsigned i=0; i<IFN; i++)
-      begin: fork_sub
+      begin: fork_sub_monitor
         obj_sub[i].transfer_monitor(tst_mon[i]);
-      end: fork_sub
+      end: fork_sub_monitor
     join_any
     // disable transfer monitor
     @(posedge clk);
@@ -145,26 +164,16 @@ module tcb_lib_demultiplexer_tb
     // reference transfer queue
     for (int unsigned i=0; i<IFN; i++)
     begin
-      automatic tcb_sub_s::transfer_queue_t tmp_sub;
-      automatic tcb_sub_s::transfer_queue_t tmp_mon;
-      sts[i] = '0;
-      tst_sub[i].delete();
-      tst_len[i] = tst_sub[i].size();
-      // append reference transfers to queue               ndn       , adr         , wdt                           ,        rdt
-      tst_len[i] += obj_sub[i].put_transaction(tst_sub[i], '{req: '{TCB_LITTLE, 32'h00000030, '{8'h10, 8'h32, 8'h54, 8'h76}}, rsp: '{nul, sts}});
-      tst_len[i] += obj_sub[i].put_transaction(tst_sub[i], '{req: '{TCB_LITTLE, 32'h00000030, nul}, rsp: '{'{8'h10, 8'h32, 8'h54, 8'h76}, sts}});
       // compare transfers from monitor to reference
       // wildcard operator is used to ignore data byte comparison, when the reference data is 8'hxx
-      tmp_sub = tst_sub[i];
-      tmp_mon = tst_mon[i];
-      foreach (tmp_sub[i]) begin
-        assert (tmp_mon[i].req ==? tmp_sub[i].req) else $error("\ntst_mon[%0d].req = %p !=? \ntst_sub[%0d].req = %p", i, tmp_mon[i].req, i, tmp_sub[i].req);
-        assert (tmp_mon[i].rsp ==? tmp_sub[i].rsp) else $error("\ntst_mon[%0d].rsp = %p !=? \ntst_sub[%0d].rsp = %p", i, tmp_mon[i].rsp, i, tmp_sub[i].rsp);
+      for (int unsigned j=0; j<tst_sub[i].size(); j++) begin
+        assert (tst_mon[i][j].req ==? tst_sub[i][j].req) else $error("\ntst_mon[%0d][%0d].req = %p !=? \ntst_sub[%0d][%0d].req = %p", i, j, tst_mon[i][j].req, i, j, tst_sub[i][j].req);
+        assert (tst_mon[i][j].rsp ==? tst_sub[i][j].rsp) else $error("\ntst_mon[%0d][%0d].rsp = %p !=? \ntst_sub[%0d][%0d].rsp = %p", i, j, tst_mon[i][j].rsp, i, j, tst_sub[i][j].rsp);
       end
-      // printout transfer queue for debugging purposes
-//      foreach (tst_sub[i]) begin
-//        $display("DEBUG: tst_mon[%0d] = %p", i, tst_mon[i]);
-//        $display("DEBUG: tst_sub[%0d] = %p", i, tst_sub[i]);
+//      // printout transfer queue for debugging purposes
+//      for (int unsigned j=0; j<tst_sub[i].size(); j++) begin
+//        $display("DEBUG: tst_sub[%0d][%0d] = %p", i, j, tst_sub[i][j]);
+//        $display("DEBUG: tst_mon[%0d][%0d] = %p", i, j, tst_mon[i][j]);
 //      end
     end
   endtask: test_simple
@@ -288,7 +297,6 @@ module tcb_lib_demultiplexer_tb
   for (genvar i=0; i<IFN; i++) begin
     initial begin    
       obj_sub[i] = new(tcb_sub[i], "SUB");
-      obj_mon[i] = new(tcb_sub[i], "MON");
     end
   end
   endgenerate
@@ -324,7 +332,7 @@ module tcb_lib_demultiplexer_tb
     .tcb (tcb_man)
   );
 
-  tcb_vip_protocol_checker chk_sub [0:IFN-1] (
+  tcb_vip_protocol_checker chk_sub [IFN-1:0] (
     .tcb (tcb_sub)
   );
 
@@ -338,7 +346,7 @@ module tcb_lib_demultiplexer_tb
     .IFN  (IFN),
     // decoder address and mask array
     .DAM  (DAM)
-  ) arb (
+  ) dut_dec (
     .tcb  (tcb_man),
     .sel  (sel)
   );
@@ -347,7 +355,7 @@ module tcb_lib_demultiplexer_tb
   tcb_lib_demultiplexer #(
     // interconnect parameters
     .IFN   (IFN)
-  ) dut (
+  ) dut_dmx (
     // control
     .sel  (sel),
     // TCB interfaces
