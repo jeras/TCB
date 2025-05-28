@@ -43,10 +43,10 @@ module tcb_vip_protocol_checker (
     if (tcb.vld == 1'b1) begin
       // ready known
       assert (!$isunknown(tcb.rdy)) else $error("TCB: tcb.rdy is unknown during a valid cycle.");
-    end
-    // while stalling
-    if (tcb.stl) begin
-      assert ($stable(tcb.req)) else $error("TCB: tcb.req is unstable during a stall.");
+      // while stalling
+      if ($past(tcb.stl)) begin
+        assert ($stable(tcb.req)) else $error("TCB: tcb.req is unstable during a stall.");
+      end
     end
     // read data hold (HSK.DLY>1)
     // TODO
