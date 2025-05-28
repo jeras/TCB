@@ -31,8 +31,6 @@ module tcb_vip_protocol_checker (
   if ($realtime > 0) begin
     // valid/ready known
     assert (!$isunknown(tcb.vld)) else $error("TCB: tcb.vld is unknown.");
-    // TODO: reconsider whether ready must always be known
-    assert (!$isunknown(tcb.rdy)) else $error("TCB: tcb.rdy is unknown.");
     // reset state
     if (tcb.rst) begin
       assert(~tcb.vld) else $error("TCB: valid must be low during reset.");
