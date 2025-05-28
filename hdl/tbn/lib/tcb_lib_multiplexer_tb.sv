@@ -105,8 +105,9 @@ module tcb_lib_multiplexer_tb
   logic [8-1:0] nul [];
 
   // response
-  logic [tcb_man.BUS_BEN-1:0][8-1:0] rdt;  // read data
-  tcb_rsp_sts_t                      sts;  // status response
+  logic [tcb_sub.BUS_BEN-1:0][8-1:0] rdt_man [IFN];  // read data
+  tcb_rsp_sts_t                      sts_man [IFN];  // status response
+  tcb_rsp_sts_t                      sts_sub;  // status response
 
   // control
   logic [IFL-1:0] sel;  // select
@@ -115,100 +116,72 @@ module tcb_lib_multiplexer_tb
 // tests
 ////////////////////////////////////////////////////////////////////////////////
 
-    fork
-      begin: req
-//        for (int unsigned i=0; i<IFN; i++) begin
-//          man[i].write(32'h01234567, 4'b1111, 32'h89ABCDEF, err);
-//          man[i].read (32'h76543210, 4'b1111, rdt         , err);
-//        end
-          // TODO: check why I could not drive an array element
-          fork
-//            begin  man[0].write(32'h00000000, 4'b1111, 32'h03020100, err[0]);  end
-//            begin  man[1].write(32'h00000004, 4'b1111, 32'h13121110, err[1]);  end
-//            begin  man[2].write(32'h0000000C, 4'b1111, 32'h23222120, err[2]);  end
-            begin  man[0].write(32'h00000000, 4'b1111, 32'h03020100, err);  end
-            begin  man[1].write(32'h00000004, 4'b1111, 32'h13121110, err);  end
-            begin  man[2].write(32'h0000000C, 4'b1111, 32'h23222120, err);  end
-          join
-          fork
-//            begin  man[0].read (32'h00000000, 4'b1111, rdt[0]      , err[0]);  end
-//            begin  man[1].read (32'h00000004, 4'b1111, rdt[1]      , err[1]);  end
-//            begin  man[2].read (32'h0000000C, 4'b1111, rdt[2]      , err[2]);  end
-            begin  man[0].read (32'h00000000, 4'b1111, rdt, err);  end
-            begin  man[1].read (32'h00000004, 4'b1111, rdt, err);  end
-            begin  man[2].read (32'h0000000C, 4'b1111, rdt, err);  end
-          join
-      end: req
-      begin: rsp
-        sub.rsp(32'hXXXXXXXX, 1'b0);
-        sub.rsp(32'hXXXXXXXX, 1'b0);
-        sub.rsp(32'hXXXXXXXX, 1'b0);
-        sub.rsp(32'h03020100, 1'b0);
-        sub.rsp(32'h13121110, 1'b0);
-        sub.rsp(32'h23222120, 1'b0);
-      end: rsp
-
-
   task test_simple ();
     // write sequence
     $display("write sequence");
     testname = "write";
-    for (int i=0; i<IFN; i++) begin
-      tst_sub[i].delete();
-      tst_mon[i].delete();
-    end
+    tst_mon.delete();
     fork
       // manager (blocking API)
       begin: fork_man
-        for (int unsigned i=0; i<IFN; i++) begin
-          obj_man.write32((i<<16) + 32'h00000000, 32'h76543210, sts);
-          obj_man.write32((i<<16) + 32'h00000020, 32'hfedcba98, sts);
-          obj_man.read32 ((i<<16) + 32'h00000000, rdt[4-1:0], sts);
-          obj_man.read32 ((i<<16) + 32'h00000020, rdt[4-1:0], sts);
-        end
+        fork
+          obj_man[0].write32(0*tcb_sub.BUS_BEN, {4{8'd0}}, sts_man[0]);
+          obj_man[1].write32(1*tcb_sub.BUS_BEN, {4{8'd1}}, sts_man[1]);
+          obj_man[2].write32(2*tcb_sub.BUS_BEN, {4{8'd2}}, sts_man[2]);
+        join
+        fork
+          obj_man[0].read32 (0*tcb_sub.BUS_BEN, rdt_man[0][4-1:0], sts_man[0]);
+          obj_man[1].read32 (1*tcb_sub.BUS_BEN, rdt_man[1][4-1:0], sts_man[1]);
+          obj_man[2].read32 (2*tcb_sub.BUS_BEN, rdt_man[2][4-1:0], sts_man[2]);
+        join
+//        for (int unsigned i=0; i<IFN; i++) begin: fork_write
+//          fork
+//            obj_man[i].write32(i*tcb_sub.BUS_BEN, {4{8'(i)}}, sts_man[i]);
+//          join_none
+//        end: fork_write
+//        wait fork;
+//        for (int unsigned i=0; i<IFN; i++) begin: fork_read
+//          fork
+//            obj_man[i].read32(i*tcb_sub.BUS_BEN, rdt_man[i][4-1:0], sts_man[i]);
+//          join_none
+//        end: fork_read
+//        wait fork;
       end: fork_man
       // subordinate (driver)
-      for (int unsigned i=0; i<IFN; i++)
       begin: fork_sub_driver
-        sts[i] = '0;
-        tst_len[i] = tst_sub[i].size();
-        // append reference transfers to queue               ndn       , adr         , wdt                           ,        rdt
-        tst_len[i] += obj_sub[i].put_transaction(tst_sub[i], '{req: '{TCB_LITTLE, 32'h00000000, '{8'h10, 8'h32, 8'h54, 8'h76}}, rsp: '{nul, sts}});
-        tst_len[i] += obj_sub[i].put_transaction(tst_sub[i], '{req: '{TCB_LITTLE, 32'h00000020, '{8'h98, 8'hba, 8'hdc, 8'hfe}}, rsp: '{nul, sts}});
-        tst_len[i] += obj_sub[i].put_transaction(tst_sub[i], '{req: '{TCB_LITTLE, 32'h00000000, nul}, rsp: '{'{8'h10, 8'h32, 8'h54, 8'h76}, sts}});
-        tst_len[i] += obj_sub[i].put_transaction(tst_sub[i], '{req: '{TCB_LITTLE, 32'h00000020, nul}, rsp: '{'{8'h98, 8'hba, 8'hdc, 8'hfe}, sts}});
-//        for (int unsigned j=0; j<tst_sub[i].size(); j++) begin
-//          $display("DEBUG: tst_sub[%0d][%0d] = %p", i, j, tst_sub[i][j]);
-//        end
-        obj_sub[i].transfer_sequencer(tst_sub[i]);
+        tst_sub.delete();
+        sts_sub = '0;
+        tst_len = tst_sub.size();
+        for (int unsigned i=0; i<IFN; i++) begin: write
+          // append reference transfers to queue               ndn       , adr              , wdt        ,        rdt
+          tst_len += obj_sub.put_transaction(tst_sub, '{req: '{TCB_LITTLE, i*tcb_sub.BUS_BEN, '{4{8'(i)}}}, rsp: '{nul, sts_sub}});
+        end: write
+        for (int unsigned i=0; i<IFN; i++) begin: read
+          // append reference transfers to queue               ndn       , adr              , wdt ,        rdt
+          tst_len += obj_sub.put_transaction(tst_sub, '{req: '{TCB_LITTLE, i*tcb_sub.BUS_BEN, nul}, rsp: '{'{4{8'(i)}}, sts_sub}});
+        end: read
+        obj_sub.transfer_sequencer(tst_sub);
       end: fork_sub_driver
       // subordinate (monitor)
-      for (int unsigned i=0; i<IFN; i++)
       begin: fork_sub_monitor
-        obj_sub[i].transfer_monitor(tst_mon[i]);
+        obj_sub.transfer_monitor(tst_mon);
       end: fork_sub_monitor
     join_any
     // disable transfer monitor
     @(posedge clk);
     disable fork;
-    // reference transfer queue
-    for (int unsigned i=0; i<IFN; i++)
-    begin
-      // compare transfers from monitor to reference
-      // wildcard operator is used to ignore data byte comparison, when the reference data is 8'hxx
-      for (int unsigned j=0; j<tst_sub[i].size(); j++) begin
-        assert (tst_mon[i][j].req ==? tst_sub[i][j].req) else $error("\ntst_mon[%0d][%0d].req = %p !=? \ntst_sub[%0d][%0d].req = %p", i, j, tst_mon[i][j].req, i, j, tst_sub[i][j].req);
-        assert (tst_mon[i][j].rsp ==? tst_sub[i][j].rsp) else $error("\ntst_mon[%0d][%0d].rsp = %p !=? \ntst_sub[%0d][%0d].rsp = %p", i, j, tst_mon[i][j].rsp, i, j, tst_sub[i][j].rsp);
-      end
-//      // printout transfer queue for debugging purposes
-//      for (int unsigned j=0; j<tst_sub[i].size(); j++) begin
-//        $display("DEBUG: tst_sub[%0d][%0d] = %p", i, j, tst_sub[i][j]);
-//        $display("DEBUG: tst_mon[%0d][%0d] = %p", i, j, tst_mon[i][j]);
-//      end
+    // compare transfers from monitor to reference
+    // wildcard operator is used to ignore data byte comparison, when the reference data is 8'hxx
+    foreach (tst_sub[i]) begin
+      assert (tst_mon[i].req ==? tst_sub[i].req) else $error("\ntst_mon[%0d].req = %p !=? \ntst_sub[%0d].req = %p", i, tst_mon[i].req, i, tst_sub[i].req);
+      assert (tst_mon[i].rsp ==? tst_sub[i].rsp) else $error("\ntst_mon[%0d].rsp = %p !=? \ntst_sub[%0d].rsp = %p", i, tst_mon[i].rsp, i, tst_sub[i].rsp);
     end
+//    // printout transfer queue for debugging purposes
+//    foreach (tst_sub[i]) begin
+//      $display("DEBUG: tst_sub[%0d] = %p", i, tst_sub[i]);
+//      $display("DEBUG: tst_mon[%0d] = %p", i, tst_mon[i]);
+//    end
   endtask: test_simple
-
-
 
 ////////////////////////////////////////////////////////////////////////////////
 // test sequence
