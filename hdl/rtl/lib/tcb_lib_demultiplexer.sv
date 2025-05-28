@@ -23,8 +23,8 @@ module tcb_lib_demultiplexer
   parameter  int unsigned IFN = 2,
   localparam int unsigned IFL = $clog2(IFN)
 )(
-  // select
-  input  logic [IFL-1:0] sel,
+  // control
+  input  logic [IFL-1:0] sel,  // select
   // TCB interfaces
   tcb_if.sub sub         ,  // TCB subordinate interface  (manager     device connects here)
   tcb_if.man man[IFN-1:0]   // TCB manager     interfaces (subordinate devices connect here)

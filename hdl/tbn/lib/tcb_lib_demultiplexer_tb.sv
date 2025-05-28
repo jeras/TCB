@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// TCB (Tightly Coupled Bus) LIBrary DeMultipleXer/DECoder TestBench
+// TCB (Tightly Coupled Bus) library demultiplexer/decoder testbench
 ////////////////////////////////////////////////////////////////////////////////
 // Copyright 2022 Iztok Jeras
 //
@@ -179,111 +179,6 @@ module tcb_lib_demultiplexer_tb
   endtask: test_simple
 
 
-/*
-  task test_parameterized();
-    static bit ndn_list [2] = '{TCB_LITTLE, TCB_BIG};
-//    static bit ndn_list [1] = '{TCB_BIG};
-    // parameterized tests
-    $display("parameterized tests");
-    testname = "parameterized tests";
-    foreach (ndn_list[i]) begin
-      for (int unsigned siz=tcb_man.PCK.MIN; siz<=tcb_man.BUS_MAX; siz++) begin
-//      begin
-//        static int unsigned siz=1;
-//        for (int unsigned off=0; off<tcb_man.BUS_BEN; off+=2) begin
-        for (int unsigned off=0; off<tcb_man.BUS_BEN; off+=2**tcb_man.PCK.OFF) begin
-          // local variables
-          string       id;
-          int unsigned size;
-          int unsigned len;
-          // address
-          logic [tcb_man.BUS.ADR-1:0] adr;
-          // endianness
-          logic         ndn;
-          // local data arrays
-          logic [8-1:0] dat [];  // pattern   data array
-          logic [8-1:0] tmp [];  // temporary data array
-          logic [8-1:0] nul [];  // empty     data array
-          // local response
-          tcb_rsp_sts_t sts;  // response status
-          // local transactions
-          tcb_vip_siz_s::transaction_t transaction_ref_w;  // reference write transaction
-          tcb_vip_siz_s::transaction_t transaction_ref_r;  // reference read  transaction
-          tcb_vip_siz_s::transaction_t transaction_mon_w;  // monitor   write transaction
-          tcb_vip_siz_s::transaction_t transaction_mon_r;  // monitor   read  transaction
-          // local transfers
-          automatic tcb_vip_siz_s::transfer_queue_t transfer_man = '{};  // manager     transfer queue
-          automatic tcb_vip_siz_s::transfer_queue_t transfer_sub = '{};  // subordinate transfer queue
-          automatic tcb_vip_siz_s::transfer_queue_t transfer_mon = '{};  // monitor     transfer queue
-
-          // endianness
-          ndn = ndn_list[i];
-          // ID
-          id = $sformatf("ndn=%0d siz=%0d off=%0d", ndn, siz, off);
-          $display("DEBUG: ID = '%s'", id);
-          // address (stride is twice BUS_BEN, to accommodate unaligned accesses)
-          adr = siz * tcb_man.BUS_BEN * 2;
-          // prepare data array
-          size = 2**siz;
-          dat = new[size];
-          for (int unsigned i=0; i<size; i++) begin
-            // each byte within a transfer has an unique value
-            dat[i] = {siz[4-1:0], off[4-1:0] + i[4-1:0]};
-          end
-          // expected response status
-          sts = '0;
-
-          // write/read transaction
-          //                           ndn, adr    , wdt          rdt, sts
-          transaction_ref_w = '{req: '{ndn, adr+off, dat}, rsp: '{nul, sts}};
-          transaction_ref_r = '{req: '{ndn, adr+off, nul}, rsp: '{dat, sts}};
-          // manager transfer queue
-          len  = 0;
-          len += obj_man.put_transaction(transfer_man, transaction_ref_w, id);
-          len += obj_man.put_transaction(transfer_man, transaction_ref_r, id);
-          // subordinate transfer queue
-          len  = 0;
-          len += obj_sub.put_transaction(transfer_sub, transaction_ref_w);
-          len += obj_sub.put_transaction(transfer_sub, transaction_ref_r);
-
-          // play/monitor transfers
-          fork
-            // drive manager bus
-            begin: parameterized_test_man
-              obj_man.transfer_sequencer(transfer_man);
-            end: parameterized_test_man
-            // monitor subordinate bus
-            begin: parameterized_test_mon
-              obj_sub.transfer_monitor(transfer_mon);
-            end: parameterized_test_mon
-          join_any
-          // disable transfer monitor
-          @(posedge clk);
-          disable fork;
-
-          // parse manager transfer queues into transactions
-          len  = 0;
-          len += obj_man.get_transaction(transfer_man, transaction_mon_w);
-          len += obj_man.get_transaction(transfer_man, transaction_mon_r);
-          // compare read data against write data
-          assert (transaction_mon_r.rsp.rdt == dat) else $error("Read data not matching previously written data (id = '%s')", id);
-          // compare subordinate reference and monitored transaction queue
-          foreach (transfer_sub[i]) begin
-            assert (transfer_mon[i].req ==? transfer_sub[i].req) else $error("\ntransfer_mon[%0d].req = %p !=? \ntransfer_ref[%0d].req = %p", i, transfer_mon[i].req, i, transfer_sub[i].req);
-            assert (transfer_mon[i].rsp ==? transfer_sub[i].rsp) else $error("\ntransfer_mon[%0d].rsp = %p !=? \ntransfer_ref[%0d].rsp = %p", i, transfer_mon[i].rsp, i, transfer_sub[i].rsp);
-          end
-          // parse subordinate monitor transfer queues into transactions
-          len  = 0;
-          len += obj_sub.get_transaction(transfer_mon, transaction_mon_w);
-          len += obj_sub.get_transaction(transfer_mon, transaction_mon_r);
-          // compare subordinate reference and monitor transactions
-          assert (transaction_mon_w == transaction_ref_w) else $error("\ntransaction_mon_w = %p != \ntransaction_ref_w = %p", transaction_mon_w, transaction_ref_w);
-          assert (transaction_mon_r == transaction_ref_r) else $error("\ntransaction_mon_r = %p != \ntransaction_ref_r = %p", transaction_mon_r, transaction_ref_r);
-        end
-      end
-    end
-  endtask: test_parameterized
-*/
 
 ////////////////////////////////////////////////////////////////////////////////
 // test sequence

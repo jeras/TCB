@@ -17,8 +17,8 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 module tcb_lib_passthrough (
-  tcb_if.sub sub,  // TCB subordinate port (manager     device connects here)
-  tcb_if.man man   // TCB manager     port (subordinate device connects here)
+  tcb_if.sub sub,  // TCB subordinate interface (manager     device connects here)
+  tcb_if.man man   // TCB manager     interface (subordinate device connects here)
 );
 
 ////////////////////////////////////////////////////////////////////////////////

@@ -38,7 +38,7 @@ module tcb_lib_misaligned_memory_controller
   // TODO
 )(
   // TCB interface
-  tcb_if.sub tcb,  // TCB subordinate port (manager device connects here)
+  tcb_if.sub tcb,  // TCB subordinate interface (manager device connects here)
   // SRAM interface
   output logic [MEM_CEN-1:0]              mem_cen,  // chip enable
   output logic                            mem_wen,  // write enable

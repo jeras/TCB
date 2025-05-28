@@ -226,7 +226,7 @@ module tcb_uart_tb
 
   // TCB independent channel splitter
   tcb_lib_common2independent cmn2ind (
-    // CRW subordinate port
+    // CRW subordinate interface
     .tcb_cmn_sub (tcb_man),
     // IRW manager ports
     .tcb_rdc_man (tcb_man_rdc),

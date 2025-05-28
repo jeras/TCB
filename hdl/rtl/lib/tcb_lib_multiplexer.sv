@@ -52,22 +52,23 @@ module tcb_lib_multiplexer
   logic [IFL-1:0] sub_sel;
   logic [IFL-1:0] man_sel;
 
-  // TODO: remove once simulators support access to types inside interfaces
-  // request
-  typedef struct packed {
-    tcb_req_cmd_def_t       cmd;  // command (optional)
-    logic                   wen;  // write enable
-    logic                   ren;  // write enable
-    logic                   ndn;  // endianness
-    logic [man.BUS.ADR-1:0] adr;  // address
-    logic [man.BUS_SIZ-1:0] siz;  // transfer size
-    logic [man.BUS_BEN-1:0] ben;  // byte enable
-    logic [man.BUS.DAT-1:0] wdt;  // write data
-  } man_req_t;
+//  // TODO: remove once simulators support access to types inside interfaces
+//  // request
+//  typedef struct packed {
+//    tcb_req_cmd_def_t       cmd;  // command (optional)
+//    logic                   wen;  // write enable
+//    logic                   ren;  // write enable
+//    logic                   ndn;  // endianness
+//    logic [man.BUS.ADR-1:0] adr;  // address
+//    logic [man.BUS_SIZ-1:0] siz;  // transfer size
+//    logic [man.BUS_BEN-1:0] ben;  // byte enable
+//    logic [man.BUS.DAT-1:0] wdt;  // write data
+//  } man_req_t;
+
+  typedef man.req_t man_req_t;
 
   logic           tmp_vld [IFN-1:0];  // handshake
   man_req_t       tmp_req [IFN-1:0];  // request
-//man.req_t       tmp_req [IFN-1:0];  // request
 
 ////////////////////////////////////////////////////////////////////////////////
 // control

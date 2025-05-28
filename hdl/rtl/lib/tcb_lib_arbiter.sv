@@ -24,13 +24,13 @@ module tcb_lib_arbiter
   // interconnect parameters (manager interface number and logarithm)
   parameter  int unsigned IFN = 2,
   localparam int unsigned IFL = $clog2(IFN),
-  // port priorities (lower number is higher priority)
+  // interface priorities (lower number is higher priority)
   parameter  bit unsigned [IFL-1:0] PRI [IFN-1:0] = '{1'd1, 1'd0}
 )(
   // TCB interfaces
-  tcb_if.sub tcb [IFN-1:0],  // TCB subordinate ports (manager devices connect here)
+  tcb_if.sub tcb [IFN-1:0],   // TCB subordinate interfaces (manager devices connect here)
   // control
-  output logic [IFL-1:0] sel   // select
+  output logic [IFL-1:0] sel  // select
 );
 
 ////////////////////////////////////////////////////////////////////////////////

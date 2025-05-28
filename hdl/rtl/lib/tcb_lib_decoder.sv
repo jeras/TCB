@@ -29,8 +29,8 @@ module tcb_lib_decoder
 )(
   // TCB interfaces
   tcb_if.sub tcb,  // TCB subordinate interface (manager device connects here)
-  // select
-  output logic [IFL-1:0] sel
+  // control
+  output logic [IFL-1:0] sel  // select
 );
 
 ////////////////////////////////////////////////////////////////////////////////

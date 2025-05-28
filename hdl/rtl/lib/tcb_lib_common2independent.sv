@@ -17,7 +17,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 module tcb_lib_common2independent (
-  // TCB common subordinate port (manager device connects here)
+  // TCB common subordinate interface (manager device connects here)
   tcb_if.sub tcb_cmn_sub,
   // TCB independant manager ports (subordinate device connects here)
   tcb_if.man tcb_rdc_man,

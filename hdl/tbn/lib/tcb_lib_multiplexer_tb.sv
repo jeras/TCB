@@ -23,74 +23,98 @@ module tcb_lib_multiplexer_tb
   // response delay
   parameter  int unsigned DLY = TCB_HSK_DEF.DLY,
   // TCB widths
-  parameter  int unsigned UNT = TCB_BUS_DEF.UNT,       // data unit   width
   parameter  int unsigned ADR = TCB_BUS_DEF.ADR,       // address bus width
   parameter  int unsigned DAT = TCB_BUS_DEF.DAT,       // data    bus width
   // interconnect parameters (interface number)
   parameter  int unsigned IFN = 3,
-  parameter  int unsigned IFL = $clog2(IFN),
-  // port priorities (lower number is higher priority)
-  parameter  int unsigned PRI [IFN-1:0] = '{2, 1, 0}
+  parameter  int unsigned IFL = $clog2(IFN)
 );
 
-  // TCB physical interface parameters
+////////////////////////////////////////////////////////////////////////////////
+// local parameters
+////////////////////////////////////////////////////////////////////////////////
+
+  // interface priorities (lower number is higher priority)
+  localparam int unsigned PRI [IFN-1:0] = '{2, 1, 0};
+
+  // handshake parameter
+  localparam tcb_hsk_t HSK = TCB_HSK_DEF;
+
+  // bus parameter
   localparam tcb_bus_t BUS = '{
-    // protocol
-    HSK: HSK,
-    // signal bus widths
-    UNT: UNT,
-    ADR: ADR,
-    DAT: DAT,
-    // size/mode/order parameters
-    ALN: TCB_PAR_BUS_DEF.ALN,
-    MIN: TCB_PAR_BUS_DEF.MIN,
-    MOD: TCB_PAR_BUS_DEF.MOD,
-    ORD: TCB_PAR_BUS_DEF.ORD,
-    // channel configuration
-    CHN: TCB_PAR_BUS_DEF.CHN
+    ADR: TCB_BUS_DEF.ADR,
+    DAT: TCB_BUS_DEF.DAT,
+    FRM: TCB_BUS_DEF.FRM,
+    CHN: TCB_CHN_HALF_DUPLEX,
+    AMO: TCB_AMO_DISABLED,
+    PRF: TCB_PRF_DISABLED,
+    NXT: TCB_NXT_DISABLED,
+    MOD: TCB_MOD_LOG_SIZE,
+    ORD: TCB_ORD_DESCENDING,
+    NDN: TCB_NDN_BI_NDN
   };
 
+  // physical interface parameter default
+  localparam tcb_pck_t PCK = '{
+    MIN: 0,
+    OFF: 0,
+    ALN: 0,
+    BND: 0
+  };
+
+  localparam tcb_vip_t VIP = '{
+    DRV: 1'b1,
+    HLD: 1'b0
+  };
+
+//  typedef tcb_c #(HSK, BUS_SIZ, PCK)::req_t req_t;
+//  typedef tcb_c #(HSK, BUS_SIZ, PCK)::rsp_t rsp_t;
+
+  // local request/response types are copies of packaged defaults
+  typedef tcb_req_t req_t;
+  typedef tcb_rsp_t rsp_t;
+
 ////////////////////////////////////////////////////////////////////////////////
 // local signals
 ////////////////////////////////////////////////////////////////////////////////
 
-  // system signals
-  logic clk;  // clock
-  logic rst;  // reset
+  // system signals (initialized)
+  logic clk = 1'b1;  // clock
+  logic rst = 1'b1;  // reset
+
+  string testname = "none";
+
+  // TCB interfaces
+  tcb_if #(tcb_hsk_t, HSK, tcb_bus_t, BUS, tcb_pck_t, PCK, req_t, rsp_t                ) tcb_man [IFN-1:0] (.clk (clk), .rst (rst));
+  tcb_if #(tcb_hsk_t, HSK, tcb_bus_t, BUS, tcb_pck_t, PCK, req_t, rsp_t, tcb_vip_t, VIP) tcb_sub           (.clk (clk), .rst (rst));
+
+  // parameterized class specialization (blocking API)
+  typedef tcb_vip_blocking_c #(tcb_hsk_t, HSK, tcb_bus_t, BUS, tcb_pck_t, PCK, req_t, rsp_t                ) tcb_man_s;
+  typedef tcb_vip_blocking_c #(tcb_hsk_t, HSK, tcb_bus_t, BUS, tcb_pck_t, PCK, req_t, rsp_t, tcb_vip_t, VIP) tcb_sub_s;
+
+  // TCB class objects
+  tcb_man_s obj_man [IFN];
+  tcb_sub_s obj_sub = new(tcb_sub, "SUB");
+
+  // transfer reference/monitor array
+  tcb_sub_s::transfer_queue_t tst_sub;
+  tcb_sub_s::transfer_queue_t tst_mon;
+  int unsigned                tst_len;
+
+  // empty array
+  logic [8-1:0] nul [];
 
   // response
-  //logic [DAT-1:0] rdt [IFN-1:0];  // read data
-  //logic           err [IFN-1:0];  // error response
-  logic [DAT-1:0] rdt;  // read data
-  logic           err;  // error response
+  logic [tcb_man.BUS_BEN-1:0][8-1:0] rdt;  // read data
+  tcb_rsp_sts_t                      sts;  // status response
 
   // control
-  logic  [IFL-1:0] sel;  // select
+  logic [IFL-1:0] sel;  // select
 
 ////////////////////////////////////////////////////////////////////////////////
-// local signals
+// tests
 ////////////////////////////////////////////////////////////////////////////////
 
-  tcb_if #(.BUS (BUS)) tcb_man  [IFN-1:0] (.clk (clk), .rst (rst));
-  tcb_if #(.BUS (BUS)) tcb_sub            (.clk (clk), .rst (rst));
-
-////////////////////////////////////////////////////////////////////////////////
-// test sequence
-////////////////////////////////////////////////////////////////////////////////
-
-  // clock
-  initial          clk = 1'b1;
-  always #(20ns/2) clk = ~clk;
-
-  // test sequence
-  initial
-  begin
-    // reset sequence
-    rst = 1'b1;
-    repeat (2) @(posedge clk);
-    rst = 1'b0;
-    repeat (1) @(posedge clk);
-    #1;
     fork
       begin: req
 //        for (int unsigned i=0; i<IFN; i++) begin
@@ -123,26 +147,119 @@ module tcb_lib_multiplexer_tb
         sub.rsp(32'h13121110, 1'b0);
         sub.rsp(32'h23222120, 1'b0);
       end: rsp
-    join
-    repeat (8) @(posedge clk);
-    $finish();
+
+
+  task test_simple ();
+    // write sequence
+    $display("write sequence");
+    testname = "write";
+    for (int i=0; i<IFN; i++) begin
+      tst_sub[i].delete();
+      tst_mon[i].delete();
+    end
+    fork
+      // manager (blocking API)
+      begin: fork_man
+        for (int unsigned i=0; i<IFN; i++) begin
+          obj_man.write32((i<<16) + 32'h00000000, 32'h76543210, sts);
+          obj_man.write32((i<<16) + 32'h00000020, 32'hfedcba98, sts);
+          obj_man.read32 ((i<<16) + 32'h00000000, rdt[4-1:0], sts);
+          obj_man.read32 ((i<<16) + 32'h00000020, rdt[4-1:0], sts);
+        end
+      end: fork_man
+      // subordinate (driver)
+      for (int unsigned i=0; i<IFN; i++)
+      begin: fork_sub_driver
+        sts[i] = '0;
+        tst_len[i] = tst_sub[i].size();
+        // append reference transfers to queue               ndn       , adr         , wdt                           ,        rdt
+        tst_len[i] += obj_sub[i].put_transaction(tst_sub[i], '{req: '{TCB_LITTLE, 32'h00000000, '{8'h10, 8'h32, 8'h54, 8'h76}}, rsp: '{nul, sts}});
+        tst_len[i] += obj_sub[i].put_transaction(tst_sub[i], '{req: '{TCB_LITTLE, 32'h00000020, '{8'h98, 8'hba, 8'hdc, 8'hfe}}, rsp: '{nul, sts}});
+        tst_len[i] += obj_sub[i].put_transaction(tst_sub[i], '{req: '{TCB_LITTLE, 32'h00000000, nul}, rsp: '{'{8'h10, 8'h32, 8'h54, 8'h76}, sts}});
+        tst_len[i] += obj_sub[i].put_transaction(tst_sub[i], '{req: '{TCB_LITTLE, 32'h00000020, nul}, rsp: '{'{8'h98, 8'hba, 8'hdc, 8'hfe}, sts}});
+//        for (int unsigned j=0; j<tst_sub[i].size(); j++) begin
+//          $display("DEBUG: tst_sub[%0d][%0d] = %p", i, j, tst_sub[i][j]);
+//        end
+        obj_sub[i].transfer_sequencer(tst_sub[i]);
+      end: fork_sub_driver
+      // subordinate (monitor)
+      for (int unsigned i=0; i<IFN; i++)
+      begin: fork_sub_monitor
+        obj_sub[i].transfer_monitor(tst_mon[i]);
+      end: fork_sub_monitor
+    join_any
+    // disable transfer monitor
+    @(posedge clk);
+    disable fork;
+    // reference transfer queue
+    for (int unsigned i=0; i<IFN; i++)
+    begin
+      // compare transfers from monitor to reference
+      // wildcard operator is used to ignore data byte comparison, when the reference data is 8'hxx
+      for (int unsigned j=0; j<tst_sub[i].size(); j++) begin
+        assert (tst_mon[i][j].req ==? tst_sub[i][j].req) else $error("\ntst_mon[%0d][%0d].req = %p !=? \ntst_sub[%0d][%0d].req = %p", i, j, tst_mon[i][j].req, i, j, tst_sub[i][j].req);
+        assert (tst_mon[i][j].rsp ==? tst_sub[i][j].rsp) else $error("\ntst_mon[%0d][%0d].rsp = %p !=? \ntst_sub[%0d][%0d].rsp = %p", i, j, tst_mon[i][j].rsp, i, j, tst_sub[i][j].rsp);
+      end
+//      // printout transfer queue for debugging purposes
+//      for (int unsigned j=0; j<tst_sub[i].size(); j++) begin
+//        $display("DEBUG: tst_sub[%0d][%0d] = %p", i, j, tst_sub[i][j]);
+//        $display("DEBUG: tst_mon[%0d][%0d] = %p", i, j, tst_mon[i][j]);
+//      end
+    end
+  endtask: test_simple
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+// test sequence
+////////////////////////////////////////////////////////////////////////////////
+
+  // clock
+  always #(20ns/2) clk = ~clk;
+
+  // initialize subordinate objects
+  generate
+  for (genvar i=0; i<IFN; i++) begin
+    initial begin    
+      obj_man[i] = new(tcb_man[i], "MAN");
+    end
   end
+  endgenerate
+
+  // test sequence
+  initial
+  begin: test
+    // reset sequence
+    repeat (2) @(posedge clk);
+    rst <= 1'b0;
+    repeat (1) @(posedge clk);
+
+    test_simple;
+//    test_parameterized;
+
+    // end of test
+    repeat (4) @(posedge clk);
+    $finish();
+  end: test
 
   // timeout
   initial
-  begin
+  begin: timeout
     repeat (20) @(posedge clk);
     $finish();
-  end
+  end: timeout
 
 ////////////////////////////////////////////////////////////////////////////////
 // VIP component instances
 ////////////////////////////////////////////////////////////////////////////////
 
-  tcb_vip_dev #("MAN") man     [IFN-1:0] (.tcb (tcb_man));  // manager
-  tcb_vip_dev #("MON") mon_man [IFN-1:0] (.tcb (tcb_man));  // manager monitor
-  tcb_vip_dev #("MON") mon_sub           (.tcb (tcb_sub));  // subordinate monitor
-  tcb_vip_dev #("SUB") sub               (.tcb (tcb_sub));  // subordinate
+  tcb_vip_protocol_checker chk_man [IFN-1:0] (
+    .tcb (tcb_man)
+  );
+
+  tcb_vip_protocol_checker chk_sub (
+    .tcb (tcb_sub)
+  );
 
 ////////////////////////////////////////////////////////////////////////////////
 // DUT instances
@@ -153,10 +270,10 @@ module tcb_lib_multiplexer_tb
     // arbitration priority mode
 //  .MD   (),
     // interconnect parameters
-    .IFN   (IFN),
-    // port priorities (lower number is higher priority)
+    .IFN  (IFN),
+    // interface priorities (lower number is higher priority)
     .PRI  (PRI)
-  ) arb (
+  ) dut_arb (
     .tcb  (tcb_man),
     .sel  (sel)
   );
@@ -165,7 +282,7 @@ module tcb_lib_multiplexer_tb
   tcb_lib_multiplexer #(
     // interconnect parameters
     .IFN   (IFN)
-  ) dut (
+  ) dut_mux (
     // control
     .sel  (sel),
     // TCB interfaces
@@ -179,7 +296,11 @@ module tcb_lib_multiplexer_tb
 
   initial
   begin
+`ifdef VERILATOR
     $dumpfile("test.fst");
+`else
+    $dumpfile("test.vcd");
+`endif
     $dumpvars;
   end
 
