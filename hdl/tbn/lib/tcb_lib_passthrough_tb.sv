@@ -94,8 +94,8 @@ module tcb_lib_passthrough_tb
         sts = '0;
         tst_ref.delete();
         tst_len = tst_ref.size();
-        tst_len += {obj_sub.put_transaction(tst_ref, '{req: '{TCB_NATIVE, 32'h01234567, '{8'h10, 8'h32, 8'h54, 8'h76}}, rsp: '{nul, sts}})};
-        tst_len += {obj_sub.put_transaction(tst_ref, '{req: '{TCB_NATIVE, 32'h89ABCDEF, nul}, rsp: '{'{8'h98, 8'hBA, 8'hDC, 8'hFE}, sts}})};
+        tst_len += obj_sub.put_transaction(tst_ref, '{req: '{TCB_NATIVE, 32'h01234567, '{8'h10, 8'h32, 8'h54, 8'h76}}, rsp: '{nul, sts}});
+        tst_len += obj_sub.put_transaction(tst_ref, '{req: '{TCB_NATIVE, 32'h89ABCDEF, nul}, rsp: '{'{8'h98, 8'hBA, 8'hDC, 8'hFE}, sts}});
         obj_sub.transfer_sequencer(tst_ref);
       end: fork_sub
       // subordinate (monitor)
