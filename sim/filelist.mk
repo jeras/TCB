@@ -18,7 +18,6 @@ RTL+=${PATH_HDL}/rtl/lib/tcb_lib_register_backpressure.sv
 #RTL+=${PATH_HDL}/rtl/lib/tcb_lib_multiplexer.sv
 RTL+=${PATH_HDL}/rtl/lib/tcb_lib_decoder.sv
 RTL+=${PATH_HDL}/rtl/lib/tcb_lib_demultiplexer.sv
-#RTL+=${PATH_HDL}/rtl/lib/tcb_lib_converter.sv
 RTL+=${PATH_HDL}/rtl/lib/tcb_lib_logsize2byteena.sv
 RTL+=${PATH_HDL}/rtl/lib/tcb_lib_misaligned_memory_controller.sv
 # GPIO RTL
@@ -47,7 +46,6 @@ TBN+=${PATH_HDL}/tbn/lib/tcb_lib_register_backpressure_tb.sv
 #TBN+=${PATH_HDL}/tbn/lib/tcb_lib_multiplexer_tb.sv
 #TBN+=${PATH_HDL}/tbn/lib/tcb_lib_decoder_tb.sv
 TBN+=${PATH_HDL}/tbn/lib/tcb_lib_demultiplexer_tb.sv
-#TBN+=${PATH_HDL}/tbn/lib/tcb_lib_converter_tb.sv
 TBN+=${PATH_HDL}/tbn/lib/tcb_lib_logsize2byteena_tb.sv
 TBN+=${PATH_HDL}/tbn/lib/tcb_lib_misaligned_memory_controller_tb.sv
 # SRAM model
