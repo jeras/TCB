@@ -139,13 +139,10 @@ module tcb_peri_gpio_tb
 
     // read/check GPIO input status
     $display("(%t) INFO: reading/checking input begin.", $time);
-    obj_man.check32('h08, 32'hxxxxxxxx, '0);  // read input register
-
-    gpio_i <= GW'('h89abcdef);
+    #10 gpio_i = GW'('h89abcdef);
     repeat (2) @(posedge clk);
     obj_man.check32('h08, 32'h89abcdef, '0);  // read input register
-
-    gpio_i <= GW'('hfedcba98);
+    #10 gpio_i = GW'('hfedcba98);
     repeat (2) @(posedge clk);
     obj_man.check32('h08, 32'hfedcba98, '0);  // read input register
     $display("(%t) INFO: reading/checking input end.", $time);
