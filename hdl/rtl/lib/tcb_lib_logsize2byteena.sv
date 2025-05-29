@@ -185,8 +185,6 @@ module tcb_lib_logsize2byteena
       man.req.ben[i] = sub_req_ben[(i-req_off) % sub.BUS_BEN];
     end: ben
 
-    // TODO: I do not like the left-hand side index to be an equation, will cause synthesis issues
-
     if (sub.BUS.CHN != TCB_CHN_READ_ONLY) begin: write
       // write data
       always_comb
