@@ -76,8 +76,7 @@ module tcb_lib_logsize2byteena_tb
   };
 
   localparam tcb_vip_t VIP = '{
-    DRV: 1'b1,
-    HLD: 1'b0
+    DRV: 1'b1
   };
 
 //  typedef tcb_c #(HSK, BUS_SIZ, PCK)::req_t req_t;

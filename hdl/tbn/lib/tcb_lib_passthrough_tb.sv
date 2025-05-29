@@ -27,8 +27,7 @@ module tcb_lib_passthrough_tb
 
   // VIP parameters
   localparam tcb_vip_t VIP = '{
-    DRV: 1'b1,
-    HLD: 1'b0
+    DRV: 1'b1
   };
 
 ////////////////////////////////////////////////////////////////////////////////

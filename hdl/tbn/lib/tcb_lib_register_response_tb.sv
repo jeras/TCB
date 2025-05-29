@@ -31,13 +31,12 @@ module tcb_lib_register_response_tb
 // local parameters
 ////////////////////////////////////////////////////////////////////////////////
 
-  localparam tcb_hsk_t HSK_MAN = '{DLY: DLY+1};
-  localparam tcb_hsk_t HSK_SUB = '{DLY: DLY};
+  localparam tcb_hsk_t HSK_MAN = '{DLY: DLY+1, HLD: 1'b0};
+  localparam tcb_hsk_t HSK_SUB = '{DLY: DLY  , HLD: 1'b0};
 
   // VIP parameters
   localparam tcb_vip_t VIP = '{
-    DRV: 1'b1,
-    HLD: 1'b0
+    DRV: 1'b1
   };
 
 ////////////////////////////////////////////////////////////////////////////////

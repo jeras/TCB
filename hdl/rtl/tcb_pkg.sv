@@ -30,11 +30,14 @@ package tcb_pkg;
   typedef struct {
   `endif
     int unsigned DLY;  // response delay
+    bit          HLD;  // hold the response till the next access,
+                       // response data even further till the next read access
   } tcb_hsk_t;
 
   // handshake delay (HSK.DLY) default value
   localparam tcb_hsk_t TCB_HSK_DEF = '{
-    DLY: 1
+    DLY: 1,
+    HLD: 1'b0
   };
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -190,13 +193,12 @@ package tcb_pkg;
   `endif
     bit DRV;  // drive response from response delay line
     bit HLD;  // hold the response till the next access,
-              // response data further till the next read access
+              // response data even further till the next read access
   } tcb_vip_t;
 
   // VIP default value
   localparam tcb_vip_t TCB_VIP_DEF = '{
-    DRV: 1'b0,
-    HLD: 1'bx
+    DRV: 1'b0
   };
 
 ////////////////////////////////////////////////////////////////////////////////
