@@ -192,8 +192,6 @@ package tcb_pkg;
   typedef struct {
   `endif
     bit DRV;  // drive response from response delay line
-    bit HLD;  // hold the response till the next access,
-              // response data even further till the next read access
   } tcb_vip_t;
 
   // VIP default value
