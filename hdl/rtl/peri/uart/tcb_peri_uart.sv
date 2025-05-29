@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// TCB interface (common RW channel): UART controller
+// TCB interface peripheral: UART controller
 ////////////////////////////////////////////////////////////////////////////////
 // Copyright 2022 Iztok Jeras
 //
@@ -16,7 +16,7 @@
 // limitations under the License.
 ////////////////////////////////////////////////////////////////////////////////
 
-module tcb_cmn_uart #(
+module tcb_peri_uart #(
   // UART parameters
   int unsigned RW = 8,  // baudrate number width
   int unsigned DW = 8,  // shifter data width
@@ -50,12 +50,7 @@ module tcb_cmn_uart #(
 // parameter validation
 ////////////////////////////////////////////////////////////////////////////////
 
-`ifdef ALTERA_RESERVED_QIS
-`else
-generate
-  if (tcb.HSK.DLY != 0)  $error("ERROR: %m parameter HSK.DLY validation failed");
-endgenerate
-`endif
+  initial assert (tcb.HSK.DLY == 0) else $error("unsupported HSK.DLY = %0d", tcb.HSK.DLY);
 
 ////////////////////////////////////////////////////////////////////////////////
 // local signals
@@ -104,9 +99,6 @@ endgenerate
 
   // RX FIFO read ready
   assign rx_bus_rdy = tcb.trn & ~tcb.req.wen & (tcb.req.adr[6-1:0] == 6'h20);
-
-  // read data response
-  assign tcb.rsp.rdt = tcb.rsp.rdt;
 
 ////////////////////////////////////////////////////////////////////////////////
 // TCB write access
@@ -159,7 +151,7 @@ endgenerate
 ////////////////////////////////////////////////////////////////////////////////
 
   // FIFO
-  tcb_uart_fifo #(
+  tcb_peri_uart_fifo #(
     .SZ      (SZ),
   //.AW      (AW),
   //.CW      (CW),
@@ -181,7 +173,7 @@ endgenerate
   );
 
   // serializer
-  tcb_uart_ser #(
+  tcb_peri_uart_ser #(
     .RW      (RW),
     .DW      (DW)
   ) tx_ser (
@@ -206,7 +198,7 @@ endgenerate
 ////////////////////////////////////////////////////////////////////////////////
 
   // FIFO
-  tcb_uart_fifo #(
+  tcb_peri_uart_fifo #(
     .SZ      (SZ),
     .AW      (AW),
   //.CW      (8),
@@ -228,7 +220,7 @@ endgenerate
   );
 
   // deserializer
-  tcb_uart_des #(
+  tcb_peri_uart_des #(
     .RW      (RW),
     .DW      (DW)
   ) rx_des (
@@ -248,5 +240,5 @@ endgenerate
   // interrupt (RX FIFO load is above limit)
   assign irq_rx = (rx_sts_cnt > rx_cfg_irq);
 
-endmodule: tcb_cmn_uart
+endmodule: tcb_peri_uart
 

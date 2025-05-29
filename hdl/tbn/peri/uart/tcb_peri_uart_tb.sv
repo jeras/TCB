@@ -16,44 +16,17 @@
 // limitations under the License.
 ////////////////////////////////////////////////////////////////////////////////
 
-module tcb_uart_tb
+module tcb_peri_uart_tb
   import tcb_pkg::*;
   import tcb_vip_blocking_pkg::*;
 #(
   // TCB widths
   int unsigned ADR = 32,
-  int unsigned DAT = 32,
-  // RW channels
-  tcb_bus_channel_t CHN = TCB_HALF_DUPLEX
+  int unsigned DAT = 32
 );
 
-  // TODO: parameter propagation through virtual interfaces in classes
-  // is not working well in Vivado 2023.1 thus this workaround
-
-  // physical interface parameter
-  localparam tcb_bus_t PHY1 = '{
-    // protocol
-    HSK.DLY: 0,
-    // signal bus widths
-    UNT: TCB_PAR_BUS_DEF.UNT,
-    ADR: ADR,
-    DAT: DAT,
-    ALN: $clog2(DAT/TCB_PAR_BUS_DEF.UNT),
-    // size/mode/order parameters
-    SIZ: TCB_PAR_BUS_DEF.SIZ,
-    MOD: TCB_PAR_BUS_DEF.MOD,
-    ORD: TCB_PAR_BUS_DEF.ORD,
-    // channel configuration
-    CHN: TCB_PAR_BUS_DEF.CHN
-  };
-
-  localparam tcb_bus_t BUS = TCB_PAR_BUS_DEF;
-
-  // GPIO width
-  localparam int unsigned GW = 32;
-
 ////////////////////////////////////////////////////////////////////////////////
-// local signals
+// local parameters
 ////////////////////////////////////////////////////////////////////////////////
 
   // UART data width
@@ -64,44 +37,70 @@ module tcb_uart_tb
   localparam int unsigned RX_BDR = 4;         // RX baudrate
   localparam int unsigned RX_SMP = RX_BDR/2;  // RX sample
 
-  // TX string
-  localparam string TX_STR = "Hello, World!";
-  localparam int    TX_LEN = TX_STR.len();
-  // RX string
-  byte rx_str [TX_LEN];
+  // handshake parameter
+  localparam tcb_hsk_t HSK = '{
+    DLY: 0
+  };
 
-  // system signals
-  logic clk;  // clock
-  logic rst;  // reset
-/*
-  // TCB interface
-  tcb_if #(.BUS (BUS)) tcb_man     (.clk (clk), .rst (rst));
-  tcb_if #(.BUS (BUS)) tcb_man_wrc (.clk (clk), .rst (rst));
-  tcb_if #(.BUS (BUS)) tcb_man_rdc (.clk (clk), .rst (rst));
-*/
-  // TODO: the above code should be used instead
+  // bus parameter
+  localparam tcb_bus_t BUS = '{
+    ADR: TCB_BUS_DEF.ADR,
+    DAT: TCB_BUS_DEF.DAT,
+    FRM: TCB_BUS_DEF.FRM,
+    CHN: TCB_CHN_HALF_DUPLEX,
+    AMO: TCB_AMO_DISABLED,
+    PRF: TCB_PRF_DISABLED,
+    NXT: TCB_NXT_DISABLED,
+    MOD: TCB_MOD_LOG_SIZE,
+    ORD: TCB_ORD_DESCENDING,
+    NDN: TCB_NDN_BI_NDN
+  };
+
+  // physical interface parameter default
+  localparam tcb_pck_t PCK = '{
+    MIN: 0,
+    OFF: 0,
+    ALN: 0,
+    BND: 0
+  };
+
+  localparam tcb_vip_t VIP = '{
+    DRV: 1'b1
+  };
+
+//  typedef tcb_c #(HSK, BUS_SIZ, PCK)::req_t req_t;
+//  typedef tcb_c #(HSK, BUS_SIZ, PCK)::rsp_t rsp_t;
+
+  // local request/response types are copies of packaged defaults
+  typedef tcb_req_t req_t;
+  typedef tcb_rsp_t rsp_t;
+
+////////////////////////////////////////////////////////////////////////////////
+// local signals
+////////////////////////////////////////////////////////////////////////////////
+
+  // system signals (initialized)
+  logic clk = 1'b1;  // clock
+  logic rst = 1'b1;  // reset
+
+  string testname = "none";
+
   // TCB interfaces
-  tcb_if tcb_man     (.clk (clk), .rst (rst));
-  tcb_if tcb_man_wrc (.clk (clk), .rst (rst));
-  tcb_if tcb_man_rdc (.clk (clk), .rst (rst));
+  tcb_if #(tcb_hsk_t, HSK, tcb_bus_t, BUS, tcb_pck_t, PCK, req_t, rsp_t) tcb_man (.clk (clk), .rst (rst));
 
-  // parameterized class specialization
-  typedef tcb_transfer_c #(.BUS (BUS)) tcb_s;
+  // parameterized class specialization (blocking API)
+  typedef tcb_vip_blocking_c #(tcb_hsk_t, HSK, tcb_bus_t, BUS, tcb_pck_t, PCK, req_t, rsp_t) tcb_man_s;
 
   // TCB class objects
-  tcb_s obj_man;
+  tcb_man_s obj_man = new(tcb_man, "MAN");
+
+  // response
+  logic [tcb_man.BUS_BEN-1:0][8-1:0] rdt;  // read data
+  tcb_rsp_sts_t                      sts;  // status response
 
 ////////////////////////////////////////////////////////////////////////////////
 // data checking
 ////////////////////////////////////////////////////////////////////////////////
-
-  // response
-  logic [BUS.DAT-1:0] rdt;  // read data
-  tcb_rsp_sts_def_t   sts;  // status response
-
-  logic [ 8-1:0] rdt8 ;  //  8-bit read data
-  logic [16-1:0] rdt16;  // 16-bit read data
-  logic [32-1:0] rdt32;  // 32-bit read data
 
   // UART signals
   logic uart_rxd;  // receive
@@ -111,23 +110,25 @@ module tcb_uart_tb
   logic irq_tx;    // TX FIFO load is below limit
   logic irq_rx;    // RX FIFO load is above limit
 
+  // TX string
+  localparam string TX_STR = "Hello, World!";
+  localparam int    TX_LEN = TX_STR.len();
+  // RX string
+  byte rx_str [TX_LEN];
+
 ////////////////////////////////////////////////////////////////////////////////
 // test sequence
 ////////////////////////////////////////////////////////////////////////////////
 
   // clock
-  initial          clk = 1'b1;
   always #(20ns/2) clk = ~clk;
 
   // test sequence
   initial
-  begin
+  begin: test
     // time dispaly formatting
     $timeformat(-9, 3, "ns", 12);
-    // connect virtual interfaces
-    obj_man = new("MAN", tcb_man);
     // reset sequence
-    rst <= 1'b1;
     repeat (2) @(posedge clk);
     rst <= 1'b0;
     repeat (1) @(posedge clk);
@@ -174,16 +175,16 @@ module tcb_uart_tb
 
     // checking if TX and RX data arrays are the same
     if (string'(rx_str) != TX_STR) begin
-      $display("ERROR: RX '%s' differs from TX '%s'", rx_str, TX_STR);
+      $display("ERROR: RX '%s' differs from TX '%s'", string'(rx_str), TX_STR);
       $display("FAILURE");
     end else begin
       $display("SUCCESS");
     end
 
     // end simulation
-    repeat (2) @(posedge clk);
+    repeat (4) @(posedge clk);
     $finish();
-  end
+  end: test
 
   // timeout (in case RX IRQ is not triggered)
   initial
@@ -198,16 +199,16 @@ module tcb_uart_tb
 // VIP instances
 ////////////////////////////////////////////////////////////////////////////////
 
+  tcb_vip_protocol_checker chk_man (
+    .tcb (tcb_man)
+  );
+
 ////////////////////////////////////////////////////////////////////////////////
 // DUT instance
 ////////////////////////////////////////////////////////////////////////////////
 
-  generate
-  if (CHN == TCB_HALF_DUPLEX)
-  begin: cmn
-
   // TCB UART
-  tcb_cmn_uart #(
+  tcb_peri_uart #(
     .DW       (UDW)
   ) uart (
     // UART signals
@@ -220,37 +221,6 @@ module tcb_uart_tb
     .tcb      (tcb_man)
   );
 
-  end: cmn
-  else
-  begin: ind
-
-  // TCB independent channel splitter
-  tcb_lib_common2independent cmn2ind (
-    // CRW subordinate interface
-    .tcb_cmn_sub (tcb_man),
-    // IRW manager ports
-    .tcb_rdc_man (tcb_man_rdc),
-    .tcb_wrc_man (tcb_man_wrc)
-  );
-
-  // TCB UART
-  tcb_ind_uart #(
-    .DW       (UDW)
-  ) uart (
-    // UART signals
-    .uart_txd (uart_txd),
-    .uart_rxd (uart_rxd),
-    // interrupts
-    .irq_tx   (irq_tx),
-    .irq_rx   (irq_rx),
-    // TCB IRW interface
-    .tcb_wrc  (tcb_man_wrc),
-    .tcb_rdc  (tcb_man_rdc)
-  );
-
-  end: ind
-  endgenerate
-
   // UART loopback
   assign uart_rxd = uart_txd;
 
@@ -260,8 +230,12 @@ module tcb_uart_tb
 
   initial
   begin
+`ifdef VERILATOR
     $dumpfile("test.fst");
+`else
+    $dumpfile("test.vcd");
+`endif
     $dumpvars;
   end
 
-endmodule: tcb_uart_tb
+endmodule: tcb_peri_uart_tb

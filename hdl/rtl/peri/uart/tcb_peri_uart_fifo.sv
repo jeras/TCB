@@ -16,7 +16,7 @@
 // limitations under the License.
 ////////////////////////////////////////////////////////////////////////////////
 
-module tcb_uart_fifo #(
+module tcb_peri_uart_fifo #(
   int unsigned SZ = 32,            // size
   int unsigned DW = 8,             // data width
   int unsigned AW = $clog2(SZ),    // address width (clog2)
@@ -105,4 +105,4 @@ module tcb_uart_fifo #(
   // output valid (not empty)
   assign sto_vld = (cnt != 'd0);
 
-endmodule: tcb_uart_fifo
+endmodule: tcb_peri_uart_fifo

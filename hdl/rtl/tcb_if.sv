@@ -256,17 +256,20 @@ interface tcb_if
       end: dly_i
     end: dly
 
-    // TODO implement hold
     if (VIP.DRV) begin: vip
       // continuous assignment
       if (HSK.DLY == 0) begin
         assign rsp = trn ? rsp_dly[HSK.DLY] : '{default: 'z};
       end else begin
-        assign rsp =       rsp_dly[HSK.DLY];
+        if (HSK.HLD) begin
+          assign rsp =                    rsp_dly[HSK.DLY];
+        end else begin
+          assign rsp = trn_dly[HSK.DLY] ? rsp_dly[HSK.DLY] : '{default: 'x};
+        end
       end
     end: vip
 
-endgenerate
+  endgenerate
 
 ////////////////////////////////////////////////////////////////////////////////
 // modports

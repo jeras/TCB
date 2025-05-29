@@ -42,13 +42,10 @@ module tcb_peri_gpio #(
 // parameter validation
 ////////////////////////////////////////////////////////////////////////////////
 
-`ifdef ALTERA_RESERVED_QIS
-`else
-generate
-  if (tcb.HSK.DLY !=  0)  $error("ERROR: %m parameter HSK.DLY validation failed");
-  if (tcb.BUS.DAT  < GW)  $error("ERROR: %m parameter GW exceeds the data bus width");
-endgenerate
-`endif
+  initial begin
+    assert (tcb.HSK.DLY ==  0) else $error("unsupported HSK.DLY = %0d", tcb.HSK.DLY);
+    assert (tcb.BUS.DAT >= GW) else $error("unsupported (BUS.DAT = %0d) < (GW = %0d)", tcb.BUS.DAT, GW);
+  end
 
 ////////////////////////////////////////////////////////////////////////////////
 // clock domain crossing

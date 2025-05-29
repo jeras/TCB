@@ -23,10 +23,10 @@ RTL+=${PATH_HDL}/rtl/lib/tcb_lib_misaligned_memory_controller.sv
 # GPIO RTL
 RTL+=${PATH_HDL}/rtl/peri/gpio/tcb_peri_gpio.sv
 # UART RTL
-#RTL+=${PATH_HDL}/rtl/peri/uart/tcb_uart_ser.sv
-#RTL+=${PATH_HDL}/rtl/peri/uart/tcb_uart_des.sv
-#RTL+=${PATH_HDL}/rtl/peri/uart/tcb_uart_fifo.sv
-#RTL+=${PATH_HDL}/rtl/peri/uart/tcb_uart.sv
+RTL+=${PATH_HDL}/rtl/peri/uart/tcb_peri_uart_ser.sv
+RTL+=${PATH_HDL}/rtl/peri/uart/tcb_peri_uart_des.sv
+RTL+=${PATH_HDL}/rtl/peri/uart/tcb_peri_uart_fifo.sv
+RTL+=${PATH_HDL}/rtl/peri/uart/tcb_peri_uart.sv
 
 # SystemVerilog VIP
 TBN+=${PATH_HDL}/tbn/vip/tcb_vip_transfer_pkg.sv
@@ -50,12 +50,12 @@ TBN+=${PATH_HDL}/tbn/lib/tcb_lib_logsize2byteena_tb.sv
 TBN+=${PATH_HDL}/tbn/lib/tcb_lib_misaligned_memory_controller_tb.sv
 # SRAM model
 TBN+=${PATH_HDL}/tbn/peri/sram/sram_model.sv
-## GPIO testbench
+# GPIO testbench
 TBN+=${PATH_HDL}/tbn/peri/gpio/tcb_peri_gpio_tb.sv
-## UART testbench
-#TBN+=${PATH_HDL}/tbn/peri/uart/uart_model.sv
-#TBN+=${PATH_HDL}/tbn/peri/uart/uart_model_tb.sv
-#TBN+=${PATH_HDL}/tbn/peri/uart/tcb_uart_tb.sv
+# UART testbench
+TBN+=${PATH_HDL}/tbn/peri/uart/uart_model.sv
+TBN+=${PATH_HDL}/tbn/peri/uart/uart_model_tb.sv
+TBN+=${PATH_HDL}/tbn/peri/uart/tcb_peri_uart_tb.sv
 
 # combined HDL sources
 HDL =${RTL}

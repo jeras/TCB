@@ -97,10 +97,6 @@ module tcb_peri_gpio_tb
 // data checking
 ////////////////////////////////////////////////////////////////////////////////
 
-  logic [ 8-1:0] rdt8 ;  //  8-bit read data
-  logic [16-1:0] rdt16;  // 16-bit read data
-  logic [32-1:0] rdt32;  // 32-bit read data
-
   // GPIO signals
   logic [GW-1:0] gpio_o;
   logic [GW-1:0] gpio_e;
