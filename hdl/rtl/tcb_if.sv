@@ -74,6 +74,15 @@ interface tcb_if
       initial assert ($bits(req.ren) == 1) else
         $error("unexpected type(req.ren) = ", $typename(req.ren));
     end
+    // channel
+    if (BUS.AMO == TCB_AMO_ENABLED) begin
+      // atomic enable signal must be present for AMO support
+      initial assert ($bits(req.aen) == 1) else
+        $error("unexpected type(req.aen) = ", $typename(req.ren));
+      // atomic function signal must be present for AMO support
+      initial assert ($bits(req.amo) == 5) else
+        $error("unexpected type(req.amo) = ", $typename(req.amo));
+    end
     // prefetch
     if (BUS.PRF == TCB_PRF_ENABLED) begin
       // prefetch signals rpt/inc must be present

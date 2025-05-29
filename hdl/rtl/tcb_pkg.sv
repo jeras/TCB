@@ -261,7 +261,8 @@ package tcb_pkg;
       logic               wen;  // write enable
       logic               ren;  // read enable
       // atomic
-      logic       [5-1:0] amo;  // atomic instruction code (RISC-V ISA)
+      logic               aen;  // atomic enable
+      logic       [5-1:0] amo;  // atomic function code (RISC-V ISA)
       // prefetch
       logic               rpt;  // repeated address
       logic               inc;  // incremented address
@@ -312,7 +313,8 @@ package tcb_pkg;
     logic                      wen;  // write enable
     logic                      ren;  // read enable
     // atomic
-    logic       [5-1:0]        amo;  // atomic instruction code (RISC-V ISA)
+    logic                      aen;  // atomic enable
+    logic              [5-1:0] amo;  // atomic function code (RISC-V ISA)
     // prefetch
     logic                      rpt;  // repeated address
     logic                      inc;  // incremented address

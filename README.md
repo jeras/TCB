@@ -79,3 +79,4 @@ for the rest of the code.
 1. OpenTitan [TileLink IP](https://docs.opentitan.org/hw/ip/tlul/doc/)
 1. https://github.com/pulp-platform/obi?tab=readme-ov-file
 1. https://github.com/openhwgroup/obi/blob/072d9173c1f2d79471d6f2a10eae59ee387d4c6f/OBI-v1.6.0.pdf
+1. [Implementation of a PMP unit in a RISC-V commercial core](https://ddd.uab.cat/pub/tfg/2023/tfg_2485861/FerranRubert_1461144_TFG_Final2.pdf) (PMP/PMA unit)
