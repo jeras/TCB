@@ -26,7 +26,7 @@ module tcb_lib_converter_tb
   parameter  int unsigned      MAN_UNT = TCB_PAR_BUS_DEF.UNT,  // data unit   width (byte width is 8 by default)
   parameter  int unsigned      MAN_ADR = TCB_PAR_BUS_DEF.ADR,  // address bus width
   parameter  int unsigned      MAN_DAT = TCB_PAR_BUS_DEF.DAT,  // data    bus width
-  // data packing parameters for manager/subordinate
+  // PMA parameters for manager/subordinate
   parameter  int unsigned      MAN_ALN = TCB_PAR_BUS_DEF.ALN,  // TODO
   parameter  int unsigned      MAN_MIN = TCB_PAR_BUS_DEF.MIN,  // TODO
   parameter  tcb_bus_mode_t    MAN_MOD = TCB_PAR_BUS_DEF.MOD,  // manager     data position mode
@@ -40,7 +40,7 @@ module tcb_lib_converter_tb
   parameter  int unsigned      SUB_UNT = TCB_PAR_BUS_DEF.UNT,  // data unit   width (byte width is 8 by default)
   parameter  int unsigned      SUB_ADR = TCB_PAR_BUS_DEF.ADR,  // address bus width
   parameter  int unsigned      SUB_DAT = TCB_PAR_BUS_DEF.DAT,  // data    bus width
-  // data packing parameters for manager/subordinate
+  // PMA parameters for manager/subordinate
   parameter  int unsigned      SUB_ALN = TCB_PAR_BUS_DEF.ALN,  // TODO
   parameter  int unsigned      SUB_MIN = TCB_PAR_BUS_DEF.MIN,  // TODO
   parameter  tcb_bus_mode_t    SUB_MOD = TCB_PAR_BUS_DEF.MOD,  // subordinate data position mode

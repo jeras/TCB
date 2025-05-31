@@ -27,4 +27,26 @@ Defines restrictions on signal values, what are valid/invalid combinations.
 Abbreviation PTC (ProToCol)
 
 Packeting layer
-PCK
+PMA
+
+## Physical Memory Attributes
+
+How to implement a PMA checker
+
+Causes for PMA errors (traps):
+- misaligned access,
+- access size,
+- access offset (offset from alignment to bus width or XLEN),
+- execute/read/write access,
+- cachability (how this affects memory vs IO)
+- coherence (TODO)
+- atomicity (implemented in CPU vs implemented in interconnect)
+- reservability (no plan to support yet)
+- memory ordering (TCB supports only RVTSO)
+- idempotency (how speculative access like prefetch affects read/write side effects).
+
+PMAs can be checked during the request phase with the following limitations:
+- a custom address decoder for testing PMAs for busses behind a register stage
+
+PMAs can be checked during the response phase based on response errors:
+- additional registers would be needed to store the PC, LSU address

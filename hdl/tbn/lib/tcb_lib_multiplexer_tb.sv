@@ -55,7 +55,7 @@ module tcb_lib_multiplexer_tb
   };
 
   // physical interface parameter default
-  localparam tcb_pck_t PCK = '{
+  localparam tcb_pma_t PMA = '{
     MIN: 0,
     OFF: 0,
     ALN: 0,
@@ -66,8 +66,8 @@ module tcb_lib_multiplexer_tb
     DRV: 1'b1
   };
 
-//  typedef tcb_c #(HSK, BUS_SIZ, PCK)::req_t req_t;
-//  typedef tcb_c #(HSK, BUS_SIZ, PCK)::rsp_t rsp_t;
+//  typedef tcb_c #(HSK, BUS_SIZ, PMA)::req_t req_t;
+//  typedef tcb_c #(HSK, BUS_SIZ, PMA)::rsp_t rsp_t;
 
   // local request/response types are copies of packaged defaults
   typedef tcb_req_t req_t;
@@ -84,12 +84,12 @@ module tcb_lib_multiplexer_tb
   string testname = "none";
 
   // TCB interfaces
-  tcb_if #(tcb_hsk_t, HSK, tcb_bus_t, BUS, tcb_pck_t, PCK, req_t, rsp_t                ) tcb_man [IFN-1:0] (.clk (clk), .rst (rst));
-  tcb_if #(tcb_hsk_t, HSK, tcb_bus_t, BUS, tcb_pck_t, PCK, req_t, rsp_t, tcb_vip_t, VIP) tcb_sub           (.clk (clk), .rst (rst));
+  tcb_if #(tcb_hsk_t, HSK, tcb_bus_t, BUS, tcb_pma_t, PMA, req_t, rsp_t                ) tcb_man [IFN-1:0] (.clk (clk), .rst (rst));
+  tcb_if #(tcb_hsk_t, HSK, tcb_bus_t, BUS, tcb_pma_t, PMA, req_t, rsp_t, tcb_vip_t, VIP) tcb_sub           (.clk (clk), .rst (rst));
 
   // parameterized class specialization (blocking API)
-  typedef tcb_vip_blocking_c #(tcb_hsk_t, HSK, tcb_bus_t, BUS, tcb_pck_t, PCK, req_t, rsp_t                ) tcb_man_s;
-  typedef tcb_vip_blocking_c #(tcb_hsk_t, HSK, tcb_bus_t, BUS, tcb_pck_t, PCK, req_t, rsp_t, tcb_vip_t, VIP) tcb_sub_s;
+  typedef tcb_vip_blocking_c #(tcb_hsk_t, HSK, tcb_bus_t, BUS, tcb_pma_t, PMA, req_t, rsp_t                ) tcb_man_s;
+  typedef tcb_vip_blocking_c #(tcb_hsk_t, HSK, tcb_bus_t, BUS, tcb_pma_t, PMA, req_t, rsp_t, tcb_vip_t, VIP) tcb_sub_s;
 
   // TCB class objects
   tcb_man_s obj_man [IFN];

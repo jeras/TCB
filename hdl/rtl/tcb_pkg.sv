@@ -125,33 +125,24 @@ package tcb_pkg;
   };
 
 ////////////////////////////////////////////////////////////////////////////////
-// packing layer (defines the relations between bus signals)
-////////////////////////////////////////////////////////////////////////////////
-
-  // bus parameter structure
-  `ifdef VERILATOR
-  typedef struct packed {
-  `else
-  typedef struct {
-  `endif
-    int unsigned MIN;  // minimum transfer logarithmic size
-    int unsigned OFF;  // number of zeroed offset bits
-    int unsigned ALN;  // alignment (number of aligned address bits)
-    int unsigned BND;  // transaction boundary address bit index
-  } tcb_pck_t;
-
-  // physical interface parameter default
-  localparam tcb_pck_t TCB_PCK_DEF = '{
-    MIN: 0,   // maximum $clog2(BUS_DAT/8)
-    OFF: 0,   // maximum $clog2(BUS_DAT/8)
-    ALN: 0,   // maximum $clog2(BUS_DAT/8)
-    BND: 0    // no boundary
-  };
-
-////////////////////////////////////////////////////////////////////////////////
 // PMA layer (physical memory attributes)
 // TODO: none of the PMA are used yet
 ////////////////////////////////////////////////////////////////////////////////
+
+  // execute/read/write
+  // TODO
+
+// Causes for PMA errors (traps):
+// - misaligned access,
+// - access size,
+// - access offset (offset from alignment to bus width or XLEN),
+// - execute/read/write access,
+// - cachability (how this affects memory vs IO)
+// - coherence (TODO)
+// - atomicity (implemented in CPU vs implemented in interconnect)
+// - reservability (no plan to support yet)
+// - memory ordering (TCB supports only RVTSO)
+// - idempotency (how speculative access like prefetch affects read/write side effects).
 
   // AMO PMA
   typedef enum logic [2-1:0] {
@@ -175,10 +166,29 @@ package tcb_pkg;
   `else
   typedef struct {
   `endif
+    // transaction size and alignment PMAs
+    int unsigned MIN;  // minimum transfer logarithmic size
+    int unsigned OFF;  // number of zeroed offset bits
+    int unsigned ALN;  // alignment (number of aligned address bits)
+    int unsigned BND;  // transaction boundary address bit index
+    // RISC-V ISA PMAs
     tcb_pma_amo_t  AMO;   // AMO PMA
     tcb_pma_rsrv_t RSRV;  // reservability PMA
     int unsigned   MAG;   // Misaligned Atomicity Granule PMA (logarithmic scale)
   } tcb_pma_t;
+
+  // physical interface parameter default
+  localparam tcb_pma_t TCB_PMA_DEF = '{
+    // transaction size and alignment PMAs
+    MIN: 0,   // maximum $clog2(BUS_DAT/8)
+    OFF: 0,   // maximum $clog2(BUS_DAT/8)
+    ALN: 0,   // maximum $clog2(BUS_DAT/8)
+    BND: 0    // no boundary
+    // RISC-V ISA PMAs
+//    AMO : AMONone,   // AMO PMA
+//    RSRV: RsrvNone,   // reservability PMA
+//    MAG : 0 // TODO   // Misaligned Atomicity Granule PMA (logarithmic scale)
+  };
 
 ////////////////////////////////////////////////////////////////////////////////
 // VIP layer (defines VIP functionality)
@@ -225,7 +235,9 @@ package tcb_pkg;
     TCB_NATIVE = 1'bx   // bus native endianness
   } tcb_endian_t;
 
-  // TODO: rethink the response status
+  // TODO: rethink the response status,
+  // perhaps use RISC-V PMA violations or related traps as guidance
+
   // status
   typedef struct packed {
     logic err;  // error response
@@ -238,7 +250,7 @@ package tcb_pkg;
   virtual class tcb_c #(
     parameter  tcb_hsk_t HSK = TCB_HSK_DEF,
     parameter  tcb_bus_t BUS = TCB_BUS_DEF,
-    parameter  tcb_pck_t PCK = TCB_PCK_DEF
+    parameter  tcb_pma_t PMA = TCB_PMA_DEF
   );
     // signal widths
     localparam BUS_LEN = $clog2(BUS.FRM+1);

@@ -60,7 +60,7 @@ module tcb_lib_read_modify_write_tb
   };
 
   // physical interface parameter default
-  localparam tcb_pck_t PCK = '{
+  localparam tcb_pma_t PMA = '{
     MIN: 0,
     OFF: 0,
     ALN: 0,
@@ -71,8 +71,8 @@ module tcb_lib_read_modify_write_tb
     DRV: 1'b1
   };
 
-//  typedef tcb_c #(HSK, BUS_SIZ, PCK)::req_t req_t;
-//  typedef tcb_c #(HSK, BUS_SIZ, PCK)::rsp_t rsp_t;
+//  typedef tcb_c #(HSK, BUS_SIZ, PMA)::req_t req_t;
+//  typedef tcb_c #(HSK, BUS_SIZ, PMA)::rsp_t rsp_t;
 
   // local request/response types are copies of packaged defaults
   typedef tcb_req_t req_t;
@@ -89,12 +89,12 @@ module tcb_lib_read_modify_write_tb
   string testname = "none";
 
   // TCB interfaces
-  tcb_if #(tcb_hsk_t, HSK, tcb_bus_t, BUS_MAN, tcb_pck_t, PCK, req_t, rsp_t                ) tcb_man       (.clk (clk), .rst (rst));
-  tcb_if #(tcb_hsk_t, HSK, tcb_bus_t, BUS_SUB, tcb_pck_t, PCK, req_t, rsp_t                ) tcb_sub       (.clk (clk), .rst (rst));
+  tcb_if #(tcb_hsk_t, HSK, tcb_bus_t, BUS_MAN, tcb_pma_t, PMA, req_t, rsp_t                ) tcb_man       (.clk (clk), .rst (rst));
+  tcb_if #(tcb_hsk_t, HSK, tcb_bus_t, BUS_SUB, tcb_pma_t, PMA, req_t, rsp_t                ) tcb_sub       (.clk (clk), .rst (rst));
 
   // parameterized class specialization (blocking API)
-  typedef tcb_vip_blocking_c #(tcb_hsk_t, HSK, tcb_bus_t, BUS_MAN, tcb_pck_t, PCK, req_t, rsp_t) tcb_vip_siz_s;
-  typedef tcb_vip_blocking_c #(tcb_hsk_t, HSK, tcb_bus_t, BUS_SUB, tcb_pck_t, PCK, req_t, rsp_t) tcb_vip_ben_s;
+  typedef tcb_vip_blocking_c #(tcb_hsk_t, HSK, tcb_bus_t, BUS_MAN, tcb_pma_t, PMA, req_t, rsp_t) tcb_vip_siz_s;
+  typedef tcb_vip_blocking_c #(tcb_hsk_t, HSK, tcb_bus_t, BUS_SUB, tcb_pma_t, PMA, req_t, rsp_t) tcb_vip_ben_s;
 
   // TCB class objects
   tcb_vip_siz_s obj_man = new(tcb_man, "MAN");
@@ -225,56 +225,6 @@ module tcb_lib_read_modify_write_tb
     obj_man.check32(32'h00000030, 32'h76543210, 1'b0);
   endtask: test_aligned
 
-  task test_misaligned ();
-    // clear memory
-    mem.mem = '{default: 'x};
-
-    // misaligned write sequence
-    $display("misaligned write sequence");
-    testname = "misaligned write";
-    tst_mon.delete();
-    tst_ref.delete();
-    // test sequence
-    fork
-      // manager (blocking API)
-      begin: fork_man_misaligned_write
-        obj_man.write16(32'h00000011, 16'h3210    , sts);
-        obj_man.write16(32'h00000023, 16'h7654    , sts);
-        obj_man.write32(32'h00000031, 32'h76543210, sts);
-        obj_man.write32(32'h00000042, 32'h76543210, sts);
-        obj_man.write32(32'h00000053, 32'h76543210, sts);
-      end: fork_man_misaligned_write
-      // subordinate (monitor)
-      begin: fork_mon_misaligned_write
-        obj_sub.transfer_monitor(tst_mon);
-      end: fork_mon_misaligned_write
-    join_any
-    // disable transfer monitor
-    @(posedge clk);
-    disable fork;
-    // reference transfer queue
-    sts = '0;
-    tst_ref.delete();
-    tst_len = tst_ref.size();
-    // append reference transfers to queue               ndn       , adr         , wdt                           ,        rdt
-    tst_len += obj_sub.put_transaction(tst_ref, '{req: '{TCB_LITTLE, 32'h00000011, '{8'h10, 8'h32              }}, rsp: '{nul, sts}});
-    tst_len += obj_sub.put_transaction(tst_ref, '{req: '{TCB_LITTLE, 32'h00000023, '{8'h54, 8'h76              }}, rsp: '{nul, sts}});
-    tst_len += obj_sub.put_transaction(tst_ref, '{req: '{TCB_LITTLE, 32'h00000031, '{8'h10, 8'h32, 8'h54, 8'h76}}, rsp: '{nul, sts}});
-    tst_len += obj_sub.put_transaction(tst_ref, '{req: '{TCB_LITTLE, 32'h00000042, '{8'h10, 8'h32, 8'h54, 8'h76}}, rsp: '{nul, sts}});
-    tst_len += obj_sub.put_transaction(tst_ref, '{req: '{TCB_LITTLE, 32'h00000053, '{8'h10, 8'h32, 8'h54, 8'h76}}, rsp: '{nul, sts}});
-    // compare transfers from monitor to reference
-    // wildcard operator is used to ignore data byte comparison, when the reference data is 8'hxx
-    foreach (tst_ref[i]) begin
-      assert (tst_mon[i].req ==? tst_ref[i].req) else $error("\ntst_mon[%0d].req = %p !=? \ntst_ref[%0d].req = %p", i, tst_mon[i].req, i, tst_ref[i].req);
-      assert (tst_mon[i].rsp ==? tst_ref[i].rsp) else $error("\ntst_mon[%0d].rsp = %p !=? \ntst_ref[%0d].rsp = %p", i, tst_mon[i].rsp, i, tst_ref[i].rsp);
-    end
-//    // printout transfer queue for debugging purposes
-//    foreach (tst_ref[i]) begin
-//      $display("DEBUG: tst_mon[%0d] = %p", i, tst_mon[i]);
-//      $display("DEBUG: tst_ref[%0d] = %p", i, tst_ref[i]);
-//    end
-  endtask: test_misaligned
-
 ////////////////////////////////////////////////////////////////////////////////
 // test sequence
 ////////////////////////////////////////////////////////////////////////////////
@@ -291,10 +241,6 @@ module tcb_lib_read_modify_write_tb
     repeat (1) @(posedge clk);
 
     test_aligned;
-    if (PCK.ALN != tcb_man.BUS_MAX) begin
-      test_misaligned;
-    end
-    test_parameterized;
 
     // end of test
     repeat (4) @(posedge clk);

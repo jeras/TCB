@@ -8,7 +8,7 @@ HSK.DLY ?= 0
 BUS_UNT ?= 8
 BUS_ADR ?= 32
 BUS_DAT ?= 32
-# data packing parameters
+# PMA parameters
 BUS_ALN ?= 0
 BUS_MIN ?= 0
 BUS_MOD ?= ${TCB_BYTE_ENA}

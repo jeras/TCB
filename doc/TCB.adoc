@@ -753,14 +753,12 @@ To a degree data packing rules are a generalization of endianness rules.
 This section will first document the parameters
 and then provide examples of packing with some parameter configurations.
 
-=== Data packing parameters
+=== PMA (physical memory attributes) parameters
 
-NOTE: The current choice of data packing parameters can be confusing.
+NOTE: The current choice of PMA parameters can be confusing.
       This might remain or change in future TCB standard releases, depending on user feedback.
 
-The following parameters affect data packing.
-
-.Data packing parameters
+.PMA parameters
 [%autowidth]
 |===
 | parameter | type (enumeration) | range (options)          | default      | description
@@ -773,10 +771,10 @@ The following parameters affect data packing.
 |===
 
 Only a small subset of all parameter value combinations configurations from all parameter combinations
-results in practical and useful data packing rule (RISC-V RV32/64 access patterns are a large part of the subset).
+results in practical and useful setup (RISC-V RV32/64 access patterns are a large part of the subset).
 The rest are reserved with no intention to be documented and implemented.
 
-.Relevant packing modes
+.Relevant PMA combinations
 [%autowidth]
 |===
 | `MOD`      | `ORD`        | `BUS.DAT` | `BUS.MIN`   | `BUS.OFF`   | `BUS.ALN`   | `ndn`   | description
@@ -804,19 +802,19 @@ NOTE: The OpenPOWER specific configuration is included for historic compatibilit
 
 TODO: Boundary
 
-* `PCK.BND` = 0
+* `PMA.BND` = 0
   There are no boundaries, any transfer can cross any boundary.
-* `PCK.BND` = BUS_MAX
+* `PMA.BND` = BUS_MAX
   Transfer must be within the data bus width, otherwise it must be split.
-* `PCK.BND` = BUS_MAX + 1
+* `PMA.BND` = BUS_MAX + 1
   For example a 32-bit CPU with a TCB `BUS.DAT=32`` (`BUS_MAX=2``).
   Connected to a 64-bit wide memory controller,
   TCB can realign transfers not crossing the 64-bit boundary,
-  transfers crossing it must be split. So `PCK.BND=3`.
-* `PCK.BND` = $clog2(64) = 6
+  transfers crossing it must be split. So `PMA.BND=3`.
+* `PMA.BND` = $clog2(64) = 6
   Accessing a cache with line size of 64 bytes.
   Crossing the cache line boundary requires a split.
-* `PCK.BND` = $clog2(4k) = 12
+* `PMA.BND` = $clog2(4k) = 12
   Crossing the 4k page boundary (ARM).
 
 === Supported size and alignment checking
@@ -878,7 +876,7 @@ The name _reference_ is based on the idea,
 that if a monitor was placed on multiple points of a mixed configuration interconnect,
 all data would be translated to a common reference before being compared.
 
-The `BYTE_ENA` mode defines the same data packing scheme as memories.
+The `BYTE_ENA` mode defines the same PMA scheme as memories.
 
 In byte enable mode the the byte enable signal `ben`
 provides the information about the transfer size,
@@ -1035,9 +1033,9 @@ This case would specify the following parameter values and signal restrictions:
 | `BUS_SIZ` |       `2` |       `2` | `$clog2(BUS_MAX+1)`
 | `BUS.NDN` | `TCB_NDN_DEFAULT`     | Endianness should be matching the default for the given byte order (BUS.ORD parameter).
 
-| `PCK.MIN` | `BUS_MAX` | `BUS_MAX` | Minimum transfer size is equal to maximum.
-| `PCK.OFF` | `BUS_MAX` | `BUS_MAX` | Entire address offset must be zero (`BUS_MAX` LSB of address).
-| `PCK.ALN` | `BUS_MAX` | `BUS_MAX` | Entire address offset must be aligned to transfer size (already covered by previous parameters).
+| `PMA.MIN` | `BUS_MAX` | `BUS_MAX` | Minimum transfer size is equal to maximum.
+| `PMA.OFF` | `BUS_MAX` | `BUS_MAX` | Entire address offset must be zero (`BUS_MAX` LSB of address).
+| `PMA.ALN` | `BUS_MAX` | `BUS_MAX` | Entire address offset must be aligned to transfer size (already covered by previous parameters).
 |===
 
 The following table lists such transfers for a 32-bit data bus.

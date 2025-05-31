@@ -80,7 +80,7 @@ BUS_PAR += -GBUS_DLY=${HSK.DLY}
 BUS_PAR += -GBUS_UNT=${BUS_UNT}
 BUS_PAR += -GBUS_ADR=${BUS_ADR}
 BUS_PAR += -GBUS_DAT=${BUS_DAT}
-# data packing parameters
+# PMA parameters
 BUS_PAR += -GBUS_ALN=${BUS_ALN}
 BUS_PAR += -GBUS_MIN=${BUS_MIN}
 BUS_PAR ?= -GBUS_MOD=${BUS_MOD}

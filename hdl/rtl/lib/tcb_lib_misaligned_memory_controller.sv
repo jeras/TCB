@@ -25,13 +25,13 @@ module tcb_lib_misaligned_memory_controller
   // bus parameters
   parameter  type bus_t = tcb_bus_t,   // bus parameter type
   parameter  bus_t BUS = TCB_BUS_DEF,  // bus parameter
-  // packing parameters
-  parameter  type pck_t = tcb_pck_t,   // packing parameter type
-  parameter  pck_t PCK = TCB_PCK_DEF,  // packing parameter
+  // PMA parameters
+  parameter  type pma_t = tcb_pma_t,   // packing parameter type
+  parameter  pma_t PMA = TCB_PMA_DEF,  // packing parameter
   // local parameters
   localparam int unsigned BUS_BEN = BUS.DAT/8,
   localparam int unsigned BUS_MAX = $clog2(BUS_BEN),
-  localparam int unsigned MEM_CEN = BUS_BEN/(2**PCK.OFF),
+  localparam int unsigned MEM_CEN = BUS_BEN/(2**PMA.OFF),
   localparam int unsigned MEM_ADR = BUS.ADR-BUS_MAX,
   localparam int unsigned MEM_DAT = BUS.DAT/MEM_CEN
   // byte order
@@ -69,9 +69,9 @@ module tcb_lib_misaligned_memory_controller
 
 //  // packeting parameters
 //  initial begin
-//    assert (sub.PCK.MIN == man.PCK.MIN) else $error("mismatch (sub.PCK.MIN = %0d) != (man.PCK.MIN = %0d)", sub.PCK.MIN, man.PCK.MIN);
-//    assert (sub.PCK.OFF == man.PCK.OFF) else $error("mismatch (sub.PCK.OFF = %0d) != (man.PCK.OFF = %0d)", sub.PCK.OFF, man.PCK.OFF);
-//    assert (sub.PCK.ALN == man.PCK.ALN) else $error("mismatch (sub.PCK.ALN = %0d) != (man.PCK.ALN = %0d)", sub.PCK.ALN, man.PCK.ALN);
+//    assert (sub.PMA.MIN == man.PMA.MIN) else $error("mismatch (sub.PMA.MIN = %0d) != (man.PMA.MIN = %0d)", sub.PMA.MIN, man.PMA.MIN);
+//    assert (sub.PMA.OFF == man.PMA.OFF) else $error("mismatch (sub.PMA.OFF = %0d) != (man.PMA.OFF = %0d)", sub.PMA.OFF, man.PMA.OFF);
+//    assert (sub.PMA.ALN == man.PMA.ALN) else $error("mismatch (sub.PMA.ALN = %0d) != (man.PMA.ALN = %0d)", sub.PMA.ALN, man.PMA.ALN);
 //  end
 
 ////////////////////////////////////////////////////////////////////////////////

@@ -25,11 +25,11 @@ module tcb_lib_logsize2byteena_tb
 //  // bus parameters
 //  parameter  tcb_bus_channel_t BUS_CHN = TCB_BUS_DEF.CHN,  // channel configuration
 //  parameter  tcb_bus_mode_t    BUS_MOD = TCB_BUS_DEF.MOD,  // manager     data position mode
-//  // data packing parameters for manager/subordinate
+//  // PMA parameters for manager/subordinate
 //  parameter  int unsigned      BUS_ALN = TCB_BUS_DEF.ALN,  // TODO
 //  parameter  int unsigned      BUS_MIN = TCB_BUS_DEF.MIN,  // TODO
 //  parameter  int unsigned      BUS_OFF = TCB_BUS_DEF.OFF,  // TODO
-//  parameter  tcb_bus_order_t   PCK_ORD = TCB_BUS_DEF.ORD   // manager     byte order
+//  parameter  tcb_bus_order_t   PMA_ORD = TCB_BUS_DEF.ORD   // manager     byte order
 );
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -68,7 +68,7 @@ module tcb_lib_logsize2byteena_tb
   };
 
   // physical interface parameter default
-  localparam tcb_pck_t PCK = '{
+  localparam tcb_pma_t PMA = '{
     MIN: 0,
     OFF: 0,
     ALN: 0,
@@ -79,8 +79,8 @@ module tcb_lib_logsize2byteena_tb
     DRV: 1'b1
   };
 
-//  typedef tcb_c #(HSK, BUS_SIZ, PCK)::req_t req_t;
-//  typedef tcb_c #(HSK, BUS_SIZ, PCK)::rsp_t rsp_t;
+//  typedef tcb_c #(HSK, BUS_SIZ, PMA)::req_t req_t;
+//  typedef tcb_c #(HSK, BUS_SIZ, PMA)::rsp_t rsp_t;
 
   // local request/response types are copies of packaged defaults
   typedef tcb_req_t req_t;
@@ -97,13 +97,13 @@ module tcb_lib_logsize2byteena_tb
   string testname = "none";
 
   // TCB interfaces
-  tcb_if #(tcb_hsk_t, HSK, tcb_bus_t, BUS_SIZ, tcb_pck_t, PCK, req_t, rsp_t                ) tcb_man       (.clk (clk), .rst (rst));
-  tcb_if #(tcb_hsk_t, HSK, tcb_bus_t, BUS_BEN, tcb_pck_t, PCK, req_t, rsp_t                ) tcb_sub       (.clk (clk), .rst (rst));
-  tcb_if #(tcb_hsk_t, HSK, tcb_bus_t, BUS_BEN, tcb_pck_t, PCK, req_t, rsp_t, tcb_vip_t, VIP) tcb_mem [0:0] (.clk (clk), .rst (rst));
+  tcb_if #(tcb_hsk_t, HSK, tcb_bus_t, BUS_SIZ, tcb_pma_t, PMA, req_t, rsp_t                ) tcb_man       (.clk (clk), .rst (rst));
+  tcb_if #(tcb_hsk_t, HSK, tcb_bus_t, BUS_BEN, tcb_pma_t, PMA, req_t, rsp_t                ) tcb_sub       (.clk (clk), .rst (rst));
+  tcb_if #(tcb_hsk_t, HSK, tcb_bus_t, BUS_BEN, tcb_pma_t, PMA, req_t, rsp_t, tcb_vip_t, VIP) tcb_mem [0:0] (.clk (clk), .rst (rst));
 
   // parameterized class specialization (blocking API)
-  typedef tcb_vip_blocking_c #(tcb_hsk_t, HSK, tcb_bus_t, BUS_SIZ, tcb_pck_t, PCK, req_t, rsp_t) tcb_vip_siz_s;
-  typedef tcb_vip_blocking_c #(tcb_hsk_t, HSK, tcb_bus_t, BUS_BEN, tcb_pck_t, PCK, req_t, rsp_t) tcb_vip_ben_s;
+  typedef tcb_vip_blocking_c #(tcb_hsk_t, HSK, tcb_bus_t, BUS_SIZ, tcb_pma_t, PMA, req_t, rsp_t) tcb_vip_siz_s;
+  typedef tcb_vip_blocking_c #(tcb_hsk_t, HSK, tcb_bus_t, BUS_BEN, tcb_pma_t, PMA, req_t, rsp_t) tcb_vip_ben_s;
 
   // TCB class objects
   tcb_vip_siz_s obj_man = new(tcb_man, "MAN");
@@ -336,11 +336,11 @@ module tcb_lib_logsize2byteena_tb
     $display("parameterized tests");
     testname = "parameterized tests";
     foreach (ndn_list[i]) begin
-      for (int unsigned siz=tcb_man.PCK.MIN; siz<=tcb_man.BUS_MAX; siz++) begin
+      for (int unsigned siz=tcb_man.PMA.MIN; siz<=tcb_man.BUS_MAX; siz++) begin
 //      begin
 //        static int unsigned siz=1;
 //        for (int unsigned off=0; off<tcb_man.BUS_BEN; off+=2) begin
-        for (int unsigned off=0; off<tcb_man.BUS_BEN; off+=2**tcb_man.PCK.OFF) begin
+        for (int unsigned off=0; off<tcb_man.BUS_BEN; off+=2**tcb_man.PMA.OFF) begin
           // local variables
           string       id;
           int unsigned size;
@@ -449,7 +449,7 @@ module tcb_lib_logsize2byteena_tb
     repeat (1) @(posedge clk);
 
     test_aligned;
-    if (PCK.ALN != tcb_man.BUS_MAX) begin
+    if (PMA.ALN != tcb_man.BUS_MAX) begin
       test_misaligned;
     end
     test_parameterized;

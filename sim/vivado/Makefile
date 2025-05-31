@@ -52,7 +52,7 @@ BUS_PAR += -generic_top HSK.DLY=${HSK.DLY}
 BUS_PAR += -generic_top BUS_UNT=${BUS_UNT}
 BUS_PAR += -generic_top BUS_ADR=${BUS_ADR}
 BUS_PAR += -generic_top BUS_DAT=${BUS_DAT}
-# data packing parameters
+# PMA parameters
 BUS_PAR += -generic_top BUS_ALN=${BUS_ALN}
 BUS_PAR += -generic_top BUS_MIN=${BUS_MIN}
 BUS_PAR ?= -generic_top BUS_MOD=${BUS_MOD}

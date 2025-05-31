@@ -33,7 +33,7 @@ module tcb_vip_tb
 
   // physical interface parameter
   localparam tcb_bus_t BUS = TCB_BUS_DEF;
-  localparam tcb_pck_t PCK = TCB_PCK_DEF;
+  localparam tcb_pma_t PMA = TCB_PMA_DEF;
 
 ////////////////////////////////////////////////////////////////////////////////
 // local signals
@@ -73,10 +73,10 @@ module tcb_vip_tb
   int unsigned tcb_cnt;
 
   // TCB interfaces
-  tcb_if #(HSK.DLY, tcb_bus_t, BUS, tcb_pck_t, PCK, tcb_req_t, tcb_rsp_t, VIP) tcb (.clk (clk), .rst (rst));
+  tcb_if #(HSK.DLY, tcb_bus_t, BUS, tcb_pma_t, PMA, tcb_req_t, tcb_rsp_t, VIP) tcb (.clk (clk), .rst (rst));
 
   // parameterized class specialization (non-blocking API)
-  typedef tcb_vip_transfer_c #(HSK.DLY, tcb_bus_t, BUS, tcb_pck_t, PCK, tcb_req_t, tcb_rsp_t, VIP) tcb_transfer_s;
+  typedef tcb_vip_transfer_c #(HSK.DLY, tcb_bus_t, BUS, tcb_pma_t, PMA, tcb_req_t, tcb_rsp_t, VIP) tcb_transfer_s;
 
   // TCB class objects
   tcb_transfer_s obj_man = new(tcb, "MAN");

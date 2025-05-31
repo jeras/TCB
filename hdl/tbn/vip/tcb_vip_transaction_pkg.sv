@@ -33,9 +33,9 @@ package tcb_vip_transaction_pkg;
     // bus parameters
     parameter  type bus_t = tcb_bus_t,   // bus parameter type
     parameter  bus_t BUS = TCB_BUS_DEF,  // bus parameter
-    // packing parameters
-    parameter  type pck_t = tcb_pck_t,   // packing parameter type
-    parameter  pck_t PCK = TCB_PCK_DEF,  // packing parameter
+    // PMA parameters
+    parameter  type pma_t = tcb_pma_t,   // packing parameter type
+    parameter  pma_t PMA = TCB_PMA_DEF,  // packing parameter
     // request/response structure types
     parameter  type req_t = tcb_req_t,  // request
     parameter  type rsp_t = tcb_rsp_t,  // response
@@ -49,8 +49,8 @@ package tcb_vip_transaction_pkg;
     .HSK     (HSK),
     .bus_t   (bus_t),
     .BUS     (BUS),
-    .pck_t   (pck_t),
-    .PCK     (PCK),
+    .pma_t   (pma_t),
+    .PMA     (PMA),
     .req_t   (req_t),
     .rsp_t   (rsp_t),
     .vip_t   (vip_t),
@@ -185,11 +185,11 @@ package tcb_vip_transaction_pkg;
       // alignment check
       // TODO: implement this later
       ////adr%siz==0
-      //if (PCK.ALN > 0) begin
-      //  logic [PCK.ALN-1:0] adr_alw;
-      //  adr_alw = transaction.req.adr[(PCK.ALN>0?(PCK.ALN-1):0):0];
+      //if (PMA.ALN > 0) begin
+      //  logic [PMA.ALN-1:0] adr_alw;
+      //  adr_alw = transaction.req.adr[(PMA.ALN>0?(PMA.ALN-1):0):0];
       //  if (|adr_alw) begin
-      //    $error("Transaction address is not aligned to supported size. adr[%0d:0]=%0d'b%b", PCK.ALN-1, PCK.ALN, adr_alw);
+      //    $error("Transaction address is not aligned to supported size. adr[%0d:0]=%0d'b%b", PMA.ALN-1, PMA.ALN, adr_alw);
       //  end
       //end
 
@@ -217,7 +217,7 @@ package tcb_vip_transaction_pkg;
         if (ren) tmp.rsp.rdt[byt] = transaction.rsp.rdt[idx];
                  tmp.req.ben[byt] = 1'b1;
         // edge byte inside data bus
-        if (PCK.BND == 0)  edg = (i == BUS_BEN-1);
+        if (PMA.BND == 0)  edg = (i == BUS_BEN-1);
         else               edg = BUS_BEN-1;  // TODO: use actual boundary
 
         // last byte in current transfer or entire transaction
