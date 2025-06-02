@@ -84,10 +84,21 @@ package tcb_vip_transaction_pkg;
 
     // TCB transaction request structure
     typedef struct {
+      // enables
+      logic               ren;  // read enable
+      logic               wen;  // write enable
+      logic               xen;  // execute enable
+      logic               cen;  // cache enable
+      // atomic
+      logic               aen;  // atomic enable
+      logic       [5-1:0] amo;  // atomic function code (RISC-V ISA)
+      // prefetch
+      logic               rpt;  // repeated address
+      logic               inc;  // incremented address
       // request
-      logic               ndn;
       logic [BUS_ADR-1:0] adr;
       logic       [8-1:0] wdt [];
+      logic               ndn;
     } transaction_req_t;
 
     // TCB transaction response structure

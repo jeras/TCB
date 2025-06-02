@@ -136,6 +136,7 @@ package tcb_pkg;
 // - misaligned access,
 // - access size,
 // - access offset (offset from alignment to bus width or XLEN),
+
 // - execute/read/write access,
 // - cachability (how this affects memory vs IO)
 // - coherence (TODO)
@@ -166,6 +167,12 @@ package tcb_pkg;
   `else
   typedef struct {
   `endif
+    // transaction types
+    bit          REN;  // read enable
+    bit          WEN;  // write enable
+    bit          XEN;  // execute enable
+    bit          CEN;  // cache enable
+    bit          AEN;  // atomic enable
     // transaction size and alignment PMAs
     int unsigned MIN;  // minimum transfer logarithmic size
     int unsigned OFF;  // number of zeroed offset bits
@@ -179,14 +186,20 @@ package tcb_pkg;
 
   // physical interface parameter default
   localparam tcb_pma_t TCB_PMA_DEF = '{
-    // transaction size and alignment PMAs
+    // transfer types
+    REN: 1'b1,  // read enable
+    WEN: 1'b1,  // write enable
+    XEN: 1'b1,  // execute enable
+    CEN: 1'b1,  // cache enable
+    AEN: 1'b1,  // atomic enable        
+    // transfer size and alignment PMAs
     MIN: 0,   // maximum $clog2(BUS_DAT/8)
     OFF: 0,   // maximum $clog2(BUS_DAT/8)
     ALN: 0,   // maximum $clog2(BUS_DAT/8)
-    BND: 0    // no boundary
+    BND: 0,   // no boundary
     // RISC-V ISA PMAs
-//    AMO : AMONone,   // AMO PMA
-//    RSRV: RsrvNone,   // reservability PMA
+    AMO : AMONone,   // AMO PMA
+    RSRV: RsrvNone   // reservability PMA
 //    MAG : 0 // TODO   // Misaligned Atomicity Granule PMA (logarithmic scale)
   };
 
@@ -269,9 +282,11 @@ package tcb_pkg;
       // framing
       logic               frm;  // frame
       logic [BUS_LEN-1:0] len;  // frame length
-      // channel
-      logic               wen;  // write enable
+      // enables
       logic               ren;  // read enable
+      logic               wen;  // write enable
+      logic               xen;  // execute enable
+      logic               cen;  // cache enable
       // atomic
       logic               aen;  // atomic enable
       logic       [5-1:0] amo;  // atomic function code (RISC-V ISA)
