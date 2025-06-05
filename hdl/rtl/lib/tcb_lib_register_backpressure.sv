@@ -34,9 +34,9 @@ module tcb_lib_register_backpressure
   initial
   begin
     // parameters
-    assert (man.HSK.DLY == sub.HSK.DLY) else $error("Parameter (man.HSK.DLY = %p) != (sub.HSK.DLY = %p)", man.HSK.DLY, sub.HSK.DLY);
-    assert (man.BUS     == sub.BUS    ) else $error("Parameter (man.BUS     = %p) != (sub.BUS     = %p)", man.BUS    , sub.BUS    );
-    assert (man.PMA     == sub.PMA    ) else $error("Parameter (man.PMA     = %p) != (sub.PMA     = %p)", man.PMA    , sub.PMA    );
+    assert (man.CFG.HSK.DLY == sub.CFG.HSK.DLY) else $error("Parameter (man.CFG.HSK.DLY = %p) != (sub.CFG.HSK.DLY = %p)", man.CFG.HSK.DLY, sub.CFG.HSK.DLY);
+    assert (man.CFG.BUS     == sub.CFG.BUS    ) else $error("Parameter (man.CFG.BUS     = %p) != (sub.CFG.BUS     = %p)", man.CFG.BUS    , sub.CFG.BUS    );
+    assert (man.CFG.PMA     == sub.CFG.PMA    ) else $error("Parameter (man.CFG.PMA     = %p) != (sub.CFG.PMA     = %p)", man.CFG.PMA    , sub.CFG.PMA    );
     // request/response types
     // TODO: Questa is complaining here
 //    assert (type(man.req_t) == type(sub.req_t)) else $error("Parameter (man.req_t = %s) != (sub.req_t = %s)", $typename(man.req_t), $typename(sub.req_t));

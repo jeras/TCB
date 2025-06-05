@@ -66,8 +66,8 @@ module tcb_lib_register_backpressure_tb
   logic [8-1:0] nul [];
 
   // response
-  logic [tcb_sub.BUS_BYT-1:0][8-1:0] rdt;  // read data
-  tcb_rsp_sts_t                      sts;  // status response
+  logic [tcb_sub.CFG_BUS_BYT-1:0][8-1:0] rdt;  // read data
+  tcb_rsp_sts_t                          sts;  // status response
 
 ////////////////////////////////////////////////////////////////////////////////
 // test sequence
@@ -99,8 +99,8 @@ module tcb_lib_register_backpressure_tb
         sts = '0;
         tst_ref.delete();
         tst_len = tst_ref.size();
-        tst_len += {obj_sub.put_transaction(tst_ref, '{req: '{TCB_NATIVE, 32'h01234567, '{8'h10, 8'h32, 8'h54, 8'h76}}, rsp: '{nul, sts}})};
-        tst_len += {obj_sub.put_transaction(tst_ref, '{req: '{TCB_NATIVE, 32'h89ABCDEF, nul}, rsp: '{'{8'h98, 8'hBA, 8'hDC, 8'hFE}, sts}})};
+        tst_len += {obj_sub.put_transaction(tst_ref, '{req: '{adr: 32'h01234567, wdt: '{8'h10, 8'h32, 8'h54, 8'h76}, default: 'x}, rsp: '{rdt: nul, sts: sts}})};
+        tst_len += {obj_sub.put_transaction(tst_ref, '{req: '{adr: 32'h89ABCDEF, wdt: nul, default: 'x}, rsp: '{rdt: '{8'h98, 8'hBA, 8'hDC, 8'hFE}, sts: sts}})};
         obj_sub.transfer_sequencer(tst_ref);
       end: fork_sub
       // subordinate (monitor)

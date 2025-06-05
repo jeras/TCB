@@ -31,8 +31,8 @@ module tcb_lib_register_response_tb
 // local parameters
 ////////////////////////////////////////////////////////////////////////////////
 
-  localparam tcb_hsk_t CFG.HSK_MAN = '{DLY: DLY+1, HLD: 1'b0};
-  localparam tcb_hsk_t CFG.HSK_SUB = '{DLY: DLY  , HLD: 1'b0};
+  localparam tcb_cfg_t CFG_MAN = '{HSK: '{DLY: DLY+1, HLD: 1'b1}, BUS: TCB_BUS_DEF, PMA: TCB_PMA_DEF};
+  localparam tcb_cfg_t CFG_SUB = '{HSK: '{DLY: DLY+0, HLD: 1'b1}, BUS: TCB_BUS_DEF, PMA: TCB_PMA_DEF};
 
   // VIP parameters
   localparam tcb_vip_t VIP = '{
@@ -48,12 +48,12 @@ module tcb_lib_register_response_tb
   logic rst = 1'b1;  // reset
 
   // TCB interfaces
-  tcb_if #(.HSK (HSK_MAN)            ) tcb_man (.clk (clk), .rst (rst));
-  tcb_if #(.HSK (HSK_SUB), .VIP (VIP)) tcb_sub (.clk (clk), .rst (rst));
+  tcb_if #(.CFG (CFG_MAN)            ) tcb_man (.clk (clk), .rst (rst));
+  tcb_if #(.CFG (CFG_SUB), .VIP (VIP)) tcb_sub (.clk (clk), .rst (rst));
 
   // parameterized class specialization (blocking API)
-  typedef tcb_vip_blocking_c #(.HSK (HSK_MAN)            ) tcb_man_s;
-  typedef tcb_vip_blocking_c #(.HSK (HSK_SUB), .VIP (VIP)) tcb_sub_s;
+  typedef tcb_vip_blocking_c #(.CFG (CFG_MAN)            ) tcb_man_s;
+  typedef tcb_vip_blocking_c #(.CFG (CFG_SUB), .VIP (VIP)) tcb_sub_s;
 
   // TCB class objects
   tcb_man_s obj_man = new(tcb_man, "MAN");
@@ -69,8 +69,8 @@ module tcb_lib_register_response_tb
   logic [8-1:0] nul [];
 
   // response
-  logic [tcb_sub.BUS_BYT-1:0][8-1:0] rdt;  // read data
-  tcb_rsp_sts_t                      sts;  // status response
+  logic [tcb_sub.CFG_BUS_BYT-1:0][8-1:0] rdt;  // read data
+  tcb_rsp_sts_t                          sts;  // status response
 
 ////////////////////////////////////////////////////////////////////////////////
 // test sequence
@@ -102,8 +102,8 @@ module tcb_lib_register_response_tb
         sts = '0;
         tst_ref.delete();
         tst_len = tst_ref.size();
-        tst_len += {obj_sub.put_transaction(tst_ref, '{req: '{TCB_NATIVE, 32'h01234567, '{8'h10, 8'h32, 8'h54, 8'h76}}, rsp: '{nul, sts}})};
-        tst_len += {obj_sub.put_transaction(tst_ref, '{req: '{TCB_NATIVE, 32'h89ABCDEF, nul}, rsp: '{'{8'h98, 8'hBA, 8'hDC, 8'hFE}, sts}})};
+        tst_len += {obj_sub.put_transaction(tst_ref, '{req: '{adr: 32'h01234567, wdt: '{8'h10, 8'h32, 8'h54, 8'h76}, default: 'x}, rsp: '{rdt: nul, sts: sts}})};
+        tst_len += {obj_sub.put_transaction(tst_ref, '{req: '{adr: 32'h89ABCDEF, wdt: nul, default: 'x}, rsp: '{rdt: '{8'h98, 8'hBA, 8'hDC, 8'hFE}, sts: sts}})};
         obj_sub.transfer_sequencer(tst_ref);
       end: fork_sub
       // subordinate (monitor)
