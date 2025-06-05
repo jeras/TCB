@@ -31,8 +31,8 @@ package tcb_vip_transaction_pkg;
     parameter  type cfg_t = tcb_cfg_t,   // configuration parameter type
     parameter  cfg_t CFG = TCB_CFG_DEF,  // configuration parameter
     // request/response structure types
-    parameter  type req_t = tcb_req_t,  // request
-    parameter  type rsp_t = tcb_rsp_t,  // response
+    parameter  type req_t = tcb_req_t,   // request
+    parameter  type rsp_t = tcb_rsp_t,   // response
     // VIP (not to be used in RTL)
     parameter  type vip_t = tcb_vip_t,   // VIP parameter type
     parameter  vip_t VIP = TCB_VIP_DEF,  // VIP parameter
@@ -116,9 +116,9 @@ package tcb_vip_transaction_pkg;
 
     // read/write request transaction of power of 2 size
     function automatic int unsigned put_transaction (
-      ref   transfer_queue_t transfer_queue,
-      input transaction_t    transaction,
-      input string           id = ""
+      ref    transfer_queue_t transfer_queue,
+      input  transaction_t    transaction,
+      input  string           id = ""
     );
       // write/read enable
       bit          wen;

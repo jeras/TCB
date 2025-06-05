@@ -23,6 +23,8 @@ package tcb_vip_blocking_pkg;
   export tcb_vip_transfer_pkg::*;
   import tcb_vip_transaction_pkg::*;
   export tcb_vip_transaction_pkg::*;
+  import tcb_vip_nonblocking_pkg::*;
+  export tcb_vip_nonblocking_pkg::*;
 
 ////////////////////////////////////////////////////////////////////////////////
 // TCB class
@@ -33,23 +35,24 @@ package tcb_vip_blocking_pkg;
     parameter  type cfg_t = tcb_cfg_t,   // configuration parameter type
     parameter  cfg_t CFG = TCB_CFG_DEF,  // configuration parameter
     // request/response structure types
-    parameter  type req_t = tcb_req_t,  // request
-    parameter  type rsp_t = tcb_rsp_t,  // response
+    parameter  type req_t = tcb_req_t,   // request
+    parameter  type rsp_t = tcb_rsp_t,   // response
     // VIP (not to be used in RTL)
     parameter  type vip_t = tcb_vip_t,   // VIP parameter type
     parameter  vip_t VIP = TCB_VIP_DEF,  // VIP parameter
-    // VIP data types
-    parameter  type adr_t = int unsigned,  // integer data types (byte/shortint/int/longint)
     // debugging options
-    parameter  bit  DEBUG = 1'b0
-  ) extends tcb_vip_transaction_c #(
+    parameter  bit  DEBUG = 1'b0,
+    // VIP data types
+    parameter  type adr_t = int unsigned // integer data types (byte/shortint/int/longint)
+  ) extends tcb_vip_nonblocking_c #(
     .cfg_t (cfg_t),
     .CFG   (CFG),
     .req_t (req_t),
     .rsp_t (rsp_t),
     .vip_t (vip_t),
     .VIP   (VIP),
-    .DEBUG (DEBUG)
+    .DEBUG (DEBUG),
+    .adr_t (adr_t)
   );
 
     //constructor
@@ -67,7 +70,7 @@ package tcb_vip_blocking_pkg;
   // local state
   //////////////////////////////////////////////////////////////////////////////
 
-    static tcb_endian_t ndn = TCB_NATIVE;
+    static logic ndn = TCB_NATIVE;
 
   //////////////////////////////////////////////////////////////////////////////
   // transaction sequence blocking API

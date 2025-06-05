@@ -33,8 +33,8 @@ package tcb_vip_nonblocking_pkg;
     parameter  type cfg_t = tcb_cfg_t,   // configuration parameter type
     parameter  cfg_t CFG = TCB_CFG_DEF,  // configuration parameter
     // request/response structure types
-    parameter  type req_t = tcb_req_t,  // request
-    parameter  type rsp_t = tcb_rsp_t,  // response
+    parameter  type req_t = tcb_req_t,   // request
+    parameter  type rsp_t = tcb_rsp_t,   // response
     // VIP (not to be used in RTL)
     parameter  type vip_t = tcb_vip_t,   // VIP parameter type
     parameter  vip_t VIP = TCB_VIP_DEF,  // VIP parameter
@@ -64,86 +64,285 @@ package tcb_vip_nonblocking_pkg;
     endfunction: new
 
   //////////////////////////////////////////////////////////////////////////////
-  // write/read/check
+  // 8-bit transaction put/set tasks
   //////////////////////////////////////////////////////////////////////////////
 
-/*
-    task access8 (
-      input  logic                wen,
+    task put_write8 (
+      ref    transfer_queue_t     que,
       input  adr_t                adr,
+      input  logic                ndn,
       input  logic [1-1:0][8-1:0] wdt,
+      input  tcb_rsp_sts_t        sts = '0,
+      input  string               id = ""
+    );
+      logic [8-1:0] dat [] = new[1]('{default: 'x});
+      logic [8-1:0] nul [];
+      transaction_t tsc;
+      int unsigned len;
+      dat = {<<8{type(dat)'(wdt)}};  // reversed unit/byte order
+      tsc = '{req: '{ndn: ndn, adr: adr, wdt: dat, default: 'x}, rsp: '{rdt: nul, sts: sts}};
+      len = put_transaction(que, tsc, id);
+    endtask: put_write8
+
+    task get_write8 (
+      ref    transfer_queue_t     que,
+      output adr_t                adr,
+      output logic                ndn,
+      output logic [1-1:0][8-1:0] wdt,
+      output tcb_rsp_sts_t        sts
+    );
+      transaction_t tsc;
+      int unsigned len;
+      len = get_transaction(que, tsc);
+      adr =                 tsc.req.adr          ;
+      ndn =                 tsc.req.ndn          ;
+      wdt = type(wdt)'({<<8{tsc.req.wdt[0:1-1]}});  // crop and reverse byte order
+      sts =                 tsc.rsp.sts          ;
+    endtask: get_write8
+
+    task put_read8 (
+      ref    transfer_queue_t     que,
+      input  adr_t                adr,
+      input  logic                ndn,
+      input  logic [1-1:0][8-1:0] rdt,
+      input  tcb_rsp_sts_t        sts = '0,
+      input  string               id = ""
+    );
+      logic [8-1:0] dat [] = new[1]('{default: 'x});
+      logic [8-1:0] nul [];
+      transaction_t tsc;
+      int unsigned len;
+      dat = {<<8{type(dat)'(rdt)}};  // reversed unit/byte order
+      tsc = '{req: '{ndn: ndn, adr: adr, wdt: nul, default: 'x}, rsp: '{rdt: dat, sts: sts}};
+      len = put_transaction(que, tsc, id);
+    endtask: put_read8
+
+    task get_read8 (
+      ref    transfer_queue_t     que,
+      output adr_t                adr,
+      output logic                ndn,
       output logic [1-1:0][8-1:0] rdt,
-      output logic                sts,
-      input  string               id = ""
+      output tcb_rsp_sts_t        sts
     );
-      logic [8-1:0] tmp_wdt [] = new[1];
-      logic [8-1:0] tmp_rdt [] = new[1];
-      tmp_wdt = {<<8{type(tmp_wdt)'(wdt)}};  // reversed unit/byte order
-      transaction(wen, adr, tmp_wdt, tmp_rdt, sts, id);
-      rdt = type(rdt)'({<<8{tmp_rdt[0:1-1]}});  // crop and reverse byte order
-    endtask: access8
+      transaction_t tsc;
+      int unsigned len;
+      len = get_transaction(que, tsc);
+      adr =                 tsc.req.adr          ;
+      ndn =                 tsc.req.ndn          ;
+      rdt = type(rdt)'({<<8{tsc.rsp.rdt[0:1-1]}});  // crop and reverse byte order
+      sts =                 tsc.rsp.sts          ;
+    endtask: get_read8
 
-    task access16 (
-      input  logic                wen,
+  //////////////////////////////////////////////////////////////////////////////
+  // 16-bit transaction put/set tasks
+  //////////////////////////////////////////////////////////////////////////////
+
+    task put_write16 (
+      ref    transfer_queue_t     que,
       input  adr_t                adr,
+      input  logic                ndn,
       input  logic [2-1:0][8-1:0] wdt,
+      input  tcb_rsp_sts_t        sts = '0,
+      input  string               id = ""
+    );
+      logic [8-1:0] dat [] = new[2]('{default: 'x});
+      logic [8-1:0] nul [];
+      transaction_t tsc;
+      int unsigned len;
+      dat = {<<8{type(dat)'(wdt)}};  // reversed unit/byte order
+      tsc = '{req: '{ndn: ndn, adr: adr, wdt: dat, default: 'x}, rsp: '{rdt: nul, sts: sts}};
+      len = put_transaction(que, tsc, id);
+    endtask: put_write16
+
+    task get_write16 (
+      ref    transfer_queue_t     que,
+      output adr_t                adr,
+      output logic                ndn,
+      output logic [2-1:0][8-1:0] wdt,
+      output tcb_rsp_sts_t        sts
+    );
+      transaction_t tsc;
+      int unsigned len;
+      len = get_transaction(que, tsc);
+      adr =                 tsc.req.adr          ;
+      ndn =                 tsc.req.ndn          ;
+      wdt = type(wdt)'({<<8{tsc.req.wdt[0:2-1]}});  // crop and reverse byte order
+      sts =                 tsc.rsp.sts          ;
+    endtask: get_write16
+
+    task put_read16 (
+      ref    transfer_queue_t     que,
+      input  adr_t                adr,
+      input  logic                ndn,
+      input  logic [2-1:0][8-1:0] rdt,
+      input  tcb_rsp_sts_t        sts = '0,
+      input  string               id = ""
+    );
+      logic [8-1:0] dat [] = new[2]('{default: 'x});
+      logic [8-1:0] nul [];
+      transaction_t tsc;
+      int unsigned len;
+      dat = {<<8{type(dat)'(rdt)}};  // reversed unit/byte order
+      tsc = '{req: '{ndn: ndn, adr: adr, wdt: nul, default: 'x}, rsp: '{rdt: dat, sts: sts}};
+      len = put_transaction(que, tsc, id);
+    endtask: put_read16
+
+    task get_read16 (
+      ref    transfer_queue_t     que,
+      output adr_t                adr,
+      output logic                ndn,
       output logic [2-1:0][8-1:0] rdt,
-      output logic                sts,
-      input  string               id = ""
+      output tcb_rsp_sts_t        sts
     );
-      logic [8-1:0] tmp_wdt [] = new[2]('{default: 'x});
-      logic [8-1:0] tmp_rdt [] = new[2];
-      tmp_wdt = {<<8{type(tmp_wdt)'(wdt)}};  // reversed unit/byte order
-      transaction(wen, adr, tmp_wdt, tmp_rdt, sts, id);
-      rdt = type(rdt)'({<<8{tmp_rdt[0:2-1]}});  // crop and reverse byte order
-    endtask: access16
+      transaction_t tsc;
+      int unsigned len;
+      len = get_transaction(que, tsc);
+      adr =                 tsc.req.adr          ;
+      ndn =                 tsc.req.ndn          ;
+      rdt = type(rdt)'({<<8{tsc.rsp.rdt[0:2-1]}});  // crop and reverse byte order
+      sts =                 tsc.rsp.sts          ;
+    endtask: get_read16
 
-    task write32 (
-      input  logic                wen,
+  //////////////////////////////////////////////////////////////////////////////
+  // 32-bit transaction put/set tasks
+  //////////////////////////////////////////////////////////////////////////////
+
+    task put_write32 (
+      ref    transfer_queue_t     que,
       input  adr_t                adr,
+      input  logic                ndn,
       input  logic [4-1:0][8-1:0] wdt,
-      output logic [4-1:0][8-1:0] rdt,
-      output logic                sts,
+      input  tcb_rsp_sts_t        sts = '0,
       input  string               id = ""
     );
-      logic [8-1:0] tmp_wdt [] = new[4]('{default: 'x});
-      logic [8-1:0] tmp_rdt [] = new[4];
-      tmp_wdt = {<<8{type(tmp_wdt)'(wdt)}};  // reversed unit/byte order
-      transaction(wen, adr, tmp_wdt, tmp_rdt, sts, id);
-      rdt = type(rdt)'({<<8{tmp_rdt[0:4-1]}});  // crop and reverse byte order
-    endtask: write32
+      logic [8-1:0] dat [] = new[4]('{default: 'x});
+      logic [8-1:0] nul [];
+      transaction_t tsc;
+      int unsigned len;
+      dat = {<<8{type(dat)'(wdt)}};  // reversed unit/byte order
+      tsc = '{req: '{ndn: ndn, adr: adr, wdt: dat, default: 'x}, rsp: '{rdt: nul, sts: sts}};
+      len = put_transaction(que, tsc, id);
+    endtask: put_write32
 
-    task write64 (
-      input  logic                wen,
+    task get_write32 (
+      ref    transfer_queue_t     que,
+      output adr_t                adr,
+      output logic                ndn,
+      output logic [4-1:0][8-1:0] wdt,
+      output tcb_rsp_sts_t        sts
+    );
+      transaction_t tsc;
+      int unsigned len;
+      len = get_transaction(que, tsc);
+      adr =                 tsc.req.adr          ;
+      ndn =                 tsc.req.ndn          ;
+      wdt = type(wdt)'({<<8{tsc.req.wdt[0:4-1]}});  // crop and reverse byte order
+      sts =                 tsc.rsp.sts          ;
+    endtask: get_write32
+
+    task put_read32 (
+      ref    transfer_queue_t     que,
       input  adr_t                adr,
+      input  logic                ndn,
+      input  logic [4-1:0][8-1:0] rdt,
+      input  tcb_rsp_sts_t        sts = '0,
+      input  string               id = ""
+    );
+      logic [8-1:0] dat [] = new[4]('{default: 'x});
+      logic [8-1:0] nul [];
+      transaction_t tsc;
+      int unsigned len;
+      dat = {<<8{type(dat)'(rdt)}};  // reversed unit/byte order
+      tsc = '{req: '{ndn: ndn, adr: adr, wdt: nul, default: 'x}, rsp: '{rdt: dat, sts: sts}};
+      len = put_transaction(que, tsc, id);
+    endtask: put_read32
+
+    task get_read32 (
+      ref    transfer_queue_t     que,
+      output adr_t                adr,
+      output logic                ndn,
+      output logic [4-1:0][8-1:0] rdt,
+      output tcb_rsp_sts_t        sts
+    );
+      transaction_t tsc;
+      int unsigned len;
+      len = get_transaction(que, tsc);
+      adr =                 tsc.req.adr          ;
+      ndn =                 tsc.req.ndn          ;
+      rdt = type(rdt)'({<<8{tsc.rsp.rdt[0:4-1]}});  // crop and reverse byte order
+      sts =                 tsc.rsp.sts          ;
+    endtask: get_read32
+
+  //////////////////////////////////////////////////////////////////////////////
+  // 64-bit transaction put/set tasks
+  //////////////////////////////////////////////////////////////////////////////
+
+    task put_write64 (
+      ref    transfer_queue_t     que,
+      input  adr_t                adr,
+      input  logic                ndn,
       input  logic [8-1:0][8-1:0] wdt,
+      input  tcb_rsp_sts_t        sts = '0,
+      input  string               id = ""
+    );
+      logic [8-1:0] dat [] = new[8]('{default: 'x});
+      logic [8-1:0] nul [];
+      transaction_t tsc;
+      int unsigned len;
+      dat = {<<8{type(dat)'(wdt)}};  // reversed unit/byte order
+      tsc = '{req: '{ndn: ndn, adr: adr, wdt: dat, default: 'x}, rsp: '{rdt: nul, sts: sts}};
+      len = put_transaction(que, tsc, id);
+    endtask: put_write64
+
+    task get_write64 (
+      ref    transfer_queue_t     que,
+      output adr_t                adr,
+      output logic                ndn,
+      output logic [8-1:0][8-1:0] wdt,
+      output tcb_rsp_sts_t        sts
+    );
+      transaction_t tsc;
+      int unsigned len;
+      len = get_transaction(que, tsc);
+      adr =                 tsc.req.adr          ;
+      ndn =                 tsc.req.ndn          ;
+      wdt = type(wdt)'({<<8{tsc.req.wdt[0:8-1]}});  // crop and reverse byte order
+      sts =                 tsc.rsp.sts          ;
+    endtask: get_write64
+
+    task put_read64 (
+      ref    transfer_queue_t     que,
+      input  adr_t                adr,
+      input  logic                ndn,
+      input  logic [8-1:0][8-1:0] rdt,
+      input  tcb_rsp_sts_t        sts = '0,
+      input  string               id = ""
+    );
+      logic [8-1:0] dat [] = new[8]('{default: 'x});
+      logic [8-1:0] nul [];
+      transaction_t tsc;
+      int unsigned len;
+      dat = {<<8{type(dat)'(rdt)}};  // reversed unit/byte order
+      tsc = '{req: '{ndn: ndn, adr: adr, wdt: nul, default: 'x}, rsp: '{rdt: dat, sts: sts}};
+      len = put_transaction(que, tsc, id);
+    endtask: put_read64
+
+    task get_read64 (
+      ref    transfer_queue_t     que,
+      output adr_t                adr,
+      output logic                ndn,
       output logic [8-1:0][8-1:0] rdt,
-      output logic                sts,
-      input  string               id = ""
+      output tcb_rsp_sts_t        sts
     );
-      logic [8-1:0] tmp_wdt [] = new[8]('{default: 'x});
-      logic [8-1:0] tmp_rdt [] = new[8];
-      tmp_wdt = {<<8{type(tmp_wdt)'(wdt)}};  // reversed unit/byte order
-      transaction(wen, adr, tmp_wdt, tmp_rdt, sts, id);
-      rdt = type(rdt)'({<<8{tmp_rdt[0:8-1]}});  // crop and reverse byte order
-    endtask: write64
+      transaction_t tsc;
+      int unsigned len;
+      len = get_transaction(que, tsc);
+      adr =                 tsc.req.adr          ;
+      ndn =                 tsc.req.ndn          ;
+      rdt = type(rdt)'({<<8{tsc.rsp.rdt[0:8-1]}});  // crop and reverse byte order
+      sts =                 tsc.rsp.sts          ;
+    endtask: get_read64
 
-    task write128 (
-      input  logic                 wen,
-      input  adr_t                 adr,
-      input  logic [16-1:0][8-1:0] wdt,
-      output logic [16-1:0][8-1:0] rdt,
-      output logic                 sts,
-      input  string               id = ""
-    );
-      logic [8-1:0] tmp_wdt [] = new[16]('{default: 'x});
-      logic [8-1:0] tmp_rdt [] = new[16];
-      tmp_wdt = {<<8{type(tmp_wdt)'(wdt)}};  // reversed unit/byte order
-      transaction(wen, adr, tmp_wdt, tmp_rdt, sts, id);
-      rdt = type(rdt)'({<<8{tmp_rdt[0:16-1]}});  // crop and reverse byte order
-    endtask: write128
-
-*/
   endclass: tcb_vip_nonblocking_c
 
 endpackage: tcb_vip_nonblocking_pkg
