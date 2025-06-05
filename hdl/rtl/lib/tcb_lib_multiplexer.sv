@@ -61,7 +61,7 @@ module tcb_lib_multiplexer
 //    logic                   ndn;  // endianness
 //    logic [man.BUS.ADR-1:0] adr;  // address
 //    logic [man.BUS_SIZ-1:0] siz;  // transfer size
-//    logic [man.BUS_BEN-1:0] ben;  // byte enable
+//    logic [man.BUS_BYT-1:0] ben;  // byte enable
 //    logic [man.BUS.DAT-1:0] wdt;  // write data
 //  } man_req_t;
 

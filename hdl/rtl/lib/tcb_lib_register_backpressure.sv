@@ -64,9 +64,9 @@ module tcb_lib_register_backpressure
     if (sub.vld & sub.rdy & ~man.rdy) begin
       tmp <= sub.req;
 //      // TODO: handle only enabled data bytes
-//      for (int unsigned i=0; i<sub.BUS_BEN; i++) begin
+//      for (int unsigned i=0; i<sub.BUS_BYT; i++) begin
 //        // data granularity
-//        if (sub.req.wen & sub.req.ben[i]) begin
+//        if (sub.req.wen & sub.req.byt[i]) begin
 //          tmp.wdt[i] <= sub.req.wdt[i];
 //        end
 //      end

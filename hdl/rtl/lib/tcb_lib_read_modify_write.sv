@@ -31,8 +31,8 @@ module tcb_lib_read_modify_write
   // BUS parameters
   initial begin
     // AMO configuration
-    assert (sub.BUS.AMO == TCB_AMO_ENABLED ) else $error("mismatch (sub.BUS.AMO = %0s) != TCB_AMO_ENABLED ", sub.BUS.AMO.name());
-    assert (man.BUS.AMO == TCB_AMO_DISABLED) else $error("mismatch (man.BUS.AMO = %0s) != TCB_AMO_DISABLED", man.BUS.AMO.name());
+    assert (sub.BUS.AMO == TCB_AMO_PRESENT ) else $error("mismatch (sub.BUS.AMO = %0s) != TCB_AMO_PRESENT ", sub.BUS.AMO.name());
+    assert (man.BUS.AMO == TCB_AMO_ABSENT) else $error("mismatch (man.BUS.AMO = %0s) != TCB_AMO_ABSENT", man.BUS.AMO.name());
     // other parameters
     assert (sub.BUS.ADR == man.BUS.ADR) else $error("mismatch (sub.BUS.ADR  = %0d) != (man.BUS.ADR  = %0d)", sub.BUS.ADR       , man.BUS.ADR       );
     assert (sub.BUS.DAT == man.BUS.DAT) else $error("mismatch (sub.BUS.DAT  = %0d) != (man.BUS.DAT  = %0d)", sub.BUS.DAT       , man.BUS.DAT       );
@@ -69,7 +69,7 @@ module tcb_lib_read_modify_write
   assign man.vld = sub.vld;
 
   // request
-  assign man.req.frm = sub.req.frm;
+  assign man.req.lck = sub.req.lck;
   assign man.req.len = sub.req.len;
   assign man.req.wen = sub.req.wen;
   assign man.req.ren = sub.req.ren;

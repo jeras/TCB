@@ -114,7 +114,7 @@ module tcb_vip_memory
 
     // local copies of TCB BUS parameters
     localparam DLY = tcb[i].HSK.DLY;
-    localparam BEN = tcb[i].BUS_BEN;
+    localparam BEN = tcb[i].BUS_BYT;
 
     // request address and size (TCB_LOG_SIZE mode)
     int unsigned adr;
@@ -142,7 +142,7 @@ module tcb_vip_memory
               end: log_size
               TCB_MOD_BYTE_ENA: begin: byte_ena
                 // write only enabled bytes
-                if (tcb[i].req.ben[(adr+b)%BEN])  mem[(adr+b)%SIZ] <= tcb[i].req.wdt[(adr+b)%BEN];
+                if (tcb[i].req.byt[(adr+b)%BEN])  mem[(adr+b)%SIZ] <= tcb[i].req.wdt[(adr+b)%BEN];
               end: byte_ena
             endcase
           end: bytes
@@ -167,7 +167,7 @@ module tcb_vip_memory
             end: log_size
             TCB_MOD_BYTE_ENA: begin: byte_ena
               // read only enabled bytes, the rest remains undefined
-              if (tcb[i].req.ben[(adr+b)%BEN])  tcb[i].rsp_dly[0].rdt[(adr+b)%BEN] = mem[(adr+b)%SIZ];
+              if (tcb[i].req.byt[(adr+b)%BEN])  tcb[i].rsp_dly[0].rdt[(adr+b)%BEN] = mem[(adr+b)%SIZ];
               else                              tcb[i].rsp_dly[0].rdt[(adr+b)%BEN] = 'x;
             end: byte_ena
           endcase

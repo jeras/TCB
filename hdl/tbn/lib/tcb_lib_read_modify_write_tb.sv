@@ -29,7 +29,7 @@ module tcb_lib_read_modify_write_tb
 ////////////////////////////////////////////////////////////////////////////////
 
   // handshake parameter
-  localparam tcb_hsk_t HSK = TCB_HSK_DEF;
+  localparam tcb_hsk_t CFG.HSK = TCB_HSK_DEF;
 
   // bus parameter
   localparam tcb_bus_t BUS_MAN = '{
@@ -37,9 +37,9 @@ module tcb_lib_read_modify_write_tb
     DAT: TCB_BUS_DEF.DAT,
     FRM: TCB_BUS_DEF.FRM,
     CHN: TCB_CHN_FULL_DUPLEX,
-    AMO: TCB_AMO_ENABLED,
-    PRF: TCB_PRF_DISABLED,
-    NXT: TCB_NXT_DISABLED,
+    AMO: TCB_AMO_PRESENT,
+    PRF: TCB_PRF_ABSENT,
+    NXT: TCB_NXT_ABSENT,
     MOD: TCB_MOD_LOG_SIZE,
     ORD: TCB_ORD_DESCENDING,
     NDN: TCB_NDN_BI_NDN
@@ -51,9 +51,9 @@ module tcb_lib_read_modify_write_tb
     DAT: TCB_BUS_DEF.DAT,
     FRM: TCB_BUS_DEF.FRM,
     CHN: TCB_CHN_FULL_DUPLEX,
-    AMO: TCB_AMO_DISABLED,
-    PRF: TCB_PRF_DISABLED,
-    NXT: TCB_NXT_DISABLED,
+    AMO: TCB_AMO_ABSENT,
+    PRF: TCB_PRF_ABSENT,
+    NXT: TCB_NXT_ABSENT,
     MOD: TCB_MOD_BYTE_ENA,
     ORD: TCB_ORD_DESCENDING,
     NDN: TCB_NDN_BI_NDN
@@ -89,12 +89,12 @@ module tcb_lib_read_modify_write_tb
   string testname = "none";
 
   // TCB interfaces
-  tcb_if #(tcb_hsk_t, HSK, tcb_bus_t, BUS_MAN, tcb_pma_t, PMA, req_t, rsp_t                ) tcb_man       (.clk (clk), .rst (rst));
-  tcb_if #(tcb_hsk_t, HSK, tcb_bus_t, BUS_SUB, tcb_pma_t, PMA, req_t, rsp_t                ) tcb_sub       (.clk (clk), .rst (rst));
+  tcb_if #(tcb_hsk_t, CFG.HSK, tcb_bus_t, BUS_MAN, tcb_pma_t, PMA, req_t, rsp_t                ) tcb_man       (.clk (clk), .rst (rst));
+  tcb_if #(tcb_hsk_t, CFG.HSK, tcb_bus_t, BUS_SUB, tcb_pma_t, PMA, req_t, rsp_t                ) tcb_sub       (.clk (clk), .rst (rst));
 
   // parameterized class specialization (blocking API)
-  typedef tcb_vip_blocking_c #(tcb_hsk_t, HSK, tcb_bus_t, BUS_MAN, tcb_pma_t, PMA, req_t, rsp_t) tcb_vip_siz_s;
-  typedef tcb_vip_blocking_c #(tcb_hsk_t, HSK, tcb_bus_t, BUS_SUB, tcb_pma_t, PMA, req_t, rsp_t) tcb_vip_ben_s;
+  typedef tcb_vip_blocking_c #(tcb_hsk_t, CFG.HSK, tcb_bus_t, BUS_MAN, tcb_pma_t, PMA, req_t, rsp_t) tcb_vip_siz_s;
+  typedef tcb_vip_blocking_c #(tcb_hsk_t, CFG.HSK, tcb_bus_t, BUS_SUB, tcb_pma_t, PMA, req_t, rsp_t) tcb_vip_ben_s;
 
   // TCB class objects
   tcb_vip_siz_s obj_man = new(tcb_man, "MAN");
@@ -109,7 +109,7 @@ module tcb_lib_read_modify_write_tb
   logic [8-1:0] nul [];
 
   // response
-  logic [tcb_man.BUS_BEN-1:0][8-1:0] rdt;  // read data
+  logic [tcb_man.BUS_BYT-1:0][8-1:0] rdt;  // read data
   tcb_rsp_sts_t                      sts;  // status response
 
 ////////////////////////////////////////////////////////////////////////////////

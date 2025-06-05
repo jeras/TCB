@@ -58,8 +58,8 @@ module tcb_lib_register_response (
   begin
     // TODO: only on read enable, and byte enable (problem is what to do with LOG_SIZE
     sub.rsp <= man.rsp;
-//    for (int unsigned i=0; i<man.BUS_BEN; i++) begin
-//      if (man.dly[man.HSK.DLY].ben[i]) begin
+//    for (int unsigned i=0; i<man.BUS_BYT; i++) begin
+//      if (man.dly[man.HSK.DLY].byt[i]) begin
 //        sub.rsp.rdt[i] <= man.rsp.rdt[i];
 //      end
 //    end

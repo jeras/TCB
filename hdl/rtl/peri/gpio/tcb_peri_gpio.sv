@@ -25,7 +25,7 @@ module tcb_peri_gpio #(
   int unsigned GW = 32,   // GPIO width
   int unsigned CFG_CDC = 2,     // implement clock domain crossing stages (0 - bypass)
   // TCB parameters
-  bit          CFG_RSP_REG = 1'b1,  // register response path (by default the response is registered giving a HSK.DLY of 1)
+  bit          CFG_RSP_REG = 1'b1,  // register response path (by default the response is registered giving a CFG.HSK.DLY of 1)
   bit          CFG_RSP_MIN = 1'b0,  // minimalistic response implementation
   // implementation device (ASIC/FPGA vendor/device)
   string       CHIP = ""
@@ -43,8 +43,8 @@ module tcb_peri_gpio #(
 ////////////////////////////////////////////////////////////////////////////////
 
   initial begin
-    assert (tcb.HSK.DLY ==  0) else $error("unsupported HSK.DLY = %0d", tcb.HSK.DLY);
-    assert (tcb.BUS.DAT >= GW) else $error("unsupported (BUS.DAT = %0d) < (GW = %0d)", tcb.BUS.DAT, GW);
+    assert (tcb.CFG.HSK.DLY ==  0) else $error("unsupported CFG.HSK.DLY = %0d", tcb.CFG.HSK.DLY);
+    assert (tcb.CFG.BUS.DAT >= GW) else $error("unsupported (CFG.BUS.DAT = %0d) < (GW = %0d)", tcb.CFG.BUS.DAT, GW);
   end
 
 ////////////////////////////////////////////////////////////////////////////////

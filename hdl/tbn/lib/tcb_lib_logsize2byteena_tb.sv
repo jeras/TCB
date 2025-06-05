@@ -36,44 +36,42 @@ module tcb_lib_logsize2byteena_tb
 // local parameters
 ////////////////////////////////////////////////////////////////////////////////
 
-  // handshake parameter
-  localparam tcb_hsk_t HSK = TCB_HSK_DEF;
-
-  // bus parameter
-  localparam tcb_bus_t BUS_SIZ = '{
-    ADR: TCB_BUS_DEF.ADR,
-    DAT: TCB_BUS_DEF.DAT,
-    FRM: TCB_BUS_DEF.FRM,
-    CHN: TCB_CHN_HALF_DUPLEX,
-    AMO: TCB_AMO_DISABLED,
-    PRF: TCB_PRF_DISABLED,
-    NXT: TCB_NXT_DISABLED,
-    MOD: TCB_MOD_LOG_SIZE,
-    ORD: TCB_ORD_DESCENDING,
-    NDN: TCB_NDN_BI_NDN
+  localparam tcb_cfg_t CFG_SIZ = '{
+    // handshake parameter
+    HSK: TCB_HSK_DEF,
+    // bus parameter
+    BUS: '{
+      ADR: TCB_BUS_DEF.ADR,
+      DAT: TCB_BUS_DEF.DAT,
+      LEN: TCB_BUS_DEF.LEN,
+      LCK: TCB_LCK_PRESENT,
+      CHN: TCB_CHN_HALF_DUPLEX,
+      AMO: TCB_AMO_ABSENT,
+      PRF: TCB_PRF_ABSENT,
+      NXT: TCB_NXT_ABSENT,
+      MOD: TCB_MOD_LOG_SIZE,
+      ORD: TCB_ORD_DESCENDING,
+      NDN: TCB_NDN_BI_NDN
+    },
+    // physical interface parameter default
+    PMA: TCB_PMA_DEF
   };
 
-  // bus parameter
-  localparam tcb_bus_t BUS_BEN = '{
-    ADR: TCB_BUS_DEF.ADR,
-    DAT: TCB_BUS_DEF.DAT,
-    FRM: TCB_BUS_DEF.FRM,
-    CHN: TCB_CHN_HALF_DUPLEX,
-    AMO: TCB_AMO_DISABLED,
-    PRF: TCB_PRF_DISABLED,
-    NXT: TCB_NXT_DISABLED,
-    MOD: TCB_MOD_BYTE_ENA,
-    ORD: TCB_ORD_DESCENDING,
-    NDN: TCB_NDN_BI_NDN
-  };
 
-  // physical interface parameter default
-  localparam tcb_pma_t PMA = '{
-    MIN: 0,
-    OFF: 0,
-    ALN: 0,
-    BND: 0
-  };
+    // bus parameter
+    localparam tcb_bus_t BUS_BYT = '{
+      ADR: TCB_BUS_DEF.ADR,
+      DAT: TCB_BUS_DEF.DAT,
+      FRM: TCB_BUS_DEF.FRM,
+      CHN: TCB_CHN_HALF_DUPLEX,
+      AMO: TCB_AMO_ABSENT,
+      PRF: TCB_PRF_ABSENT,
+      NXT: TCB_NXT_ABSENT,
+      MOD: TCB_MOD_BYTE_ENA,
+      ORD: TCB_ORD_DESCENDING,
+      NDN: TCB_NDN_BI_NDN
+    };
+
 
   localparam tcb_vip_t VIP = '{
     DRV: 1'b1
@@ -97,13 +95,13 @@ module tcb_lib_logsize2byteena_tb
   string testname = "none";
 
   // TCB interfaces
-  tcb_if #(tcb_hsk_t, HSK, tcb_bus_t, BUS_SIZ, tcb_pma_t, PMA, req_t, rsp_t                ) tcb_man       (.clk (clk), .rst (rst));
-  tcb_if #(tcb_hsk_t, HSK, tcb_bus_t, BUS_BEN, tcb_pma_t, PMA, req_t, rsp_t                ) tcb_sub       (.clk (clk), .rst (rst));
-  tcb_if #(tcb_hsk_t, HSK, tcb_bus_t, BUS_BEN, tcb_pma_t, PMA, req_t, rsp_t, tcb_vip_t, VIP) tcb_mem [0:0] (.clk (clk), .rst (rst));
+  tcb_if #(tcb_cfg_t, CFG_SIZ, req_t, rsp_t                ) tcb_man       (.clk (clk), .rst (rst));
+  tcb_if #(tcb_cfg_t, CFG_BYT, req_t, rsp_t                ) tcb_sub       (.clk (clk), .rst (rst));
+  tcb_if #(tcb_cfg_t, CFG_BYT, req_t, rsp_t, tcb_vip_t, VIP) tcb_mem [0:0] (.clk (clk), .rst (rst));
 
   // parameterized class specialization (blocking API)
-  typedef tcb_vip_blocking_c #(tcb_hsk_t, HSK, tcb_bus_t, BUS_SIZ, tcb_pma_t, PMA, req_t, rsp_t) tcb_vip_siz_s;
-  typedef tcb_vip_blocking_c #(tcb_hsk_t, HSK, tcb_bus_t, BUS_BEN, tcb_pma_t, PMA, req_t, rsp_t) tcb_vip_ben_s;
+  typedef tcb_vip_blocking_c #(tcb_cfg_t, CFG_SIZ, req_t, rsp_t) tcb_vip_siz_s;
+  typedef tcb_vip_blocking_c #(tcb_cfg_t, CFG_BYT, req_t, rsp_t) tcb_vip_ben_s;
 
   // TCB class objects
   tcb_vip_siz_s obj_man = new(tcb_man, "MAN");
@@ -118,7 +116,7 @@ module tcb_lib_logsize2byteena_tb
   logic [8-1:0] nul [];
 
   // response
-  logic [tcb_man.BUS_BEN-1:0][8-1:0] rdt;  // read data
+  logic [tcb_man.BUS_BYT-1:0][8-1:0] rdt;  // read data
   tcb_rsp_sts_t                      sts;  // status response
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -339,8 +337,8 @@ module tcb_lib_logsize2byteena_tb
       for (int unsigned siz=tcb_man.PMA.MIN; siz<=tcb_man.BUS_MAX; siz++) begin
 //      begin
 //        static int unsigned siz=1;
-//        for (int unsigned off=0; off<tcb_man.BUS_BEN; off+=2) begin
-        for (int unsigned off=0; off<tcb_man.BUS_BEN; off+=2**tcb_man.PMA.OFF) begin
+//        for (int unsigned off=0; off<tcb_man.BUS_BYT; off+=2) begin
+        for (int unsigned off=0; off<tcb_man.BUS_BYT; off+=2**tcb_man.PMA.OFF) begin
           // local variables
           string       id;
           int unsigned size;
@@ -370,8 +368,8 @@ module tcb_lib_logsize2byteena_tb
           // ID
           id = $sformatf("ndn=%0d siz=%0d off=%0d", ndn, siz, off);
           $display("DEBUG: ID = '%s'", id);
-          // address (stride is twice BUS_BEN, to accommodate unaligned accesses)
-          adr = siz * tcb_man.BUS_BEN * 2;
+          // address (stride is twice BUS_BYT, to accommodate unaligned accesses)
+          adr = siz * tcb_man.BUS_BYT * 2;
           // prepare data array
           size = 2**siz;
           dat = new[size];

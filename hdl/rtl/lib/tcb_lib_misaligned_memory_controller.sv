@@ -29,11 +29,11 @@ module tcb_lib_misaligned_memory_controller
   parameter  type pma_t = tcb_pma_t,   // packing parameter type
   parameter  pma_t PMA = TCB_PMA_DEF,  // packing parameter
   // local parameters
-  localparam int unsigned BUS_BEN = BUS.DAT/8,
-  localparam int unsigned BUS_MAX = $clog2(BUS_BEN),
-  localparam int unsigned MEM_CEN = BUS_BEN/(2**PMA.OFF),
-  localparam int unsigned MEM_ADR = BUS.ADR-BUS_MAX,
-  localparam int unsigned MEM_DAT = BUS.DAT/MEM_CEN
+  localparam int unsigned BUS_BYT = CFG.BUS.DAT/8,
+  localparam int unsignedCFG_BUS_MAX = $clog2(CFG.BUS_BYT),
+  localparam int unsigned MEM_CEN = BUS_BYT/(2**PMA.OFF),
+  localparam int unsigned MEM_ADR = CFG.BUS.ADR-BUS_MAX,
+  localparam int unsigned MEM_DAT = CFG.BUS.DAT/MEM_CEN
   // byte order
   // TODO
 )(
@@ -54,9 +54,9 @@ module tcb_lib_misaligned_memory_controller
   // BUS parameters
   initial begin
     // channel configuration
-    assert (tcb.BUS.CHN != TCB_CHN_FULL_DUPLEX) else $error("unsupported (tcb.BUS.CHN = %0s) == TCB_CHN_FULL_DUPLEX", tcb.BUS.CHN.name());
+    assert (tcb.CFG.BUS.CHN != TCB_CHN_FULL_DUPLEX) else $error("unsupported (tcb.CFG.BUS.CHN = %0s) == TCB_CHN_FULL_DUPLEX", tcb.CFG.BUS.CHN.name());
     // data sizing mode
-    assert (tcb.BUS.MOD == TCB_MOD_BYTE_ENA)    else $error("unsupported (tcb.BUS.MOD = %0s) != TCB_MOD_BYTE_ENA", tcb.BUS.MOD.name());
+    assert (tcb.CFG.BUS.MOD == TCB_MOD_BYTE_ENA)    else $error("unsupported (tcb.CFG.BUS.MOD = %0s) != TCB_MOD_BYTE_ENA", tcb.CFG.BUS.MOD.name());
     // other parameters
 //    assert (      sub.BUS.FRM  ==       man.BUS.FRM ) else $error("mismatch (      sub.BUS.FRM  = %0d) != (      man.BUS.FRM  = %0d)",       sub.BUS.FRM       ,       man.BUS.FRM       );
 //    assert (      sub.BUS.PRF  ==       man.BUS.PRF ) else $error("mismatch (      sub.BUS.PRF  = %0s) != (      man.BUS.PRF  = %0s)",       sub.BUS.PRF.name(),       man.BUS.PRF.name());
@@ -88,7 +88,7 @@ module tcb_lib_misaligned_memory_controller
 //      assign man.req.ren = sub.req.ren;
 //    end
 //    // prefetch
-//    if (man.BUS.PRF == TCB_PRF_ENABLED) begin
+//    if (man.BUS.PRF == TCB_PRF_PRESENT) begin
 //      assign man.req.rpt = sub.req.rpt;
 //      assign man.req.inc = sub.req.inc;
 //    end
@@ -131,7 +131,7 @@ module tcb_lib_misaligned_memory_controller
   logic [BUS_MAX-1:0] off;
 
   assign mem_cen = {MEM_CEN{tcb.vld    }}
-                 &          tcb.req.ben  ;
+                 &          tcb.req.byt  ;
   assign mem_wen =          tcb.req.wen  ;
 
   // address
@@ -141,24 +141,24 @@ module tcb_lib_misaligned_memory_controller
 
   generate
     // next address
-    if (tcb.BUS.NXT == TCB_NXT_ENABLED) begin
+    if (tcb.CFG.BUS.NXT == TCB_NXT_PRESENT) begin
       assign nxt = tcb.req.nxt[BUS_MAX+:MEM_ADR];
     end else begin
       assign nxt = adr + 1;
     end
 
     // address or next address
-    for (genvar i=0; i<BUS_BEN; i++) begin
+    for (genvar i=0; i<BUS_BYT; i++) begin
       assign mem_adr[i] = (i < off) ? nxt : adr;
     end
   endgenerate
 
   // request/response data
   generate
-    if (tcb.BUS.CHN != TCB_CHN_READ_ONLY) begin
+    if (tcb.CFG.BUS.CHN != TCB_CHN_READ_ONLY) begin
       assign mem_wdt = tcb.req.wdt;
     end
-    if (tcb.BUS.CHN != TCB_CHN_WRITE_ONLY) begin
+    if (tcb.CFG.BUS.CHN != TCB_CHN_WRITE_ONLY) begin
       assign tcb.rsp.rdt = mem_rdt;
     end
   endgenerate

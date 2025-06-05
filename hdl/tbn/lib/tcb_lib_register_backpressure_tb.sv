@@ -66,7 +66,7 @@ module tcb_lib_register_backpressure_tb
   logic [8-1:0] nul [];
 
   // response
-  logic [tcb_sub.BUS_BEN-1:0][8-1:0] rdt;  // read data
+  logic [tcb_sub.BUS_BYT-1:0][8-1:0] rdt;  // read data
   tcb_rsp_sts_t                      sts;  // status response
 
 ////////////////////////////////////////////////////////////////////////////////

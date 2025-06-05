@@ -70,7 +70,7 @@ module tcb_lib_logsize2byteena
   generate
     // framing
     if (man.BUS.FRM > 0) begin
-      assign man.req.frm = sub.req.frm;
+      assign man.req.lck = sub.req.lck;
       assign man.req.len = sub.req.len;
     end
     // channel
@@ -81,13 +81,13 @@ module tcb_lib_logsize2byteena
       assign man.req.ren = sub.req.ren;
     end
     // prefetch
-    if (man.BUS.PRF == TCB_PRF_ENABLED) begin
+    if (man.BUS.PRF == TCB_PRF_PRESENT) begin
       assign man.req.rpt = sub.req.rpt;
       assign man.req.inc = sub.req.inc;
     end
     // address and next address
     assign man.req.adr = sub.req.adr;
-    if (man.BUS.NXT == TCB_NXT_ENABLED) begin
+    if (man.BUS.NXT == TCB_NXT_PRESENT) begin
       assign man.req.nxt = sub.req.nxt;
     end
     // endianness
@@ -145,8 +145,8 @@ module tcb_lib_logsize2byteena
 
     // byte enable
     always_comb
-    for (int unsigned i=0; i<sub.BUS_BEN; i++) begin
-      man.req.ben[i] = (req_off & req_msk) == (i[sub.BUS_MAX-1:0] & req_msk);
+    for (int unsigned i=0; i<sub.BUS_BYT; i++) begin
+      man.req.byt[i] = (req_off & req_msk) == (i[sub.BUS_MAX-1:0] & req_msk);
     end
 
     // TODO: add big endian support, maybe ASCENDING also
@@ -154,7 +154,7 @@ module tcb_lib_logsize2byteena
     if (sub.BUS.CHN != TCB_CHN_READ_ONLY) begin: write
       // write access
       always_comb
-      for (int unsigned i=0; i<sub.BUS_BEN; i++) begin
+      for (int unsigned i=0; i<sub.BUS_BYT; i++) begin
         man.req.wdt[i] = sub.req.wdt[i[sub.BUS_MAX-1:0] & ~req_msk];
       end
     end: write
@@ -162,7 +162,7 @@ module tcb_lib_logsize2byteena
     if (sub.BUS.CHN != TCB_CHN_WRITE_ONLY) begin: read
       // read access
       always_comb
-      for (int unsigned i=0; i<sub.BUS_BEN; i++) begin
+      for (int unsigned i=0; i<sub.BUS_BYT; i++) begin
         sub.rsp.rdt[i] = man.rsp.rdt[(~prefix_or(i[sub.BUS_MAX-1:0]) & rsp_off) | i[sub.BUS_MAX-1:0]];
       end
     end: read
@@ -171,27 +171,27 @@ module tcb_lib_logsize2byteena
   else begin: unaligned
 
     // byte enable
-    logic [sub.BUS_BEN-1:0] sub_req_ben;
+    logic [sub.BUS_BYT-1:0] sub_req_ben;
 
     // logarithmic size mode (subordinate interface) byte enable
     always_comb
-    for (int unsigned i=0; i<sub.BUS_BEN; i++) begin: logsize2byteena
+    for (int unsigned i=0; i<sub.BUS_BYT; i++) begin: logsize2byteena
       sub_req_ben[i] = (i < 2**sub.req.siz) ? 1'b1 : 1'b0;
     end: logsize2byteena
 
     // byte enable
     always_comb
-    for (int unsigned i=0; i<sub.BUS_BEN; i++) begin: ben
-      man.req.ben[i] = sub_req_ben[(i-req_off) % sub.BUS_BEN];
+    for (int unsigned i=0; i<sub.BUS_BYT; i++) begin: ben
+      man.req.byt[i] = sub_req_ben[(i-req_off) % sub.BUS_BYT];
     end: ben
 
     if (sub.BUS.CHN != TCB_CHN_READ_ONLY) begin: write
       // write data
       always_comb
-      for (int unsigned i=0; i<sub.BUS_BEN; i++) begin: wdt
+      for (int unsigned i=0; i<sub.BUS_BYT; i++) begin: wdt
         unique case (req_ndn)
-          TCB_LITTLE:  man.req.wdt[i] = sub.req.wdt[(             i-req_off) % sub.BUS_BEN];
-          TCB_BIG   :  man.req.wdt[i] = sub.req.wdt[(2**req_siz-1-i+req_off) % sub.BUS_BEN];
+          TCB_LITTLE:  man.req.wdt[i] = sub.req.wdt[(             i-req_off) % sub.BUS_BYT];
+          TCB_BIG   :  man.req.wdt[i] = sub.req.wdt[(2**req_siz-1-i+req_off) % sub.BUS_BYT];
           default   :  man.req.wdt[i] = '{default: 8'hxx};
         endcase
       end: wdt
@@ -200,10 +200,10 @@ module tcb_lib_logsize2byteena
     if (sub.BUS.CHN != TCB_CHN_WRITE_ONLY) begin: read
       // read data
       always_comb
-      for (int unsigned i=0; i<sub.BUS_BEN; i++) begin: rdt
+      for (int unsigned i=0; i<sub.BUS_BYT; i++) begin: rdt
         unique case (rsp_ndn)
-          TCB_LITTLE:  sub.rsp.rdt[i] = man.rsp.rdt[(             i+rsp_off) % sub.BUS_BEN];
-          TCB_BIG   :  sub.rsp.rdt[i] = man.rsp.rdt[(2**rsp_siz-1-i+rsp_off) % sub.BUS_BEN];
+          TCB_LITTLE:  sub.rsp.rdt[i] = man.rsp.rdt[(             i+rsp_off) % sub.BUS_BYT];
+          TCB_BIG   :  sub.rsp.rdt[i] = man.rsp.rdt[(2**rsp_siz-1-i+rsp_off) % sub.BUS_BYT];
           default   :  sub.rsp.rdt[i] = '{default: 8'hxx};
         endcase
       end: rdt

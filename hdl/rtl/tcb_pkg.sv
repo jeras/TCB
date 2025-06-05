@@ -44,6 +44,12 @@ package tcb_pkg;
 // bus layer (defines which signal subset is used)
 ////////////////////////////////////////////////////////////////////////////////
 
+  // locking configuration
+  typedef enum bit {
+    TCB_LCK_ABSENT  = 1'b0,
+    TCB_LCK_PRESENT = 1'b1
+  } tcb_bus_lock_t;
+
   // channel configuration
   typedef enum bit [2-1:0] {
     // 2 bit value {rd,wr}
@@ -55,20 +61,20 @@ package tcb_pkg;
 
   // atomic configuration
   typedef enum bit {
-    TCB_AMO_DISABLED = 1'b0,
-    TCB_AMO_ENABLED  = 1'b1
+    TCB_AMO_ABSENT  = 1'b0,
+    TCB_AMO_PRESENT = 1'b1
   } tcb_bus_atomic_t;
 
   // prefetch configuration
   typedef enum bit {
-    TCB_PRF_DISABLED = 1'b0,  //
-    TCB_PRF_ENABLED  = 1'b1   // enable prefetch signals
+    TCB_PRF_ABSENT  = 1'b0,  //
+    TCB_PRF_PRESENT = 1'b1   // enable prefetch signals
   } tcb_bus_prefetch_t;
 
   // next address configuration (for misaligned accesses)
   typedef enum bit {
-    TCB_NXT_DISABLED = 1'b0,  //
-    TCB_NXT_ENABLED  = 1'b1   // enable prefetch signals
+    TCB_NXT_ABSENT  = 1'b0,  //
+    TCB_NXT_PRESENT = 1'b1   // enable prefetch signals
   } tcb_bus_next_t;
 
   // data sizing mode
@@ -100,7 +106,8 @@ package tcb_pkg;
   `endif
     int unsigned       ADR;  // address width
     int unsigned       DAT;  // data width
-    int unsigned       FRM;  // framing maximum length (if 0 framing is disabled)
+    int unsigned       LEN;  // burst length counter width
+    tcb_bus_lock_t     LCK;  // framing configuration
     tcb_bus_channel_t  CHN;  // channel configuration
     tcb_bus_atomic_t   AMO;  // atomic configuration
     tcb_bus_prefetch_t PRF;  // prefetch configuration
@@ -114,11 +121,12 @@ package tcb_pkg;
   localparam tcb_bus_t TCB_BUS_DEF = '{
     ADR: 32,
     DAT: 32,
-    FRM: 15, // frame size of up to FRM+1=16 transfers
+    LEN: 12, // transfer frame size of up to 4kB
+    LCK: TCB_LCK_PRESENT,
     CHN: TCB_CHN_HALF_DUPLEX,
-    AMO: TCB_AMO_ENABLED,
-    PRF: TCB_PRF_ENABLED,
-    NXT: TCB_NXT_ENABLED,
+    AMO: TCB_AMO_PRESENT,
+    PRF: TCB_PRF_PRESENT,
+    NXT: TCB_NXT_PRESENT,
     MOD: TCB_MOD_BYTE_ENA,
     ORD: TCB_ORD_DESCENDING,
     NDN: TCB_NDN_BI_NDN
@@ -171,9 +179,11 @@ package tcb_pkg;
     bit          REN;  // read enable
     bit          WEN;  // write enable
     bit          XEN;  // execute enable
-    bit          CEN;  // cache enable
     bit          AEN;  // atomic enable
+    bit          BEN;  // burst enable
+    bit          CEN;  // cache enable
     // transaction size and alignment PMAs
+    int unsigned MAX;  // maximum transfer logarithmic size
     int unsigned MIN;  // minimum transfer logarithmic size
     int unsigned OFF;  // number of zeroed offset bits
     int unsigned ALN;  // alignment (number of aligned address bits)
@@ -181,7 +191,7 @@ package tcb_pkg;
     // RISC-V ISA PMAs
     tcb_pma_amo_t  AMO;   // AMO PMA
     tcb_pma_rsrv_t RSRV;  // reservability PMA
-    int unsigned   MAG;   // Misaligned Atomicity Granule PMA (logarithmic scale)
+//    int unsigned   MAG;   // Misaligned Atomicity Granule PMA (logarithmic scale)
   } tcb_pma_t;
 
   // physical interface parameter default
@@ -190,12 +200,14 @@ package tcb_pkg;
     REN: 1'b1,  // read enable
     WEN: 1'b1,  // write enable
     XEN: 1'b1,  // execute enable
-    CEN: 1'b1,  // cache enable
-    AEN: 1'b1,  // atomic enable        
+    AEN: 1'b0,  // atomic enable        
+    BEN: 1'b0,  // burst enable        
+    CEN: 1'b0,  // cache enable
     // transfer size and alignment PMAs
-    MIN: 0,   // maximum $clog2(BUS_DAT/8)
-    OFF: 0,   // maximum $clog2(BUS_DAT/8)
-    ALN: 0,   // maximum $clog2(BUS_DAT/8)
+    MAX: 0,   // 
+    MIN: 0,   // 0 <= MIN <= $clog2(CFG.BUS_DAT/8)
+    OFF: 0,   // 0 <= OFF <= $clog2(CFG.BUS_DAT/8)
+    ALN: 0,   // 0 <= ALN <= $clog2(CFG.BUS_DAT/8)
     BND: 0,   // no boundary
     // RISC-V ISA PMAs
     AMO : AMONone,   // AMO PMA
@@ -220,6 +232,28 @@ package tcb_pkg;
   // VIP default value
   localparam tcb_vip_t TCB_VIP_DEF = '{
     DRV: 1'b0
+  };
+
+////////////////////////////////////////////////////////////////////////////////
+// TCB configuration structure
+////////////////////////////////////////////////////////////////////////////////
+
+  // PMA parameter structure
+  `ifdef VERILATOR
+  typedef struct packed {
+  `else
+  typedef struct {
+  `endif
+    tcb_hsk_t HSK;  // handshake
+    tcb_bus_t BUS;  // bus
+    tcb_pma_t PMA;  // physical memory attributes
+  } tcb_cfg_t;
+
+  // configuration parameter default
+  localparam tcb_cfg_t TCB_CFG_DEF = '{
+    HSK: TCB_HSK_DEF,
+    BUS: TCB_BUS_DEF,
+    PMA: TCB_PMA_DEF
   };
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -261,18 +295,16 @@ package tcb_pkg;
 ////////////////////////////////////////////////////////////////////////////////
 
   virtual class tcb_c #(
-    parameter  tcb_hsk_t HSK = TCB_HSK_DEF,
-    parameter  tcb_bus_t BUS = TCB_BUS_DEF,
-    parameter  tcb_pma_t PMA = TCB_PMA_DEF
+    parameter  tcb_cfg_t CFG = TCB_CFG_DEF
   );
     // signal widths
-    localparam BUS_LEN = $clog2(BUS.FRM+1);
-    localparam BUS_BEN = BUS.DAT/8;
-    localparam BUS_MAX = $clog2(BUS_BEN);
-    localparam BUS_SIZ = $clog2(BUS_MAX+1);
+    localparam CFG_BUS_LEN = $clog2(CFG.BUS.LEN);
+    localparam CFG_BUS_BYT = CFG.BUS.DAT/8;
+    localparam CFG_BUS_MAX = $clog2(CFG_BUS_BYT);
+    localparam CFG_BUS_SIZ = $clog2(CFG_BUS_MAX+1);
 
-    localparam int unsigned LEFT  = (BUS.ORD == TCB_ORD_DESCENDING) ? BUS_BEN-1 : 0;
-    localparam int unsigned RIGHT = (BUS.ORD == TCB_ORD_DESCENDING) ? 0 : BUS_BEN-1;
+    localparam int unsigned LEFT  = (CFG.BUS.ORD == TCB_ORD_DESCENDING) ? CFG_BUS_BYT-1 : 0;
+    localparam int unsigned RIGHT = (CFG.BUS.ORD == TCB_ORD_DESCENDING) ? 0 : CFG_BUS_BYT-1;
 
     typedef logic [LEFT:RIGHT]        ben_t;
     typedef logic [LEFT:RIGHT][8-1:0] dat_t;
@@ -280,35 +312,38 @@ package tcb_pkg;
     // request
     typedef struct packed {
       // framing
-      logic               frm;  // frame
-      logic [BUS_LEN-1:0] len;  // frame length
+      logic                   lck;  // frame lock
       // enables
-      logic               ren;  // read enable
-      logic               wen;  // write enable
-      logic               xen;  // execute enable
-      logic               cen;  // cache enable
+      logic                   ren;  // read enable
+      logic                   wen;  // write enable
+      logic                   xen;  // execute enable
+      logic                   aen;  // atomic enable
+      logic                   ben;  // burst enable
+      logic                   cen;  // cache enable
       // atomic
-      logic               aen;  // atomic enable
-      logic       [5-1:0] amo;  // atomic function code (RISC-V ISA)
+      logic           [5-1:0] amo;  // atomic function code (RISC-V ISA)
+      // burst
+      logic                   bst;  // burst type
+      logic [CFG.BUS.LEN-1:0] len;  // burst length in bytes
       // prefetch
-      logic               rpt;  // repeated address
-      logic               inc;  // incremented address
+      logic                   rpt;  // repeated address
+      logic                   inc;  // incremented address
       // address and next address
-      logic [BUS.ADR-1:0] adr;  // current address
-      logic [BUS.ADR-1:0] nxt;  // next address
+      logic [CFG.BUS.ADR-1:0] adr;  // current address
+      logic [CFG.BUS.ADR-1:0] nxt;  // next address
       // data sizing
-      logic [BUS_SIZ-1:0] siz;  // logarithmic transfer size
-      ben_t               ben;  // byte enable
+      logic [CFG_BUS_SIZ-1:0] siz;  // logarithmic transfer size
+      ben_t                   byt;  // byte enable
       // endianness
-      logic               ndn;  // endianness
+      logic                   ndn;  // endianness
       // data
-      dat_t               wdt;  // write data
+      dat_t                   wdt;  // write data
     } req_t;
 
     // response
     typedef struct packed {
-      dat_t               rdt;  // read data
-      tcb_rsp_sts_t       sts;  // status
+      dat_t                   rdt;  // read data
+      tcb_rsp_sts_t           sts;  // status
     } rsp_t;
   endclass: tcb_c
 
@@ -324,24 +359,29 @@ package tcb_pkg;
 ////////////////////////////////////////////////////////////////////////////////
 
   // default signal widths
-  localparam DEF_LEN = $clog2(TCB_BUS_DEF.FRM+1);
+  localparam DEF_LEN = $clog2(TCB_CFG_DEF.BUS.LEN);
   localparam DEF_ADR = 32;
   localparam DEF_DAT = 32;
-  localparam DEF_BEN = DEF_DAT/8;
-  localparam DEF_MAX = $clog2(DEF_BEN);
+  localparam DEF_BYT = DEF_DAT/8;
+  localparam DEF_MAX = $clog2(DEF_BYT);
   localparam DEF_SIZ = $clog2(DEF_MAX+1);
 
   // request
   typedef struct packed {
     // framing
-    logic                      frm;  // frame
-    logic [DEF_LEN-1:0]        len;  // frame length
+    logic                      lck;  // frame
     // channel
-    logic                      wen;  // write enable
     logic                      ren;  // read enable
-    // atomic
+    logic                      wen;  // write enable
+    logic                      xen;  // execute enable
     logic                      aen;  // atomic enable
+    logic                      ben;  // burst enable
+    logic                      cen;  // cache enable
+    // atomic
     logic              [5-1:0] amo;  // atomic function code (RISC-V ISA)
+    // burst
+    logic                      bst;  // burst type
+    logic [DEF_LEN-1:0]        len;  // burst length in bytes
     // prefetch
     logic                      rpt;  // repeated address
     logic                      inc;  // incremented address
@@ -350,16 +390,16 @@ package tcb_pkg;
     logic [DEF_ADR-1:0]        nxt;  // next address
     // data sizing
     logic [DEF_SIZ-1:0]        siz;  // logarithmic transfer size
-    logic [DEF_BEN-1:0]        ben;  // byte enable
+    logic [DEF_BYT-1:0]        byt;  // byte enable
     // endianness
     logic                      ndn;  // endianness
     // data
-    logic [DEF_BEN-1:0][8-1:0] wdt;  // write data
+    logic [DEF_BYT-1:0][8-1:0] wdt;  // write data
   } tcb_req_t;
 
   // response
   typedef struct packed {
-    logic [DEF_BEN-1:0][8-1:0] rdt;  // read data
+    logic [DEF_BYT-1:0][8-1:0] rdt;  // read data
     tcb_rsp_sts_t              sts;  // status
   } tcb_rsp_t;
 

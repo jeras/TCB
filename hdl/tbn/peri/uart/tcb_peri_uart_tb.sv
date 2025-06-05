@@ -48,9 +48,9 @@ module tcb_peri_uart_tb
     DAT: TCB_BUS_DEF.DAT,
     FRM: TCB_BUS_DEF.FRM,
     CHN: TCB_CHN_HALF_DUPLEX,
-    AMO: TCB_AMO_DISABLED,
-    PRF: TCB_PRF_DISABLED,
-    NXT: TCB_NXT_DISABLED,
+    AMO: TCB_AMO_ABSENT,
+    PRF: TCB_PRF_ABSENT,
+    NXT: TCB_NXT_ABSENT,
     MOD: TCB_MOD_LOG_SIZE,
     ORD: TCB_ORD_DESCENDING,
     NDN: TCB_NDN_BI_NDN
@@ -95,7 +95,7 @@ module tcb_peri_uart_tb
   tcb_man_s obj_man = new(tcb_man, "MAN");
 
   // response
-  logic [tcb_man.BUS_BEN-1:0][8-1:0] rdt;  // read data
+  logic [tcb_man.BUS_BYT-1:0][8-1:0] rdt;  // read data
   tcb_rsp_sts_t                      sts;  // status response
 
 ////////////////////////////////////////////////////////////////////////////////

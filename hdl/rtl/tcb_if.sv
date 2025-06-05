@@ -19,15 +19,9 @@
 interface tcb_if
   import tcb_pkg::*;
 #(
-  // handshake parameters
-  parameter  type hsk_t = tcb_hsk_t,   // handshake parameter type
-  parameter  hsk_t HSK = TCB_HSK_DEF,  // handshake parameter
-  // bus parameters
-  parameter  type bus_t = tcb_bus_t,   // bus parameter type
-  parameter  bus_t BUS = TCB_BUS_DEF,  // bus parameter
-  // PMA parameters
-  parameter  type pma_t = tcb_pma_t,   // packing parameter type
-  parameter  pma_t PMA = TCB_PMA_DEF,  // packing parameter
+  // configuration parameters
+  parameter  type cfg_t = tcb_cfg_t,   // configuration parameter type
+  parameter  cfg_t CFG = TCB_CFG_DEF,  // configuration parameter
   // request/response structure types
   parameter  type req_t = tcb_req_t,   // request
   parameter  type rsp_t = tcb_rsp_t,   // response
@@ -35,7 +29,7 @@ interface tcb_if
   parameter  type vip_t = tcb_vip_t,   // VIP parameter type
   parameter  vip_t VIP = TCB_VIP_DEF,  // VIP parameter
   // partial address decoding mask
-  parameter  logic [BUS.ADR-1:0] MSK = '1
+  parameter  logic [CFG.BUS.ADR-1:0] MSK = '1
 )(
   // system signals
   input  logic clk,  // clock
@@ -59,23 +53,23 @@ interface tcb_if
 ////////////////////////////////////////////////////////////////////////////////
 
   generate
-    // framing (maximum frame length is FRM+1)
-    if (BUS.FRM > 0) begin
+    // framing lock (maximum frame length is FRM+1)
+    if (CFG.BUS.LCK > 0) begin
       // check frame enable bit presence and type
-      initial assert ($bits(req.frm) == 1) else
-        $error("unexpected type(req.frm) = ", $typename(req.frm));
+      initial assert ($bits(req.lck) == 1) else
+        $error("unexpected type(req.lck) = ", $typename(req.lck));
       // check frame length vector presence and size
-      initial assert ($bits(req.len) == $clog2(BUS.FRM+1)) else
+      initial assert ($bits(req.len) == $clog2(CFG.BUS.LEN)) else
         $error("unexpected type(req.len) = ", $typename(req.len));
     end
     // channel
-    if (BUS.CHN == TCB_CHN_FULL_DUPLEX) begin
+    if (CFG.BUS.CHN == TCB_CHN_FULL_DUPLEX) begin
       // read enable signal must be present on full duplex channels
       initial assert ($bits(req.ren) == 1) else
         $error("unexpected type(req.ren) = ", $typename(req.ren));
     end
     // channel
-    if (BUS.AMO == TCB_AMO_ENABLED) begin
+    if (CFG.BUS.AMO == TCB_AMO_PRESENT) begin
       // atomic enable signal must be present for AMO support
       initial assert ($bits(req.aen) == 1) else
         $error("unexpected type(req.aen) = ", $typename(req.ren));
@@ -84,7 +78,7 @@ interface tcb_if
         $error("unexpected type(req.amo) = ", $typename(req.amo));
     end
     // prefetch
-    if (BUS.PRF == TCB_PRF_ENABLED) begin
+    if (CFG.BUS.PRF == TCB_PRF_PRESENT) begin
       // prefetch signals rpt/inc must be present
       initial assert ($bits(req.rpt) == 1) else
         $error("unexpected type(req.rpt) = ", $typename(req.rpt));
@@ -94,46 +88,46 @@ interface tcb_if
     // address and next address
     initial assert ($bits(req.adr) > 0) else
       $error("unexpected type(req.adr) = ", $typename(req.adr));
-    if (BUS.NXT == TCB_NXT_ENABLED) begin
+    if (CFG.BUS.NXT == TCB_NXT_PRESENT) begin
       initial assert ($bits(req.adr) == $bits(req.nxt)) else
         $error("unexpected type(req.nxt) = ", $typename(req.nxt));
     end
     // request/write data bus and data sizing
-    if (BUS.CHN != TCB_CHN_READ_ONLY) begin
+    if (CFG.BUS.CHN != TCB_CHN_READ_ONLY) begin
       // check request/write data bus (multiple of 8 and power of 2)
       initial assert (($bits(req.wdt)%8 == 0) && ($bits(req.wdt) == 2**$clog2($bits(req.wdt)))) else
         $error("unexpected type(req.wdt) = ", $typename(req.wdt));
       // check data sizing
-      case (BUS.MOD)
+      case (CFG.BUS.MOD)
         TCB_MOD_LOG_SIZE: begin  // logarithmic size
           initial assert ($bits(req.siz) == $clog2($clog2($bits(req.wdt)/8)+1)) else
             $error("unexpected type(req.siz) = ", $typename(req.siz));
         end
         TCB_MOD_BYTE_ENA: begin  // byte enable
-          initial assert ($bits(req.ben) == $bits(req.wdt)/8) else
-            $error("unexpected type(req.ben) = ", $typename(req.ben));
+          initial assert ($bits(req.byt) == $bits(req.wdt)/8) else
+            $error("unexpected type(req.byt) = ", $typename(req.byt));
         end
       endcase
     end
     // response/read data bus and data sizing
-    if (BUS.CHN != TCB_CHN_READ_ONLY) begin
+    if (CFG.BUS.CHN != TCB_CHN_READ_ONLY) begin
       // check response/read data bus (multiple of 8 and power of 2)
       initial assert (($bits(rsp.rdt)%8 == 0) && ($bits(rsp.rdt) == 2**$clog2($bits(rsp.rdt)))) else
         $error("unexpected type(rsp.rdt) = ", $typename(rsp.rdt));
       // check data sizing
-      case (BUS.MOD)
+      case (CFG.BUS.MOD)
         TCB_MOD_LOG_SIZE: begin  // logarithmic size
           initial assert ($bits(req.siz) == $clog2($clog2($bits(rsp.rdt)/8)+1)) else
             $error("unexpected type(req.siz) = ", $typename(req.siz));
         end
         TCB_MOD_BYTE_ENA: begin  // byte enable
-          initial assert ($bits(req.ben) == $bits(rsp.rdt)/8) else
-            $error("unexpected type(req.ben) = ", $typename(req.ben));
+          initial assert ($bits(req.byt) == $bits(rsp.rdt)/8) else
+            $error("unexpected type(req.byt) = ", $typename(req.byt));
         end
       endcase
     end
     // endianness
-    if (BUS.NDN == TCB_NDN_BI_NDN) begin
+    if (CFG.BUS.NDN == TCB_NDN_BI_NDN) begin
         // bi-endian signal presence
         initial assert ($bits(req.ndn) == 1) else
           $error("unexpected type(req.ndn) = ", $typename(req.ndn));
@@ -145,9 +139,9 @@ interface tcb_if
 ////////////////////////////////////////////////////////////////////////////////
 
   // local parameters are calculated from the request
-  localparam int unsigned BUS_BEN = BUS.DAT/8;
-  localparam int unsigned BUS_MAX = $clog2(BUS_BEN);
-  localparam int unsigned BUS_SIZ = $clog2(DEF_MAX+1);
+  localparam int unsigned CFG_BUS_BYT = CFG.BUS.DAT/8;
+  localparam int unsigned CFG_BUS_MAX = $clog2(CFG_BUS_BYT);
+  localparam int unsigned CFG_BUS_SIZ = $clog2(CFG_BUS_MAX+1);
 
 ////////////////////////////////////////////////////////////////////////////////
 // helper functions
@@ -155,10 +149,10 @@ interface tcb_if
 
   // TODO: rethink this functionality
   // logarithmic size mode (subordinate interface) byte enable
-  function automatic logic [BUS_BEN-1:0] logsize2byteena (
-    input logic [BUS_SIZ-1:0] siz
+  function automatic logic [CFG_BUS_BYT-1:0] logsize2byteena (
+    input logic [CFG_BUS_SIZ-1:0] siz
   );
-    for (int unsigned i=0; i<BUS_BEN; i++) begin
+    for (int unsigned i=0; i<CFG_BUS_BYT; i++) begin
       logsize2byteena[i] = (i < 2**siz) ? 1'b1 : 1'b0;
     end
   endfunction: logsize2byteena
@@ -172,22 +166,22 @@ interface tcb_if
   function automatic logic endianness (
     input logic ndn  // requested endianness
   );
-    case (BUS.NDN)
+    case (CFG.BUS.NDN)
       BCB_NDN_DEFAULT: begin
-        endianness = BUS.ORD;
-        assert (endianness ==? ndn) else $error("Transaction endianness does not match BUS.NDN");
+        endianness = CFG.BUS.ORD;
+        assert (endianness ==? ndn) else $error("Transaction endianness does not match CFG.BUS.NDN");
       end
       TCB_NDN_BI_NDN :  begin
         if ($isunknown(ndn)) begin
-          endianness = BUS.ORD;
+          endianness = CFG.BUS.ORD;
         end else begin
           endianness = ndn;
         end
       end
       TCB_NDN_LITTLE ,
       TCB_NDN_BIG    :  begin
-        endianness = BUS.NDN[0];
-        assert (endianness ==? ndn) else $error("Transaction endianness does not match BUS.NDN");
+        endianness = CFG.BUS.NDN[0];
+        assert (endianness ==? ndn) else $error("Transaction endianness does not match CFG.BUS.NDN");
       end
     endcase
   endfunction: endianness
@@ -196,7 +190,7 @@ interface tcb_if
   function automatic logic write (
     input logic wen
   );
-    case (BUS.CHN)
+    case (CFG.BUS.CHN)
       TCB_CHN_HALF_DUPLEX:  write =  wen;
       TCB_CHN_FULL_DUPLEX:  write =  wen;
       TCB_CHN_WRITE_ONLY :  write = 1'b1;
@@ -209,7 +203,7 @@ interface tcb_if
     input logic wen,
     input logic ren
   );
-    case (BUS.CHN)
+    case (CFG.BUS.CHN)
       TCB_CHN_HALF_DUPLEX:  read = ~wen;
       TCB_CHN_FULL_DUPLEX:  read =  ren;
       TCB_CHN_WRITE_ONLY :  read = 1'b0;
@@ -240,13 +234,13 @@ interface tcb_if
 // request/response delay
 ////////////////////////////////////////////////////////////////////////////////
 
-  logic trn_dly [0:HSK.DLY];
-  req_t req_dly [0:HSK.DLY];
-  rsp_t rsp_dly [0:HSK.DLY];
+  logic trn_dly [0:CFG.HSK.DLY];
+  req_t req_dly [0:CFG.HSK.DLY];
+  rsp_t rsp_dly [0:CFG.HSK.DLY];
 
   generate
     // delay line
-    for (genvar i=0; i<=HSK.DLY; i++) begin: dly
+    for (genvar i=0; i<=CFG.HSK.DLY; i++) begin: dly
       // handshake transfer
       if (i==0) begin: dly_0
         // continuous assignment
@@ -267,13 +261,13 @@ interface tcb_if
 
     if (VIP.DRV) begin: vip
       // continuous assignment
-      if (HSK.DLY == 0) begin
-        assign rsp = trn ? rsp_dly[HSK.DLY] : '{default: 'z};
+      if (CFG.HSK.DLY == 0) begin
+        assign rsp = trn ? rsp_dly[CFG.HSK.DLY] : '{default: 'z};
       end else begin
-        if (HSK.HLD) begin
-          assign rsp =                    rsp_dly[HSK.DLY];
+        if (CFG.HSK.HLD) begin
+          assign rsp =                        rsp_dly[CFG.HSK.DLY];
         end else begin
-          assign rsp = trn_dly[HSK.DLY] ? rsp_dly[HSK.DLY] : '{default: 'x};
+          assign rsp = trn_dly[CFG.HSK.DLY] ? rsp_dly[CFG.HSK.DLY] : '{default: 'x};
         end
       end
     end: vip

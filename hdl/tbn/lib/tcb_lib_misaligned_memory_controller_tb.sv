@@ -33,7 +33,7 @@ module tcb_lib_misaligned_memory_controller_tb
 );
 
   // handshake parameter
-  localparam tcb_hsk_t HSK = TCB_HSK_DEF;
+  localparam tcb_hsk_t CFG.HSK = TCB_HSK_DEF;
 
   // bus parameter
   localparam tcb_bus_t BUS = '{
@@ -41,9 +41,9 @@ module tcb_lib_misaligned_memory_controller_tb
     DAT: TCB_BUS_DEF.DAT,
     FRM: TCB_BUS_DEF.FRM,
     CHN: TCB_CHN_HALF_DUPLEX,
-    AMO: TCB_AMO_DISABLED,
-    PRF: TCB_PRF_DISABLED,
-    NXT: TCB_NXT_DISABLED,
+    AMO: TCB_AMO_ABSENT,
+    PRF: TCB_PRF_ABSENT,
+    NXT: TCB_NXT_ABSENT,
     MOD: TCB_MOD_BYTE_ENA,
     ORD: TCB_ORD_DESCENDING,
     NDN: TCB_NDN_BI_NDN
@@ -75,10 +75,10 @@ module tcb_lib_misaligned_memory_controller_tb
   string testname = "none";
 
   // TCB interfaces
-  tcb_if #(tcb_hsk_t, HSK, tcb_bus_t, BUS, tcb_pma_t, PMA, req_t, rsp_t) tcb (.clk (clk), .rst (rst));
+  tcb_if #(tcb_hsk_t, CFG.HSK, tcb_bus_t, BUS, tcb_pma_t, PMA, req_t, rsp_t) tcb (.clk (clk), .rst (rst));
 
   // parameterized class specialization (blocking API)
-  typedef tcb_vip_blocking_c #(tcb_hsk_t, HSK, tcb_bus_t, BUS, tcb_pma_t, PMA, req_t, rsp_t) tcb_vip_s;
+  typedef tcb_vip_blocking_c #(tcb_hsk_t, CFG.HSK, tcb_bus_t, BUS, tcb_pma_t, PMA, req_t, rsp_t) tcb_vip_s;
 
   // TCB class objects
   tcb_vip_s obj = new(tcb, "MAN");
@@ -87,15 +87,15 @@ module tcb_lib_misaligned_memory_controller_tb
   logic [8-1:0] nul [];
 
   // response
-  logic [tcb.BUS_BEN-1:0][8-1:0] rdt;  // read data
+  logic [tcb.CFG.BUS_BYT-1:0][8-1:0] rdt;  // read data
   tcb_rsp_sts_t                  sts;  // status response
 
   // local parameters
-  localparam int unsigned BUS_BEN = BUS.DAT/8;
-  localparam int unsigned BUS_MAX = $clog2(BUS_BEN);
-  localparam int unsigned MEM_CEN = BUS_BEN/(2**PMA.OFF);
-  localparam int unsigned MEM_ADR = BUS.ADR-BUS_MAX;
-  localparam int unsigned MEM_DAT = BUS.DAT/MEM_CEN;
+  localparam int unsigned BUS_BYT = CFG.BUS.DAT/8;
+  localparam int unsignedCFG_BUS_MAX = $clog2(CFG.BUS_BYT);
+  localparam int unsigned MEM_CEN = BUS_BYT/(2**PMA.OFF);
+  localparam int unsigned MEM_ADR = CFG.BUS.ADR-BUS_MAX;
+  localparam int unsigned MEM_DAT = CFG.BUS.DAT/MEM_CEN;
 
   // SRAM model
   logic [MEM_CEN-1:0]              mem_cen;  // chip enable
@@ -173,17 +173,17 @@ module tcb_lib_misaligned_memory_controller_tb
     // parameterized tests
     $display("parameterized tests");
     testname = "parameterized tests";
-    for (int unsigned siz=tcb.PMA.MIN; siz<=tcb.BUS_MAX; siz++) begin
+    for (int unsigned siz=tcb.PMA.MIN; siz<=tcb.CFG.BUS_MAX; siz++) begin
 //    begin
 //      static int unsigned siz=1;
-//      for (int unsigned off=0; off<tcb.BUS_BEN; off+=2) begin
-      for (int unsigned off=0; off<tcb.BUS_BEN; off+=2**tcb.PMA.OFF) begin
+//      for (int unsigned off=0; off<tcb.CFG.BUS_BYT; off+=2) begin
+      for (int unsigned off=0; off<tcb.CFG.BUS_BYT; off+=2**tcb.PMA.OFF) begin
         // local variables
         string       id;
         int unsigned size;
         int unsigned len;
         // address
-        logic [tcb.BUS.ADR-1:0] adr;
+        logic [tcb.CFG.BUS.ADR-1:0] adr;
         // endianness
         logic         ndn;
         // local data arrays
@@ -201,8 +201,8 @@ module tcb_lib_misaligned_memory_controller_tb
         // ID
         id = $sformatf("siz=%0d off=%0d", siz, off);
         $display("DEBUG: ID = '%s'", id);
-        // address (stride is twice BUS_BEN, to accommodate unaligned accesses)
-        adr = siz * tcb.BUS_BEN * 2;
+        // address (stride is twice BUS_BYT, to accommodate unaligned accesses)
+        adr = siz * tcb.CFG.BUS_BYT * 2;
         // prepare data array
         size = 2**siz;
         dat = new[size];
@@ -253,7 +253,7 @@ module tcb_lib_misaligned_memory_controller_tb
     repeat (1) @(posedge clk);
 
     test_aligned;
-    if (PMA.ALN != tcb.BUS_MAX) begin
+    if (PMA.ALN != tcb.CFG.BUS_MAX) begin
       test_misaligned;
     end
     test_parameterized;
@@ -290,7 +290,7 @@ module tcb_lib_misaligned_memory_controller_tb
 
   tcb_lib_misaligned_memory_controller #(
     .HSK      (HSK),
-    .BUS      (BUS),
+    .BUS      (CFG.BUS),
     .PMA      (PMA)
   ) dut (
     // TCB interface

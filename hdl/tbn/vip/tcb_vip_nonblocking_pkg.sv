@@ -29,15 +29,9 @@ package tcb_vip_nonblocking_pkg;
 ////////////////////////////////////////////////////////////////////////////////
 
   class tcb_vip_nonblocking_c #(
-    // handshake parameters
-    parameter  type hsk_t = tcb_hsk_t,   // handshake parameter type
-    parameter  hsk_t HSK = TCB_HSK_DEF,  // handshake parameter
-    // bus parameters
-    parameter  type bus_t = tcb_bus_t,   // bus parameter type
-    parameter  bus_t BUS = TCB_BUS_DEF,  // bus parameter
-    // PMA parameters
-    parameter  type pma_t = tcb_pma_t,   // packing parameter type
-    parameter  pma_t PMA = TCB_PMA_DEF,  // packing parameter
+    // configuration parameters
+    parameter  type cfg_t = tcb_cfg_t,   // configuration parameter type
+    parameter  cfg_t CFG = TCB_CFG_DEF,  // configuration parameter
     // request/response structure types
     parameter  type req_t = tcb_req_t,  // request
     parameter  type rsp_t = tcb_rsp_t,  // response
@@ -49,17 +43,13 @@ package tcb_vip_nonblocking_pkg;
     // VIP data types
     parameter  type adr_t = int unsigned  // integer data types (byte/shortint/int/longint)
   ) extends tcb_vip_transaction_c #(
-    .hsk_t   (hsk_t),
-    .HSK     (HSK),
-    .bus_t   (bus_t),
-    .BUS     (BUS),
-    .pma_t   (pma_t),
-    .PMA     (PMA),
-    .req_t   (req_t),
-    .rsp_t   (rsp_t),
-    .vip_t   (vip_t),
-    .VIP     (VIP),
-    .DEBUG   (DEBUG)
+    .cfg_t (cfg_t),
+    .CFG   (CFG),
+    .req_t (req_t),
+    .rsp_t (rsp_t),
+    .vip_t (vip_t),
+    .VIP   (VIP),
+    .DEBUG (DEBUG)
   );
 
     //constructor

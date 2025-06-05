@@ -106,7 +106,7 @@ module tcb_lib_converter_tb
 ////////////////////////////////////////////////////////////////////////////////
 
   // response
-  logic [tcb_man.BUS_BEN-1:0][tcb_man.BUS.UNT-1:0] rdt;  // read data
+  logic [tcb_man.BUS_BYT-1:0][tcb_man.BUS.UNT-1:0] rdt;  // read data
   tcb_rsp_sts_def_t                                sts;  // status response
 
 ////////////////////////////////////////////////////////////////////////////////

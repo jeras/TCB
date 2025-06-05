@@ -54,13 +54,13 @@ module tcb_vip_tb
 ////////////////////////////////////////////////////////////////////////////////
 
   // data organized into packed bytes
-  typedef logic [tcb.BUS_BEN-1:0][8-1:0] data_byte_t;
+  typedef logic [tcb.CFG.BUS_BYT-1:0][8-1:0] data_byte_t;
 
   // created data for tests
   function automatic data_byte_t data_test_f (
     input logic [8/2-1:0] val = 'x
   );
-    for (int unsigned i=0; i<tcb.BUS_BEN; i++) begin
+    for (int unsigned i=0; i<tcb.CFG.BUS_BYT; i++) begin
       data_test_f[i] = {val, i[8/2-1:0]};
     end
   endfunction: data_test_f
@@ -107,7 +107,7 @@ module tcb_vip_tb
               ren: ~lst_wen[idx_wen],
               ndn: 1'b0,
               adr: 'h00,
-              siz: $clog2(tcb.BUS_BEN),
+              siz: $clog2(tcb.CFG.BUS_BYT),
               ben: '1,
               wdt: data_test_f((8/2)'(2*i+0))
             },

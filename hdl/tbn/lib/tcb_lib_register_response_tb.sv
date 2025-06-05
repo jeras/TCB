@@ -31,8 +31,8 @@ module tcb_lib_register_response_tb
 // local parameters
 ////////////////////////////////////////////////////////////////////////////////
 
-  localparam tcb_hsk_t HSK_MAN = '{DLY: DLY+1, HLD: 1'b0};
-  localparam tcb_hsk_t HSK_SUB = '{DLY: DLY  , HLD: 1'b0};
+  localparam tcb_hsk_t CFG.HSK_MAN = '{DLY: DLY+1, HLD: 1'b0};
+  localparam tcb_hsk_t CFG.HSK_SUB = '{DLY: DLY  , HLD: 1'b0};
 
   // VIP parameters
   localparam tcb_vip_t VIP = '{
@@ -69,7 +69,7 @@ module tcb_lib_register_response_tb
   logic [8-1:0] nul [];
 
   // response
-  logic [tcb_sub.BUS_BEN-1:0][8-1:0] rdt;  // read data
+  logic [tcb_sub.BUS_BYT-1:0][8-1:0] rdt;  // read data
   tcb_rsp_sts_t                      sts;  // status response
 
 ////////////////////////////////////////////////////////////////////////////////

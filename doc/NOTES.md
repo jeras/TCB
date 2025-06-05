@@ -50,3 +50,24 @@ PMAs can be checked during the request phase with the following limitations:
 
 PMAs can be checked during the response phase based on response errors:
 - additional registers would be needed to store the PC, LSU address
+
+## Transaction types
+
+1. Single transfer transactions
+   - `siz <=CFG_BUS_MAX`.
+2. Split transfer into smaller segments (for transition to narrower data bus) 
+   - `siz >CFG_BUS_MAX`,
+   - locked frame containing split transfers,
+   - address is incremented in each segment.
+   - endianness rules for single transactions are clear.
+   - the order of the segments depends on the endianness.
+3. Recombine transfer from smaller split segments.
+3. Burst transfers
+  - address does not change during a busts,
+  - fixed/incremental/wrapped bursts,
+  - burst length is a linear number,
+  - if `siz =CFG_BUS_MAX` then `len` is the burst length,
+  - if `siz <CFG_BUS_MAX` then `len` is the burst length / split,
+  - if `siz >CFG_BUS_MAX` then `len` is the burst length * split,
+  - splitting and combining order depends on endianness?
+  - 

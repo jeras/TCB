@@ -25,18 +25,12 @@ package tcb_vip_transfer_pkg;
 ////////////////////////////////////////////////////////////////////////////////
 
   class tcb_vip_transfer_c #(
-    // handshake parameters
-    parameter  type hsk_t = tcb_hsk_t,   // handshake parameter type
-    parameter  hsk_t HSK = TCB_HSK_DEF,  // handshake parameter
-    // bus parameters
-    parameter  type bus_t = tcb_bus_t,   // bus parameter type
-    parameter  bus_t BUS = TCB_BUS_DEF,  // bus parameter
-    // PMA parameters
-    parameter  type pma_t = tcb_pma_t,   // packing parameter type
-    parameter  pma_t PMA = TCB_PMA_DEF,  // packing parameter
+    // configuration parameters
+    parameter  type cfg_t = tcb_cfg_t,   // configuration parameter type
+    parameter  cfg_t CFG = TCB_CFG_DEF,  // configuration parameter
     // request/response structure types
-    parameter  type req_t = tcb_req_t,  // request
-    parameter  type rsp_t = tcb_rsp_t,  // response
+    parameter  type req_t = tcb_req_t,   // request
+    parameter  type rsp_t = tcb_rsp_t,   // response
     // VIP (not to be used in RTL)
     parameter  type vip_t = tcb_vip_t,   // VIP parameter type
     parameter  vip_t VIP = TCB_VIP_DEF,  // VIP parameter
@@ -50,16 +44,12 @@ package tcb_vip_transfer_pkg;
 
     // virtual interface type definition
     typedef virtual tcb_if #(
-      .hsk_t   (hsk_t),
-      .HSK     (HSK),
-      .bus_t   (bus_t),
-      .BUS     (BUS),
-      .pma_t   (pma_t),
-      .PMA     (PMA),
-      .req_t   (req_t),
-      .rsp_t   (rsp_t),
-      .vip_t   (vip_t),
-      .VIP     (VIP)
+      .cfg_t (cfg_t),
+      .CFG   (CFG),
+      .req_t (req_t),
+      .rsp_t (rsp_t),
+      .vip_t (vip_t),
+      .VIP   (VIP)
     ) tcb_vif_t;
 
     // virtual interface instance
@@ -204,7 +194,7 @@ package tcb_vip_transfer_pkg;
         @(posedge tcb.clk);
       end while (~tcb.trn);
       // delay
-      repeat (tcb.HSK.DLY) @(posedge tcb.clk);
+      repeat (tcb.CFG.HSK.DLY) @(posedge tcb.clk);
       // sample response
       itm.rsp = tcb.rsp;
       if (DEBUG)  $info("DEBUG: %t: handshake_delay end ID = \"%s\".", $realtime, itm.id);
@@ -254,9 +244,9 @@ package tcb_vip_transfer_pkg;
         // wait for delayed transfer
         do begin
           @(posedge tcb.clk);
-        end while (~tcb.trn_dly[tcb.HSK.DLY]);
+        end while (~tcb.trn_dly[tcb.CFG.HSK.DLY]);
         // sample delayed request and response
-        transfer_queue.push_back('{req: tcb.req_dly[tcb.HSK.DLY], rsp: tcb.rsp, default: 'x});
+        transfer_queue.push_back('{req: tcb.req_dly[tcb.CFG.HSK.DLY], rsp: tcb.rsp, default: 'x});
       end: loop
       if (DEBUG)  $info("DEBUG: %t: transfer_monitor stopped.", $realtime);
     endtask: transfer_monitor
