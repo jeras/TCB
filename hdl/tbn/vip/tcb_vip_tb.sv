@@ -22,18 +22,17 @@ module tcb_vip_tb
   import tcb_vip_blocking_pkg::*;
 #(
   // response delay
-  parameter  int unsigned HSK.DLY = TCB_HSK_DEF,
+  parameter  int unsigned DLY = TCB_HSK_DEF.DLY,
   // TCB widths
-  parameter  int unsigned BUS_ADR = 32,
-  parameter  int unsigned BUS_DAT = 32
+  parameter  int unsigned ADR = 32,
+  parameter  int unsigned DAT = 32
 );
 
   // TODO: parameter propagation through virtual interfaces in classes
   // is not working well thus this workaround
 
   // physical interface parameter
-  localparam tcb_bus_t BUS = TCB_BUS_DEF;
-  localparam tcb_pma_t PMA = TCB_PMA_DEF;
+  localparam tcb_cfg_t CFG = TCB_CFG_DEF;
 
 ////////////////////////////////////////////////////////////////////////////////
 // local signals
@@ -54,13 +53,13 @@ module tcb_vip_tb
 ////////////////////////////////////////////////////////////////////////////////
 
   // data organized into packed bytes
-  typedef logic [tcb.CFG.BUS_BYT-1:0][8-1:0] data_byte_t;
+  typedef logic [tcb.CFG_BUS_BYT-1:0][8-1:0] data_byte_t;
 
   // created data for tests
   function automatic data_byte_t data_test_f (
     input logic [8/2-1:0] val = 'x
   );
-    for (int unsigned i=0; i<tcb.CFG.BUS_BYT; i++) begin
+    for (int unsigned i=0; i<tcb.CFG_BUS_BYT; i++) begin
       data_test_f[i] = {val, i[8/2-1:0]};
     end
   endfunction: data_test_f
@@ -73,10 +72,10 @@ module tcb_vip_tb
   int unsigned tcb_cnt;
 
   // TCB interfaces
-  tcb_if #(HSK.DLY, tcb_bus_t, BUS, tcb_pma_t, PMA, tcb_req_t, tcb_rsp_t, VIP) tcb (.clk (clk), .rst (rst));
+  tcb_if #(tcb_cfg_t, CFG, tcb_req_t, tcb_rsp_t, tcb_vip_t, VIP) tcb (.clk (clk), .rst (rst));
 
   // parameterized class specialization (non-blocking API)
-  typedef tcb_vip_transfer_c #(HSK.DLY, tcb_bus_t, BUS, tcb_pma_t, PMA, tcb_req_t, tcb_rsp_t, VIP) tcb_transfer_s;
+  typedef tcb_vip_transfer_c #(tcb_cfg_t, CFG, tcb_req_t, tcb_rsp_t, tcb_vip_t, VIP) tcb_transfer_s;
 
   // TCB class objects
   tcb_transfer_s obj_man = new(tcb, "MAN");
@@ -107,7 +106,7 @@ module tcb_vip_tb
               ren: ~lst_wen[idx_wen],
               ndn: 1'b0,
               adr: 'h00,
-              siz: $clog2(tcb.CFG.BUS_BYT),
+              siz: $clog2(tcb.CFG_BUS_BYT),
               ben: '1,
               wdt: data_test_f((8/2)'(2*i+0))
             },
