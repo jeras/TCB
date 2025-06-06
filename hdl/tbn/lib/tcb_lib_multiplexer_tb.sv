@@ -163,7 +163,7 @@ module tcb_lib_multiplexer_tb
       end: fork_sub_monitor
     join_any
     // disable transfer monitor
-    @(posedge clk);
+    repeat (tcb_sub.CFG.HSK.DLY) @(posedge clk);
     disable fork;
     // compare transfers from monitor to reference
     // wildcard operator is used to ignore data byte comparison, when the reference data is 8'hxx

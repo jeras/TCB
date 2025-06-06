@@ -141,7 +141,7 @@ module tcb_lib_read_modify_write_tb
       end: fork_mon_write
     join_any
     // disable transfer monitor
-    @(posedge clk);
+    repeat (tcb_man.CFG.HSK.DLY) @(posedge clk);
     disable fork;
     // reference transfer queue
     sts = '0;
@@ -188,7 +188,7 @@ module tcb_lib_read_modify_write_tb
       end: fork_mon_read
     join_any
     // disable transfer monitor
-    @(posedge clk);
+    repeat (tcb_man.CFG.HSK.DLY) @(posedge clk);
     disable fork;
     // reference transfer queue
     sts = '0;

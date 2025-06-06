@@ -150,7 +150,7 @@ module tcb_lib_logsize2byteena_tb
       end: fork_mon_write
     join_any
     // disable transfer monitor
-    @(posedge clk);
+    repeat (tcb_man.CFG.HSK.DLY) @(posedge clk);
     disable fork;
     // reference transfer queue
     sts = '0;
@@ -197,7 +197,7 @@ module tcb_lib_logsize2byteena_tb
       end: fork_mon_read
     join_any
     // disable transfer monitor
-    @(posedge clk);
+    repeat (tcb_man.CFG.HSK.DLY) @(posedge clk);
     disable fork;
     // reference transfer queue
     sts = '0;
@@ -262,7 +262,7 @@ module tcb_lib_logsize2byteena_tb
       end: fork_mon_misaligned_write
     join_any
     // disable transfer monitor
-    @(posedge clk);
+    repeat (tcb_man.CFG.HSK.DLY) @(posedge clk);
     disable fork;
     // reference transfer queue
     sts = '0;
@@ -307,7 +307,7 @@ module tcb_lib_logsize2byteena_tb
       end: fork_mon_misaligned_read
     join_any
     // disable transfer monitor
-    @(posedge clk);
+    repeat (tcb_man.CFG.HSK.DLY) @(posedge clk);
     disable fork;
     // reference transfer queue
     sts = '0;
@@ -413,7 +413,7 @@ module tcb_lib_logsize2byteena_tb
             end: parameterized_test_mon
           join_any
           // disable transfer monitor
-          @(posedge clk);
+          repeat (tcb_man.CFG.HSK.DLY) @(posedge clk);
           disable fork;
 
           // parse manager transfer queues into transactions

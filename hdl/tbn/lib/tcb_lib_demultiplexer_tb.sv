@@ -154,7 +154,7 @@ module tcb_lib_demultiplexer_tb
       end: fork_sub_monitor
     join_any
     // disable transfer monitor
-    @(posedge clk);
+    repeat (tcb_man.CFG.HSK.DLY) @(posedge clk);
     disable fork;
     // reference transfer queue
     for (int unsigned i=0; i<IFN; i++)

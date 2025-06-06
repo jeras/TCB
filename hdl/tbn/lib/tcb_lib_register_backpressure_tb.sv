@@ -109,7 +109,7 @@ module tcb_lib_register_backpressure_tb
       end: fork_sub_monitor
     join_any
     // disable transfer monitor
-    @(posedge clk);
+    repeat (tcb_man.CFG.HSK.DLY) @(posedge clk);
     disable fork;
 
     foreach(tst_ref[i]) begin
