@@ -18,7 +18,7 @@ RTL+=${PATH_HDL}/rtl/lib/tcb_lib_arbiter.sv
 RTL+=${PATH_HDL}/rtl/lib/tcb_lib_multiplexer.sv
 RTL+=${PATH_HDL}/rtl/lib/tcb_lib_decoder.sv
 RTL+=${PATH_HDL}/rtl/lib/tcb_lib_demultiplexer.sv
-#RTL+=${PATH_HDL}/rtl/lib/tcb_lib_logsize2byteena.sv
+RTL+=${PATH_HDL}/rtl/lib/tcb_lib_logsize2byteena.sv
 #RTL+=${PATH_HDL}/rtl/lib/tcb_lib_misaligned_memory_controller.sv
 #RTL+=${PATH_HDL}/rtl/lib/tcb_lib_read_modify_write.sv
 # GPIO RTL
@@ -47,7 +47,7 @@ TBN+=${PATH_HDL}/tbn/lib/tcb_lib_register_backpressure_tb.sv
 TBN+=${PATH_HDL}/tbn/lib/tcb_lib_multiplexer_tb.sv
 #TBN+=${PATH_HDL}/tbn/lib/tcb_lib_decoder_tb.sv
 TBN+=${PATH_HDL}/tbn/lib/tcb_lib_demultiplexer_tb.sv
-#TBN+=${PATH_HDL}/tbn/lib/tcb_lib_logsize2byteena_tb.sv
+TBN+=${PATH_HDL}/tbn/lib/tcb_lib_logsize2byteena_tb.sv
 #TBN+=${PATH_HDL}/tbn/lib/tcb_lib_misaligned_memory_controller_tb.sv
 #TBN+=${PATH_HDL}/tbn/lib/tcb_lib_read_modify_write_tb.sv
 ## RAM models

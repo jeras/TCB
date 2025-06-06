@@ -113,8 +113,8 @@ module tcb_vip_memory
   for (genvar i=0; i<IFN; i++) begin: port
 
     // local copies of TCB BUS parameters
-    localparam DLY = tcb[i].HSK.DLY;
-    localparam BEN = tcb[i].BUS_BYT;
+    localparam DLY = tcb[i].CFG.HSK.DLY;
+    localparam BEN = tcb[i].CFG_BUS_BYT;
 
     // request address and size (TCB_LOG_SIZE mode)
     int unsigned adr;
@@ -135,7 +135,7 @@ module tcb_vip_memory
       if (tcb[i].trn) begin
         if (tcb[i].req.wen) begin: write
           for (int unsigned b=0; b<BEN; b++) begin: bytes
-            case (tcb[i].BUS.MOD)
+            case (tcb[i].CFG.BUS.MOD)
               TCB_MOD_LOG_SIZE: begin: log_size
                 // write only transfer size bytes
                 if (b < siz)  mem[(adr+b)%SIZ] <= tcb[i].req.wdt[b];
@@ -159,7 +159,7 @@ module tcb_vip_memory
     if (tcb[i].trn) begin
       if (~tcb[i].req.wen) begin: read
         for (int unsigned b=0; b<BEN; b++) begin: bytes
-          case (tcb[i].BUS.MOD)
+          case (tcb[i].CFG.BUS.MOD)
             TCB_MOD_LOG_SIZE: begin: log_size
               // read only transfer size bytes, the rest remains undefined
               if (b < siz)  tcb[i].rsp_dly[0].rdt[b] = mem[(adr+b)%SIZ];

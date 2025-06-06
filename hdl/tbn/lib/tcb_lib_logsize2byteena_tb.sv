@@ -57,12 +57,15 @@ module tcb_lib_logsize2byteena_tb
     PMA: TCB_PMA_DEF
   };
 
-
+  localparam tcb_cfg_t CFG_BYT = '{
+    // handshake parameter
+    HSK: TCB_HSK_DEF,
     // bus parameter
-    localparam tcb_bus_t BUS_BYT = '{
+    BUS: '{
       ADR: TCB_BUS_DEF.ADR,
       DAT: TCB_BUS_DEF.DAT,
-      FRM: TCB_BUS_DEF.FRM,
+      LEN: TCB_BUS_DEF.LEN,
+      LCK: TCB_LCK_PRESENT,
       CHN: TCB_CHN_HALF_DUPLEX,
       AMO: TCB_AMO_ABSENT,
       PRF: TCB_PRF_ABSENT,
@@ -70,8 +73,10 @@ module tcb_lib_logsize2byteena_tb
       MOD: TCB_MOD_BYTE_ENA,
       ORD: TCB_ORD_DESCENDING,
       NDN: TCB_NDN_BI_NDN
-    };
-
+    },
+    // physical interface parameter default
+    PMA: TCB_PMA_DEF
+  };
 
   localparam tcb_vip_t VIP = '{
     DRV: 1'b1
@@ -100,24 +105,24 @@ module tcb_lib_logsize2byteena_tb
   tcb_if #(tcb_cfg_t, CFG_BYT, req_t, rsp_t, tcb_vip_t, VIP) tcb_mem [0:0] (.clk (clk), .rst (rst));
 
   // parameterized class specialization (blocking API)
-  typedef tcb_vip_blocking_c #(tcb_cfg_t, CFG_SIZ, req_t, rsp_t) tcb_vip_siz_s;
-  typedef tcb_vip_blocking_c #(tcb_cfg_t, CFG_BYT, req_t, rsp_t) tcb_vip_ben_s;
+  typedef tcb_vip_blocking_c #(tcb_cfg_t, CFG_SIZ, req_t, rsp_t) tcb_siz_s;
+  typedef tcb_vip_blocking_c #(tcb_cfg_t, CFG_BYT, req_t, rsp_t) tcb_byt_s;
 
   // TCB class objects
-  tcb_vip_siz_s obj_man = new(tcb_man, "MAN");
-  tcb_vip_ben_s obj_sub = new(tcb_sub, "MON");
+  tcb_siz_s obj_man = new(tcb_man, "MAN");
+  tcb_byt_s obj_sub = new(tcb_sub, "MON");
 
   // transfer reference/monitor array
-  tcb_vip_ben_s::transfer_queue_t tst_ref;
-  tcb_vip_ben_s::transfer_queue_t tst_mon;
-  int unsigned                    tst_len;
+  tcb_byt_s::transfer_queue_t tst_ref;
+  tcb_byt_s::transfer_queue_t tst_mon;
+  int unsigned                tst_len;
 
   // empty array
   logic [8-1:0] nul [];
 
   // response
-  logic [tcb_man.BUS_BYT-1:0][8-1:0] rdt;  // read data
-  tcb_rsp_sts_t                      sts;  // status response
+  logic [tcb_man.CFG_BUS_BYT-1:0][8-1:0] rdt;  // read data
+  tcb_rsp_sts_t                          sts;  // status response
 
 ////////////////////////////////////////////////////////////////////////////////
 // tests
@@ -151,14 +156,14 @@ module tcb_lib_logsize2byteena_tb
     sts = '0;
     tst_ref.delete();
     tst_len = tst_ref.size();
-    // append reference transfers to queue               ndn       , adr         , wdt                           ,        rdt
-    tst_len += obj_sub.put_transaction(tst_ref, '{req: '{TCB_LITTLE, 32'h00000010, '{8'h10                     }}, rsp: '{nul, sts}});  //$display("DEBUG: tst_ref.size() = %0d", tst_ref.size());
-    tst_len += obj_sub.put_transaction(tst_ref, '{req: '{TCB_LITTLE, 32'h00000011, '{       8'h32              }}, rsp: '{nul, sts}});  //$display("DEBUG: tst_ref.size() = %0d", tst_ref.size());
-    tst_len += obj_sub.put_transaction(tst_ref, '{req: '{TCB_LITTLE, 32'h00000012, '{              8'h54       }}, rsp: '{nul, sts}});  //$display("DEBUG: tst_ref.size() = %0d", tst_ref.size());
-    tst_len += obj_sub.put_transaction(tst_ref, '{req: '{TCB_LITTLE, 32'h00000013, '{                     8'h76}}, rsp: '{nul, sts}});  //$display("DEBUG: tst_ref.size() = %0d", tst_ref.size());
-    tst_len += obj_sub.put_transaction(tst_ref, '{req: '{TCB_LITTLE, 32'h00000020, '{8'h10, 8'h32              }}, rsp: '{nul, sts}});  //$display("DEBUG: tst_ref.size() = %0d", tst_ref.size());
-    tst_len += obj_sub.put_transaction(tst_ref, '{req: '{TCB_LITTLE, 32'h00000022, '{              8'h54, 8'h76}}, rsp: '{nul, sts}});  //$display("DEBUG: tst_ref.size() = %0d", tst_ref.size());
-    tst_len += obj_sub.put_transaction(tst_ref, '{req: '{TCB_LITTLE, 32'h00000030, '{8'h10, 8'h32, 8'h54, 8'h76}}, rsp: '{nul, sts}});  //$display("DEBUG: tst_ref.size() = %0d", tst_ref.size());
+    // append reference transfers to queue               adr              , wdt                                             ,        rdt
+    tst_len += obj_sub.put_transaction(tst_ref, '{req: '{adr: 32'h00000010, wdt: '{8'h10                     }, default: 'x}, rsp: '{nul, sts}});  //$display("DEBUG: tst_ref.size() = %0d", tst_ref.size());
+    tst_len += obj_sub.put_transaction(tst_ref, '{req: '{adr: 32'h00000011, wdt: '{       8'h32              }, default: 'x}, rsp: '{nul, sts}});  //$display("DEBUG: tst_ref.size() = %0d", tst_ref.size());
+    tst_len += obj_sub.put_transaction(tst_ref, '{req: '{adr: 32'h00000012, wdt: '{              8'h54       }, default: 'x}, rsp: '{nul, sts}});  //$display("DEBUG: tst_ref.size() = %0d", tst_ref.size());
+    tst_len += obj_sub.put_transaction(tst_ref, '{req: '{adr: 32'h00000013, wdt: '{                     8'h76}, default: 'x}, rsp: '{nul, sts}});  //$display("DEBUG: tst_ref.size() = %0d", tst_ref.size());
+    tst_len += obj_sub.put_transaction(tst_ref, '{req: '{adr: 32'h00000020, wdt: '{8'h10, 8'h32              }, default: 'x}, rsp: '{nul, sts}});  //$display("DEBUG: tst_ref.size() = %0d", tst_ref.size());
+    tst_len += obj_sub.put_transaction(tst_ref, '{req: '{adr: 32'h00000022, wdt: '{              8'h54, 8'h76}, default: 'x}, rsp: '{nul, sts}});  //$display("DEBUG: tst_ref.size() = %0d", tst_ref.size());
+    tst_len += obj_sub.put_transaction(tst_ref, '{req: '{adr: 32'h00000030, wdt: '{8'h10, 8'h32, 8'h54, 8'h76}, default: 'x}, rsp: '{nul, sts}});  //$display("DEBUG: tst_ref.size() = %0d", tst_ref.size());
     // compare transfers from monitor to reference
     // wildcard operator is used to ignore data byte comparison, when the reference data is 8'hxx
     foreach(tst_ref[i]) begin
@@ -198,14 +203,14 @@ module tcb_lib_logsize2byteena_tb
     sts = '0;
     tst_ref.delete();
     tst_len = tst_ref.size();
-    // append reference transfers to queue               ndn        , adr         , wdt ,        rdt
-    tst_len += obj_sub.put_transaction(tst_ref, '{req: '{TCB_LITTLE, 32'h00000010, nul}, rsp: '{'{8'h10                     }, sts}});
-    tst_len += obj_sub.put_transaction(tst_ref, '{req: '{TCB_LITTLE, 32'h00000011, nul}, rsp: '{'{       8'h32              }, sts}});
-    tst_len += obj_sub.put_transaction(tst_ref, '{req: '{TCB_LITTLE, 32'h00000012, nul}, rsp: '{'{              8'h54       }, sts}});
-    tst_len += obj_sub.put_transaction(tst_ref, '{req: '{TCB_LITTLE, 32'h00000013, nul}, rsp: '{'{                     8'h76}, sts}});
-    tst_len += obj_sub.put_transaction(tst_ref, '{req: '{TCB_LITTLE, 32'h00000020, nul}, rsp: '{'{8'h10, 8'h32              }, sts}});
-    tst_len += obj_sub.put_transaction(tst_ref, '{req: '{TCB_LITTLE, 32'h00000022, nul}, rsp: '{'{              8'h54, 8'h76}, sts}});
-    tst_len += obj_sub.put_transaction(tst_ref, '{req: '{TCB_LITTLE, 32'h00000030, nul}, rsp: '{'{8'h10, 8'h32, 8'h54, 8'h76}, sts}});
+    // append reference transfers to queue               adr              , wdt                   ,        rdt
+    tst_len += obj_sub.put_transaction(tst_ref, '{req: '{adr: 32'h00000010, wdt: nul, default: 'x}, rsp: '{'{8'h10                     }, sts}});
+    tst_len += obj_sub.put_transaction(tst_ref, '{req: '{adr: 32'h00000011, wdt: nul, default: 'x}, rsp: '{'{       8'h32              }, sts}});
+    tst_len += obj_sub.put_transaction(tst_ref, '{req: '{adr: 32'h00000012, wdt: nul, default: 'x}, rsp: '{'{              8'h54       }, sts}});
+    tst_len += obj_sub.put_transaction(tst_ref, '{req: '{adr: 32'h00000013, wdt: nul, default: 'x}, rsp: '{'{                     8'h76}, sts}});
+    tst_len += obj_sub.put_transaction(tst_ref, '{req: '{adr: 32'h00000020, wdt: nul, default: 'x}, rsp: '{'{8'h10, 8'h32              }, sts}});
+    tst_len += obj_sub.put_transaction(tst_ref, '{req: '{adr: 32'h00000022, wdt: nul, default: 'x}, rsp: '{'{              8'h54, 8'h76}, sts}});
+    tst_len += obj_sub.put_transaction(tst_ref, '{req: '{adr: 32'h00000030, wdt: nul, default: 'x}, rsp: '{'{8'h10, 8'h32, 8'h54, 8'h76}, sts}});
     // compare transfers from monitor to reference
     // wildcard operator is used to ignore data byte comparison, when the reference data is 8'hxx
     foreach(tst_ref[i]) begin
@@ -263,12 +268,12 @@ module tcb_lib_logsize2byteena_tb
     sts = '0;
     tst_ref.delete();
     tst_len = tst_ref.size();
-    // append reference transfers to queue               ndn       , adr         , wdt                           ,        rdt
-    tst_len += obj_sub.put_transaction(tst_ref, '{req: '{TCB_LITTLE, 32'h00000011, '{8'h10, 8'h32              }}, rsp: '{nul, sts}});
-    tst_len += obj_sub.put_transaction(tst_ref, '{req: '{TCB_LITTLE, 32'h00000023, '{8'h54, 8'h76              }}, rsp: '{nul, sts}});
-    tst_len += obj_sub.put_transaction(tst_ref, '{req: '{TCB_LITTLE, 32'h00000031, '{8'h10, 8'h32, 8'h54, 8'h76}}, rsp: '{nul, sts}});
-    tst_len += obj_sub.put_transaction(tst_ref, '{req: '{TCB_LITTLE, 32'h00000042, '{8'h10, 8'h32, 8'h54, 8'h76}}, rsp: '{nul, sts}});
-    tst_len += obj_sub.put_transaction(tst_ref, '{req: '{TCB_LITTLE, 32'h00000053, '{8'h10, 8'h32, 8'h54, 8'h76}}, rsp: '{nul, sts}});
+    // append reference transfers to queue               adr              , wdt                                             ,        rdt
+    tst_len += obj_sub.put_transaction(tst_ref, '{req: '{adr: 32'h00000011, wdt: '{8'h10, 8'h32              }, default: 'x}, rsp: '{nul, sts}});
+    tst_len += obj_sub.put_transaction(tst_ref, '{req: '{adr: 32'h00000023, wdt: '{8'h54, 8'h76              }, default: 'x}, rsp: '{nul, sts}});
+    tst_len += obj_sub.put_transaction(tst_ref, '{req: '{adr: 32'h00000031, wdt: '{8'h10, 8'h32, 8'h54, 8'h76}, default: 'x}, rsp: '{nul, sts}});
+    tst_len += obj_sub.put_transaction(tst_ref, '{req: '{adr: 32'h00000042, wdt: '{8'h10, 8'h32, 8'h54, 8'h76}, default: 'x}, rsp: '{nul, sts}});
+    tst_len += obj_sub.put_transaction(tst_ref, '{req: '{adr: 32'h00000053, wdt: '{8'h10, 8'h32, 8'h54, 8'h76}, default: 'x}, rsp: '{nul, sts}});
     // compare transfers from monitor to reference
     // wildcard operator is used to ignore data byte comparison, when the reference data is 8'hxx
     foreach (tst_ref[i]) begin
@@ -308,12 +313,12 @@ module tcb_lib_logsize2byteena_tb
     sts = '0;
     tst_ref.delete();
     tst_len = tst_ref.size();
-    // append reference transfers to queue               ndn       , adr         , wdt ,        rdt
-    tst_len += obj_sub.put_transaction(tst_ref, '{req: '{TCB_LITTLE, 32'h00000011, nul}, rsp: '{'{8'h10, 8'h32              }, sts}});
-    tst_len += obj_sub.put_transaction(tst_ref, '{req: '{TCB_LITTLE, 32'h00000023, nul}, rsp: '{'{8'h54, 8'h76              }, sts}});
-    tst_len += obj_sub.put_transaction(tst_ref, '{req: '{TCB_LITTLE, 32'h00000031, nul}, rsp: '{'{8'h10, 8'h32, 8'h54, 8'h76}, sts}});
-    tst_len += obj_sub.put_transaction(tst_ref, '{req: '{TCB_LITTLE, 32'h00000042, nul}, rsp: '{'{8'h10, 8'h32, 8'h54, 8'h76}, sts}});
-    tst_len += obj_sub.put_transaction(tst_ref, '{req: '{TCB_LITTLE, 32'h00000053, nul}, rsp: '{'{8'h10, 8'h32, 8'h54, 8'h76}, sts}});
+    // append reference transfers to queue               adr              , wdt                   ,        rdt
+    tst_len += obj_sub.put_transaction(tst_ref, '{req: '{adr: 32'h00000011, wdt: nul, default: 'x}, rsp: '{'{8'h10, 8'h32              }, sts}});
+    tst_len += obj_sub.put_transaction(tst_ref, '{req: '{adr: 32'h00000023, wdt: nul, default: 'x}, rsp: '{'{8'h54, 8'h76              }, sts}});
+    tst_len += obj_sub.put_transaction(tst_ref, '{req: '{adr: 32'h00000031, wdt: nul, default: 'x}, rsp: '{'{8'h10, 8'h32, 8'h54, 8'h76}, sts}});
+    tst_len += obj_sub.put_transaction(tst_ref, '{req: '{adr: 32'h00000042, wdt: nul, default: 'x}, rsp: '{'{8'h10, 8'h32, 8'h54, 8'h76}, sts}});
+    tst_len += obj_sub.put_transaction(tst_ref, '{req: '{adr: 32'h00000053, wdt: nul, default: 'x}, rsp: '{'{8'h10, 8'h32, 8'h54, 8'h76}, sts}});
     // compare transfers from monitor to reference
     // wildcard operator is used to ignore data byte comparison, when the reference data is 8'hxx
     foreach (tst_ref[i]) begin
@@ -334,17 +339,17 @@ module tcb_lib_logsize2byteena_tb
     $display("parameterized tests");
     testname = "parameterized tests";
     foreach (ndn_list[i]) begin
-      for (int unsigned siz=tcb_man.PMA.MIN; siz<=tcb_man.BUS_MAX; siz++) begin
+      for (int unsigned siz=tcb_man.CFG.PMA.MIN; siz<=tcb_man.CFG_BUS_MAX; siz++) begin
 //      begin
 //        static int unsigned siz=1;
-//        for (int unsigned off=0; off<tcb_man.BUS_BYT; off+=2) begin
-        for (int unsigned off=0; off<tcb_man.BUS_BYT; off+=2**tcb_man.PMA.OFF) begin
+//        for (int unsigned off=0; off<tcb_man.CFG_BUS_BYT; off+=2) begin
+        for (int unsigned off=0; off<tcb_man.CFG_BUS_BYT; off+=2**tcb_man.CFG.PMA.OFF) begin
           // local variables
           string       id;
           int unsigned size;
           int unsigned len;
           // address
-          logic [tcb_man.BUS.ADR-1:0] adr;
+          logic [tcb_man.CFG.BUS.ADR-1:0] adr;
           // endianness
           logic         ndn;
           // local data arrays
@@ -354,14 +359,16 @@ module tcb_lib_logsize2byteena_tb
           // local response
           tcb_rsp_sts_t sts;  // response status
           // local transactions
-          tcb_vip_siz_s::transaction_t transaction_ref_w;  // reference write transaction
-          tcb_vip_siz_s::transaction_t transaction_ref_r;  // reference read  transaction
-          tcb_vip_siz_s::transaction_t transaction_mon_w;  // monitor   write transaction
-          tcb_vip_siz_s::transaction_t transaction_mon_r;  // monitor   read  transaction
+          tcb_siz_s::transaction_t transaction_man_w;  // manager     write transaction
+          tcb_siz_s::transaction_t transaction_man_r;  // manager     read  transaction
+          tcb_byt_s::transaction_t transaction_sub_w;  // bubordinate write transaction
+          tcb_byt_s::transaction_t transaction_sub_r;  // bubordinate read  transaction
+          tcb_byt_s::transaction_t transaction_mon_w;  // monitor     write transaction
+          tcb_byt_s::transaction_t transaction_mon_r;  // monitor     read  transaction
           // local transfers
-          automatic tcb_vip_siz_s::transfer_queue_t transfer_man = '{};  // manager     transfer queue
-          automatic tcb_vip_siz_s::transfer_queue_t transfer_sub = '{};  // subordinate transfer queue
-          automatic tcb_vip_siz_s::transfer_queue_t transfer_mon = '{};  // monitor     transfer queue
+          automatic tcb_siz_s::transfer_queue_t transfer_man = '{};  // manager     transfer queue
+          automatic tcb_byt_s::transfer_queue_t transfer_sub = '{};  // subordinate transfer queue
+          automatic tcb_byt_s::transfer_queue_t transfer_mon = '{};  // monitor     transfer queue
 
           // endianness
           ndn = ndn_list[i];
@@ -369,7 +376,7 @@ module tcb_lib_logsize2byteena_tb
           id = $sformatf("ndn=%0d siz=%0d off=%0d", ndn, siz, off);
           $display("DEBUG: ID = '%s'", id);
           // address (stride is twice BUS_BYT, to accommodate unaligned accesses)
-          adr = siz * tcb_man.BUS_BYT * 2;
+          adr = siz * tcb_man.CFG_BUS_BYT * 2;
           // prepare data array
           size = 2**siz;
           dat = new[size];
@@ -381,17 +388,18 @@ module tcb_lib_logsize2byteena_tb
           sts = '0;
 
           // write/read transaction
-          //                           ndn, adr    , wdt          rdt, sts
-          transaction_ref_w = '{req: '{ndn, adr+off, dat}, rsp: '{nul, sts}};
-          transaction_ref_r = '{req: '{ndn, adr+off, nul}, rsp: '{dat, sts}};
+          transaction_man_w = '{req: '{ndn: ndn, adr: adr+off, wdt: dat, default: 'x}, rsp: '{nul, sts}};
+          transaction_man_r = '{req: '{ndn: ndn, adr: adr+off, wdt: nul, default: 'x}, rsp: '{dat, sts}};
+          transaction_sub_w = '{req: '{ndn: ndn, adr: adr+off, wdt: dat, default: 'x}, rsp: '{nul, sts}};
+          transaction_sub_r = '{req: '{ndn: ndn, adr: adr+off, wdt: nul, default: 'x}, rsp: '{dat, sts}};
           // manager transfer queue
           len  = 0;
-          len += obj_man.put_transaction(transfer_man, transaction_ref_w, id);
-          len += obj_man.put_transaction(transfer_man, transaction_ref_r, id);
+          len += obj_man.put_transaction(transfer_man, transaction_man_w, id);
+          len += obj_man.put_transaction(transfer_man, transaction_man_r, id);
           // subordinate transfer queue
           len  = 0;
-          len += obj_sub.put_transaction(transfer_sub, transaction_ref_w);
-          len += obj_sub.put_transaction(transfer_sub, transaction_ref_r);
+          len += obj_sub.put_transaction(transfer_sub, transaction_sub_w);
+          len += obj_sub.put_transaction(transfer_sub, transaction_sub_r);
 
           // play/monitor transfers
           fork
@@ -410,22 +418,22 @@ module tcb_lib_logsize2byteena_tb
 
           // parse manager transfer queues into transactions
           len  = 0;
-          len += obj_man.get_transaction(transfer_man, transaction_mon_w);
-          len += obj_man.get_transaction(transfer_man, transaction_mon_r);
+          len += obj_man.get_transaction(transfer_man, transaction_man_w);
+          len += obj_man.get_transaction(transfer_man, transaction_man_r);
           // compare read data against write data
-          assert (transaction_mon_r.rsp.rdt == dat) else $error("Read data not matching previously written data (id = '%s')", id);
-          // compare subordinate reference and monitored transaction queue
+          assert (transaction_man_r.rsp.rdt == dat) else $error("Read data not matching previously written data (id = '%s')", id);
+          // compare subordinate reference and monitored transfer queue
           foreach (transfer_sub[i]) begin
-            assert (transfer_mon[i].req ==? transfer_sub[i].req) else $error("\ntransfer_mon[%0d].req = %p !=? \ntransfer_ref[%0d].req = %p", i, transfer_mon[i].req, i, transfer_sub[i].req);
-            assert (transfer_mon[i].rsp ==? transfer_sub[i].rsp) else $error("\ntransfer_mon[%0d].rsp = %p !=? \ntransfer_ref[%0d].rsp = %p", i, transfer_mon[i].rsp, i, transfer_sub[i].rsp);
+            assert (transfer_mon[i].req ==? transfer_sub[i].req) else $error("\ntransfer_mon[%0d].req = %p !=? \ntransfer_sub[%0d].req = %p", i, transfer_mon[i].req, i, transfer_sub[i].req);
+            assert (transfer_mon[i].rsp ==? transfer_sub[i].rsp) else $error("\ntransfer_mon[%0d].rsp = %p !=? \ntransfer_sub[%0d].rsp = %p", i, transfer_mon[i].rsp, i, transfer_sub[i].rsp);
           end
           // parse subordinate monitor transfer queues into transactions
           len  = 0;
           len += obj_sub.get_transaction(transfer_mon, transaction_mon_w);
           len += obj_sub.get_transaction(transfer_mon, transaction_mon_r);
           // compare subordinate reference and monitor transactions
-          assert (transaction_mon_w == transaction_ref_w) else $error("\ntransaction_mon_w = %p != \ntransaction_ref_w = %p", transaction_mon_w, transaction_ref_w);
-          assert (transaction_mon_r == transaction_ref_r) else $error("\ntransaction_mon_r = %p != \ntransaction_ref_r = %p", transaction_mon_r, transaction_ref_r);
+          assert (transaction_mon_w == transaction_sub_w) else $error("\ntransaction_mon_w = %p != \ntransaction_sub_w = %p", transaction_mon_w, transaction_sub_w);
+          assert (transaction_mon_r == transaction_sub_r) else $error("\ntransaction_mon_r = %p != \ntransaction_sub_r = %p", transaction_mon_r, transaction_sub_r);
         end
       end
     end
@@ -447,7 +455,7 @@ module tcb_lib_logsize2byteena_tb
     repeat (1) @(posedge clk);
 
     test_aligned;
-    if (PMA.ALN != tcb_man.BUS_MAX) begin
+    if (CFG_SIZ.PMA.ALN != tcb_man.CFG_BUS_MAX) begin
       test_misaligned;
     end
     test_parameterized;
