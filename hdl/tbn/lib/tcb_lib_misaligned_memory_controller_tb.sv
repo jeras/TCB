@@ -32,29 +32,25 @@ module tcb_lib_misaligned_memory_controller_tb
 //  parameter  tcb_bus_order_t   PMA_ORD = TCB_BUS_DEF.ORD   // manager     byte order
 );
 
-  // handshake parameter
-  localparam tcb_hsk_t CFG.HSK = TCB_HSK_DEF;
-
-  // bus parameter
-  localparam tcb_bus_t BUS = '{
-    ADR: TCB_BUS_DEF.ADR,
-    DAT: TCB_BUS_DEF.DAT,
-    FRM: TCB_BUS_DEF.FRM,
-    CHN: TCB_CHN_HALF_DUPLEX,
-    AMO: TCB_AMO_ABSENT,
-    PRF: TCB_PRF_ABSENT,
-    NXT: TCB_NXT_ABSENT,
-    MOD: TCB_MOD_BYTE_ENA,
-    ORD: TCB_ORD_DESCENDING,
-    NDN: TCB_NDN_BI_NDN
-  };
-
-  // physical interface parameter default
-  localparam tcb_pma_t PMA = '{
-    MIN: 0,
-    OFF: 0,
-    ALN: 0,
-    BND: 0
+  localparam tcb_cfg_t CFG = '{
+    // handshake parameter
+    HSK: TCB_HSK_DEF,
+    // bus parameter
+    BUS: '{
+      ADR: TCB_BUS_DEF.ADR,
+      DAT: TCB_BUS_DEF.DAT,
+      LEN: TCB_BUS_DEF.LEN,
+      LCK: TCB_LCK_PRESENT,
+      CHN: TCB_CHN_HALF_DUPLEX,
+      AMO: TCB_AMO_ABSENT,
+      PRF: TCB_PRF_ABSENT,
+      NXT: TCB_NXT_ABSENT,
+      MOD: TCB_MOD_BYTE_ENA,
+      ORD: TCB_ORD_DESCENDING,
+      NDN: TCB_NDN_BI_NDN
+    },
+    // physical interface parameter default
+    PMA: TCB_PMA_DEF
   };
 
 //  typedef tcb_c #(HSK, BUS_SIZ, PMA)::req_t req_t;
@@ -75,10 +71,10 @@ module tcb_lib_misaligned_memory_controller_tb
   string testname = "none";
 
   // TCB interfaces
-  tcb_if #(tcb_hsk_t, CFG.HSK, tcb_bus_t, BUS, tcb_pma_t, PMA, req_t, rsp_t) tcb (.clk (clk), .rst (rst));
+  tcb_if #(tcb_cfg_t, CFG, req_t, rsp_t) tcb (.clk (clk), .rst (rst));
 
   // parameterized class specialization (blocking API)
-  typedef tcb_vip_blocking_c #(tcb_hsk_t, CFG.HSK, tcb_bus_t, BUS, tcb_pma_t, PMA, req_t, rsp_t) tcb_vip_s;
+  typedef tcb_vip_blocking_c #(tcb_cfg_t, CFG, req_t, rsp_t) tcb_vip_s;
 
   // TCB class objects
   tcb_vip_s obj = new(tcb, "MAN");
@@ -87,14 +83,14 @@ module tcb_lib_misaligned_memory_controller_tb
   logic [8-1:0] nul [];
 
   // response
-  logic [tcb.CFG.BUS_BYT-1:0][8-1:0] rdt;  // read data
+  logic [tcb.CFG_BUS_BYT-1:0][8-1:0] rdt;  // read data
   tcb_rsp_sts_t                  sts;  // status response
 
   // local parameters
-  localparam int unsigned BUS_BYT = CFG.BUS.DAT/8;
-  localparam int unsignedCFG_BUS_MAX = $clog2(CFG.BUS_BYT);
-  localparam int unsigned MEM_CEN = BUS_BYT/(2**PMA.OFF);
-  localparam int unsigned MEM_ADR = CFG.BUS.ADR-BUS_MAX;
+  localparam int unsigned CFG_BUS_BYT = CFG.BUS.DAT/8;
+  localparam int unsigned CFG_BUS_MAX = $clog2(CFG_BUS_BYT);
+  localparam int unsigned MEM_CEN = CFG_BUS_BYT/(2**CFG.PMA.OFF);
+  localparam int unsigned MEM_ADR = CFG.BUS.ADR-CFG_BUS_MAX;
   localparam int unsigned MEM_DAT = CFG.BUS.DAT/MEM_CEN;
 
   // SRAM model
@@ -173,11 +169,11 @@ module tcb_lib_misaligned_memory_controller_tb
     // parameterized tests
     $display("parameterized tests");
     testname = "parameterized tests";
-    for (int unsigned siz=tcb.PMA.MIN; siz<=tcb.CFG.BUS_MAX; siz++) begin
+    for (int unsigned siz=tcb.CFG.PMA.MIN; siz<=tcb.CFG_BUS_MAX; siz++) begin
 //    begin
 //      static int unsigned siz=1;
-//      for (int unsigned off=0; off<tcb.CFG.BUS_BYT; off+=2) begin
-      for (int unsigned off=0; off<tcb.CFG.BUS_BYT; off+=2**tcb.PMA.OFF) begin
+//      for (int unsigned off=0; off<tcb.CFG.CFG_BUS_BYT; off+=2) begin
+      for (int unsigned off=0; off<tcb.CFG_BUS_BYT; off+=2**tcb.CFG.PMA.OFF) begin
         // local variables
         string       id;
         int unsigned size;
@@ -201,8 +197,8 @@ module tcb_lib_misaligned_memory_controller_tb
         // ID
         id = $sformatf("siz=%0d off=%0d", siz, off);
         $display("DEBUG: ID = '%s'", id);
-        // address (stride is twice BUS_BYT, to accommodate unaligned accesses)
-        adr = siz * tcb.CFG.BUS_BYT * 2;
+        // address (stride is twice CFG_BUS_BYT, to accommodate unaligned accesses)
+        adr = siz * tcb.CFG_BUS_BYT * 2;
         // prepare data array
         size = 2**siz;
         dat = new[size];
@@ -214,9 +210,9 @@ module tcb_lib_misaligned_memory_controller_tb
         sts = '0;
 
         // write/read transaction
-        //                       ndn , adr    , wdt          rdt, sts
-        transaction_w = '{req: '{1'b0, adr+off, dat}, rsp: '{nul, sts}};
-        transaction_r = '{req: '{1'b0, adr+off, nul}, rsp: '{dat, sts}};
+        //                       adr         , wdt                            rdt, sts
+        transaction_w = '{req: '{adr: adr+off, wdt: dat, default: 'x}, rsp: '{nul, sts}};
+        transaction_r = '{req: '{adr: adr+off, wdt: nul, default: 'x}, rsp: '{dat, sts}};
         // manager transfer queue
         len  = 0;
         len += obj.put_transaction(transfer, transaction_w, id);
@@ -253,7 +249,7 @@ module tcb_lib_misaligned_memory_controller_tb
     repeat (1) @(posedge clk);
 
     test_aligned;
-    if (PMA.ALN != tcb.CFG.BUS_MAX) begin
+    if (CFG.PMA.ALN != tcb.CFG_BUS_MAX) begin
       test_misaligned;
     end
     test_parameterized;
@@ -289,9 +285,7 @@ module tcb_lib_misaligned_memory_controller_tb
 ////////////////////////////////////////////////////////////////////////////////
 
   tcb_lib_misaligned_memory_controller #(
-    .HSK      (HSK),
-    .BUS      (CFG.BUS),
-    .PMA      (PMA)
+    .CFG      (CFG)
   ) dut (
     // TCB interface
     .tcb      (tcb),

@@ -28,43 +28,46 @@ module tcb_lib_read_modify_write_tb
 // local parameters
 ////////////////////////////////////////////////////////////////////////////////
 
-  // handshake parameter
-  localparam tcb_hsk_t CFG.HSK = TCB_HSK_DEF;
-
-  // bus parameter
-  localparam tcb_bus_t BUS_MAN = '{
-    ADR: TCB_BUS_DEF.ADR,
-    DAT: TCB_BUS_DEF.DAT,
-    FRM: TCB_BUS_DEF.FRM,
-    CHN: TCB_CHN_FULL_DUPLEX,
-    AMO: TCB_AMO_PRESENT,
-    PRF: TCB_PRF_ABSENT,
-    NXT: TCB_NXT_ABSENT,
-    MOD: TCB_MOD_LOG_SIZE,
-    ORD: TCB_ORD_DESCENDING,
-    NDN: TCB_NDN_BI_NDN
+  localparam tcb_cfg_t CFG_MAN = '{
+    // handshake parameter
+    HSK: TCB_HSK_DEF,
+    // bus parameter
+    BUS: '{
+      ADR: TCB_BUS_DEF.ADR,
+      DAT: TCB_BUS_DEF.DAT,
+      LEN: TCB_BUS_DEF.LEN,
+      LCK: TCB_LCK_PRESENT,
+      CHN: TCB_CHN_HALF_DUPLEX,
+      AMO: TCB_AMO_PRESENT,
+      PRF: TCB_PRF_ABSENT,
+      NXT: TCB_NXT_ABSENT,
+      MOD: TCB_MOD_BYTE_ENA,
+      ORD: TCB_ORD_DESCENDING,
+      NDN: TCB_NDN_BI_NDN
+    },
+    // physical interface parameter default
+    PMA: TCB_PMA_DEF
   };
 
-  // bus parameter
-  localparam tcb_bus_t BUS_SUB = '{
-    ADR: TCB_BUS_DEF.ADR,
-    DAT: TCB_BUS_DEF.DAT,
-    FRM: TCB_BUS_DEF.FRM,
-    CHN: TCB_CHN_FULL_DUPLEX,
-    AMO: TCB_AMO_ABSENT,
-    PRF: TCB_PRF_ABSENT,
-    NXT: TCB_NXT_ABSENT,
-    MOD: TCB_MOD_BYTE_ENA,
-    ORD: TCB_ORD_DESCENDING,
-    NDN: TCB_NDN_BI_NDN
-  };
-
-  // physical interface parameter default
-  localparam tcb_pma_t PMA = '{
-    MIN: 0,
-    OFF: 0,
-    ALN: 0,
-    BND: 0
+    localparam tcb_cfg_t CFG_SUB = '{
+    // handshake parameter
+    HSK: TCB_HSK_DEF,
+    // bus parameter
+    BUS: '{
+      ADR: TCB_BUS_DEF.ADR,
+      DAT: TCB_BUS_DEF.DAT,
+      LEN: TCB_BUS_DEF.LEN,
+      LCK: TCB_LCK_PRESENT,
+      CHN: TCB_CHN_HALF_DUPLEX,
+      AMO: TCB_AMO_ABSENT,
+      PRF: TCB_PRF_ABSENT,
+      NXT: TCB_NXT_ABSENT,
+      MOD: TCB_MOD_BYTE_ENA,
+      ORD: TCB_ORD_DESCENDING,
+      NDN: TCB_NDN_BI_NDN
+    },
+    // physical interface parameter default
+    PMA: TCB_PMA_DEF
   };
 
   localparam tcb_vip_t VIP = '{
@@ -89,28 +92,28 @@ module tcb_lib_read_modify_write_tb
   string testname = "none";
 
   // TCB interfaces
-  tcb_if #(tcb_hsk_t, CFG.HSK, tcb_bus_t, BUS_MAN, tcb_pma_t, PMA, req_t, rsp_t                ) tcb_man       (.clk (clk), .rst (rst));
-  tcb_if #(tcb_hsk_t, CFG.HSK, tcb_bus_t, BUS_SUB, tcb_pma_t, PMA, req_t, rsp_t                ) tcb_sub       (.clk (clk), .rst (rst));
+  tcb_if #(tcb_cfg_t, CFG_MAN, req_t, rsp_t) tcb_man (.clk (clk), .rst (rst));
+  tcb_if #(tcb_cfg_t, CFG_SUB, req_t, rsp_t) tcb_sub (.clk (clk), .rst (rst));
 
   // parameterized class specialization (blocking API)
-  typedef tcb_vip_blocking_c #(tcb_hsk_t, CFG.HSK, tcb_bus_t, BUS_MAN, tcb_pma_t, PMA, req_t, rsp_t) tcb_vip_siz_s;
-  typedef tcb_vip_blocking_c #(tcb_hsk_t, CFG.HSK, tcb_bus_t, BUS_SUB, tcb_pma_t, PMA, req_t, rsp_t) tcb_vip_ben_s;
+  typedef tcb_vip_blocking_c #(tcb_cfg_t, CFG_MAN, req_t, rsp_t) tcb_man_s;
+  typedef tcb_vip_blocking_c #(tcb_cfg_t, CFG_SUB, req_t, rsp_t) tcb_sub_s;
 
   // TCB class objects
-  tcb_vip_siz_s obj_man = new(tcb_man, "MAN");
-  tcb_vip_ben_s obj_sub = new(tcb_sub, "MON");
+  tcb_man_s obj_man = new(tcb_man, "MAN");
+  tcb_sub_s obj_sub = new(tcb_sub, "MON");
 
   // transfer reference/monitor array
-  tcb_vip_ben_s::transfer_queue_t tst_ref;
-  tcb_vip_ben_s::transfer_queue_t tst_mon;
-  int unsigned                    tst_len;
+  tcb_man_s::transfer_queue_t tst_ref;
+  tcb_sub_s::transfer_queue_t tst_mon;
+  int unsigned                tst_len;
 
   // empty array
   logic [8-1:0] nul [];
 
   // response
-  logic [tcb_man.BUS_BYT-1:0][8-1:0] rdt;  // read data
-  tcb_rsp_sts_t                      sts;  // status response
+  logic [tcb_man.CFG_BUS_BYT-1:0][8-1:0] rdt;  // read data
+  tcb_rsp_sts_t                          sts;  // status response
 
 ////////////////////////////////////////////////////////////////////////////////
 // tests

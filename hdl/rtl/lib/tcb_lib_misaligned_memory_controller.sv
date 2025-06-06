@@ -19,20 +19,14 @@
 module tcb_lib_misaligned_memory_controller
   import tcb_pkg::*;
 #(
-  // handshake parameters
-  parameter  type hsk_t = tcb_hsk_t,   // handshake parameter type
-  parameter  hsk_t HSK = TCB_HSK_DEF,  // handshake parameter
-  // bus parameters
-  parameter  type bus_t = tcb_bus_t,   // bus parameter type
-  parameter  bus_t BUS = TCB_BUS_DEF,  // bus parameter
-  // PMA parameters
-  parameter  type pma_t = tcb_pma_t,   // packing parameter type
-  parameter  pma_t PMA = TCB_PMA_DEF,  // packing parameter
+  // configuration parameters
+  parameter  type cfg_t = tcb_cfg_t,   // configuration parameter type
+  parameter  cfg_t CFG = TCB_CFG_DEF,  // configuration parameter
   // local parameters
-  localparam int unsigned BUS_BYT = CFG.BUS.DAT/8,
-  localparam int unsignedCFG_BUS_MAX = $clog2(CFG.BUS_BYT),
-  localparam int unsigned MEM_CEN = BUS_BYT/(2**PMA.OFF),
-  localparam int unsigned MEM_ADR = CFG.BUS.ADR-BUS_MAX,
+  localparam int unsigned CFG_BUS_BYT = CFG.BUS.DAT/8,
+  localparam int unsigned CFG_BUS_MAX = $clog2(CFG_BUS_BYT),
+  localparam int unsigned MEM_CEN = CFG_BUS_BYT/(2**CFG.PMA.OFF),
+  localparam int unsigned MEM_ADR = CFG.BUS.ADR-CFG_BUS_MAX,
   localparam int unsigned MEM_DAT = CFG.BUS.DAT/MEM_CEN
   // byte order
   // TODO
@@ -98,25 +92,25 @@ module tcb_lib_misaligned_memory_controller
 ////////////////////////////////////////////////////////////////////////////////
 
 //  // request/response address offset, logarithmic size
-//  logic [sub.BUS_MAX-1:0] req_off, rsp_off;
+//  logic [sub.CFG_BUS_MAX-1:0] req_off, rsp_off;
 //  logic [sub.BUS_SIZ-1:0] req_siz, rsp_siz;
 //
 //  // endianness
 //  logic                   req_ndn, rsp_ndn;
 //
 //  // prefix OR operation
-//  function automatic [sub.BUS_MAX-1:0] prefix_or (
-//    input logic [sub.BUS_MAX-1:0] val
+//  function automatic [sub.CFG_BUS_MAX-1:0] prefix_or (
+//    input logic [sub.CFG_BUS_MAX-1:0] val
 //  );
-//    prefix_or[sub.BUS_MAX-1] = val[sub.BUS_MAX-1];
-//    for (int unsigned i=sub.BUS_MAX-1; i>0; i--) begin
+//    prefix_or[sub.CFG_BUS_MAX-1] = val[sub.CFG_BUS_MAX-1];
+//    for (int unsigned i=sub.CFG_BUS_MAX-1; i>0; i--) begin
 //      prefix_or[i-1] = prefix_or[i] | val[i-1];
 //    end
 //  endfunction: prefix_or
 //
 //  // request/response address offset, logarithmic size
-//  assign req_off = sub.req_dly[0          ].adr[sub.BUS_MAX-1:0];
-//  assign rsp_off = sub.req_dly[sub.HSK.DLY].adr[sub.BUS_MAX-1:0];
+//  assign req_off = sub.req_dly[0          ].adr[sub.CFG_BUS_MAX-1:0];
+//  assign rsp_off = sub.req_dly[sub.HSK.DLY].adr[sub.CFG_BUS_MAX-1:0];
 //  assign req_siz = sub.req_dly[0          ].siz;
 //  assign rsp_siz = sub.req_dly[sub.HSK.DLY].siz;
 
@@ -128,27 +122,27 @@ module tcb_lib_misaligned_memory_controller
   logic [MEM_ADR-1:0] adr;
   logic [MEM_ADR-1:0] nxt;
   // offset
-  logic [BUS_MAX-1:0] off;
+  logic [CFG_BUS_MAX-1:0] off;
 
   assign mem_cen = {MEM_CEN{tcb.vld    }}
                  &          tcb.req.byt  ;
   assign mem_wen =          tcb.req.wen  ;
 
   // address
-  assign adr = tcb.req.adr[BUS_MAX+:MEM_ADR];
+  assign adr = tcb.req.adr[CFG_BUS_MAX+:MEM_ADR];
   // offset
-  assign off = tcb.req.adr[BUS_MAX-1:0];
+  assign off = tcb.req.adr[CFG_BUS_MAX-1:0];
 
   generate
     // next address
     if (tcb.CFG.BUS.NXT == TCB_NXT_PRESENT) begin
-      assign nxt = tcb.req.nxt[BUS_MAX+:MEM_ADR];
+      assign nxt = tcb.req.nxt[CFG_BUS_MAX+:MEM_ADR];
     end else begin
       assign nxt = adr + 1;
     end
 
     // address or next address
-    for (genvar i=0; i<BUS_BYT; i++) begin
+    for (genvar i=0; i<CFG_BUS_BYT; i++) begin
       assign mem_adr[i] = (i < off) ? nxt : adr;
     end
   endgenerate
