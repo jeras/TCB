@@ -199,9 +199,6 @@ package tcb_vip_transaction_pkg;
       //  end
       //end
 
-//      $display("DEBUG: transaction_request: siz = %d, len = %d", siz, len);
-//      $display("DEBUG: transaction_request: transfer_queue = %p", transfer_queue);
-
       // loop over transaction data bytes
       tmp.req.byt = '0;
       for (int unsigned i=0; i<size; i++) begin
@@ -223,8 +220,8 @@ package tcb_vip_transaction_pkg;
         if (ren) tmp.rsp.rdt[byt] = transaction.rsp.rdt[idx];
                  tmp.req.byt[byt] = 1'b1;
         // edge byte inside data bus
-        if (CFG.PMA.BND == 0)  edg = (i == CFG_BUS_BYT-1);
-        else                   edg =       CFG_BUS_BYT-1;  // TODO: use actual boundary
+        if (CFG.PMA.BND == 0)  edg = ((i+1) % CFG_BUS_BYT) == 0;
+        else                   edg =          CFG_BUS_BYT-1;  // TODO: use actual boundary
 
         // last byte in current transfer or entire transaction
         if (edg || (i == size-1)) begin
@@ -266,7 +263,7 @@ package tcb_vip_transaction_pkg;
           // size
           case (CFG.BUS.MOD)
             TCB_MOD_LOG_SIZE: begin
-              tmp.req.siz = (size < CFG_BUS_BYT) ? $clog2(size) :CFG_BUS_MAX;
+              tmp.req.siz = $clog2(size);
               tmp.req.byt = 'x;
             end
             TCB_MOD_BYTE_ENA: begin

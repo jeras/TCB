@@ -192,43 +192,45 @@ module tcb_vip_tb
     tcb_s::transfer_queue_t que_man;
     tcb_s::transfer_queue_t que_sub;
 
-    integer unsigned     adr;
-    logic                ndn;
-    logic [1-1:0][8-1:0] dat8;
-    logic [2-1:0][8-1:0] dat16;
-    logic [4-1:0][8-1:0] dat32;
-    logic [8-1:0][8-1:0] dat64;
-    tcb_rsp_sts_t        sts;
+    integer unsigned      adr;
+    logic                 ndn;
+    logic [ 1-1:0][8-1:0] dat8;
+    logic [ 2-1:0][8-1:0] dat16;
+    logic [ 4-1:0][8-1:0] dat32;
+    logic [ 8-1:0][8-1:0] dat64;
+    logic [16-1:0][8-1:0] dat128;
+    tcb_rsp_sts_t         sts;
 
     testname = "nonblocking";
 
-    //                 que      adr           ndn         wdt
-    obj_ref.put_write8(que_ref, 32'h00000000, TCB_NATIVE, 32'h01, '0);
-    obj_ref.put_write8(que_ref, 32'h00000001, TCB_NATIVE, 32'h23, '0);
-    obj_ref.put_write8(que_ref, 32'h00000002, TCB_NATIVE, 32'h45, '0);
-    obj_ref.put_write8(que_ref, 32'h00000003, TCB_NATIVE, 32'h67, '0);
-    //                 que      adr           ndn         rdt
-    obj_ref.put_read8 (que_ref, 32'h00000000, TCB_NATIVE, 32'h01, '0);
-    obj_ref.put_read8 (que_ref, 32'h00000001, TCB_NATIVE, 32'h23, '0);
-    obj_ref.put_read8 (que_ref, 32'h00000002, TCB_NATIVE, 32'h45, '0);
-    obj_ref.put_read8 (que_ref, 32'h00000003, TCB_NATIVE, 32'h67, '0);
+    //                   que      adr           ndn         wdt/rdt sts
+    obj_ref.put_write8  (que_ref, 32'h00000000, TCB_NATIVE, 32'h10, '0);
+    obj_ref.put_write8  (que_ref, 32'h00000001, TCB_NATIVE, 32'h32, '0);
+    obj_ref.put_write8  (que_ref, 32'h00000002, TCB_NATIVE, 32'h54, '0);
+    obj_ref.put_write8  (que_ref, 32'h00000003, TCB_NATIVE, 32'h76, '0);
+    obj_ref.put_read8   (que_ref, 32'h00000000, TCB_NATIVE, 32'h10, '0);
+    obj_ref.put_read8   (que_ref, 32'h00000001, TCB_NATIVE, 32'h32, '0);
+    obj_ref.put_read8   (que_ref, 32'h00000002, TCB_NATIVE, 32'h54, '0);
+    obj_ref.put_read8   (que_ref, 32'h00000003, TCB_NATIVE, 32'h76, '0);
+    //                   que      adr           ndn         wdt/rdt   sts
+    obj_ref.put_write16 (que_ref, 32'h00000010, TCB_NATIVE, 32'h3210, '0);
+    obj_ref.put_write16 (que_ref, 32'h00000012, TCB_NATIVE, 32'h7654, '0);
+    obj_ref.put_read16  (que_ref, 32'h00000010, TCB_NATIVE, 32'h3210, '0);
+    obj_ref.put_read16  (que_ref, 32'h00000012, TCB_NATIVE, 32'h7654, '0);
+    //                   que      adr           ndn         wdt/rdt       sts
+    obj_ref.put_write32 (que_ref, 32'h00000020, TCB_NATIVE, 32'h76543210, '0);
+    obj_ref.put_read32  (que_ref, 32'h00000020, TCB_NATIVE, 32'h76543210, '0);
+    //                   que      adr           ndn         wdt/rdt               sts
+    obj_ref.put_write64 (que_ref, 32'h00000040, TCB_NATIVE, 64'hfedcba9876543210, '0);
+    obj_ref.put_read64  (que_ref, 32'h00000040, TCB_NATIVE, 64'hfedcba9876543210, '0);
+    //                   que      adr           ndn         wdt/rdt                                sts
+    obj_ref.put_write128(que_ref, 32'h00000040, TCB_NATIVE, 128'h0f0e0d0c0b0a09080706050403020100, '0);
+    obj_ref.put_read128 (que_ref, 32'h00000040, TCB_NATIVE, 128'h0f0e0d0c0b0a09080706050403020100, '0);
 
-    //                 que      adr           ndn         wdt
-    obj_ref.put_write16(que_ref, 32'h00000010, TCB_NATIVE, 32'h0123, '0);
-    obj_ref.put_write16(que_ref, 32'h00000012, TCB_NATIVE, 32'h4567, '0);
-    //                 que      adr           ndn         rdt
-    obj_ref.put_read16 (que_ref, 32'h00000010, TCB_NATIVE, 32'h0123, '0);
-    obj_ref.put_read16 (que_ref, 32'h00000012, TCB_NATIVE, 32'h4567, '0);
-
-    //                 que      adr           ndn         wdt
-    obj_ref.put_write32(que_ref, 32'h00000020, TCB_NATIVE, 32'h01234567, '0);
-    //                 que      adr           ndn         rdt
-    obj_ref.put_read32 (que_ref, 32'h00000020, TCB_NATIVE, 32'h01234567, '0);
-
-    //                 que      adr           ndn         wdt
-    obj_ref.put_write64(que_ref, 32'h00000040, TCB_NATIVE, 64'h01234567891abcdef, '0);
-    //                 que      adr           ndn         rdt
-    obj_ref.put_read64 (que_ref, 32'h00000040, TCB_NATIVE, 54'h01234567891abcdef, '0);
+//    //                 que      amo      adr           ndn         wdt           rdt           sts
+//    obj_ref.put_amo32 (que_ref, AMOSWAP, 32'h00000080, TCB_NATIVE, 32'h06040200, 32'h70503010, '0);
+//    //                 que      amo      adr           ndn         wdt                   rdt                   sts
+//    obj_ref.put_amo64 (que_ref, AMOSWAP, 32'h000000c0, TCB_NATIVE, 32'h0e0c0b0806040200, 32'hf0d0a09070503010, '0);
 
     // copy reference transfer queue
     que_man = que_ref;
@@ -267,28 +269,32 @@ module tcb_vip_tb
     end
     $display("INFO: nonblocking API checks begin.");
 
-    foreach(que_man[i])
-    $display("DEBUG: que_man[%0d] = %p", i, que_man[i]);
+//    foreach(que_man[i])
+//    $display("DEBUG: que_man[%0d] = %p", i, que_man[i]);
 
-    obj_man.get_write8(que_man, adr, ndn, dat8, sts);  $display("DEBUG: adr=32'h%08h ndn=1'b%01b wdt=8'h%02h sts=%p", adr, ndn, dat8, sts);
-    obj_man.get_write8(que_man, adr, ndn, dat8, sts);  $display("DEBUG: adr=32'h%08h ndn=1'b%01b wdt=8'h%02h sts=%p", adr, ndn, dat8, sts);
-    obj_man.get_write8(que_man, adr, ndn, dat8, sts);  $display("DEBUG: adr=32'h%08h ndn=1'b%01b wdt=8'h%02h sts=%p", adr, ndn, dat8, sts);
-    obj_man.get_write8(que_man, adr, ndn, dat8, sts);  $display("DEBUG: adr=32'h%08h ndn=1'b%01b wdt=8'h%02h sts=%p", adr, ndn, dat8, sts);
-    obj_man.get_read8 (que_man, adr, ndn, dat8, sts);  $display("DEBUG: adr=32'h%08h ndn=1'b%01b rdt=8'h%02h sts=%p", adr, ndn, dat8, sts);
-    obj_man.get_read8 (que_man, adr, ndn, dat8, sts);  $display("DEBUG: adr=32'h%08h ndn=1'b%01b rdt=8'h%02h sts=%p", adr, ndn, dat8, sts);
-    obj_man.get_read8 (que_man, adr, ndn, dat8, sts);  $display("DEBUG: adr=32'h%08h ndn=1'b%01b rdt=8'h%02h sts=%p", adr, ndn, dat8, sts);
-    obj_man.get_read8 (que_man, adr, ndn, dat8, sts);  $display("DEBUG: adr=32'h%08h ndn=1'b%01b rdt=8'h%02h sts=%p", adr, ndn, dat8, sts);
+    obj_man.get_write8  (que_man,         sts);  $display("DEBUG: sts=%p", sts);
+    obj_man.get_write8  (que_man,         sts);  $display("DEBUG: sts=%p", sts);
+    obj_man.get_write8  (que_man,         sts);  $display("DEBUG: sts=%p", sts);
+    obj_man.get_write8  (que_man,         sts);  $display("DEBUG: sts=%p", sts);
+    obj_man.get_read8   (que_man, dat8  , sts);  $display("DEBUG: rdt=8'h%02h sts=%p", dat8, sts);
+    obj_man.get_read8   (que_man, dat8  , sts);  $display("DEBUG: rdt=8'h%02h sts=%p", dat8, sts);
+    obj_man.get_read8   (que_man, dat8  , sts);  $display("DEBUG: rdt=8'h%02h sts=%p", dat8, sts);
+    obj_man.get_read8   (que_man, dat8  , sts);  $display("DEBUG: rdt=8'h%02h sts=%p", dat8, sts);
+    obj_man.get_write16 (que_man,         sts);  $display("DEBUG: sts=%p", sts);
+    obj_man.get_write16 (que_man,         sts);  $display("DEBUG: sts=%p", sts);
+    obj_man.get_read16  (que_man, dat16 , sts);  $display("DEBUG: rdt=16'h%04h sts=%p", dat16, sts);
+    obj_man.get_read16  (que_man, dat16 , sts);  $display("DEBUG: rdt=16'h%04h sts=%p", dat16, sts);
+    obj_man.get_write32 (que_man,         sts);  $display("DEBUG: sts=%p", sts);
+    obj_man.get_read32  (que_man, dat32 , sts);  $display("DEBUG: rdt=32'h%08h sts=%p", dat32, sts);
+    obj_man.get_write64 (que_man,         sts);  $display("DEBUG: sts=%p", sts);
+    obj_man.get_read64  (que_man, dat64 , sts);  $display("DEBUG: rdt=64'h%016h sts=%p", dat64, sts);
+    obj_man.get_write128(que_man,         sts);  $display("DEBUG: sts=%p", sts);
+    obj_man.get_read128 (que_man, dat128, sts);  $display("DEBUG: rdt=128'h%032h sts=%p", dat128, sts);
 
-    obj_man.get_write16(que_man, adr, ndn, dat16, sts);  $display("DEBUG: adr=32'h%08h ndn=1'b%01b wdt=16'h%04h sts=%p", adr, ndn, dat16, sts);
-    obj_man.get_write16(que_man, adr, ndn, dat16, sts);  $display("DEBUG: adr=32'h%08h ndn=1'b%01b wdt=16'h%04h sts=%p", adr, ndn, dat16, sts);
-    obj_man.get_read16 (que_man, adr, ndn, dat16, sts);  $display("DEBUG: adr=32'h%08h ndn=1'b%01b rdt=16'h%04h sts=%p", adr, ndn, dat16, sts);
-    obj_man.get_read16 (que_man, adr, ndn, dat16, sts);  $display("DEBUG: adr=32'h%08h ndn=1'b%01b rdt=16'h%04h sts=%p", adr, ndn, dat16, sts);
+//    obj_man.get_amo32   (que_man, dat32 , sts);  $display("DEBUG: rdt=32'h%08h sts=%p", dat32, sts);
+//    obj_man.get_amo64   (que_man, dat64 , sts);  $display("DEBUG: rdt=64'h%016h sts=%p", dat64, sts);
 
-    obj_man.get_write32(que_man, adr, ndn, dat32, sts);  $display("DEBUG: adr=32'h%08h ndn=1'b%01b wdt=32'h%08h sts=%p", adr, ndn, dat32, sts);
-    obj_man.get_read32 (que_man, adr, ndn, dat32, sts);  $display("DEBUG: adr=32'h%08h ndn=1'b%01b rdt=32'h%08h sts=%p", adr, ndn, dat32, sts);
-
-    obj_man.get_write64(que_man, adr, ndn, dat64, sts);  $display("DEBUG: adr=32'h%08h ndn=1'b%01b wdt=54'h%016h sts=%p", adr, ndn, dat64, sts);
-    obj_man.get_read64 (que_man, adr, ndn, dat64, sts);  $display("DEBUG: adr=32'h%08h ndn=1'b%01b rdt=54'h%016h sts=%p", adr, ndn, dat64, sts);
+    // TODO: add some automatic checking
 
   endtask: test_nonblocking
 
