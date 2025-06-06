@@ -37,29 +37,25 @@ module tcb_lib_multiplexer_tb
   // interface priorities (lower number is higher priority)
   localparam int unsigned PRI [IFN-1:0] = '{2, 1, 0};
 
-  // handshake parameter
-  localparam tcb_hsk_t CFG.HSK = TCB_HSK_DEF;
-
-  // bus parameter
-  localparam tcb_bus_t BUS = '{
-    ADR: TCB_BUS_DEF.ADR,
-    DAT: TCB_BUS_DEF.DAT,
-    FRM: TCB_BUS_DEF.FRM,
-    CHN: TCB_CHN_HALF_DUPLEX,
-    AMO: TCB_AMO_ABSENT,
-    PRF: TCB_PRF_ABSENT,
-    NXT: TCB_NXT_ABSENT,
-    MOD: TCB_MOD_LOG_SIZE,
-    ORD: TCB_ORD_DESCENDING,
-    NDN: TCB_NDN_BI_NDN
-  };
-
-  // physical interface parameter default
-  localparam tcb_pma_t PMA = '{
-    MIN: 0,
-    OFF: 0,
-    ALN: 0,
-    BND: 0
+  localparam tcb_cfg_t CFG = '{
+    // handshake parameter
+    HSK: TCB_HSK_DEF,
+    // bus parameter
+    BUS: '{
+      ADR: TCB_BUS_DEF.ADR,
+      DAT: TCB_BUS_DEF.DAT,
+      LEN: TCB_BUS_DEF.LEN,
+      LCK: TCB_LCK_PRESENT,
+      CHN: TCB_CHN_HALF_DUPLEX,
+      AMO: TCB_AMO_ABSENT,
+      PRF: TCB_PRF_ABSENT,
+      NXT: TCB_NXT_ABSENT,
+      MOD: TCB_MOD_LOG_SIZE,
+      ORD: TCB_ORD_DESCENDING,
+      NDN: TCB_NDN_BI_NDN
+    },
+    // physical interface parameter default
+    PMA: TCB_PMA_DEF
   };
 
   localparam tcb_vip_t VIP = '{
@@ -84,12 +80,12 @@ module tcb_lib_multiplexer_tb
   string testname = "none";
 
   // TCB interfaces
-  tcb_if #(tcb_hsk_t, CFG.HSK, tcb_bus_t, BUS, tcb_pma_t, PMA, req_t, rsp_t                ) tcb_man [IFN-1:0] (.clk (clk), .rst (rst));
-  tcb_if #(tcb_hsk_t, CFG.HSK, tcb_bus_t, BUS, tcb_pma_t, PMA, req_t, rsp_t, tcb_vip_t, VIP) tcb_sub           (.clk (clk), .rst (rst));
+  tcb_if #(tcb_cfg_t, CFG, req_t, rsp_t                ) tcb_man [IFN-1:0] (.clk (clk), .rst (rst));
+  tcb_if #(tcb_cfg_t, CFG, req_t, rsp_t, tcb_vip_t, VIP) tcb_sub           (.clk (clk), .rst (rst));
 
   // parameterized class specialization (blocking API)
-  typedef tcb_vip_blocking_c #(tcb_hsk_t, CFG.HSK, tcb_bus_t, BUS, tcb_pma_t, PMA, req_t, rsp_t                ) tcb_man_s;
-  typedef tcb_vip_blocking_c #(tcb_hsk_t, CFG.HSK, tcb_bus_t, BUS, tcb_pma_t, PMA, req_t, rsp_t, tcb_vip_t, VIP) tcb_sub_s;
+  typedef tcb_vip_blocking_c #(tcb_cfg_t, CFG, req_t, rsp_t                ) tcb_man_s;
+  typedef tcb_vip_blocking_c #(tcb_cfg_t, CFG, req_t, rsp_t, tcb_vip_t, VIP) tcb_sub_s;
 
   // TCB class objects
   tcb_man_s obj_man [IFN];
@@ -104,9 +100,9 @@ module tcb_lib_multiplexer_tb
   logic [8-1:0] nul [];
 
   // response
-  logic [tcb_sub.BUS_BYT-1:0][8-1:0] rdt_man [IFN];  // read data
-  tcb_rsp_sts_t                      sts_man [IFN];  // status response
-  tcb_rsp_sts_t                      sts_sub;  // status response
+  logic [tcb_sub.CFG_BUS_BYT-1:0][8-1:0] rdt_man [IFN];  // read data
+  tcb_rsp_sts_t                          sts_man [IFN];  // status response
+  tcb_rsp_sts_t                          sts_sub;  // status response
 
   // control
   logic [IFL-1:0] sel;  // select
@@ -124,14 +120,14 @@ module tcb_lib_multiplexer_tb
       // manager (blocking API)
       begin: fork_man
         fork
-          obj_man[0].write32(0*tcb_sub.BUS_BYT, {4{8'd0}}, sts_man[0]);
-          obj_man[1].write32(1*tcb_sub.BUS_BYT, {4{8'd1}}, sts_man[1]);
-          obj_man[2].write32(2*tcb_sub.BUS_BYT, {4{8'd2}}, sts_man[2]);
+          obj_man[0].write32(0*tcb_sub.CFG_BUS_BYT, {4{8'd0}}, sts_man[0]);
+          obj_man[1].write32(1*tcb_sub.CFG_BUS_BYT, {4{8'd1}}, sts_man[1]);
+          obj_man[2].write32(2*tcb_sub.CFG_BUS_BYT, {4{8'd2}}, sts_man[2]);
         join
         fork
-          obj_man[0].read32 (0*tcb_sub.BUS_BYT, rdt_man[0][4-1:0], sts_man[0]);
-          obj_man[1].read32 (1*tcb_sub.BUS_BYT, rdt_man[1][4-1:0], sts_man[1]);
-          obj_man[2].read32 (2*tcb_sub.BUS_BYT, rdt_man[2][4-1:0], sts_man[2]);
+          obj_man[0].read32 (0*tcb_sub.CFG_BUS_BYT, rdt_man[0][4-1:0], sts_man[0]);
+          obj_man[1].read32 (1*tcb_sub.CFG_BUS_BYT, rdt_man[1][4-1:0], sts_man[1]);
+          obj_man[2].read32 (2*tcb_sub.CFG_BUS_BYT, rdt_man[2][4-1:0], sts_man[2]);
         join
 //        for (int unsigned i=0; i<IFN; i++) begin: fork_write
 //          fork
@@ -152,12 +148,12 @@ module tcb_lib_multiplexer_tb
         sts_sub = '0;
         tst_len = tst_sub.size();
         for (int unsigned i=0; i<IFN; i++) begin: write
-          // append reference transfers to queue               ndn       , adr              , wdt        ,        rdt
-          tst_len += obj_sub.put_transaction(tst_sub, '{req: '{TCB_LITTLE, i*tcb_sub.BUS_BYT, '{4{8'(i)}}}, rsp: '{nul, sts_sub}});
+          // append reference transfers to queue               adr                       , wdt             ,                      rdt
+          tst_len += obj_sub.put_transaction(tst_sub, '{req: '{adr: i*tcb_sub.CFG_BUS_BYT, wdt: '{4{8'(i)}}, default: 'x}, rsp: '{nul, sts_sub}});
         end: write
         for (int unsigned i=0; i<IFN; i++) begin: read
-          // append reference transfers to queue               ndn       , adr              , wdt ,        rdt
-          tst_len += obj_sub.put_transaction(tst_sub, '{req: '{TCB_LITTLE, i*tcb_sub.BUS_BYT, nul}, rsp: '{'{4{8'(i)}}, sts_sub}});
+          // append reference transfers to queue               adr                       , wdt                   ,        rdt
+          tst_len += obj_sub.put_transaction(tst_sub, '{req: '{adr: i*tcb_sub.CFG_BUS_BYT, wdt: nul, default: 'x}, rsp: '{'{4{8'(i)}}, sts_sub}});
         end: read
         obj_sub.transfer_sequencer(tst_sub);
       end: fork_sub_driver

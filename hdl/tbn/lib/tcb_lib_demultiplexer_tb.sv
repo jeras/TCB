@@ -88,8 +88,8 @@ module tcb_lib_demultiplexer_tb
   tcb_if #(tcb_cfg_t, CFG, req_t, rsp_t, tcb_vip_t, VIP) tcb_sub [IFN-1:0] (.clk (clk), .rst (rst));
 
   // parameterized class specialization (blocking API)
-  typedef tcb_vip_blocking_c #(tcb_hsk_t, CFG.HSK, tcb_bus_t, BUS, tcb_pma_t, PMA, req_t, rsp_t                ) tcb_man_s;
-  typedef tcb_vip_blocking_c #(tcb_hsk_t, CFG.HSK, tcb_bus_t, BUS, tcb_pma_t, PMA, req_t, rsp_t, tcb_vip_t, VIP) tcb_sub_s;
+  typedef tcb_vip_blocking_c #(tcb_cfg_t, CFG, req_t, rsp_t                ) tcb_man_s;
+  typedef tcb_vip_blocking_c #(tcb_cfg_t, CFG, req_t, rsp_t, tcb_vip_t, VIP) tcb_sub_s;
 
   // TCB class objects
   tcb_man_s obj_man = new(tcb_man, "MAN");
@@ -104,8 +104,8 @@ module tcb_lib_demultiplexer_tb
   logic [8-1:0] nul [];
 
   // response
-  logic [tcb_man.BUS_BYT-1:0][8-1:0] rdt;  // read data
-  tcb_rsp_sts_t                      sts;  // status response
+  logic [tcb_man.CFG_BUS_BYT-1:0][8-1:0] rdt;  // read data
+  tcb_rsp_sts_t                          sts;  // status response
 
   // control
   logic [IFL-1:0] sel;  // select
@@ -137,11 +137,11 @@ module tcb_lib_demultiplexer_tb
       begin: fork_sub_driver
         sts[i] = '0;
         tst_len[i] = tst_sub[i].size();
-        // append reference transfers to queue               ndn       , adr         , wdt                           ,        rdt
-        tst_len[i] += obj_sub[i].put_transaction(tst_sub[i], '{req: '{TCB_LITTLE, 32'h00000000, '{8'h10, 8'h32, 8'h54, 8'h76}}, rsp: '{nul, sts}});
-        tst_len[i] += obj_sub[i].put_transaction(tst_sub[i], '{req: '{TCB_LITTLE, 32'h00000020, '{8'h98, 8'hba, 8'hdc, 8'hfe}}, rsp: '{nul, sts}});
-        tst_len[i] += obj_sub[i].put_transaction(tst_sub[i], '{req: '{TCB_LITTLE, 32'h00000000, nul}, rsp: '{'{8'h10, 8'h32, 8'h54, 8'h76}, sts}});
-        tst_len[i] += obj_sub[i].put_transaction(tst_sub[i], '{req: '{TCB_LITTLE, 32'h00000020, nul}, rsp: '{'{8'h98, 8'hba, 8'hdc, 8'hfe}, sts}});
+        // append reference transfers to queue                        adr                wdt
+        tst_len[i] += obj_sub[i].put_transaction(tst_sub[i], '{req: '{adr: 32'h00000000, wdt: '{8'h10, 8'h32, 8'h54, 8'h76}, default: 'x}, rsp: '{nul, sts}});
+        tst_len[i] += obj_sub[i].put_transaction(tst_sub[i], '{req: '{adr: 32'h00000020, wdt: '{8'h98, 8'hba, 8'hdc, 8'hfe}, default: 'x}, rsp: '{nul, sts}});
+        tst_len[i] += obj_sub[i].put_transaction(tst_sub[i], '{req: '{adr: 32'h00000000, wdt: nul, default: 'x}, rsp: '{'{8'h10, 8'h32, 8'h54, 8'h76}, sts}});
+        tst_len[i] += obj_sub[i].put_transaction(tst_sub[i], '{req: '{adr: 32'h00000020, wdt: nul, default: 'x}, rsp: '{'{8'h98, 8'hba, 8'hdc, 8'hfe}, sts}});
 //        for (int unsigned j=0; j<tst_sub[i].size(); j++) begin
 //          $display("DEBUG: tst_sub[%0d][%0d] = %p", i, j, tst_sub[i][j]);
 //        end

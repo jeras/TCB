@@ -5,6 +5,7 @@ import pprint
 import re
 
 tests = [
+  "tcb_vip_tb",
   "tcb_lib_passthrough_tb",
   "tcb_lib_register_request_tb",
   "tcb_lib_register_response_tb",
