@@ -147,14 +147,14 @@ module tcb_lib_read_modify_write_tb
     sts = '0;
     tst_ref.delete();
     tst_len = tst_ref.size();
-    // append reference transfers to queue               ndn       , adr         , wdt                           ,        rdt
-    tst_len += obj_sub.put_transaction(tst_ref, '{req: '{TCB_LITTLE, 32'h00000010, '{8'h10                     }}, rsp: '{nul, sts}});  //$display("DEBUG: tst_ref.size() = %0d", tst_ref.size());
-    tst_len += obj_sub.put_transaction(tst_ref, '{req: '{TCB_LITTLE, 32'h00000011, '{       8'h32              }}, rsp: '{nul, sts}});  //$display("DEBUG: tst_ref.size() = %0d", tst_ref.size());
-    tst_len += obj_sub.put_transaction(tst_ref, '{req: '{TCB_LITTLE, 32'h00000012, '{              8'h54       }}, rsp: '{nul, sts}});  //$display("DEBUG: tst_ref.size() = %0d", tst_ref.size());
-    tst_len += obj_sub.put_transaction(tst_ref, '{req: '{TCB_LITTLE, 32'h00000013, '{                     8'h76}}, rsp: '{nul, sts}});  //$display("DEBUG: tst_ref.size() = %0d", tst_ref.size());
-    tst_len += obj_sub.put_transaction(tst_ref, '{req: '{TCB_LITTLE, 32'h00000020, '{8'h10, 8'h32              }}, rsp: '{nul, sts}});  //$display("DEBUG: tst_ref.size() = %0d", tst_ref.size());
-    tst_len += obj_sub.put_transaction(tst_ref, '{req: '{TCB_LITTLE, 32'h00000022, '{              8'h54, 8'h76}}, rsp: '{nul, sts}});  //$display("DEBUG: tst_ref.size() = %0d", tst_ref.size());
-    tst_len += obj_sub.put_transaction(tst_ref, '{req: '{TCB_LITTLE, 32'h00000030, '{8'h10, 8'h32, 8'h54, 8'h76}}, rsp: '{nul, sts}});  //$display("DEBUG: tst_ref.size() = %0d", tst_ref.size());
+    // append reference transfers to queue
+    tst_len += obj_sub.put_transaction(tst_ref, '{req: '{adr: 32'h00000010, wdt: '{8'h10                     }, default: 'x}, rsp: '{nul, sts}});  //$display("DEBUG: tst_ref.size() = %0d", tst_ref.size());
+    tst_len += obj_sub.put_transaction(tst_ref, '{req: '{adr: 32'h00000011, wdt: '{       8'h32              }, default: 'x}, rsp: '{nul, sts}});  //$display("DEBUG: tst_ref.size() = %0d", tst_ref.size());
+    tst_len += obj_sub.put_transaction(tst_ref, '{req: '{adr: 32'h00000012, wdt: '{              8'h54       }, default: 'x}, rsp: '{nul, sts}});  //$display("DEBUG: tst_ref.size() = %0d", tst_ref.size());
+    tst_len += obj_sub.put_transaction(tst_ref, '{req: '{adr: 32'h00000013, wdt: '{                     8'h76}, default: 'x}, rsp: '{nul, sts}});  //$display("DEBUG: tst_ref.size() = %0d", tst_ref.size());
+    tst_len += obj_sub.put_transaction(tst_ref, '{req: '{adr: 32'h00000020, wdt: '{8'h10, 8'h32              }, default: 'x}, rsp: '{nul, sts}});  //$display("DEBUG: tst_ref.size() = %0d", tst_ref.size());
+    tst_len += obj_sub.put_transaction(tst_ref, '{req: '{adr: 32'h00000022, wdt: '{              8'h54, 8'h76}, default: 'x}, rsp: '{nul, sts}});  //$display("DEBUG: tst_ref.size() = %0d", tst_ref.size());
+    tst_len += obj_sub.put_transaction(tst_ref, '{req: '{adr: 32'h00000030, wdt: '{8'h10, 8'h32, 8'h54, 8'h76}, default: 'x}, rsp: '{nul, sts}});  //$display("DEBUG: tst_ref.size() = %0d", tst_ref.size());
     // compare transfers from monitor to reference
     // wildcard operator is used to ignore data byte comparison, when the reference data is 8'hxx
     foreach(tst_ref[i]) begin
@@ -194,14 +194,14 @@ module tcb_lib_read_modify_write_tb
     sts = '0;
     tst_ref.delete();
     tst_len = tst_ref.size();
-    // append reference transfers to queue               ndn        , adr         , wdt ,        rdt
-    tst_len += obj_sub.put_transaction(tst_ref, '{req: '{TCB_LITTLE, 32'h00000010, nul}, rsp: '{'{8'h10                     }, sts}});
-    tst_len += obj_sub.put_transaction(tst_ref, '{req: '{TCB_LITTLE, 32'h00000011, nul}, rsp: '{'{       8'h32              }, sts}});
-    tst_len += obj_sub.put_transaction(tst_ref, '{req: '{TCB_LITTLE, 32'h00000012, nul}, rsp: '{'{              8'h54       }, sts}});
-    tst_len += obj_sub.put_transaction(tst_ref, '{req: '{TCB_LITTLE, 32'h00000013, nul}, rsp: '{'{                     8'h76}, sts}});
-    tst_len += obj_sub.put_transaction(tst_ref, '{req: '{TCB_LITTLE, 32'h00000020, nul}, rsp: '{'{8'h10, 8'h32              }, sts}});
-    tst_len += obj_sub.put_transaction(tst_ref, '{req: '{TCB_LITTLE, 32'h00000022, nul}, rsp: '{'{              8'h54, 8'h76}, sts}});
-    tst_len += obj_sub.put_transaction(tst_ref, '{req: '{TCB_LITTLE, 32'h00000030, nul}, rsp: '{'{8'h10, 8'h32, 8'h54, 8'h76}, sts}});
+    // append reference transfers to queue
+    tst_len += obj_sub.put_transaction(tst_ref, '{req: '{adr: 32'h00000010, wdt: nul, default: 'x}, rsp: '{'{8'h10                     }, sts}});
+    tst_len += obj_sub.put_transaction(tst_ref, '{req: '{adr: 32'h00000011, wdt: nul, default: 'x}, rsp: '{'{       8'h32              }, sts}});
+    tst_len += obj_sub.put_transaction(tst_ref, '{req: '{adr: 32'h00000012, wdt: nul, default: 'x}, rsp: '{'{              8'h54       }, sts}});
+    tst_len += obj_sub.put_transaction(tst_ref, '{req: '{adr: 32'h00000013, wdt: nul, default: 'x}, rsp: '{'{                     8'h76}, sts}});
+    tst_len += obj_sub.put_transaction(tst_ref, '{req: '{adr: 32'h00000020, wdt: nul, default: 'x}, rsp: '{'{8'h10, 8'h32              }, sts}});
+    tst_len += obj_sub.put_transaction(tst_ref, '{req: '{adr: 32'h00000022, wdt: nul, default: 'x}, rsp: '{'{              8'h54, 8'h76}, sts}});
+    tst_len += obj_sub.put_transaction(tst_ref, '{req: '{adr: 32'h00000030, wdt: nul, default: 'x}, rsp: '{'{8'h10, 8'h32, 8'h54, 8'h76}, sts}});
     // compare transfers from monitor to reference
     // wildcard operator is used to ignore data byte comparison, when the reference data is 8'hxx
     foreach(tst_ref[i]) begin
@@ -264,8 +264,8 @@ module tcb_lib_read_modify_write_tb
 
   // CRAM memory model subordinate
   cram_model #(
-    .ADR (tcb_sub.BUS.ADR),
-    .DAT (tcb_sub.BUS.DAT),
+    .ADR (tcb_sub.CFG.BUS.ADR),
+    .DAT (tcb_sub.CFG.BUS.DAT),
     .SIZ (2**5)
   ) cram (
     .clk (tcb_sub.clk),

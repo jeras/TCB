@@ -31,34 +31,35 @@ module tcb_lib_read_modify_write
   // BUS parameters
   initial begin
     // AMO configuration
-    assert (sub.BUS.AMO == TCB_AMO_PRESENT ) else $error("mismatch (sub.BUS.AMO = %0s) != TCB_AMO_PRESENT ", sub.BUS.AMO.name());
-    assert (man.BUS.AMO == TCB_AMO_ABSENT) else $error("mismatch (man.BUS.AMO = %0s) != TCB_AMO_ABSENT", man.BUS.AMO.name());
+    assert (sub.CFG.BUS.AMO == TCB_AMO_PRESENT) else $error("mismatch (sub.CFG.BUS.AMO = %0s) != TCB_AMO_PRESENT", sub.CFG.BUS.AMO.name());
+    assert (man.CFG.BUS.AMO == TCB_AMO_ABSENT ) else $error("mismatch (man.CFG.BUS.AMO = %0s) != TCB_AMO_ABSENT" , man.CFG.BUS.AMO.name());
     // other parameters
-    assert (sub.BUS.ADR == man.BUS.ADR) else $error("mismatch (sub.BUS.ADR  = %0d) != (man.BUS.ADR  = %0d)", sub.BUS.ADR       , man.BUS.ADR       );
-    assert (sub.BUS.DAT == man.BUS.DAT) else $error("mismatch (sub.BUS.DAT  = %0d) != (man.BUS.DAT  = %0d)", sub.BUS.DAT       , man.BUS.DAT       );
-    assert (sub.BUS.FRM == man.BUS.FRM) else $error("mismatch (sub.BUS.FRM  = %0d) != (man.BUS.FRM  = %0d)", sub.BUS.FRM       , man.BUS.FRM       );
-    assert (sub.BUS.CHN == man.BUS.CHN) else $error("mismatch (sub.BUS.CHN  = %0s) != (man.BUS.CHN  = %0s)", sub.BUS.CHN.name(), man.BUS.CHN.name());
-    assert (sub.BUS.PRF == man.BUS.PRF) else $error("mismatch (sub.BUS.PRF  = %0s) != (man.BUS.PRF  = %0s)", sub.BUS.PRF.name(), man.BUS.PRF.name());
-    assert (sub.BUS.NXT == man.BUS.NXT) else $error("mismatch (sub.BUS.NXT  = %0s) != (man.BUS.NXT  = %0s)", sub.BUS.NXT.name(), man.BUS.NXT.name());
-    assert (sub.BUS.MOD == man.BUS.MOD) else $error("mismatch (sub.BUS.MOD  = %0s) != (man.BUS.MOD  = %0s)", sub.BUS.MOD.name(), man.BUS.MOD.name());
-    assert (sub.BUS.ORD == man.BUS.ORD) else $error("mismatch (sub.BUS.ORD  = %0s) != (man.BUS.ORD  = %0s)", sub.BUS.ORD.name(), man.BUS.ORD.name());
-    assert (sub.BUS.NDN == man.BUS.NDN) else $error("mismatch (sub.BUS.NDN  = %0s) != (man.BUS.NDN  = %0s)", sub.BUS.NDN.name(), man.BUS.NDN.name());
+    assert (sub.CFG.BUS.ADR == man.CFG.BUS.ADR) else $error("mismatch (sub.CFG.BUS.ADR  = %0d) != (man.CFG.BUS.ADR  = %0d)", sub.CFG.BUS.ADR       , man.CFG.BUS.ADR       );
+    assert (sub.CFG.BUS.DAT == man.CFG.BUS.DAT) else $error("mismatch (sub.CFG.BUS.DAT  = %0d) != (man.CFG.BUS.DAT  = %0d)", sub.CFG.BUS.DAT       , man.CFG.BUS.DAT       );
+    assert (sub.CFG.BUS.LEN == man.CFG.BUS.LEN) else $error("mismatch (sub.CFG.BUS.LEN  = %0d) != (man.CFG.BUS.LEN  = %0d)", sub.CFG.BUS.LEN       , man.CFG.BUS.LEN       );
+    assert (sub.CFG.BUS.LCK == man.CFG.BUS.LCK) else $error("mismatch (sub.CFG.BUS.LCK  = %0s) != (man.CFG.BUS.LCK  = %0s)", sub.CFG.BUS.LCK.name(), man.CFG.BUS.LCK.name());
+    assert (sub.CFG.BUS.CHN == man.CFG.BUS.CHN) else $error("mismatch (sub.CFG.BUS.CHN  = %0s) != (man.CFG.BUS.CHN  = %0s)", sub.CFG.BUS.CHN.name(), man.CFG.BUS.CHN.name());
+    assert (sub.CFG.BUS.PRF == man.CFG.BUS.PRF) else $error("mismatch (sub.CFG.BUS.PRF  = %0s) != (man.CFG.BUS.PRF  = %0s)", sub.CFG.BUS.PRF.name(), man.CFG.BUS.PRF.name());
+    assert (sub.CFG.BUS.NXT == man.CFG.BUS.NXT) else $error("mismatch (sub.CFG.BUS.NXT  = %0s) != (man.CFG.BUS.NXT  = %0s)", sub.CFG.BUS.NXT.name(), man.CFG.BUS.NXT.name());
+    assert (sub.CFG.BUS.MOD == man.CFG.BUS.MOD) else $error("mismatch (sub.CFG.BUS.MOD  = %0s) != (man.CFG.BUS.MOD  = %0s)", sub.CFG.BUS.MOD.name(), man.CFG.BUS.MOD.name());
+    assert (sub.CFG.BUS.ORD == man.CFG.BUS.ORD) else $error("mismatch (sub.CFG.BUS.ORD  = %0s) != (man.CFG.BUS.ORD  = %0s)", sub.CFG.BUS.ORD.name(), man.CFG.BUS.ORD.name());
+    assert (sub.CFG.BUS.NDN == man.CFG.BUS.NDN) else $error("mismatch (sub.CFG.BUS.NDN  = %0s) != (man.CFG.BUS.NDN  = %0s)", sub.CFG.BUS.NDN.name(), man.CFG.BUS.NDN.name());
   end
 
   generate
-    if (sub.BUS.CHN != TCB_CHN_READ_ONLY) begin
+    if (sub.CFG.BUS.CHN != TCB_CHN_READ_ONLY) begin
       initial assert ($bits(sub.req.wdt) == $bits(man.req.wdt)) else $error("mismatch ($bits(sub.req.wdt) = %0d) != ($bits(man.req.wdt) = %0d)", $bits(sub.req.wdt), $bits(man.req.wdt));
     end
-    if (sub.BUS.CHN != TCB_CHN_WRITE_ONLY) begin
+    if (sub.CFG.BUS.CHN != TCB_CHN_WRITE_ONLY) begin
       initial assert ($bits(sub.rsp.rdt) == $bits(man.rsp.rdt)) else $error("mismatch ($bits(sub.rsp.rdt) = %0d) != ($bits(man.rsp.rdt) = %0d)", $bits(sub.rsp.rdt), $bits(man.rsp.rdt));
     end
   endgenerate
 
   // packeting parameters
   initial begin
-    assert (sub.PMA.MIN == man.PMA.MIN) else $error("mismatch (sub.PMA.MIN = %0d) != (man.PMA.MIN = %0d)", sub.PMA.MIN, man.PMA.MIN);
-    assert (sub.PMA.OFF == man.PMA.OFF) else $error("mismatch (sub.PMA.OFF = %0d) != (man.PMA.OFF = %0d)", sub.PMA.OFF, man.PMA.OFF);
-    assert (sub.PMA.ALN == man.PMA.ALN) else $error("mismatch (sub.PMA.ALN = %0d) != (man.PMA.ALN = %0d)", sub.PMA.ALN, man.PMA.ALN);
+    assert (sub.CFG.PMA.MIN == man.CFG.PMA.MIN) else $error("mismatch (sub.CFG.PMA.MIN = %0d) != (man.CFG.PMA.MIN = %0d)", sub.CFG.PMA.MIN, man.CFG.PMA.MIN);
+    assert (sub.CFG.PMA.OFF == man.CFG.PMA.OFF) else $error("mismatch (sub.CFG.PMA.OFF = %0d) != (man.CFG.PMA.OFF = %0d)", sub.CFG.PMA.OFF, man.CFG.PMA.OFF);
+    assert (sub.CFG.PMA.ALN == man.CFG.PMA.ALN) else $error("mismatch (sub.CFG.PMA.ALN = %0d) != (man.CFG.PMA.ALN = %0d)", sub.CFG.PMA.ALN, man.CFG.PMA.ALN);
   end
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -84,7 +85,7 @@ module tcb_lib_read_modify_write
 ////////////////////////////////////////////////////////////////////////////////
 
   // shorthand for data bus width
-  localparam int unsigned DAT = sub.BUS.DAT;
+  localparam int unsigned DAT = sub.CFG.BUS.DAT;
 
   // AMO logical functions
   function automatic logic [DAT-1:0] amo_log (

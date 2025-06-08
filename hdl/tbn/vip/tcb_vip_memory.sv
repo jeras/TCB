@@ -114,7 +114,7 @@ module tcb_vip_memory
 
     // local copies of TCB BUS parameters
     localparam DLY = tcb[i].CFG.HSK.DLY;
-    localparam BEN = tcb[i].CFG_BUS_BYT;
+    localparam BYT = tcb[i].CFG_BUS_BYT;
 
     // request address and size (TCB_LOG_SIZE mode)
     int unsigned adr;
@@ -134,7 +134,7 @@ module tcb_vip_memory
       always_ff @(posedge tcb[i].clk)
       if (tcb[i].trn) begin
         if (tcb[i].req.wen) begin: write
-          for (int unsigned b=0; b<BEN; b++) begin: bytes
+          for (int unsigned b=0; b<BYT; b++) begin: bytes
             case (tcb[i].CFG.BUS.MOD)
               TCB_MOD_LOG_SIZE: begin: log_size
                 // write only transfer size bytes
@@ -142,7 +142,7 @@ module tcb_vip_memory
               end: log_size
               TCB_MOD_BYTE_ENA: begin: byte_ena
                 // write only enabled bytes
-                if (tcb[i].req.byt[(adr+b)%BEN])  mem[(adr+b)%SIZ] <= tcb[i].req.wdt[(adr+b)%BEN];
+                if (tcb[i].req.byt[(adr+b)%BYT])  mem[(adr+b)%SIZ] <= tcb[i].req.wdt[(adr+b)%BYT];
               end: byte_ena
             endcase
           end: bytes
@@ -158,7 +158,7 @@ module tcb_vip_memory
     always_comb
     if (tcb[i].trn) begin
       if (~tcb[i].req.wen) begin: read
-        for (int unsigned b=0; b<BEN; b++) begin: bytes
+        for (int unsigned b=0; b<BYT; b++) begin: bytes
           case (tcb[i].CFG.BUS.MOD)
             TCB_MOD_LOG_SIZE: begin: log_size
               // read only transfer size bytes, the rest remains undefined
@@ -167,8 +167,8 @@ module tcb_vip_memory
             end: log_size
             TCB_MOD_BYTE_ENA: begin: byte_ena
               // read only enabled bytes, the rest remains undefined
-              if (tcb[i].req.byt[(adr+b)%BEN])  tcb[i].rsp_dly[0].rdt[(adr+b)%BEN] = mem[(adr+b)%SIZ];
-              else                              tcb[i].rsp_dly[0].rdt[(adr+b)%BEN] = 'x;
+              if (tcb[i].req.byt[(adr+b)%BYT])  tcb[i].rsp_dly[0].rdt[(adr+b)%BYT] = mem[(adr+b)%SIZ];
+              else                              tcb[i].rsp_dly[0].rdt[(adr+b)%BYT] = 'x;
             end: byte_ena
           endcase
         end: bytes
