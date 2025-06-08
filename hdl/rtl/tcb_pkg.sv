@@ -216,25 +216,6 @@ package tcb_pkg;
   };
 
 ////////////////////////////////////////////////////////////////////////////////
-// VIP layer (defines VIP functionality)
-////////////////////////////////////////////////////////////////////////////////
-
-  // VIP layer parameter structure
-  // TODO: the structure is packed to workaround a Verilator bug
-  `ifdef VERILATOR
-  typedef struct packed {
-  `else
-  typedef struct {
-  `endif
-    bit DRV;  // drive response from response delay line
-  } tcb_vip_t;
-
-  // VIP default value
-  localparam tcb_vip_t TCB_VIP_DEF = '{
-    DRV: 1'b0
-  };
-
-////////////////////////////////////////////////////////////////////////////////
 // TCB configuration structure
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -254,6 +235,25 @@ package tcb_pkg;
     HSK: TCB_HSK_DEF,
     BUS: TCB_BUS_DEF,
     PMA: TCB_PMA_DEF
+  };
+
+////////////////////////////////////////////////////////////////////////////////
+// VIP layer (defines VIP functionality)
+////////////////////////////////////////////////////////////////////////////////
+
+  // VIP layer parameter structure
+  // TODO: the structure is packed to workaround a Verilator bug
+  `ifdef VERILATOR
+  typedef struct packed {
+  `else
+  typedef struct {
+  `endif
+    bit DRV;  // drive response from response delay line
+  } tcb_vip_t;
+
+  // VIP default value
+  localparam tcb_vip_t TCB_VIP_DEF = '{
+    DRV: 1'b0
   };
 
 ////////////////////////////////////////////////////////////////////////////////
