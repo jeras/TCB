@@ -53,7 +53,7 @@ module tcb_lib_logsize2byteena_tb
       ORD: TCB_ORD_DESCENDING,
       NDN: TCB_NDN_BI_NDN
     },
-    // physical interface parameter default
+    // physical interface parameter
     PMA: TCB_PMA_DEF
   };
 
@@ -74,7 +74,7 @@ module tcb_lib_logsize2byteena_tb
       ORD: TCB_ORD_DESCENDING,
       NDN: TCB_NDN_BI_NDN
     },
-    // physical interface parameter default
+    // physical interface parameter
     PMA: TCB_PMA_DEF
   };
 
@@ -118,7 +118,7 @@ module tcb_lib_logsize2byteena_tb
   int unsigned                tst_len;
 
   // empty array
-  logic [8-1:0] nul [];
+  logic [8-1:0] nul [] = new[0];
 
   // response
   logic [tcb_man.CFG_BUS_BYT-1:0][8-1:0] rdt;  // read data
@@ -361,8 +361,8 @@ module tcb_lib_logsize2byteena_tb
           // local transactions
           tcb_siz_s::transaction_t transaction_man_w;  // manager     write transaction
           tcb_siz_s::transaction_t transaction_man_r;  // manager     read  transaction
-          tcb_byt_s::transaction_t transaction_sub_w;  // bubordinate write transaction
-          tcb_byt_s::transaction_t transaction_sub_r;  // bubordinate read  transaction
+          tcb_byt_s::transaction_t transaction_sub_w;  // subordinate write transaction
+          tcb_byt_s::transaction_t transaction_sub_r;  // subordinate read  transaction
           tcb_byt_s::transaction_t transaction_mon_w;  // monitor     write transaction
           tcb_byt_s::transaction_t transaction_mon_r;  // monitor     read  transaction
           // local transfers
@@ -432,6 +432,14 @@ module tcb_lib_logsize2byteena_tb
           len += obj_sub.get_transaction(transfer_mon, transaction_mon_w);
           len += obj_sub.get_transaction(transfer_mon, transaction_mon_r);
           // compare subordinate reference and monitor transactions
+
+          // Apparent bug in Questa, the two arrays are not equall and not different at the same time
+          assert (transaction_mon_w.req == transaction_sub_w.req) else $error("\ntransaction_mon_w.req = %p != \ntransaction_sub_w.req = %p", transaction_mon_w.req, transaction_sub_w.req);
+          $display("DEBUG: $typename(transaction_mon_w.req)=%s", $typename(transaction_mon_w.req));
+          $display("DEBUG: $typename(transaction_sub_w.req)=%s", $typename(transaction_sub_w.req));
+          $display("DEBUG: %p", transaction_mon_w.req == transaction_sub_w.req);
+          $display("DEBUG: %p", transaction_mon_w.req != transaction_sub_w.req);
+
           assert (transaction_mon_w == transaction_sub_w) else $error("\ntransaction_mon_w = %p != \ntransaction_sub_w = %p", transaction_mon_w, transaction_sub_w);
           assert (transaction_mon_r == transaction_sub_r) else $error("\ntransaction_mon_r = %p != \ntransaction_sub_r = %p", transaction_mon_r, transaction_sub_r);
         end
