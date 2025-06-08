@@ -66,43 +66,18 @@ module tcb_lib_logsize2byteena
   assign man.vld = sub.vld;
 
   // request
-  generate
-    // framing
-    if (man.CFG.BUS.LCK == TCB_LCK_PRESENT) begin
-      assign man.req.lck = sub.req.lck;
-    end
-    // burst
-    if (man.CFG.BUS.LEN > 0) begin
-      assign man.req.ben = sub.req.ben;
-      assign man.req.len = sub.req.len;
-    end
-    // channel
-    if (man.CFG.BUS.CHN inside {TCB_CHN_FULL_DUPLEX, TCB_CHN_HALF_DUPLEX}) begin
-      assign man.req.wen = sub.req.wen;
-    end
-    if (man.CFG.BUS.CHN inside {TCB_CHN_FULL_DUPLEX}) begin
-      assign man.req.ren = sub.req.ren;
-    end
-    // prefetch
-    if (man.CFG.BUS.AMO == TCB_AMO_PRESENT) begin
-      assign man.req.aen = sub.req.aen;
-      assign man.req.amo = sub.req.amo;
-    end
-    // prefetch
-    if (man.CFG.BUS.PRF == TCB_PRF_PRESENT) begin
-      assign man.req.rpt = sub.req.rpt;
-      assign man.req.inc = sub.req.inc;
-    end
-    // address and next address
-    assign man.req.adr = sub.req.adr;
-    if (man.CFG.BUS.NXT == TCB_NXT_PRESENT) begin
-      assign man.req.nxt = sub.req.nxt;
-    end
-    // endianness
-    if (man.CFG.BUS.NDN == TCB_NDN_BI_NDN) begin
-      assign man.req.ndn = sub.req.ndn;
-    end
-  endgenerate
+  assign man.req.lck = sub.req.lck;
+  assign man.req.ben = sub.req.ben;
+  assign man.req.len = sub.req.len;
+  assign man.req.wen = sub.req.wen;
+  assign man.req.ren = sub.req.ren;
+  assign man.req.aen = sub.req.aen;
+  assign man.req.amo = sub.req.amo;
+  assign man.req.rpt = sub.req.rpt;
+  assign man.req.inc = sub.req.inc;
+  assign man.req.adr = sub.req.adr;
+  assign man.req.nxt = sub.req.nxt;
+  assign man.req.ndn = sub.req.ndn;
 
 ////////////////////////////////////////////////////////////////////////////////
 // local signals
