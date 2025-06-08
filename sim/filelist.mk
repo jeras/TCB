@@ -54,11 +54,11 @@ TBN+=${PATH_HDL}/tbn/lib/tcb_lib_read_modify_write_tb.sv
 TBN+=${PATH_HDL}/tbn/peri/sram/sram_model.sv
 TBN+=${PATH_HDL}/tbn/peri/cram/cram_model.sv
 # GPIO testbench
-#TBN+=${PATH_HDL}/tbn/peri/gpio/tcb_peri_gpio_tb.sv
-## UART testbench
-#TBN+=${PATH_HDL}/tbn/peri/uart/uart_model.sv
-#TBN+=${PATH_HDL}/tbn/peri/uart/uart_model_tb.sv
-#TBN+=${PATH_HDL}/tbn/peri/uart/tcb_peri_uart_tb.sv
+TBN+=${PATH_HDL}/tbn/peri/gpio/tcb_peri_gpio_tb.sv
+# UART testbench
+TBN+=${PATH_HDL}/tbn/peri/uart/uart_model.sv
+TBN+=${PATH_HDL}/tbn/peri/uart/uart_model_tb.sv
+TBN+=${PATH_HDL}/tbn/peri/uart/tcb_peri_uart_tb.sv
 
 # combined HDL sources
 HDL =${RTL}

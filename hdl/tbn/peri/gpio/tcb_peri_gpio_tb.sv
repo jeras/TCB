@@ -32,31 +32,29 @@ module tcb_peri_gpio_tb
   // GPIO width
   localparam int unsigned GW = 32;
 
-  // handshake parameter
-  localparam tcb_hsk_t CFG.HSK = '{
-    DLY: 0
-  };
-
-  // bus parameter
-  localparam tcb_bus_t BUS = '{
-    ADR: TCB_BUS_DEF.ADR,
-    DAT: TCB_BUS_DEF.DAT,
-    FRM: TCB_BUS_DEF.FRM,
-    CHN: TCB_CHN_HALF_DUPLEX,
-    AMO: TCB_AMO_ABSENT,
-    PRF: TCB_PRF_ABSENT,
-    NXT: TCB_NXT_ABSENT,
-    MOD: TCB_MOD_LOG_SIZE,
-    ORD: TCB_ORD_DESCENDING,
-    NDN: TCB_NDN_BI_NDN
-  };
-
-  // physical interface parameter default
-  localparam tcb_pma_t PMA = '{
-    MIN: 0,
-    OFF: 0,
-    ALN: 0,
-    BND: 0
+  // configuration parameter
+  localparam tcb_cfg_t CFG = '{
+    // handshake parameter
+    HSK: '{
+      DLY: 0,
+      HLD: 1'b0
+    },
+    // bus parameter
+    BUS: '{
+      ADR: TCB_BUS_DEF.ADR,
+      DAT: TCB_BUS_DEF.DAT,
+      LEN: TCB_BUS_DEF.LEN,
+      LCK: TCB_LCK_PRESENT,
+      CHN: TCB_CHN_HALF_DUPLEX,
+      AMO: TCB_AMO_ABSENT,
+      PRF: TCB_PRF_ABSENT,
+      NXT: TCB_NXT_ABSENT,
+      MOD: TCB_MOD_LOG_SIZE,
+      ORD: TCB_ORD_DESCENDING,
+      NDN: TCB_NDN_BI_NDN
+    },
+    // physical interface parameter
+    PMA: TCB_PMA_DEF
   };
 
   localparam tcb_vip_t VIP = '{
@@ -81,17 +79,17 @@ module tcb_peri_gpio_tb
   string testname = "none";
 
   // TCB interfaces
-  tcb_if #(tcb_hsk_t, CFG.HSK, tcb_bus_t, BUS, tcb_pma_t, PMA, req_t, rsp_t) tcb_man (.clk (clk), .rst (rst));
+  tcb_if #(tcb_cfg_t, CFG, req_t, rsp_t) tcb_man (.clk (clk), .rst (rst));
 
   // parameterized class specialization (blocking API)
-  typedef tcb_vip_blocking_c #(tcb_hsk_t, CFG.HSK, tcb_bus_t, BUS, tcb_pma_t, PMA, req_t, rsp_t) tcb_man_s;
+  typedef tcb_vip_blocking_c #(tcb_cfg_t, CFG, req_t, rsp_t) tcb_man_s;
 
   // TCB class objects
   tcb_man_s obj_man = new(tcb_man, "MAN");
 
   // response
-  logic [tcb_man.BUS_BYT-1:0][8-1:0] rdt;  // read data
-  tcb_rsp_sts_t                      sts;  // status response
+  logic [tcb_man.CFG_BUS_BYT-1:0][8-1:0] rdt;  // read data
+  tcb_rsp_sts_t                          sts;  // status response
 
 ////////////////////////////////////////////////////////////////////////////////
 // data checking
