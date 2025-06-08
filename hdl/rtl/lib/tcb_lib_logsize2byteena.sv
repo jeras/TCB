@@ -73,6 +73,7 @@ module tcb_lib_logsize2byteena
     end
     // burst
     if (man.CFG.BUS.LEN > 0) begin
+      assign man.req.ben = sub.req.ben;
       assign man.req.len = sub.req.len;
     end
     // channel
@@ -81,6 +82,11 @@ module tcb_lib_logsize2byteena
     end
     if (man.CFG.BUS.CHN inside {TCB_CHN_FULL_DUPLEX}) begin
       assign man.req.ren = sub.req.ren;
+    end
+    // prefetch
+    if (man.CFG.BUS.AMO == TCB_AMO_PRESENT) begin
+      assign man.req.aen = sub.req.aen;
+      assign man.req.amo = sub.req.amo;
     end
     // prefetch
     if (man.CFG.BUS.PRF == TCB_PRF_PRESENT) begin
