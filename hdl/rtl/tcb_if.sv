@@ -147,6 +147,7 @@ interface tcb_if
 // helper functions
 ////////////////////////////////////////////////////////////////////////////////
 
+/*
   // TODO: rethink this functionality
   // logarithmic size mode (subordinate interface) byte enable
   function automatic logic [CFG_BUS_BYT-1:0] logsize2byteena (
@@ -185,6 +186,7 @@ interface tcb_if
       end
     endcase
   endfunction: endianness
+*/
 
   // write enable
   function automatic logic write (
@@ -298,7 +300,7 @@ interface tcb_if
     input  req_dly,
     input  rsp_dly,
     // functions
-    import endianness,
+//    import endianness,
     import write, read
   );
 
@@ -322,7 +324,7 @@ interface tcb_if
     input  req_dly,
     input  rsp_dly,
     // functions
-    import endianness,
+//    import endianness,
     import write, read
   );
 
@@ -346,7 +348,7 @@ interface tcb_if
     input  req_dly,
     input  rsp_dly,
     // functions
-    import endianness,
+//    import endianness,
     import write, read
   );
 

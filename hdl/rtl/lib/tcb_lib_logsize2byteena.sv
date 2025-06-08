@@ -107,8 +107,8 @@ module tcb_lib_logsize2byteena
   assign rsp_siz = sub.req_dly[sub.CFG.HSK.DLY].siz;
 
   // endianness
-  assign req_ndn = man.endianness(sub.req.                     ndn);
-  assign rsp_ndn = man.endianness(sub.req_dly[man.CFG.HSK.DLY].ndn);
+  assign req_ndn = sub.req.                     ndn;
+  assign rsp_ndn = sub.req_dly[man.CFG.HSK.DLY].ndn;
 
 ////////////////////////////////////////////////////////////////////////////////
 // multiplexers

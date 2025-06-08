@@ -20,12 +20,12 @@ module tcb_lib_decoder
   import tcb_pkg::*;
 #(
   // TCB parameters (contains address width)
-  parameter  tcb_bus_t BUS = TCB_BUS_DEF,
+  parameter  int unsigned ADR = 32,
   // interconnect parameters (subordinate interface number and logarithm)
   parameter  int unsigned IFN = 2,
   localparam int unsigned IFL = $clog2(IFN),
   // decoder address and mask array
-  parameter  logic [BUS.ADR-1:0] DAM [IFN-1:0] = '{default: 'x}
+  parameter  logic [ADR-1:0] DAM [IFN-1:0] = '{default: 'x}
 )(
   // TCB interfaces
   tcb_if.sub tcb,  // TCB subordinate interface (manager device connects here)
@@ -44,7 +44,7 @@ module tcb_lib_decoder
 // local signals
 ////////////////////////////////////////////////////////////////////////////////
 
-  logic [BUS.ADR-1:0] adr;
+  logic [ADR-1:0] adr;
 
   // extract address from TCB
   assign adr = tcb.req.adr;

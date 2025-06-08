@@ -132,6 +132,11 @@ endgenerate
 // TCB write access
 ////////////////////////////////////////////////////////////////////////////////
 
+  logic [tcb.CFG.BUS.DAT-1:0] wdt;
+
+  // casting write data
+  assign wdt = tcb.req.wdt;
+
   // write output and output enable
   always_ff @(posedge tcb.clk, posedge tcb.rst)
   if (tcb.rst) begin
@@ -141,8 +146,8 @@ endgenerate
     if (tcb.req.wen) begin
       // write access
       case (tcb.req.adr[4-1:0])
-        4'h0:    gpio_o <= tcb.req.wdt[GW-1:0];
-        4'h4:    gpio_e <= tcb.req.wdt[GW-1:0];
+        4'h0:    gpio_o <= wdt[GW-1:0];
+        4'h4:    gpio_e <= wdt[GW-1:0];
         default: ;  // do nothing
       endcase
     end
