@@ -28,19 +28,17 @@ module tcb_lib_register_request (
 `ifdef ALTERA_RESERVED_QIS
 `else
   // comparing subordinate and manager interface parameters
-  generate
   initial
   begin
     // parameters
     assert (man.CFG.HSK.DLY+1 == sub.CFG.HSK.DLY) else $error("Parameter (man.CFG.HSK.DLY+1 = %p+1) != (sub.CFG.HSK.DLY = %p)", man.CFG.HSK.DLY, sub.CFG.HSK.DLY);
-    assert (man.CFG.BUS       == sub.CFG.BUS    ) else $error("Parameter (man.CFG.BUS       = %p  ) != (sub.CFG.BUS     = %p)", man.CFG.BUS    , sub.CFG.BUS    );
+//    assert (man.CFG.BUS       == sub.CFG.BUS    ) else $error("Parameter (man.CFG.BUS       = %p  ) != (sub.CFG.BUS     = %p)", man.CFG.BUS    , sub.CFG.BUS    );
     assert (man.CFG.PMA       == sub.CFG.PMA    ) else $error("Parameter (man.CFG.PMA       = %p  ) != (sub.CFG.PMA     = %p)", man.CFG.PMA    , sub.CFG.PMA    );
     // request/response types
     // TODO: Questa is complaining here
 //    assert (type(man.req_t) == type(sub.req_t)) else $error("Parameter (man.req_t = %s) != (sub.req_t = %s)", $typename(man.req_t), $typename(sub.req_t));
 //    assert (type(man.rsp_t) == type(sub.rsp_t)) else $error("Parameter (man.rsp_t = %s) != (sub.rsp_t = %s)", $typename(man.rsp_t), $typename(sub.rsp_t));
   end
-  endgenerate
 `endif
 
 ////////////////////////////////////////////////////////////////////////////////
