@@ -13,18 +13,34 @@ This project provides the following parts:
 - reference verification library (VIP),
 - reference peripherals.
 
-## Overview
+## Overview of core features
 
 TCB (tightly coupled bus) is named after TCM (tightly coupled memory),
 since it generalizes the SRAM (synchronous static RAM) interface to support peripherals.
 The purpose of TCB is to fill a niche for a low complexity system bus
 without unnecessary limitations on throughput.
 
+TCB is a good fit for small microcontrollers with processors
+with a simple short in order pipeline.
+
+TCB is not a good fit for interconnects with large access delays
+(external memory controllers, CDC in the interconnect, ...),
+or interconnect where out of order access can provide a performance advantage.
+
+NOTE: Except for the handshake and response delay (see below),
+all features are optional.
+To avoid competing non standard solutions
+the reference implementation attempts to document and implement
+as many features as possible.
+Still the standard should be flexible enough that that it should be possible
+to interface with any custom implementation with minimal glue logic.
+
 ### Basic read/write cycles and the VALID/READY handshake
 
 The SRAM interface is designed to allow a read or write access every clock cycle.
 Read data output (response) is available in the clock period after (request to response delay)
 the address input (request) is sampled with the rising edge of the clock.
+There are not idle clock cycles when switching between read and write accesses.
 
 Control signals use the standard VALID/READY handshake,
 which allows developers familiar with AMBA AXI to immediately understand it
@@ -35,6 +51,9 @@ if the response can't be provided early enough,
 the request must be stalled using backpressure (READY).
 
 IMAGE of read/write cycles.
+
+This approach makes TCB a good fit for managers (CPU, ...)
+where the request signals (address, write data, ...) are combinational.
 
 ### Generalization of request to response delay
 
@@ -60,9 +79,117 @@ thus avoiding undesired effects of retiming on signal toggling and consequent po
 
 This can be achieved by writing peripherals with `DLY=0`,
 where write access is synchronous, but reads are combinational.
-A `DLY=1` TCB interface is then achieved by placing a pipeline stage at the 
+A `DLY=1` TCB interface is then achieved by placing a pipeline stage at the request input side.
 
 IMAGE block diagram
+
+### Logarithmic size instead of byte enable
+
+Instead of the common approach of using byte enable signals
+to position data smaller than the bus width,
+TCB can use the logarithmic size of data (same as RISC-V ISA).
+
+Byte enable signals and the related data byte multiplexer
+(mapping bytes between different positions within the memory bus to the right of CPU registers)
+are necessary for interfacing between a CPU and SRAM.
+But the data byte multiplexer is not necessary for accessing peripherals,
+since they are usually only accessed with the full bus width.
+Skipping the data byte multiplexer on the path between the CPU and peripherals
+can improve timing and power consumption.
+
+When using this approach, the CPU LSU uses the logarithmic byte mode.
+The data byte multiplexer becomes a part of the system interconnect.
+
+IMAGE block diagram.
+
+### Support for atomic access and arbiter locking
+
+TCB can perform RISC-V AMO instruction accesses to peripherals with `DLY=0`
+in a single cycle within the interconnect.
+This can be used to implement thread safe access to peripherals.
+
+For example in a GPIO peripheral individual
+data output and output enable register bit can be set/cleared,
+without necessitating a read modify write sequence (not thread safe),
+or custom approaches (for example Xilinx SoC/MPSoC).
+
+The same can't be done with SRAM.
+In this case TCB provides an arbiter locking signal,
+Which prevents the arbiter to the current manager
+till a non locking access is performed.
+
+The same locking approach can be used to implement atomic accesses
+for data wider than the bus data width.
+For example RISC-V load/store pair instructions
+(accessing 64-bit counters on a 32-bit data bus, ...).
+Another example would be burst transactions.
+
+### Minimizing power consumption
+
+TCB utilizes many approaches to reduce power consumption, the main are:
+
+* Placing pipeline stage registers at the peripheral module inputs,
+  this prevents the propagation of address and write data signal toggling
+  through the peripheral control logic when it is not accessed,
+  thus minimizing dynamic power consumptions in address decoders,
+  read data multiplexers, ...
+* Request signal explicitly indicating repeated access to the same address,
+  can be used to skip SRAM reads, since common ASIC/FPGA SRAM
+  holds the last read data till the next access.
+  This can be used during a stalled instruction fetch
+  while avoiding a register holding the last fetched instruction.
+* Splitting or read and write address prevents toggling
+  in the read data multiplexer, while performing a write,
+  and vice versa.
+* Only active data bytes should toggle during a read/write access.
+  Read data multiplexers have separate select signals for each byte,
+  select signals for inactive bytes do not change from the previous access.
+  This is not ideal when the last access was to a volatile location like a counter,
+  further research is needed to handle this use case.
+  A SRAM implementations is desired, where read logic can be enabled for individual bytes.
+
+### Miscellaneous optional features
+
+* Support for little/big endian.
+* Support for misaligned access.
+* Support for zero overhead sequential misaligned accesses
+  (RISC-V instruction fetch with C extension) (research in progress).
+* Support for data bursts (research in progress).
+
+### Reference RTL and VIP library implementation
+
+The RTL and VIP library are written in SystemVerilog,
+extensively utilizing interfaces and parameterization.
+VHDL might be an option in the future.
+
+### Comparison against competing system bus standards
+
+WHile having similar complexity as **APB**,
+it provides double the throughput and additional features.
+
+Compared to **AHB** and **Wishbone**,
+it has a more straight forward handshake and no wasted cycles
+when switching access direction.
+
+Compared to **OBI1** (RISC-V Ibex CPU, and other Pulp Platform designs),
+The response delay is fixed, thus making the response path logic simpler.
+If a peripheral is unable to respond immediately,
+OBI1 would delay the response channel ready signal,
+while TCB would apply backpressure to the request handshake.
+Since either provide out of order support,
+the throughput should be the same
+(I state this without providing a proper proof).
+
+Compared to **AXI-Lite**, a single channel handshake is just much simpler.
+AXI4-Lite also does not provide a mechanism for requesting
+a read narrower than the data bus width (AXI5-Lite provides this option).
+While the multiple channels in AXI-Lite allow for power reduction
+due to using only the necessary channels,
+a similar result can be achieved with TCB.
+The main advantage of AXI-Lite would be throughput in CDC scenarios.
+
+None of the standard busses known to me provides a logarithmic size mode.
+
 
 ## Implementation status
 
