@@ -13,9 +13,56 @@ This project provides the following parts:
 - reference verification library (VIP),
 - reference peripherals.
 
+## Overview
 
+TCB (tightly coupled bus) is named after TCM (tightly coupled memory),
+since it generalizes the SRAM (synchronous static RAM) interface to support peripherals.
 The purpose of TCB is to fill a niche for a low complexity system bus
 without unnecessary limitations on throughput.
+
+### Basic read/write cycles and the VALID/READY handshake
+
+The SRAM interface is designed to allow a read or write access every clock cycle.
+Read data output (response) is available in the clock period after (request to response delay)
+the address input (request) is sampled with the rising edge of the clock.
+
+Control signals use the standard VALID/READY handshake,
+which allows developers familiar with AMBA AXI to immediately understand it
+without reading further documentation.
+
+Since the request to response delay is fixed,
+if the response can't be provided early enough,
+the request must be stalled using backpressure (READY).
+
+IMAGE of read/write cycles.
+
+### Generalization of request to response delay
+
+While the SRAM interface request to response delay is usually one clock cycle,
+this can be generalized to any integer delay `DLY` (values `0`, `1`, `2` would be common).
+
+* `DLY=0` is used for peripherals (explained later TODO),
+* `DLY=1` is used for TCM SRAM, and therefore by the CPU (matched delay maximizes throughput),
+* `DLY=2` would be used where the read data clock to output delay
+          is high enough to require an additional pipeline stage.
+
+### Matching timing of peripherals to SRAM
+
+Typical ASIC/FPGA SRAM has a low setup time for inputs (control, address, write data),
+most combinational delay is seen as the clock to data delay for read data outputs.
+
+IMAGE SRAM delay
+
+While not strictly part of the protocol,
+it is recommended to write the TCB interconnect with similar timing characteristics.
+This allows for a good timing balance without the need for register retiming during synthesis,
+thus avoiding undesired effects of retiming on signal toggling and consequent power consumption impact.
+
+This can be achieved by writing peripherals with `DLY=0`,
+where write access is synchronous, but reads are combinational.
+A `DLY=1` TCB interface is then achieved by placing a pipeline stage at the 
+
+IMAGE block diagram
 
 ## Implementation status
 
