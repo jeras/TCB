@@ -156,12 +156,6 @@ TCB utilizes many approaches to reduce power consumption, the main are:
   (RISC-V instruction fetch with C extension) (research in progress).
 * Support for data bursts (research in progress).
 
-### Reference RTL and VIP library implementation
-
-The RTL and VIP library are written in SystemVerilog,
-extensively utilizing interfaces and parameterization.
-VHDL might be an option in the future.
-
 ### Comparison against competing system bus standards
 
 WHile having similar complexity as **APB**,
@@ -190,6 +184,20 @@ The main advantage of AXI-Lite would be throughput in CDC scenarios.
 
 None of the standard busses known to me provides a logarithmic size mode.
 
+### Reference RTL and VIP library implementation
+
+The RTL and VIP library are written in SystemVerilog,
+extensively utilizing interfaces and parameterization.
+Parameters are validated at compile time,
+checking for compatibility between modules and interfaces
+(bus width, protocol modes and features, ...).
+VHDL might be an option in the future.
+
+Many features have been validated on 2 RISC-V processors and GPIO and UART peripherals,
+many features have not been fully validated yet.
+
+Overall the documentation and reference implementation are a work in progress,
+and getting feedback would speed up this process.
 
 ## Implementation status
 
