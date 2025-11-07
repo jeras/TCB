@@ -52,7 +52,7 @@ Since the request to response delay is fixed,
 if the response can't be provided early enough,
 the request must be stalled using backpressure (READY).
 
-![TCB read/write cycles (access to SRAM)](doc/tcb_read_write_sram.json)
+![TCB read/write cycles (access to SRAM)](doc/tcb_read_write_sram.svg)
 
 ### Generalization of request to response delay
 
