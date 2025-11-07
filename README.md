@@ -20,12 +20,13 @@ since it generalizes the SRAM (synchronous static RAM) interface to support peri
 The purpose of TCB is to fill a niche for a low complexity system bus
 without unnecessary limitations on throughput.
 
-TCB is a good fit for small microcontrollers with processors
-with a simple short in order pipeline.
+TCB is a good fit for small microcontrollers containing processors
+with a simple short in-order pipeline and
+combinational request signals (address, write data, ...).
 
 TCB is not a good fit for interconnects with large access delays
 (external memory controllers, CDC in the interconnect, ...),
-or interconnect where out of order access can provide a performance advantage.
+or interconnect where out-of-order access can provide a performance advantage.
 
 NOTE: Except for the handshake and response delay (see below),
 all features are optional.
@@ -38,39 +39,39 @@ to interface with any custom implementation with minimal glue logic.
 ### Basic read/write cycles and the VALID/READY handshake
 
 The SRAM interface is designed to allow a read or write access every clock cycle.
-Read data output (response) is available in the clock period after (request to response delay)
+Read data output (response) is available in the clock period after
 the address input (request) is sampled with the rising edge of the clock.
-There are not idle clock cycles when switching between read and write accesses.
+This would be a 1 clock period request to response delay.
+There are no idle clock cycles when switching between read and write accesses.
 
 Control signals use the standard VALID/READY handshake,
 which allows developers familiar with AMBA AXI to immediately understand it
-without reading further documentation.
+without reading any documentation.
 
 Since the request to response delay is fixed,
 if the response can't be provided early enough,
 the request must be stalled using backpressure (READY).
 
-IMAGE of read/write cycles.
-
-This approach makes TCB a good fit for managers (CPU, ...)
-where the request signals (address, write data, ...) are combinational.
+![TCB read/write cycles (access to SRAM)](doc/tcb_read_write_sram.json)
 
 ### Generalization of request to response delay
 
 While the SRAM interface request to response delay is usually one clock cycle,
 this can be generalized to any integer delay `DLY` (values `0`, `1`, `2` would be common).
 
-* `DLY=0` is used for peripherals (explained later TODO),
+* `DLY=0` is used for peripherals (explained below),
 * `DLY=1` is used for TCM SRAM, and therefore by the CPU (matched delay maximizes throughput),
 * `DLY=2` would be used where the read data clock to output delay
           is high enough to require an additional pipeline stage.
+
+![TCB request to response delay](doc/tcb_handshake.svg)
 
 ### Matching timing of peripherals to SRAM
 
 Typical ASIC/FPGA SRAM has a low setup time for inputs (control, address, write data),
 most combinational delay is seen as the clock to data delay for read data outputs.
 
-IMAGE SRAM delay
+![TCB timing (modelled after SRAM)](doc/tcb_timing.svg)
 
 While not strictly part of the protocol,
 it is recommended to write the TCB interconnect with similar timing characteristics.

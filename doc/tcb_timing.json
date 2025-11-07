@@ -1,0 +1,25 @@
+{signal: [
+    ['system',
+      {name: "clk", wave: 'l1....0....1....0....1.',
+                    node: '           B           '},
+      {}
+    ],
+    ['handshake',
+      {name: "vld", wave: '0.1.........0..........'},
+      {name: "rdy", wave: 'x...1.........x........'},
+      {}
+    ],
+    ['request',
+      {name: "req", wave: 'x.........2.x..........', data: 'REQ',
+                    node: '          A            '},
+      {             node: '      C   DEF          '}
+    ],
+    ['response',
+      {name: "rsp", wave: 'x................2....x', data: 'RSP',
+                    node: '                 I     '},
+      {             node: '           G     H     '}
+    ]
+  ],
+  edge: ['A-D', 'B-E', 'C-D request setup', 'D<->E', 'E-F',
+         'E-G', 'I-H', 'G<->H response clock to output']
+}
