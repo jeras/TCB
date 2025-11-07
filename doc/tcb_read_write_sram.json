@@ -1,0 +1,23 @@
+{signal: [
+  ['system',
+    {name: "clk", wave: 'P................'},
+    {name: "rst", wave: '10...............'}
+  ],
+  {},
+  ['handshake',
+    {name: "vld", wave: '0.111.0111.01110.'},
+    {name: "rdy", wave: 'x.1101x1101x1110.'}
+  ],
+  {},
+  ['request',
+    {name: "wen", wave: 'x.000.x111.x101x.'},
+    {name: "adr", wave: 'x.123.x456.x789x.', data: 'A1 A2 A3 A4 A5 A6 A7 A8 A9'},
+    {name: "ben", wave: 'x.123.x456.x789x.', data: 'F  F  F  F  F  F  F  F  F '},
+    {name: "wdt", wave: 'x......456.x7x9x.', data: '      D3 D4 D5 D6    D7   '}
+  ],
+  {},
+  ['response',
+    {name: "rdt", wave: 'x..23.4........9.', data: 'D1 D2 D3          D7      '}
+  ],
+  {}
+]}

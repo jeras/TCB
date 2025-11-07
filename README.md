@@ -190,7 +190,7 @@ The RTL and VIP library are written in SystemVerilog,
 extensively utilizing interfaces and parameterization.
 Parameters are validated at compile time,
 checking for compatibility between modules and interfaces
-(bus width, protocol modes and features, ...).
+(bus width, protocol modes and features, address space size, ...).
 VHDL might be an option in the future.
 
 Many features have been validated on 2 RISC-V processors and GPIO and UART peripherals,
@@ -198,6 +198,26 @@ many features have not been fully validated yet.
 
 Overall the documentation and reference implementation are a work in progress,
 and getting feedback would speed up this process.
+
+### Open questions
+
+While some aspects of the protocol have been validated,
+some require further research:
+
+* Handling of endianness in bursts, especially when
+  the the burst traverses one or more change in data bus width.
+* A proper definition for the read value hold feature.
+* Minimizing power consumption in write/read logic,
+  minimizing address changes to reduce decoder and multiplexer power,
+  with the additional requirement to avoid volatile data
+  (counters, GPIO inputs, ...) from propagating while the bus is idle.
+* A systematic approach to parameter validation.
+* Assertions for checking features like read hold.
+* Validation of features for
+  repeated address access, incremental address access,
+  partially overlapping incremental access
+  (RISC-V instruction fetch with C extension),
+  ...
 
 ## Implementation status
 
