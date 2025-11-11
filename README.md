@@ -68,8 +68,8 @@ this can be generalized to any integer delay `DLY` (values `0`, `1`, `2` would b
 
 ### Matching timing of peripherals to SRAM
 
-Typical ASIC/FPGA SRAM has a low setup time for inputs (control, address, write data),
-most combinational delay is seen as the clock to data delay for read data outputs.
+Typical ASIC/FPGA SRAM has a low setup time for request inputs (control, address, write data),
+most combinational delay is seen as the clock to data delay for response outputs (read data).
 
 ![TCB timing (modelled after SRAM)](doc/tcb_timing.svg)
 
@@ -84,6 +84,12 @@ A `DLY=1` TCB interface is then achieved by placing a pipeline stage at the requ
 
 IMAGE block diagram
 
+TODO manager timing, call the above subordinate
+there is a combinational path from response to request address/data
+wandering if some paths can be declared false,
+like a peripheral response would not be used in the calculation of a new address?
+Cant be checked with an assertion, it depends on the running program.
+
 ### Logarithmic size instead of byte enable
 
 Instead of the common approach of using byte enable signals
@@ -96,7 +102,7 @@ are necessary for interfacing between a CPU and SRAM.
 But the data byte multiplexer is not necessary for accessing peripherals,
 since they are usually only accessed with the full bus width.
 Skipping the data byte multiplexer on the path between the CPU and peripherals
-can improve timing and power consumption.
+can improve timing and dynamic power consumption.
 
 When using this approach, the CPU LSU uses the logarithmic byte mode.
 The data byte multiplexer becomes a part of the system interconnect.
@@ -125,9 +131,9 @@ For example RISC-V load/store pair instructions
 (accessing 64-bit counters on a 32-bit data bus, ...).
 Another example would be burst transactions.
 
-### Minimizing power consumption
+### Minimizing dynamic power consumption
 
-TCB utilizes many approaches to reduce power consumption, the main are:
+TCB utilizes many approaches to reduce dynamic power consumption, the main are:
 
 * Placing pipeline stage registers at the peripheral module inputs,
   this prevents the propagation of address and write data signal toggling
@@ -149,10 +155,17 @@ TCB utilizes many approaches to reduce power consumption, the main are:
   further research is needed to handle this use case.
   A SRAM implementations is desired, where read logic can be enabled for individual bytes.
 
+
+TODO: Write address decoder
+
+### Parameterization and parameter validation
+
+Not strictly part of the standard, but a feature of the reference library implementation.
+
 ### Miscellaneous optional features
 
 * Support for little/big endian.
-* Support for misaligned access.
+* Support for misaligned access (including single cycle).
 * Support for zero overhead sequential misaligned accesses
   (RISC-V instruction fetch with C extension) (research in progress).
 * Support for data bursts (research in progress).
@@ -167,7 +180,7 @@ it has a more straight forward handshake and no wasted cycles
 when switching access direction.
 
 Compared to **OBI1** (RISC-V Ibex CPU, and other Pulp Platform designs),
-The response delay is fixed, thus making the response path logic simpler.
+the response delay is fixed, thus making the response path logic simpler.
 If a peripheral is unable to respond immediately,
 OBI1 would delay the response channel ready signal,
 while TCB would apply backpressure to the request handshake.
@@ -177,8 +190,8 @@ the throughput should be the same
 
 Compared to **AXI-Lite**, a single channel handshake is just much simpler.
 AXI4-Lite also does not provide a mechanism for requesting
-a read narrower than the data bus width (AXI5-Lite provides this option).
-While the multiple channels in AXI-Lite allow for power reduction
+a read narrower than the data bus width (AXI5-Lite provides this feature).
+While the multiple channels in AXI-Lite allow for synamic power reduction
 due to using only the necessary channels,
 a similar result can be achieved with TCB.
 The main advantage of AXI-Lite would be throughput in CDC scenarios.
@@ -205,10 +218,13 @@ and getting feedback would speed up this process.
 While some aspects of the protocol have been validated,
 some require further research:
 
+* Handling errors. Should response error codes be standardized?
+  Should some errors be detected during the request phase (misalignment)?
+* Burst semantics.
 * Handling of endianness in bursts, especially when
-  the the burst traverses one or more change in data bus width.
+  the the burst traverses one or more changes in data bus width.
 * A proper definition for the read value hold feature.
-* Minimizing power consumption in write/read logic,
+* Minimizing dynamic power consumption in write/read logic,
   minimizing address changes to reduce decoder and multiplexer power,
   with the additional requirement to avoid volatile data
   (counters, GPIO inputs, ...) from propagating while the bus is idle.
@@ -219,6 +235,7 @@ some require further research:
   partially overlapping incremental access
   (RISC-V instruction fetch with C extension),
   ...
+* ...
 
 ## Implementation status
 
