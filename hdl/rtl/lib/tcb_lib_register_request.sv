@@ -32,7 +32,7 @@ module tcb_lib_register_request (
   begin
     // parameters
     assert (man.CFG.HSK.DLY+1 == sub.CFG.HSK.DLY) else $error("Parameter (man.CFG.HSK.DLY+1 = %p+1) != (sub.CFG.HSK.DLY = %p)", man.CFG.HSK.DLY, sub.CFG.HSK.DLY);
-//    assert (man.CFG.BUS       == sub.CFG.BUS    ) else $error("Parameter (man.CFG.BUS       = %p  ) != (sub.CFG.BUS     = %p)", man.CFG.BUS    , sub.CFG.BUS    );
+//  assert (man.CFG.BUS       == sub.CFG.BUS    ) else $error("Parameter (man.CFG.BUS       = %p  ) != (sub.CFG.BUS     = %p)", man.CFG.BUS    , sub.CFG.BUS    );
     assert (man.CFG.PMA       == sub.CFG.PMA    ) else $error("Parameter (man.CFG.PMA       = %p  ) != (sub.CFG.PMA     = %p)", man.CFG.PMA    , sub.CFG.PMA    );
     // request/response types
     // TODO: Questa is complaining here
