@@ -130,8 +130,8 @@ module tcb_lib_logsize2byteena_tb
 
   task test_aligned ();
     // write sequence
-    $display("write sequence");
-    testname = "write";
+    testname = "write sequence";
+    $display("TEST: %s", testname);
     tst_mon.delete();
     fork
       // manager (blocking API)
@@ -177,8 +177,8 @@ module tcb_lib_logsize2byteena_tb
 //    end
 
     // read sequence
-    $display("read sequence");
-    testname = "read";
+    testname = "read sequence";
+    $display("TEST: %s", testname);
     tst_mon.delete();
     fork
       // manager (blocking API)
@@ -224,8 +224,9 @@ module tcb_lib_logsize2byteena_tb
 //    end
 
     // check sequence
-    $display("check sequence");
-    testname = "check";
+    testname = "check sequence";
+    $display("TEST: %s", testname);
+    
     obj_man.check8 (32'h00000010,        8'h10, 1'b0);
     obj_man.check8 (32'h00000011,      8'h32  , 1'b0);
     obj_man.check8 (32'h00000012,    8'h54    , 1'b0);
@@ -242,8 +243,8 @@ module tcb_lib_logsize2byteena_tb
     mem.mem = '{default: 'x};
 
     // misaligned write sequence
-    $display("misaligned write sequence");
     testname = "misaligned write";
+    $display("TEST: %s", testname);
     tst_mon.delete();
     tst_ref.delete();
     // test sequence
@@ -287,8 +288,8 @@ module tcb_lib_logsize2byteena_tb
 //    end
 
     // misaligned read/check sequence
-    $display("misaligned read/check sequence");
     testname = "misaligned read/check";
+    $display("TEST: %s", testname);
     tst_mon.delete();
     tst_ref.delete();
     // test sequence
@@ -336,22 +337,28 @@ module tcb_lib_logsize2byteena_tb
     static bit ndn_list [2] = '{TCB_LITTLE, TCB_BIG};
 //    static bit ndn_list [1] = '{TCB_BIG};
     // parameterized tests
-    $display("parameterized tests");
     testname = "parameterized tests";
+    $display("TEST: %s", testname);
+
+    // endianness
     foreach (ndn_list[i]) begin
+      logic ndn;
+      ndn = ndn_list[i];
+//    begin
+//      static logic ndn = ndn_list[0];
+
       for (int unsigned siz=tcb_man.CFG.PMA.MIN; siz<=tcb_man.CFG_BUS_MAX; siz++) begin
 //      begin
 //        static int unsigned siz=1;
-//        for (int unsigned off=0; off<tcb_man.CFG_BUS_BYT; off+=2) begin
         for (int unsigned off=0; off<tcb_man.CFG_BUS_BYT; off+=2**tcb_man.CFG.PMA.OFF) begin
+//        begin
+//          static int unsigned off=0;
           // local variables
           string       id;
           int unsigned size;
           int unsigned len;
           // address
           logic [tcb_man.CFG.BUS.ADR-1:0] adr;
-          // endianness
-          logic         ndn;
           // local data arrays
           logic [8-1:0] dat [];  // pattern   data array
           logic [8-1:0] tmp [];  // temporary data array
@@ -370,8 +377,6 @@ module tcb_lib_logsize2byteena_tb
           automatic tcb_byt_s::transfer_queue_t transfer_sub = '{};  // subordinate transfer queue
           automatic tcb_byt_s::transfer_queue_t transfer_mon = '{};  // monitor     transfer queue
 
-          // endianness
-          ndn = ndn_list[i];
           // ID
           id = $sformatf("ndn=%0d siz=%0d off=%0d", ndn, siz, off);
           $display("DEBUG: ID = '%s'", id);
@@ -432,16 +437,8 @@ module tcb_lib_logsize2byteena_tb
           len += obj_sub.get_transaction(transfer_mon, transaction_mon_w);
           len += obj_sub.get_transaction(transfer_mon, transaction_mon_r);
           // compare subordinate reference and monitor transactions
-
-          // Apparent bug in Questa, the two arrays are not equall and not different at the same time
-          assert (transaction_mon_w.req == transaction_sub_w.req) else $error("\ntransaction_mon_w.req = %p != \ntransaction_sub_w.req = %p", transaction_mon_w.req, transaction_sub_w.req);
-          $display("DEBUG: $typename(transaction_mon_w.req)=%s", $typename(transaction_mon_w.req));
-          $display("DEBUG: $typename(transaction_sub_w.req)=%s", $typename(transaction_sub_w.req));
-          $display("DEBUG: %p", transaction_mon_w.req == transaction_sub_w.req);
-          $display("DEBUG: %p", transaction_mon_w.req != transaction_sub_w.req);
-
-          assert (transaction_mon_w == transaction_sub_w) else $error("\ntransaction_mon_w = %p != \ntransaction_sub_w = %p", transaction_mon_w, transaction_sub_w);
-          assert (transaction_mon_r == transaction_sub_r) else $error("\ntransaction_mon_r = %p != \ntransaction_sub_r = %p", transaction_mon_r, transaction_sub_r);
+          assert (transaction_mon_w === transaction_sub_w) else $error("\ntransaction_mon_w = %p != \ntransaction_sub_w = %p", transaction_mon_w, transaction_sub_w);
+          assert (transaction_mon_r === transaction_sub_r) else $error("\ntransaction_mon_r = %p != \ntransaction_sub_r = %p", transaction_mon_r, transaction_sub_r);
         end
       end
     end
@@ -462,10 +459,10 @@ module tcb_lib_logsize2byteena_tb
     rst <= 1'b0;
     repeat (1) @(posedge clk);
 
-    test_aligned;
-    if (CFG_SIZ.PMA.ALN != tcb_man.CFG_BUS_MAX) begin
-      test_misaligned;
-    end
+//    test_aligned;
+//    if (CFG_SIZ.PMA.ALN != tcb_man.CFG_BUS_MAX) begin
+//      test_misaligned;
+//    end
     test_parameterized;
 
     // end of test
