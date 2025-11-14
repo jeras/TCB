@@ -17,24 +17,24 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 module cram_model #(
-  parameter  int unsigned ADR = 5,  // address bus width
-  parameter  int unsigned DAT = 8,  // data bus width
-  parameter  int unsigned SIZ = 2**ADR  // memory size
+    parameter  int unsigned ADR = 5,  // address bus width
+    parameter  int unsigned DAT = 8,  // data bus width
+    parameter  int unsigned SIZ = 2**ADR  // memory size
 )(
-  input  logic           clk,  // clock
-  input  logic           wen,  // write enable
-  input  logic [ADR-1:0] adr,  // address
-  input  logic [DAT-1:0] wdt,  // write data
-  output logic [DAT-1:0] rdt   // read data
+    input  logic           clk,  // clock
+    input  logic           wen,  // write enable
+    input  logic [ADR-1:0] adr,  // address
+    input  logic [DAT-1:0] wdt,  // write data
+    output logic [DAT-1:0] rdt   // read data
 );
 
-  logic [DAT-1:0] mem [0:SIZ-1];
+    logic [DAT-1:0] mem [0:SIZ-1];
 
-  // synchronous write access
-  always_ff @(posedge clk)
-  if (wen) mem[adr] <= wdt;
+    // synchronous write access
+    always_ff @(posedge clk)
+    if (wen) mem[adr] <= wdt;
 
-  // combinational read access
-  assign rdt = mem[adr];
+    // combinational read access
+    assign rdt = mem[adr];
 
 endmodule: cram_model

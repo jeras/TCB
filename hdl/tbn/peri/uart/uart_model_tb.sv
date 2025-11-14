@@ -20,10 +20,10 @@
 
 module uart_model_tb ();
 
-// master program input and data output files
-//localparam M1_P = "hdl/bench/wishbone/wishbone_program.txt";
-localparam string UART_TX = "hdl/bench/uart/uart_tx.txt";
-localparam string UART_RX = "hdl/bench/uart/uart_rx.txt";
+    // master program input and data output files
+    //localparam M1_P = "hdl/bench/wishbone/wishbone_program.txt";
+    localparam string UART_TX = "hdl/bench/uart/uart_tx.txt";
+    localparam string UART_RX = "hdl/bench/uart/uart_rx.txt";
 
 ////////////////////////////////////////////////////////////////////////////////
 // test sequence
@@ -33,33 +33,33 @@ string txt;
 int unsigned i;
 
 initial begin
-  txt = "Hello Workd!";
-//foreach (txt[c])  uart.tx(c);
-  for (i=0; i<txt.len(); i++) begin
-    uart.tx(txt[i]);
-  end
-  #10000;
-  $finish;
+    txt = "Hello Workd!";
+//  foreach (txt[c])  uart.tx(c);
+    for (i=0; i<txt.len(); i++) begin
+        uart.tx(txt[i]);
+    end
+    #10000;
+    $finish;
 end
 
 ////////////////////////////////////////////////////////////////////////////////
 // module instances 
 ////////////////////////////////////////////////////////////////////////////////
 
-// UART loop signal
-wire loop;
+    // UART loop signal
+    wire loop;
 
-// UART model instance
-uart_model #(
-  .BAUD   (14400),
-  .PARITY ("ODD"),
-  .FILE_I (UART_TX),
-  .FILE_O (UART_RX),
-  .NAME   ("UART"),
-  .AUTO   (0)
-) uart (
-  .TXD    (loop),
-  .RXD    (loop)
-);
+    // UART model instance
+    uart_model #(
+        .BAUD   (14400),
+        .PARITY ("ODD"),
+        .FILE_I (UART_TX),
+        .FILE_O (UART_RX),
+        .NAME   ("UART"),
+        .AUTO   (0)
+    ) uart (
+        .TXD    (loop),
+        .RXD    (loop)
+    );
 
 endmodule: uart_model_tb

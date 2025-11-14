@@ -51,13 +51,13 @@ package tcb_vip_transfer_pkg;
             .vip_t (vip_t),
             .VIP   (VIP)
         ) tcb_vif_t;
-    
+
         // virtual interface instance
         tcb_vif_t tcb;
-    
+
         // direction
         string DIR = "";
-    
+
         //constructor
         function new(
             tcb_vif_t tcb,
@@ -100,10 +100,10 @@ package tcb_vip_transfer_pkg;
             // transfer ID
             string       id;
         } transfer_t;
-    
+
         typedef transfer_t transfer_array_t [];
         typedef transfer_t transfer_queue_t [$];
-    
+
     ///////////////////////////////////////
     // transfer manager/subordinate/monitor handshake
     ///////////////////////////////////////
@@ -134,7 +134,7 @@ package tcb_vip_transfer_pkg;
             tcb.req <= '{default: 'x};
             if (DEBUG)  $info("DEBUG: %t: handshake_manager end ID = \"%s\".", $realtime, itm.id);
         endtask: handshake_manager
-    
+
         // subordinate handshake driver
         task automatic handshake_subordinate (
             ref transfer_t itm  // transfer item
@@ -161,7 +161,7 @@ package tcb_vip_transfer_pkg;
             tcb.rsp_dly[0] <= '{default: '0};
             if (DEBUG)  $info("DEBUG: %t: handshake_subordinate end ID = \"%s\".", $realtime, itm.id);
         endtask: handshake_subordinate
-    
+
         // monitor handshake listener
         task automatic handshake_monitor (
             ref transfer_t itm  // transfer item
@@ -179,11 +179,11 @@ package tcb_vip_transfer_pkg;
             itm.req = tcb.req;
             if (DEBUG)  $info("DEBUG: %t: handshake_monitor end ID = \"%s\".", $realtime, itm.id);
         endtask: handshake_monitor
-  
+
     ///////////////////////////////////////
     // transfer manager/subordinate/monitor response delay line
     ///////////////////////////////////////
-  
+
         // monitor delay line (listen to response)
         task automatic handshake_delay (
             ref transfer_t itm
@@ -199,11 +199,11 @@ package tcb_vip_transfer_pkg;
             itm.rsp = tcb.rsp;
             if (DEBUG)  $info("DEBUG: %t: handshake_delay end ID = \"%s\".", $realtime, itm.id);
         endtask: handshake_delay
-  
+
     ///////////////////////////////////////
     // transfer sequence (non-blocking)
     ///////////////////////////////////////
-  
+
         // request/response
         task automatic transfer_sequencer (
             // use of `ref` ports in combination with fork-join is not allowed
@@ -229,11 +229,11 @@ package tcb_vip_transfer_pkg;
             wait fork;
             if (DEBUG)  $info("DEBUG: %t: transfer_sequencer end of all forks.", $realtime);
         endtask: transfer_sequencer
-  
+
     ///////////////////////////////////////
     // transfer monitor
     ///////////////////////////////////////
-  
+
         // monitor delayed request/response
         task automatic transfer_monitor (
             ref transfer_queue_t transfer_queue
@@ -250,7 +250,7 @@ package tcb_vip_transfer_pkg;
             end: loop
             if (DEBUG)  $info("DEBUG: %t: transfer_monitor stopped.", $realtime);
         endtask: transfer_monitor
-  
+
     endclass: tcb_vip_transfer_c
-  
+
 endpackage: tcb_vip_transfer_pkg

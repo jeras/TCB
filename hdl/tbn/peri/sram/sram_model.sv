@@ -17,28 +17,28 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 module sram_model #(
-  parameter  int unsigned ADR = 8,  // address bus width
-  parameter  int unsigned DAT = 8,  // data bus width
-  parameter  int unsigned SIZ = 2**ADR  // memory size
+    parameter  int unsigned ADR = 8,  // address bus width
+    parameter  int unsigned DAT = 8,  // data bus width
+    parameter  int unsigned SIZ = 2**ADR  // memory size
 )(
-  input  logic           clk,  // clock
-  input  logic           cen,  // chip enable
-  input  logic           wen,  // write enable
-  input  logic [ADR-1:0] adr,  // address
-  input  logic [DAT-1:0] wdt,  // write data
-  output logic [DAT-1:0] rdt   // read data
+    input  logic           clk,  // clock
+    input  logic           cen,  // chip enable
+    input  logic           wen,  // write enable
+    input  logic [ADR-1:0] adr,  // address
+    input  logic [DAT-1:0] wdt,  // write data
+    output logic [DAT-1:0] rdt   // read data
 );
 
-  logic [DAT-1:0] mem [0:SIZ-1];
+    logic [DAT-1:0] mem [0:SIZ-1];
 
-  // read first SRAM
-  always_ff @(posedge clk)
-  if (cen) begin
-    if (wen) begin
-      mem[adr] <= wdt;
-    end else begin
-      rdt <= mem[adr];
+    // read first SRAM
+    always_ff @(posedge clk)
+    if (cen) begin
+        if (wen) begin
+            mem[adr] <= wdt;
+        end else begin
+            rdt <= mem[adr];
+        end
     end
-  end
 
 endmodule: sram_model
