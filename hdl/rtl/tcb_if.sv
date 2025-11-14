@@ -147,7 +147,6 @@ interface tcb_if
 // helper functions
 ////////////////////////////////////////////////////////////////////////////////
 
-/*
   // TODO: rethink this functionality
   // logarithmic size mode (subordinate interface) byte enable
   function automatic logic [CFG_BUS_BYT-1:0] logsize2byteena (
@@ -157,36 +156,6 @@ interface tcb_if
       logsize2byteena[i] = (i < 2**siz) ? 1'b1 : 1'b0;
     end
   endfunction: logsize2byteena
-
-  // endianness
-  // NOTE: If the bus endianness is hardcoded, the transaction endianness must:
-  //       - match the hardcoded bus endianness OR,
-  //       - be undefined (x/z).
-  // NOTE: If the requested endianness $isunknown, the transaction endianness
-  //       will be set to the native bus endianness.
-  function automatic logic endianness (
-    input logic ndn  // requested endianness
-  );
-    case (CFG.BUS.NDN)
-      BCB_NDN_DEFAULT: begin
-        endianness = CFG.BUS.ORD;
-        assert (endianness ==? ndn) else $error("Transaction endianness does not match CFG.BUS.NDN");
-      end
-      TCB_NDN_BI_NDN :  begin
-        if ($isunknown(ndn)) begin
-          endianness = CFG.BUS.ORD;
-        end else begin
-          endianness = ndn;
-        end
-      end
-      TCB_NDN_LITTLE ,
-      TCB_NDN_BIG    :  begin
-        endianness = CFG.BUS.NDN[0];
-        assert (endianness ==? ndn) else $error("Transaction endianness does not match CFG.BUS.NDN");
-      end
-    endcase
-  endfunction: endianness
-*/
 
   // write enable
   function automatic logic write (

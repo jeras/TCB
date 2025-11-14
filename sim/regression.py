@@ -19,15 +19,26 @@ tests = [
   "tcb_peri_uart_tb",
 ]
 
+simulator = "questa"
+#simulator = "vivado"
+#simulator = "verilator"
+
 report = []
 
 # run tests
 for top in tests:
-    # run simulation
-    status = subprocess.run(f"TOP={top} make -C questa/", shell=True)
-    # parse Questa log file
-    log = open("questa/qrun.log").read()
-    summary = re.search(r'Totals: Errors:\s+(\d+), Warnings:\s+(\d+)', log)
+    if (simulator == "questa"):
+        # run simulation
+        status = subprocess.run(f"TOP={top} make -C questa/", shell=True)
+        # parse Questa log file
+        log = open("questa/qrun.log").read()
+        summary = re.search(r'Totals: Errors:\s+(\d+), Warnings:\s+(\d+)', log)
+    if (simulator == "verilator"):
+        # run simulation
+        status = subprocess.run(f"TOP={top} make -C verilator/", shell=True)
+#        # parse Questa log file
+#        log = open("questa/qrun.log").read()
+#        summary = re.search(r'Totals: Errors:\s+(\d+), Warnings:\s+(\d+)', log)
     errors   = summary.groups()[0]
     warnings = summary.groups()[1]
     # create report

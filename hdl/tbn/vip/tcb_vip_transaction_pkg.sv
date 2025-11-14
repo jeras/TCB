@@ -19,6 +19,7 @@
 package tcb_vip_transaction_pkg;
 
   import tcb_pkg::*;
+  import tcb_vip_pkg::*;
   import tcb_vip_transfer_pkg::*;
   export tcb_vip_transfer_pkg::*;
 
@@ -184,7 +185,7 @@ package tcb_vip_transaction_pkg;
       endcase
 
       // endianness
-      ndn = tcb.endianness(transaction.req.ndn);
+      ndn = endianness(transaction.req.ndn, tcb.CFG);
 
 //      $display("DEBUG: size=%0d", size);
 
@@ -320,7 +321,7 @@ package tcb_vip_transaction_pkg;
       ren = tcb.read (transfer_queue[0].req.wen, transfer_queue[0].req.ren);
 
       // endianness
-      transaction.req.ndn = tcb.endianness(transfer_queue[0].req.ndn);
+      transaction.req.ndn = endianness(transfer_queue[0].req.ndn, tcb.CFG);
 
       // request signals (first transfer)
       transaction.req.adr = transfer_queue[0].req.adr;

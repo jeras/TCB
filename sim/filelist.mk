@@ -30,6 +30,7 @@ RTL+=${PATH_HDL}/rtl/peri/uart/tcb_peri_uart_fifo.sv
 RTL+=${PATH_HDL}/rtl/peri/uart/tcb_peri_uart.sv
 
 # SystemVerilog VIP
+TBN+=${PATH_HDL}/tbn/vip/tcb_vip_pkg.sv
 TBN+=${PATH_HDL}/tbn/vip/tcb_vip_transfer_pkg.sv
 TBN+=${PATH_HDL}/tbn/vip/tcb_vip_transaction_pkg.sv
 TBN+=${PATH_HDL}/tbn/vip/tcb_vip_nonblocking_pkg.sv

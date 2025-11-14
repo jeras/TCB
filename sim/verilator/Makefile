@@ -61,7 +61,9 @@ VFLAGS += --trace-structs
 # DEF += -Dmacro=value
 
 # define TOOL_* macro (used to handle tool quirks)
-DEF = -DTOOL_VERILATOR
+DEF += -DTOOL_VERILATOR
+DEF += -Wno-TIMESCALEMOD
+DEF += --debug --gdbbt
 
 # define macro VERILATOR is already predefined in Verilator
 

@@ -17,7 +17,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 module tcb_lib_arbiter
-  import tcb_pkg::*;
+    import tcb_pkg::*;
 #(
   // arbitration priority mode
   parameter  string       MOD = "FX",  // "FX" - fixed priority, "RR" - round robin (TODO)
@@ -41,7 +41,7 @@ module tcb_lib_arbiter
 // TODO
 
 ////////////////////////////////////////////////////////////////////////////////
-// reorder priorities
+// local signals
 ////////////////////////////////////////////////////////////////////////////////
 
   logic vld [IFN-1:0];
@@ -78,6 +78,6 @@ module tcb_lib_arbiter
   endfunction: encode
 
   // priority arbiter
-  assign sub_rdy = sub_vld & neg_vld;
+  assign sel = PRI[encode(reorder(vld, PRI))];
 
 endmodule: tcb_lib_arbiter
