@@ -17,11 +17,11 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 module tcb_lib_common2independent (
-  // TCB common subordinate interface (manager device connects here)
-  tcb_if.sub tcb_cmn_sub,
-  // TCB independant manager ports (subordinate device connects here)
-  tcb_if.man tcb_rdc_man,
-  tcb_if.man tcb_wrc_man
+    // TCB common subordinate interface (manager device connects here)
+    tcb_if.sub tcb_cmn_sub,
+    // TCB independant manager ports (subordinate device connects here)
+    tcb_if.man tcb_rdc_man,
+    tcb_if.man tcb_wrc_man
 );
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -30,31 +30,31 @@ module tcb_lib_common2independent (
 
 `ifdef ALTERA_RESERVED_QIS
 `else
-  // camparing subordinate and manager interface parameters
-  generate
-    if (tcb_cmn_sub.BUS != tcb_wrc_man.BUS)  $error("ERROR: %m parameter (tcb_cmn_sub.BUS = %p) != (tcb_wrc_man.BUS = %p)", tcb_cmn_sub.BUS, tcb_wrc_man.BUS);
-    if (tcb_cmn_sub.BUS != tcb_rdc_man.BUS)  $error("ERROR: %m parameter (tcb_cmn_sub.BUS = %p) != (tcb_rdc_man.BUS = %p)", tcb_cmn_sub.BUS, tcb_rdc_man.BUS);
-  endgenerate
+    // comparing subordinate and manager interface parameters
+    generate
+        if (tcb_cmn_sub.BUS != tcb_wrc_man.BUS)  $error("ERROR: %m parameter (tcb_cmn_sub.BUS = %p) != (tcb_wrc_man.BUS = %p)", tcb_cmn_sub.BUS, tcb_wrc_man.BUS);
+        if (tcb_cmn_sub.BUS != tcb_rdc_man.BUS)  $error("ERROR: %m parameter (tcb_cmn_sub.BUS = %p) != (tcb_rdc_man.BUS = %p)", tcb_cmn_sub.BUS, tcb_rdc_man.BUS);
+    endgenerate
 `endif
 
 ////////////////////////////////////////////////////////////////////////////////
 // passthrough
 ////////////////////////////////////////////////////////////////////////////////
 
-  // handshake valid
-  assign tcb_rdc_man.vld = ~tcb_cmn_sub.req.wen & tcb_cmn_sub.vld;
-  assign tcb_wrc_man.vld =  tcb_cmn_sub.req.wen & tcb_cmn_sub.vld;
-  // handshake ready
-  assign tcb_cmn_sub.rdy = ~tcb_cmn_sub.req.wen ? tcb_rdc_man.rdy
-                                                : tcb_wrc_man.rdy;
+    // handshake valid
+    assign tcb_rdc_man.vld = ~tcb_cmn_sub.req.wen & tcb_cmn_sub.vld;
+    assign tcb_wrc_man.vld =  tcb_cmn_sub.req.wen & tcb_cmn_sub.vld;
+    // handshake ready
+    assign tcb_cmn_sub.rdy = ~tcb_cmn_sub.req.wen ? tcb_rdc_man.rdy
+                                                  : tcb_wrc_man.rdy;
 
-  // request
-  // TODO: avoid passing write data to read channel
-  assign tcb_rdc_man.req =  tcb_cmn_sub.req;
-  assign tcb_wrc_man.req =  tcb_cmn_sub.req;
-  // response
-  // TODO: avoid passing read data from write channel
-  assign tcb_cmn_sub.rsp =  tcb_cmn_sub.dly[tcb_cmn_sub.HSK.DLY].ren ? tcb_rdc_man.rsp
-                                                                     : tcb_wrc_man.rsp;
+    // request
+    // TODO: avoid passing write data to read channel
+    assign tcb_rdc_man.req =  tcb_cmn_sub.req;
+    assign tcb_wrc_man.req =  tcb_cmn_sub.req;
+    // response
+    // TODO: avoid passing read data from write channel
+    assign tcb_cmn_sub.rsp =  tcb_cmn_sub.dly[tcb_cmn_sub.HSK.DLY].ren ? tcb_rdc_man.rsp
+                                                                       : tcb_wrc_man.rsp;
 
 endmodule: tcb_lib_common2independent

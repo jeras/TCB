@@ -17,20 +17,20 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 module tcb_lib_decoder
-  import tcb_pkg::*;
+    import tcb_pkg::*;
 #(
-  // TCB parameters (contains address width)
-  parameter  int unsigned ADR = 32,
-  // interconnect parameters (subordinate interface number and logarithm)
-  parameter  int unsigned IFN = 2,
-  localparam int unsigned IFL = $clog2(IFN),
-  // decoder address and mask array
-  parameter  logic [ADR-1:0] DAM [IFN-1:0] = '{default: 'x}
+    // TCB parameters (contains address width)
+    parameter  int unsigned ADR = 32,
+    // interconnect parameters (subordinate interface number and logarithm)
+    parameter  int unsigned IFN = 2,
+    localparam int unsigned IFL = $clog2(IFN),
+    // decoder address and mask array
+    parameter  logic [ADR-1:0] DAM [IFN-1:0] = '{default: 'x}
 )(
-  // TCB interfaces
-  tcb_if.sub tcb,  // TCB subordinate interface (manager device connects here)
-  // control
-  output logic [IFL-1:0] sel  // select
+    // TCB interfaces
+    tcb_if.sub tcb,  // TCB subordinate interface (manager device connects here)
+    // control
+    output logic [IFL-1:0] sel  // select
 );
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -44,45 +44,45 @@ module tcb_lib_decoder
 // local signals
 ////////////////////////////////////////////////////////////////////////////////
 
-  logic [ADR-1:0] adr;
+    logic [ADR-1:0] adr;
 
-  // extract address from TCB
-  assign adr = tcb.req.adr;
+    // extract address from TCB
+    assign adr = tcb.req.adr;
 
 ////////////////////////////////////////////////////////////////////////////////
 // decoder
 ////////////////////////////////////////////////////////////////////////////////
 
-//  // match
-//  function [IFN-1:0] match (
-//    logic [BUS.ADR-1:0] val,           // input
-//    logic [BUS.ADR-1:0] mch [IFN-1:0]   // matching reference
-//  );
-//    for (int unsigned i=0; i<IFN; i++) begin
-//      assign match[i] = val ==? mch[i];
-//    end
-//  endfunction: match
+//    // match
+//    function [IFN-1:0] match (
+//        logic [BUS.ADR-1:0] val,           // input
+//        logic [BUS.ADR-1:0] mch [IFN-1:0]   // matching reference
+//    );
+//        for (int unsigned i=0; i<IFN; i++) begin
+//            assign match[i] = val ==? mch[i];
+//        end
+//    endfunction: match
 
-  // match
-  logic mch [IFN-1:0];
+    // match
+    logic mch [IFN-1:0];
 
-  // match
-  generate
-    for (genvar i=0; i<IFN; i++) begin
-      assign mch[i] = adr ==? DAM[i];
-    end
-  endgenerate
+    // match
+    generate
+        for (genvar i=0; i<IFN; i++) begin
+            assign mch[i] = adr ==? DAM[i];
+        end
+    endgenerate
 
-  // encode
-  function logic [IFL-1:0] encode (logic val [IFN-1:0]);
-    encode = 'x;  // optimization of undefined encodings
-    for (int i=IFN; i>=0; i--) begin
-      if (val[i])  encode = i[IFL-1:0];
-    end
-  endfunction: encode
+    // encode
+    function logic [IFL-1:0] encode (logic val [IFN-1:0]);
+        encode = 'x;  // optimization of undefined encodings
+        for (int i=IFN; i>=0; i--) begin
+            if (val[i])  encode = i[IFL-1:0];
+        end
+    endfunction: encode
 
-  // address decoder
-//  assign sel = encode(match(adr, DAM));
-  assign sel = encode(mch);
+    // address decoder
+//    assign sel = encode(match(adr, DAM));
+    assign sel = encode(mch);
 
 endmodule: tcb_lib_decoder

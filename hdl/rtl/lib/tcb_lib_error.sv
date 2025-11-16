@@ -17,21 +17,21 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 module tcb_lib_error (
-  // system bus interface
-  tcb_if.sub sub
+    // system bus interface
+    tcb_if.sub sub
 );
 
 ////////////////////////////////////////////////////////////////////////////////
 // TCB access
 ////////////////////////////////////////////////////////////////////////////////
 
-// response is immediate
-assign sub.rdy = 1'b1;
+    // response is immediate
+    assign sub.rdy = 1'b1;
 
-// data is don't care
-assign sub.rsp.rdt = 'x;
+    // data is don't care
+    assign sub.rsp.rdt = 'x;
 
-// the response status is always an error
-assign sub.rsp.sts.err = 1'b1;
+    // the response status is always an error
+    assign sub.rsp.sts.err = 1'b1;
 
 endmodule: tcb_lib_error
