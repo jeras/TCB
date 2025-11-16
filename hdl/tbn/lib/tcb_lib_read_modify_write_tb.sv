@@ -17,284 +17,284 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 module tcb_lib_read_modify_write_tb
-  import tcb_pkg::*;
-  import tcb_vip_blocking_pkg::*;
+    import tcb_pkg::*;
+    import tcb_vip_blocking_pkg::*;
 #(
-  // handshake parameter
-  parameter  int unsigned      DLY = TCB_HSK_DEF.DLY      // response delay
+    // handshake parameter
+    parameter  int unsigned      DLY = TCB_HSK_DEF.DLY      // response delay
 );
 
 ////////////////////////////////////////////////////////////////////////////////
 // local parameters
 ////////////////////////////////////////////////////////////////////////////////
 
-  localparam tcb_cfg_t CFG_MAN = '{
-    // handshake parameter
-    HSK: TCB_HSK_DEF,
-    // bus parameter
-    BUS: '{
-      ADR: TCB_BUS_DEF.ADR,
-      DAT: TCB_BUS_DEF.DAT,
-      LEN: TCB_BUS_DEF.LEN,
-      LCK: TCB_LCK_PRESENT,
-      CHN: TCB_CHN_HALF_DUPLEX,
-      AMO: TCB_AMO_PRESENT,
-      PRF: TCB_PRF_ABSENT,
-      NXT: TCB_NXT_ABSENT,
-      MOD: TCB_MOD_BYTE_ENA,
-      ORD: TCB_ORD_DESCENDING,
-      NDN: TCB_NDN_BI_NDN
-    },
-    // physical interface parameter default
-    PMA: TCB_PMA_DEF
-  };
+    localparam tcb_cfg_t CFG_MAN = '{
+        // handshake parameter
+        HSK: TCB_HSK_DEF,
+        // bus parameter
+        BUS: '{
+            ADR: TCB_BUS_DEF.ADR,
+            DAT: TCB_BUS_DEF.DAT,
+            LEN: TCB_BUS_DEF.LEN,
+            LCK: TCB_LCK_PRESENT,
+            CHN: TCB_CHN_HALF_DUPLEX,
+            AMO: TCB_AMO_PRESENT,
+            PRF: TCB_PRF_ABSENT,
+            NXT: TCB_NXT_ABSENT,
+            MOD: TCB_MOD_BYTE_ENA,
+            ORD: TCB_ORD_DESCENDING,
+            NDN: TCB_NDN_BI_NDN
+        },
+        // physical interface parameter default
+        PMA: TCB_PMA_DEF
+    };
 
     localparam tcb_cfg_t CFG_SUB = '{
-    // handshake parameter
-    HSK: TCB_HSK_DEF,
-    // bus parameter
-    BUS: '{
-      ADR: TCB_BUS_DEF.ADR,
-      DAT: TCB_BUS_DEF.DAT,
-      LEN: TCB_BUS_DEF.LEN,
-      LCK: TCB_LCK_PRESENT,
-      CHN: TCB_CHN_HALF_DUPLEX,
-      AMO: TCB_AMO_ABSENT,
-      PRF: TCB_PRF_ABSENT,
-      NXT: TCB_NXT_ABSENT,
-      MOD: TCB_MOD_BYTE_ENA,
-      ORD: TCB_ORD_DESCENDING,
-      NDN: TCB_NDN_BI_NDN
-    },
-    // physical interface parameter default
-    PMA: TCB_PMA_DEF
-  };
+        // handshake parameter
+        HSK: TCB_HSK_DEF,
+        // bus parameter
+        BUS: '{
+            ADR: TCB_BUS_DEF.ADR,
+            DAT: TCB_BUS_DEF.DAT,
+            LEN: TCB_BUS_DEF.LEN,
+            LCK: TCB_LCK_PRESENT,
+            CHN: TCB_CHN_HALF_DUPLEX,
+            AMO: TCB_AMO_ABSENT,
+            PRF: TCB_PRF_ABSENT,
+            NXT: TCB_NXT_ABSENT,
+            MOD: TCB_MOD_BYTE_ENA,
+            ORD: TCB_ORD_DESCENDING,
+            NDN: TCB_NDN_BI_NDN
+        },
+        // physical interface parameter default
+        PMA: TCB_PMA_DEF
+    };
 
-  localparam tcb_vip_t VIP = '{
-    DRV: 1'b1
-  };
+    localparam tcb_vip_t VIP = '{
+        DRV: 1'b1
+    };
 
-//  typedef tcb_c #(HSK, BUS_SIZ, PMA)::req_t req_t;
-//  typedef tcb_c #(HSK, BUS_SIZ, PMA)::rsp_t rsp_t;
+//    typedef tcb_c #(HSK, BUS_SIZ, PMA)::req_t req_t;
+//    typedef tcb_c #(HSK, BUS_SIZ, PMA)::rsp_t rsp_t;
 
-  // local request/response types are copies of packaged defaults
-  typedef tcb_req_t req_t;
-  typedef tcb_rsp_t rsp_t;
+    // local request/response types are copies of packaged defaults
+    typedef tcb_req_t req_t;
+    typedef tcb_rsp_t rsp_t;
 
 ////////////////////////////////////////////////////////////////////////////////
 // local signals
 ////////////////////////////////////////////////////////////////////////////////
 
-  // system signals (initialized)
-  logic clk = 1'b1;  // clock
-  logic rst = 1'b1;  // reset
+    // system signals (initialized)
+    logic clk = 1'b1;  // clock
+    logic rst = 1'b1;  // reset
 
-  string testname = "none";
+    string testname = "none";
 
-  // TCB interfaces
-  tcb_if #(tcb_cfg_t, CFG_MAN, req_t, rsp_t) tcb_man (.clk (clk), .rst (rst));
-  tcb_if #(tcb_cfg_t, CFG_SUB, req_t, rsp_t) tcb_sub (.clk (clk), .rst (rst));
+    // TCB interfaces
+    tcb_if #(tcb_cfg_t, CFG_MAN, req_t, rsp_t) tcb_man (.clk (clk), .rst (rst));
+    tcb_if #(tcb_cfg_t, CFG_SUB, req_t, rsp_t) tcb_sub (.clk (clk), .rst (rst));
 
-  // parameterized class specialization (blocking API)
-  typedef tcb_vip_blocking_c #(tcb_cfg_t, CFG_MAN, req_t, rsp_t) tcb_man_s;
-  typedef tcb_vip_blocking_c #(tcb_cfg_t, CFG_SUB, req_t, rsp_t) tcb_sub_s;
+    // parameterized class specialization (blocking API)
+    typedef tcb_vip_blocking_c #(tcb_cfg_t, CFG_MAN, req_t, rsp_t) tcb_man_s;
+    typedef tcb_vip_blocking_c #(tcb_cfg_t, CFG_SUB, req_t, rsp_t) tcb_sub_s;
 
-  // TCB class objects
-  tcb_man_s obj_man = new(tcb_man, "MAN");
-  tcb_sub_s obj_sub = new(tcb_sub, "MON");
+    // TCB class objects
+    tcb_man_s obj_man = new(tcb_man, "MAN");
+    tcb_sub_s obj_sub = new(tcb_sub, "MON");
 
-  // transfer reference/monitor array
-  tcb_man_s::transfer_queue_t tst_ref;
-  tcb_sub_s::transfer_queue_t tst_mon;
-  int unsigned                tst_len;
+    // transfer reference/monitor array
+    tcb_man_s::transfer_queue_t tst_ref;
+    tcb_sub_s::transfer_queue_t tst_mon;
+    int unsigned                tst_len;
 
-  // empty array
-  logic [8-1:0] nul [];
+    // empty array
+    logic [8-1:0] nul [];
 
-  // response
-  logic [tcb_man.CFG_BUS_BYT-1:0][8-1:0] rdt;  // read data
-  tcb_rsp_sts_t                          sts;  // status response
+    // response
+    logic [tcb_man.CFG_BUS_BYT-1:0][8-1:0] rdt;  // read data
+    tcb_rsp_sts_t                          sts;  // status response
 
 ////////////////////////////////////////////////////////////////////////////////
 // tests
 ////////////////////////////////////////////////////////////////////////////////
 
-  task test_aligned ();
-    // write sequence
-    $display("write sequence");
-    testname = "write";
-    tst_mon.delete();
-    fork
-      // manager (blocking API)
-      begin: fork_man_write
-        obj_man.write8 (32'h00000010,        8'h10, sts);
-        obj_man.write8 (32'h00000011,      8'h32  , sts);
-        obj_man.write8 (32'h00000012,    8'h54    , sts);
-        obj_man.write8 (32'h00000013,  8'h76      , sts);
-        obj_man.write16(32'h00000020,     16'h3210, sts);
-        obj_man.write16(32'h00000022, 16'h7654    , sts);
-        obj_man.write32(32'h00000030, 32'h76543210, sts);
-      end: fork_man_write
-      // subordinate (monitor)
-      begin: fork_mon_write
-        obj_sub.transfer_monitor(tst_mon);
-      end: fork_mon_write
-    join_any
-    // disable transfer monitor
-    repeat (tcb_man.CFG.HSK.DLY) @(posedge clk);
-    disable fork;
-    // reference transfer queue
-    sts = '0;
-    tst_ref.delete();
-    tst_len = tst_ref.size();
-    // append reference transfers to queue
-    tst_len += obj_sub.put_transaction(tst_ref, '{req: '{adr: 32'h00000010, wdt: '{8'h10                     }, default: 'x}, rsp: '{nul, sts}});  //$display("DEBUG: tst_ref.size() = %0d", tst_ref.size());
-    tst_len += obj_sub.put_transaction(tst_ref, '{req: '{adr: 32'h00000011, wdt: '{       8'h32              }, default: 'x}, rsp: '{nul, sts}});  //$display("DEBUG: tst_ref.size() = %0d", tst_ref.size());
-    tst_len += obj_sub.put_transaction(tst_ref, '{req: '{adr: 32'h00000012, wdt: '{              8'h54       }, default: 'x}, rsp: '{nul, sts}});  //$display("DEBUG: tst_ref.size() = %0d", tst_ref.size());
-    tst_len += obj_sub.put_transaction(tst_ref, '{req: '{adr: 32'h00000013, wdt: '{                     8'h76}, default: 'x}, rsp: '{nul, sts}});  //$display("DEBUG: tst_ref.size() = %0d", tst_ref.size());
-    tst_len += obj_sub.put_transaction(tst_ref, '{req: '{adr: 32'h00000020, wdt: '{8'h10, 8'h32              }, default: 'x}, rsp: '{nul, sts}});  //$display("DEBUG: tst_ref.size() = %0d", tst_ref.size());
-    tst_len += obj_sub.put_transaction(tst_ref, '{req: '{adr: 32'h00000022, wdt: '{              8'h54, 8'h76}, default: 'x}, rsp: '{nul, sts}});  //$display("DEBUG: tst_ref.size() = %0d", tst_ref.size());
-    tst_len += obj_sub.put_transaction(tst_ref, '{req: '{adr: 32'h00000030, wdt: '{8'h10, 8'h32, 8'h54, 8'h76}, default: 'x}, rsp: '{nul, sts}});  //$display("DEBUG: tst_ref.size() = %0d", tst_ref.size());
-    // compare transfers from monitor to reference
-    // wildcard operator is used to ignore data byte comparison, when the reference data is 8'hxx
-    foreach(tst_ref[i]) begin
-      assert (tst_mon[i].req ==? tst_ref[i].req) else $error("\ntst_mon[%0d].req = %p !=? \ntst_ref[%0d].req = %p", i, tst_mon[i].req, i, tst_ref[i].req);
-      assert (tst_mon[i].rsp ==? tst_ref[i].rsp) else $error("\ntst_mon[%0d].rsp = %p !=? \ntst_ref[%0d].rsp = %p", i, tst_mon[i].rsp, i, tst_ref[i].rsp);
-    end
-    // printout transfer queue for debugging purposes
-//    foreach (tst_ref[i]) begin
-//      $display("DEBUG: tst_mon[%0d] = %p", i, tst_mon[i]);
-//      $display("DEBUG: tst_ref[%0d] = %p", i, tst_ref[i]);
-//    end
+    task test_aligned ();
+        // write sequence
+        $display("write sequence");
+        testname = "write";
+        tst_mon.delete();
+        fork
+            // manager (blocking API)
+            begin: fork_man_write
+                obj_man.write8 (32'h00000010,        8'h10, sts);
+                obj_man.write8 (32'h00000011,      8'h32  , sts);
+                obj_man.write8 (32'h00000012,    8'h54    , sts);
+                obj_man.write8 (32'h00000013,  8'h76      , sts);
+                obj_man.write16(32'h00000020,     16'h3210, sts);
+                obj_man.write16(32'h00000022, 16'h7654    , sts);
+                obj_man.write32(32'h00000030, 32'h76543210, sts);
+            end: fork_man_write
+            // subordinate (monitor)
+            begin: fork_mon_write
+                obj_sub.transfer_monitor(tst_mon);
+            end: fork_mon_write
+        join_any
+        // disable transfer monitor
+        repeat (tcb_man.CFG.HSK.DLY) @(posedge clk);
+        disable fork;
+        // reference transfer queue
+        sts = '0;
+        tst_ref.delete();
+        tst_len = tst_ref.size();
+        // append reference transfers to queue
+        tst_len += obj_sub.put_transaction(tst_ref, '{req: '{adr: 32'h00000010, wdt: '{8'h10                     }, default: 'x}, rsp: '{nul, sts}});  //$display("DEBUG: tst_ref.size() = %0d", tst_ref.size());
+        tst_len += obj_sub.put_transaction(tst_ref, '{req: '{adr: 32'h00000011, wdt: '{       8'h32              }, default: 'x}, rsp: '{nul, sts}});  //$display("DEBUG: tst_ref.size() = %0d", tst_ref.size());
+        tst_len += obj_sub.put_transaction(tst_ref, '{req: '{adr: 32'h00000012, wdt: '{              8'h54       }, default: 'x}, rsp: '{nul, sts}});  //$display("DEBUG: tst_ref.size() = %0d", tst_ref.size());
+        tst_len += obj_sub.put_transaction(tst_ref, '{req: '{adr: 32'h00000013, wdt: '{                     8'h76}, default: 'x}, rsp: '{nul, sts}});  //$display("DEBUG: tst_ref.size() = %0d", tst_ref.size());
+        tst_len += obj_sub.put_transaction(tst_ref, '{req: '{adr: 32'h00000020, wdt: '{8'h10, 8'h32              }, default: 'x}, rsp: '{nul, sts}});  //$display("DEBUG: tst_ref.size() = %0d", tst_ref.size());
+        tst_len += obj_sub.put_transaction(tst_ref, '{req: '{adr: 32'h00000022, wdt: '{              8'h54, 8'h76}, default: 'x}, rsp: '{nul, sts}});  //$display("DEBUG: tst_ref.size() = %0d", tst_ref.size());
+        tst_len += obj_sub.put_transaction(tst_ref, '{req: '{adr: 32'h00000030, wdt: '{8'h10, 8'h32, 8'h54, 8'h76}, default: 'x}, rsp: '{nul, sts}});  //$display("DEBUG: tst_ref.size() = %0d", tst_ref.size());
+        // compare transfers from monitor to reference
+        // wildcard operator is used to ignore data byte comparison, when the reference data is 8'hxx
+        foreach(tst_ref[i]) begin
+          assert (tst_mon[i].req ==? tst_ref[i].req) else $error("\ntst_mon[%0d].req = %p !=? \ntst_ref[%0d].req = %p", i, tst_mon[i].req, i, tst_ref[i].req);
+          assert (tst_mon[i].rsp ==? tst_ref[i].rsp) else $error("\ntst_mon[%0d].rsp = %p !=? \ntst_ref[%0d].rsp = %p", i, tst_mon[i].rsp, i, tst_ref[i].rsp);
+        end
+        // printout transfer queue for debugging purposes
+//        foreach (tst_ref[i]) begin
+//            $display("DEBUG: tst_mon[%0d] = %p", i, tst_mon[i]);
+//            $display("DEBUG: tst_ref[%0d] = %p", i, tst_ref[i]);
+//        end
 
-    // read sequence
-    $display("read sequence");
-    testname = "read";
-    tst_mon.delete();
-    fork
-      // manager (blocking API)
-      begin: fork_man_read
-        obj_man.read8  (32'h00000010, rdt[1-1:0], sts);
-        obj_man.read8  (32'h00000011, rdt[1-1:0], sts);
-        obj_man.read8  (32'h00000012, rdt[1-1:0], sts);
-        obj_man.read8  (32'h00000013, rdt[1-1:0], sts);
-        obj_man.read16 (32'h00000020, rdt[2-1:0], sts);
-        obj_man.read16 (32'h00000022, rdt[2-1:0], sts);
-        obj_man.read32 (32'h00000030, rdt[4-1:0], sts);
-      end: fork_man_read
-      // subordinate (monitor)
-      begin: fork_mon_read
-        obj_sub.transfer_monitor(tst_mon);
-      end: fork_mon_read
-    join_any
-    // disable transfer monitor
-    repeat (tcb_man.CFG.HSK.DLY) @(posedge clk);
-    disable fork;
-    // reference transfer queue
-    sts = '0;
-    tst_ref.delete();
-    tst_len = tst_ref.size();
-    // append reference transfers to queue
-    tst_len += obj_sub.put_transaction(tst_ref, '{req: '{adr: 32'h00000010, wdt: nul, default: 'x}, rsp: '{'{8'h10                     }, sts}});
-    tst_len += obj_sub.put_transaction(tst_ref, '{req: '{adr: 32'h00000011, wdt: nul, default: 'x}, rsp: '{'{       8'h32              }, sts}});
-    tst_len += obj_sub.put_transaction(tst_ref, '{req: '{adr: 32'h00000012, wdt: nul, default: 'x}, rsp: '{'{              8'h54       }, sts}});
-    tst_len += obj_sub.put_transaction(tst_ref, '{req: '{adr: 32'h00000013, wdt: nul, default: 'x}, rsp: '{'{                     8'h76}, sts}});
-    tst_len += obj_sub.put_transaction(tst_ref, '{req: '{adr: 32'h00000020, wdt: nul, default: 'x}, rsp: '{'{8'h10, 8'h32              }, sts}});
-    tst_len += obj_sub.put_transaction(tst_ref, '{req: '{adr: 32'h00000022, wdt: nul, default: 'x}, rsp: '{'{              8'h54, 8'h76}, sts}});
-    tst_len += obj_sub.put_transaction(tst_ref, '{req: '{adr: 32'h00000030, wdt: nul, default: 'x}, rsp: '{'{8'h10, 8'h32, 8'h54, 8'h76}, sts}});
-    // compare transfers from monitor to reference
-    // wildcard operator is used to ignore data byte comparison, when the reference data is 8'hxx
-    foreach(tst_ref[i]) begin
-      assert (tst_mon[i].req ==? tst_ref[i].req) else $error("\ntst_mon[%0d].req = %p !=? \ntst_ref[%0d].req = %p", i, tst_mon[i].req, i, tst_ref[i].req);
-      assert (tst_mon[i].rsp ==? tst_ref[i].rsp) else $error("\ntst_mon[%0d].rsp = %p !=? \ntst_ref[%0d].rsp = %p", i, tst_mon[i].rsp, i, tst_ref[i].rsp);
-    end
-//    // printout transfer queue for debugging purposes
-//    foreach (tst_ref[i]) begin
-//      $display("DEBUG: tst_mon[%0d] = %p", i, tst_mon[i]);
-//      $display("DEBUG: tst_ref[%0d] = %p", i, tst_ref[i]);
-//    end
+        // read sequence
+        $display("read sequence");
+        testname = "read";
+        tst_mon.delete();
+        fork
+            // manager (blocking API)
+            begin: fork_man_read
+                obj_man.read8  (32'h00000010, rdt[1-1:0], sts);
+                obj_man.read8  (32'h00000011, rdt[1-1:0], sts);
+                obj_man.read8  (32'h00000012, rdt[1-1:0], sts);
+                obj_man.read8  (32'h00000013, rdt[1-1:0], sts);
+                obj_man.read16 (32'h00000020, rdt[2-1:0], sts);
+                obj_man.read16 (32'h00000022, rdt[2-1:0], sts);
+                obj_man.read32 (32'h00000030, rdt[4-1:0], sts);
+            end: fork_man_read
+            // subordinate (monitor)
+            begin: fork_mon_read
+                obj_sub.transfer_monitor(tst_mon);
+            end: fork_mon_read
+        join_any
+        // disable transfer monitor
+        repeat (tcb_man.CFG.HSK.DLY) @(posedge clk);
+        disable fork;
+        // reference transfer queue
+        sts = '0;
+        tst_ref.delete();
+        tst_len = tst_ref.size();
+        // append reference transfers to queue
+        tst_len += obj_sub.put_transaction(tst_ref, '{req: '{adr: 32'h00000010, wdt: nul, default: 'x}, rsp: '{'{8'h10                     }, sts}});
+        tst_len += obj_sub.put_transaction(tst_ref, '{req: '{adr: 32'h00000011, wdt: nul, default: 'x}, rsp: '{'{       8'h32              }, sts}});
+        tst_len += obj_sub.put_transaction(tst_ref, '{req: '{adr: 32'h00000012, wdt: nul, default: 'x}, rsp: '{'{              8'h54       }, sts}});
+        tst_len += obj_sub.put_transaction(tst_ref, '{req: '{adr: 32'h00000013, wdt: nul, default: 'x}, rsp: '{'{                     8'h76}, sts}});
+        tst_len += obj_sub.put_transaction(tst_ref, '{req: '{adr: 32'h00000020, wdt: nul, default: 'x}, rsp: '{'{8'h10, 8'h32              }, sts}});
+        tst_len += obj_sub.put_transaction(tst_ref, '{req: '{adr: 32'h00000022, wdt: nul, default: 'x}, rsp: '{'{              8'h54, 8'h76}, sts}});
+        tst_len += obj_sub.put_transaction(tst_ref, '{req: '{adr: 32'h00000030, wdt: nul, default: 'x}, rsp: '{'{8'h10, 8'h32, 8'h54, 8'h76}, sts}});
+        // compare transfers from monitor to reference
+        // wildcard operator is used to ignore data byte comparison, when the reference data is 8'hxx
+        foreach(tst_ref[i]) begin
+            assert (tst_mon[i].req ==? tst_ref[i].req) else $error("\ntst_mon[%0d].req = %p !=? \ntst_ref[%0d].req = %p", i, tst_mon[i].req, i, tst_ref[i].req);
+            assert (tst_mon[i].rsp ==? tst_ref[i].rsp) else $error("\ntst_mon[%0d].rsp = %p !=? \ntst_ref[%0d].rsp = %p", i, tst_mon[i].rsp, i, tst_ref[i].rsp);
+        end
+//        // printout transfer queue for debugging purposes
+//        foreach (tst_ref[i]) begin
+//            $display("DEBUG: tst_mon[%0d] = %p", i, tst_mon[i]);
+//            $display("DEBUG: tst_ref[%0d] = %p", i, tst_ref[i]);
+//        end
 
-    // check sequence
-    $display("check sequence");
-    testname = "check";
-    obj_man.check8 (32'h00000010,        8'h10, 1'b0);
-    obj_man.check8 (32'h00000011,      8'h32  , 1'b0);
-    obj_man.check8 (32'h00000012,    8'h54    , 1'b0);
-    obj_man.check8 (32'h00000013,  8'h76      , 1'b0);
-    obj_man.check32(32'h00000010, 32'h76543210, 1'b0);
-    obj_man.check16(32'h00000020,     16'h3210, 1'b0);
-    obj_man.check16(32'h00000022, 16'h7654    , 1'b0);
-    obj_man.check32(32'h00000020, 32'h76543210, 1'b0);
-    obj_man.check32(32'h00000030, 32'h76543210, 1'b0);
-  endtask: test_aligned
+        // check sequence
+        $display("check sequence");
+        testname = "check";
+        obj_man.check8 (32'h00000010,        8'h10, 1'b0);
+        obj_man.check8 (32'h00000011,      8'h32  , 1'b0);
+        obj_man.check8 (32'h00000012,    8'h54    , 1'b0);
+        obj_man.check8 (32'h00000013,  8'h76      , 1'b0);
+        obj_man.check32(32'h00000010, 32'h76543210, 1'b0);
+        obj_man.check16(32'h00000020,     16'h3210, 1'b0);
+        obj_man.check16(32'h00000022, 16'h7654    , 1'b0);
+        obj_man.check32(32'h00000020, 32'h76543210, 1'b0);
+        obj_man.check32(32'h00000030, 32'h76543210, 1'b0);
+    endtask: test_aligned
 
 ////////////////////////////////////////////////////////////////////////////////
 // test sequence
 ////////////////////////////////////////////////////////////////////////////////
 
-  // clock
-  always #(20ns/2) clk = ~clk;
+    // clock
+    always #(20ns/2) clk = ~clk;
 
-  // test sequence
-  initial
-  begin: test
-    // reset sequence
-    repeat (2) @(posedge clk);
-    rst <= 1'b0;
-    repeat (1) @(posedge clk);
+    // test sequence
+    initial
+    begin: test
+        // reset sequence
+        repeat (2) @(posedge clk);
+        rst <= 1'b0;
+        repeat (1) @(posedge clk);
 
-    test_aligned;
+        test_aligned;
 
-    // end of test
-    repeat (4) @(posedge clk);
-    $finish();
-  end: test
+        // end of test
+        repeat (4) @(posedge clk);
+        $finish();
+    end: test
 
 ////////////////////////////////////////////////////////////////////////////////
 // VIP instances
 ////////////////////////////////////////////////////////////////////////////////
 
-  tcb_vip_protocol_checker chk_man (
-    .tcb (tcb_man)
-  );
+    tcb_vip_protocol_checker chk_man (
+        .tcb (tcb_man)
+    );
 
-  tcb_vip_protocol_checker chk_sub (
-    .tcb (tcb_sub)
-  );
+    tcb_vip_protocol_checker chk_sub (
+        .tcb (tcb_sub)
+    );
 
-  // CRAM memory model subordinate
-  cram_model #(
-    .ADR (tcb_sub.CFG.BUS.ADR),
-    .DAT (tcb_sub.CFG.BUS.DAT),
-    .SIZ (2**5)
-  ) cram (
-    .clk (tcb_sub.clk),
-    .wen (tcb_sub.req.wen & tcb_sub.trn),
-    .adr (tcb_sub.req.adr),
-    .wdt (tcb_sub.req.wdt),
-    .rdt (tcb_sub.rsp.rdt)
-  );
+    // CRAM memory model subordinate
+    cram_model #(
+        .ADR (tcb_sub.CFG.BUS.ADR),
+        .DAT (tcb_sub.CFG.BUS.DAT),
+        .SIZ (2**5)
+    ) cram (
+        .clk (tcb_sub.clk),
+        .wen (tcb_sub.req.wen & tcb_sub.trn),
+        .adr (tcb_sub.req.adr),
+        .wdt (tcb_sub.req.wdt),
+        .rdt (tcb_sub.rsp.rdt)
+    );
 
-  assign tcb_sub.rdy = 1'b1;
-  assign tcb_sub.rsp.sts = '0;
+    assign tcb_sub.rdy = 1'b1;
+    assign tcb_sub.rsp.sts = '0;
 
 ////////////////////////////////////////////////////////////////////////////////
 // DUT instance
 ////////////////////////////////////////////////////////////////////////////////
 
-  tcb_lib_read_modify_write dut (
-    .sub  (tcb_man),
-    .man  (tcb_sub)
-  );
+    tcb_lib_read_modify_write dut (
+        .sub  (tcb_man),
+        .man  (tcb_sub)
+    );
 
 ////////////////////////////////////////////////////////////////////////////////
 // VCD/FST waveform trace
-////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////// /////
 
-  initial
-  begin
-    $dumpfile("test.fst");
-    $dumpvars;
-  end
+    initial
+    begin
+        $dumpfile("test.fst");
+        $dumpvars;
+    end
 
 endmodule: tcb_lib_read_modify_write_tb
