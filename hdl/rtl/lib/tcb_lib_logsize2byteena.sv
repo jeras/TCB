@@ -30,28 +30,19 @@ module tcb_lib_logsize2byteena
 
     // BUS parameters
     initial begin
-        // data sizing mode
-        assert (sub.CFG.BUS.MOD == TCB_MOD_LOG_SIZE) else $error("mismatch (sub.CFG.BUS.MOD = %0s) != TCB_MOD_LOG_SIZE", sub.CFG.BUS.MOD.name());
-        assert (man.CFG.BUS.MOD == TCB_MOD_BYTE_ENA) else $error("mismatch (man.CFG.BUS.MOD = %0s) != TCB_MOD_BYTE_ENA", man.CFG.BUS.MOD.name());
-        // other parameters
-        assert (  sub.CFG.BUS.LCK  ==   man.CFG.BUS.LCK ) else $error("mismatch (  sub.CFG.BUS.LCK  = %0d) != (  man.CFG.BUS.LCK  = %0d)", sub.CFG.BUS.LCK       , man.CFG.BUS.LCK       );
-        assert (  sub.CFG.BUS.LEN  ==   man.CFG.BUS.LEN ) else $error("mismatch (  sub.CFG.BUS.LEN  = %0d) != (  man.CFG.BUS.LEN  = %0d)", sub.CFG.BUS.LEN       , man.CFG.BUS.LEN       );
-        assert (  sub.CFG.BUS.CHN  ==   man.CFG.BUS.CHN ) else $error("mismatch (  sub.CFG.BUS.CHN  = %0s) != (  man.CFG.BUS.CHN  = %0s)", sub.CFG.BUS.CHN.name(), man.CFG.BUS.CHN.name());
-        assert (  sub.CFG.BUS.PRF  ==   man.CFG.BUS.PRF ) else $error("mismatch (  sub.CFG.BUS.PRF  = %0s) != (  man.CFG.BUS.PRF  = %0s)", sub.CFG.BUS.PRF.name(), man.CFG.BUS.PRF.name());
-        assert ($bits(sub.req.adr) == $bits(man.req.adr)) else $error("mismatch ($bits(sub.req.adr) = %0d) != ($bits(man.req.adr) = %0d)", $bits(sub.req.adr)    , $bits(man.req.adr)    );
-        assert (  sub.CFG.BUS.NXT  ==   man.CFG.BUS.NXT ) else $error("mismatch (  sub.CFG.BUS.NXT  = %0s) != (  man.CFG.BUS.NXT  = %0s)", sub.CFG.BUS.NXT.name(), man.CFG.BUS.NXT.name());
-        assert (  sub.CFG.BUS.ORD  ==   man.CFG.BUS.ORD ) else $error("mismatch (  sub.CFG.BUS.ORD  = %0s) != (  man.CFG.BUS.ORD  = %0s)", sub.CFG.BUS.ORD.name(), man.CFG.BUS.ORD.name());
-        assert (  sub.CFG.BUS.NDN  ==   man.CFG.BUS.NDN ) else $error("mismatch (  sub.CFG.BUS.NDN  = %0s) != (  man.CFG.BUS.NDN  = %0s)", sub.CFG.BUS.NDN.name(), man.CFG.BUS.NDN.name());
-    end
+        // data packing
+        assert (sub.CFG.PCK.ORD == man.CFG.PCK.ORD) else $error("mismatch (sub.CFG.PCK.ORD = %0s) != (man.CFG.PCK.ORD = %0s)", sub.CFG.PCK.ORD.name(), man.CFG.PCK.ORD.name());
+        assert (sub.CFG.PCK.NDN == man.CFG.PCK.NDN) else $error("mismatch (sub.CFG.PCK.NDN = %0s) != (man.CFG.PCK.NDN = %0s)", sub.CFG.PCK.NDN.name(), man.CFG.PCK.NDN.name());
 
-    generate
-        if (sub.CFG.BUS.CHN != TCB_CHN_READ_ONLY) begin
-            initial assert ($bits(sub.req.wdt) == $bits(man.req.wdt)) else $error("mismatch ($bits(sub.req.wdt) = %0d) != ($bits(man.req.wdt) = %0d)", $bits(sub.req.wdt), $bits(man.req.wdt));
-        end
-        if (sub.CFG.BUS.CHN != TCB_CHN_WRITE_ONLY) begin
-            initial assert ($bits(sub.rsp.rdt) == $bits(man.rsp.rdt)) else $error("mismatch ($bits(sub.rsp.rdt) = %0d) != ($bits(man.rsp.rdt) = %0d)", $bits(sub.rsp.rdt), $bits(man.rsp.rdt));
-        end
-    endgenerate
+        assert (sub.CFG.PCK.MOD == TCB_MOD_LOG_SIZE) else $error("mismatch (sub.CFG.PCK.MOD = %0s) != TCB_MOD_LOG_SIZE", sub.CFG.PCK.MOD.name());
+        assert (man.CFG.PCK.MOD == TCB_MOD_BYTE_ENA) else $error("mismatch (man.CFG.PCK.MOD = %0s) != TCB_MOD_BYTE_ENA", man.CFG.PCK.MOD.name());
+        // other parameters
+        assert (  sub.CFG.BUS.LCK  ==   man.CFG.BUS.LCK ) else $error("mismatch (  sub.CFG.BUS.LCK  = %0d) != (  man.CFG.BUS.LCK  = %0d)", sub.CFG.BUS.LCK, man.CFG.BUS.LCK);
+        assert (  sub.CFG.BUS.LEN  ==   man.CFG.BUS.LEN ) else $error("mismatch (  sub.CFG.BUS.LEN  = %0d) != (  man.CFG.BUS.LEN  = %0d)", sub.CFG.BUS.LEN, man.CFG.BUS.LEN);
+        assert (  sub.CFG.BUS.PRF  ==   man.CFG.BUS.PRF ) else $error("mismatch (  sub.CFG.BUS.PRF  = %0s) != (  man.CFG.BUS.PRF  = %0s)", sub.CFG.BUS.PRF, man.CFG.BUS.PRF);
+        assert ($bits(sub.req.adr) == $bits(man.req.adr)) else $error("mismatch ($bits(sub.req.adr) = %0d) != ($bits(man.req.adr) = %0d)", $bits(sub.req.adr), $bits(man.req.adr));
+        assert (  sub.CFG.BUS.NXT  ==   man.CFG.BUS.NXT ) else $error("mismatch (  sub.CFG.BUS.NXT  = %0s) != (  man.CFG.BUS.NXT  = %0s)", sub.CFG.BUS.NXT, man.CFG.BUS.NXT);
+    end
 
     // PMA parameters
     initial begin
@@ -77,6 +68,8 @@ module tcb_lib_logsize2byteena
     assign man.req.inc = sub.req.inc;
     assign man.req.adr = sub.req.adr;
     assign man.req.nxt = sub.req.nxt;
+    assign man.req.wad = sub.req.wad;
+    assign man.req.rad = sub.req.rad;
     assign man.req.ndn = sub.req.ndn;
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -134,21 +127,17 @@ module tcb_lib_logsize2byteena
 
         // TODO: add big endian support, maybe ASCENDING also
 
-        if (sub.CFG.BUS.CHN != TCB_CHN_READ_ONLY) begin: write
-            // write access
-            always_comb
-            for (int unsigned i=0; i<sub.CFG_BUS_BYT; i++) begin
-                man.req.wdt[i] = sub.req.wdt[i[sub.CFG_BUS_MAX-1:0] & ~req_msk];
-            end
-        end: write
+        // write access
+        always_comb
+        for (int unsigned i=0; i<sub.CFG_BUS_BYT; i++) begin
+            man.req.wdt[i] = sub.req.wdt[i[sub.CFG_BUS_MAX-1:0] & ~req_msk];
+        end
 
-        if (sub.CFG.BUS.CHN != TCB_CHN_WRITE_ONLY) begin: read
-            // read access
-            always_comb
-            for (int unsigned i=0; i<sub.CFG_BUS_BYT; i++) begin
-                sub.rsp.rdt[i] = man.rsp.rdt[(~prefix_or(i[sub.CFG_BUS_MAX-1:0]) & rsp_off) | i[sub.CFG_BUS_MAX-1:0]];
-            end
-        end: read
+        // read access
+        always_comb
+        for (int unsigned i=0; i<sub.CFG_BUS_BYT; i++) begin
+            sub.rsp.rdt[i] = man.rsp.rdt[(~prefix_or(i[sub.CFG_BUS_MAX-1:0]) & rsp_off) | i[sub.CFG_BUS_MAX-1:0]];
+        end
 
     end: aligned
     else begin: unaligned
@@ -168,29 +157,25 @@ module tcb_lib_logsize2byteena
             man.req.byt[i] = sub_req_ben[(i-req_off) % sub.CFG_BUS_BYT];
         end: ben
 
-        if (sub.CFG.BUS.CHN != TCB_CHN_READ_ONLY) begin: write
-            // write data
-            always_comb
-            for (int unsigned i=0; i<sub.CFG_BUS_BYT; i++) begin: wdt
-                unique case (req_ndn)
-                    TCB_LITTLE:  man.req.wdt[i] = sub.req.wdt[(             i-req_off) % sub.CFG_BUS_BYT];
-                    TCB_BIG   :  man.req.wdt[i] = sub.req.wdt[(2**req_siz-1-i+req_off) % sub.CFG_BUS_BYT];
-                    default   :  man.req.wdt[i] = '{default: 8'hxx};
-                endcase
-            end: wdt
-        end: write
+        // write data
+        always_comb
+        for (int unsigned i=0; i<sub.CFG_BUS_BYT; i++) begin: wdt
+            unique case (req_ndn)
+                TCB_LITTLE:  man.req.wdt[i] = sub.req.wdt[(             i-req_off) % sub.CFG_BUS_BYT];
+                TCB_BIG   :  man.req.wdt[i] = sub.req.wdt[(2**req_siz-1-i+req_off) % sub.CFG_BUS_BYT];
+                default   :  man.req.wdt[i] = '{default: 8'hxx};
+            endcase
+        end: wdt
 
-        if (sub.CFG.BUS.CHN != TCB_CHN_WRITE_ONLY) begin: read
-            // read data
-            always_comb
-            for (int unsigned i=0; i<sub.CFG_BUS_BYT; i++) begin: rdt
-                unique case (rsp_ndn)
-                    TCB_LITTLE:  sub.rsp.rdt[i] = man.rsp.rdt[(             i+rsp_off) % sub.CFG_BUS_BYT];
-                    TCB_BIG   :  sub.rsp.rdt[i] = man.rsp.rdt[(2**rsp_siz-1-i+rsp_off) % sub.CFG_BUS_BYT];
-                    default   :  sub.rsp.rdt[i] = '{default: 8'hxx};
-                endcase
-            end: rdt
-        end: read
+        // read data
+        always_comb
+        for (int unsigned i=0; i<sub.CFG_BUS_BYT; i++) begin: rdt
+            unique case (rsp_ndn)
+                TCB_LITTLE:  sub.rsp.rdt[i] = man.rsp.rdt[(             i+rsp_off) % sub.CFG_BUS_BYT];
+                TCB_BIG   :  sub.rsp.rdt[i] = man.rsp.rdt[(2**rsp_siz-1-i+rsp_off) % sub.CFG_BUS_BYT];
+                default   :  sub.rsp.rdt[i] = '{default: 8'hxx};
+            endcase
+        end: rdt
 
     end: unaligned
     endgenerate

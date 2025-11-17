@@ -21,33 +21,22 @@ package tcb_vip_pkg;
     import tcb_pkg::*;
 
     // endianness
-    // NOTE: If the bus endianness is hardcoded, the transaction endianness must:
-    //       - match the hardcoded bus endianness OR,
-    //       - be undefined (x/z).
-    // NOTE: If the requested endianness $isunknown, the transaction endianness
-    //       will be set to the native bus endianness.
     function automatic logic endianness (
         input logic ndn,  // requested endianness
         tcb_cfg_t   CFG   // configuration parameters
     );
-        case (CFG.BUS.NDN)
-            TCB_NDN_DEFAULT: begin
-                endianness = CFG.BUS.ORD;
-                assert (endianness ==? ndn) else $error("Transaction endianness does not match CFG.BUS.NDN");
+        if ($isunknown(ndn)) begin
+            // if desired endianness is undefined,
+            // apply default endianness
+            endianness = CFG.PCK.NDN;
+        end else begin
+            // apply desired endianness
+            endianness = ndn;
+            // check if endianness is supported
+            if (!CFG.BUS.NDN) begin
+                assert (ndn ==? CFG.PCK.NDN) else $error("Transaction endianness does not match CFG.BUS.NDN");
             end
-            TCB_NDN_BI_NDN :  begin
-                if ($isunknown(ndn)) begin
-                    endianness = CFG.BUS.ORD;
-                end else begin
-                    endianness = ndn;
-                end
-            end
-            TCB_NDN_LITTLE ,
-            TCB_NDN_BIG    :  begin
-                endianness = CFG.BUS.NDN[0];
-                assert (endianness ==? ndn) else $error("Transaction endianness does not match CFG.BUS.NDN");
-            end
-        endcase
+        end
     endfunction: endianness
 
 endpackage: tcb_vip_pkg

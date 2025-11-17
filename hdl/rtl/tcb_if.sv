@@ -52,6 +52,8 @@ interface tcb_if
 // parameter validation
 ////////////////////////////////////////////////////////////////////////////////
 
+/*
+    // bus parameter validation
     generate
         // framing lock (maximum frame length is FRM+1)
         if (CFG.BUS.LCK > 0) begin
@@ -133,13 +135,14 @@ interface tcb_if
                 $error("unexpected type(req.ndn) = ", $typename(req.ndn));
         end
     endgenerate
+*/
 
 ////////////////////////////////////////////////////////////////////////////////
 // local parameters
 ////////////////////////////////////////////////////////////////////////////////
 
     // local parameters are calculated from the request
-    localparam int unsigned CFG_BUS_BYT = CFG.BUS.DAT/8;
+    localparam int unsigned CFG_BUS_BYT =        CFG.BUS.DAT/8;
     localparam int unsigned CFG_BUS_MAX = $clog2(CFG_BUS_BYT);
     localparam int unsigned CFG_BUS_SIZ = $clog2(CFG_BUS_MAX+1);
 
@@ -156,31 +159,6 @@ interface tcb_if
             logsize2byteena[i] = (i < 2**siz) ? 1'b1 : 1'b0;
         end
     endfunction: logsize2byteena
-
-    // write enable
-    function automatic logic write (
-        input logic wen
-    );
-        case (CFG.BUS.CHN)
-            TCB_CHN_HALF_DUPLEX:  write =  wen;
-            TCB_CHN_FULL_DUPLEX:  write =  wen;
-            TCB_CHN_WRITE_ONLY :  write = 1'b1;
-            TCB_CHN_READ_ONLY  :  write = 1'b0;
-        endcase
-    endfunction: write
-
-    // read enable
-    function automatic logic read (
-        input logic wen,
-        input logic ren
-    );
-        case (CFG.BUS.CHN)
-            TCB_CHN_HALF_DUPLEX:  read = ~wen;
-            TCB_CHN_FULL_DUPLEX:  read =  ren;
-            TCB_CHN_WRITE_ONLY :  read = 1'b0;
-            TCB_CHN_READ_ONLY  :  read = 1'b1;
-        endcase
-    endfunction: read
 
 ////////////////////////////////////////////////////////////////////////////////
 // transaction handshake and misalignment logic
@@ -267,9 +245,7 @@ interface tcb_if
         // delayed request/response
         input  trn_dly,
         input  req_dly,
-        input  rsp_dly,
-        // functions
-        import write, read
+        input  rsp_dly
     );
 
     // monitor
@@ -290,9 +266,7 @@ interface tcb_if
         // delayed request/response
         input  trn_dly,
         input  req_dly,
-        input  rsp_dly,
-        // functions
-        import write, read
+        input  rsp_dly
     );
 
     // subordinate
@@ -313,9 +287,7 @@ interface tcb_if
         // delayed request/response
         input  trn_dly,
         input  req_dly,
-        input  rsp_dly,
-        // functions
-        import write, read
+        input  rsp_dly
     );
 
 endinterface: tcb_if

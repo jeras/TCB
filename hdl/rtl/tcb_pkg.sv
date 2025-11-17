@@ -23,65 +23,51 @@ package tcb_pkg;
 ////////////////////////////////////////////////////////////////////////////////
 
     // handshake layer parameter structure
-    // TODO: the structure is packed to workaround a Verilator bug
-    `ifdef VERILATOR
-    typedef struct packed {
-    `else
     typedef struct {
-    `endif
         int unsigned DLY;  // response delay
         bit          HLD;  // hold the response till the next access,
                            // response data even further till the next read access
+        bit          TGL;  // prevent toggling of response data during idle periods,
+                           // due to propagation of volatile signals (counters, ...)
     } tcb_hsk_t;
 
     // handshake delay (HSK.DLY) default value
     localparam tcb_hsk_t TCB_HSK_DEF = '{
         DLY: 1,
-        HLD: 1'b0
+        HLD: 1'b0,
+        TGL: 1'b0
     };
 
 ////////////////////////////////////////////////////////////////////////////////
 // bus layer (defines which signal subset is used)
 ////////////////////////////////////////////////////////////////////////////////
 
-    // locking configuration
-    typedef enum bit {
-        TCB_LCK_ABSENT  = 1'b0,
-        TCB_LCK_PRESENT = 1'b1
-    } tcb_bus_lock_t;
+    // bus layer parameter structure
+    // TODO: the structure is packed to workaround a Verilator bug
+    typedef struct {
+        // signal widths
+        int unsigned ADR;  // address width
+        int unsigned DAT;  // data width
+        int unsigned LEN;  // burst length counter width
+        // signal used/unused
+        bit          PRF;  // prefetch configuration
+        bit          NXT;  // next address configuration
+        bit          NDN;  // endianness
+    } tcb_bus_t;
 
-    // channel configuration
-    typedef enum bit [2-1:0] {
-        // 2 bit value {rd,wr}
-        TCB_CHN_HALF_DUPLEX = 2'b00,  // half duplex read/write (wen is used to distinguish between write and read)
-        TCB_CHN_FULL_DUPLEX = 2'b11,  // full duplex read/write (wen/ren are both used)
-        TCB_CHN_WRITE_ONLY  = 2'b01,  // write only channel (wen/ren are both ignored)
-        TCB_CHN_READ_ONLY   = 2'b10   // read  only channel (wen/ren are both ignored)
-    } tcb_bus_channel_t;
+    // physical interface parameter default
+    localparam tcb_bus_t TCB_BUS_DEF = '{
+        // signal widths
+        ADR: 32,
+        DAT: 32,
+        LEN: 12, // transfer frame size of up to 4kB
+        // signal used/unused
+        default: 1'b1
+    };
 
-    // atomic configuration
-    typedef enum bit {
-        TCB_AMO_ABSENT  = 1'b0,
-        TCB_AMO_PRESENT = 1'b1
-    } tcb_bus_atomic_t;
-
-    // prefetch configuration
-    typedef enum bit {
-        TCB_PRF_ABSENT  = 1'b0,  //
-        TCB_PRF_PRESENT = 1'b1   // enable prefetch signals
-    } tcb_bus_prefetch_t;
-
-    // next address configuration (for misaligned accesses)
-    typedef enum bit {
-        TCB_NXT_ABSENT  = 1'b0,  //
-        TCB_NXT_PRESENT = 1'b1   // enable prefetch signals
-    } tcb_bus_next_t;
-
-    // data sizing mode
-    typedef enum bit {
-        TCB_MOD_LOG_SIZE = 1'b0,  // logarithmic size
-        TCB_MOD_BYTE_ENA = 1'b1   // byte enable
-    } tcb_bus_mode_t;
+////////////////////////////////////////////////////////////////////////////////
+// byte packing layer (defines which signal subset is used)
+////////////////////////////////////////////////////////////////////////////////
 
     // byte order
     typedef enum bit {
@@ -91,45 +77,31 @@ package tcb_pkg;
 
     // endianness configuration (for LITTLE/BIG endian only the endianness in encoded in NDN[0])
     typedef enum bit [2-1:0] {
-        TCB_NDN_DEFAULT = 2'b00,  // default derived from byte order
-        TCB_NDN_BI_NDN  = 2'b01,  // bi-    endian support
-        TCB_NDN_LITTLE  = 2'b10,  // little endian only (default for TCB_ORD_DESCENDING order)
-        TCB_NDN_BIG     = 2'b11   // big    endian only (default for TCB_ORD_ASCENDING  order)
+        TCB_NDN_LITTLE  = 1'b0,  // little endian only (default for TCB_ORD_DESCENDING order)
+        TCB_NDN_BIG     = 1'b1   // big    endian only (default for TCB_ORD_ASCENDING  order)
     } tcb_bus_endian_t;
+
+    // data sizing mode
+    typedef enum bit {
+        TCB_MOD_LOG_SIZE = 1'b0,  // logarithmic size
+        TCB_MOD_BYTE_ENA = 1'b1   // byte enable
+    } tcb_bus_mode_t;
 
     // bus layer parameter structure
     // TODO: the structure is packed to workaround a Verilator bug
-    `ifdef VERILATOR
-    typedef struct packed {
-    `else
     typedef struct {
-    `endif
-        int unsigned       ADR;  // address width
-        int unsigned       DAT;  // data width
-        int unsigned       LEN;  // burst length counter width
-        tcb_bus_lock_t     LCK;  // framing configuration
-        tcb_bus_channel_t  CHN;  // channel configuration
-        tcb_bus_atomic_t   AMO;  // atomic configuration
-        tcb_bus_prefetch_t PRF;  // prefetch configuration
-        tcb_bus_next_t     NXT;  // next address configuration
-        tcb_bus_mode_t     MOD;  // data sizing mode
+        // data byte packing
         tcb_bus_order_t    ORD;  // byte order
-        tcb_bus_endian_t   NDN;  // endianness configuration
-    } tcb_bus_t;
+        tcb_bus_endian_t   NDN;  // endianness
+        tcb_bus_mode_t     MOD;  // data sizing mode
+    } tcb_pck_t;
 
     // physical interface parameter default
-    localparam tcb_bus_t TCB_BUS_DEF = '{
-        ADR: 32,
-        DAT: 32,
-        LEN: 12, // transfer frame size of up to 4kB
-        LCK: TCB_LCK_PRESENT,
-        CHN: TCB_CHN_HALF_DUPLEX,
-        AMO: TCB_AMO_PRESENT,
-        PRF: TCB_PRF_PRESENT,
-        NXT: TCB_NXT_PRESENT,
-        MOD: TCB_MOD_BYTE_ENA,
+    localparam tcb_pck_t TCB_PCK_DEF = '{
+        // data byte packing
         ORD: TCB_ORD_DESCENDING,
-        NDN: TCB_NDN_BI_NDN
+        NDN: TCB_NDN_LITTLE,
+        MOD: TCB_MOD_BYTE_ENA
     };
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -146,7 +118,7 @@ package tcb_pkg;
 // - access offset (offset from alignment to bus width or XLEN),
 
 // - execute/read/write access,
-// - cachability (how this affects memory vs IO)
+// - cacheability (how this affects memory vs IO)
 // - coherence (TODO)
 // - atomicity (implemented in CPU vs implemented in interconnect)
 // - reservability (no plan to support yet)
@@ -170,18 +142,17 @@ package tcb_pkg;
     } tcb_pma_rsrv_t;
 
     // PMA parameter structure
-    `ifdef VERILATOR
-    typedef struct packed {
-    `else
     typedef struct {
-    `endif
+        // transfer types
+        bit          LCK;
         // transaction types
-        bit          REN;  // read enable
-        bit          WEN;  // write enable
-        bit          XEN;  // execute enable
-        bit          AEN;  // atomic enable
-        bit          BEN;  // burst enable
-        bit          CEN;  // cache enable
+        bit          REN;  // read     enable
+        bit          WEN;  // write    enable
+        bit          XEN;  // execute  enable
+        bit          AEN;  // atomic   enable
+        bit          BEN;  // burst    enable
+        bit          CEN;  // cache    enable
+        bit          PEN;  // prefetch enable
         // transaction size and alignment PMAs
         int unsigned MAX;  // maximum transfer logarithmic size
         int unsigned MIN;  // minimum transfer logarithmic size
@@ -197,12 +168,13 @@ package tcb_pkg;
     // physical interface parameter default
     localparam tcb_pma_t TCB_PMA_DEF = '{
         // transfer types
-        REN: 1'b1,  // read enable
-        WEN: 1'b1,  // write enable
-        XEN: 1'b1,  // execute enable
-        AEN: 1'b0,  // atomic enable
-        BEN: 1'b0,  // burst enable
-        CEN: 1'b0,  // cache enable
+        REN: 1'b1,  // read     enable
+        WEN: 1'b1,  // write    enable
+        XEN: 1'b1,  // execute  enable
+        AEN: 1'b0,  // atomic   enable
+        BEN: 1'b0,  // burst    enable
+        CEN: 1'b0,  // cache    enable
+        PEN: 1'b0,  // prefetch enable
         // transfer size and alignment PMAs
         MAX: 0,   //
         MIN: 0,   // 0 <= MIN <= $clog2(CFG.BUS_DAT/8)
@@ -220,13 +192,10 @@ package tcb_pkg;
 ////////////////////////////////////////////////////////////////////////////////
 
     // PMA parameter structure
-    `ifdef VERILATOR
-    typedef struct packed {
-    `else
     typedef struct {
-    `endif
         tcb_hsk_t HSK;  // handshake
         tcb_bus_t BUS;  // bus
+        tcb_pck_t PCK;  // packing
         tcb_pma_t PMA;  // physical memory attributes
     } tcb_cfg_t;
 
@@ -234,6 +203,7 @@ package tcb_pkg;
     localparam tcb_cfg_t TCB_CFG_DEF = '{
         HSK: TCB_HSK_DEF,
         BUS: TCB_BUS_DEF,
+        PCK: TCB_PCK_DEF,
         PMA: TCB_PMA_DEF
     };
 
@@ -242,12 +212,7 @@ package tcb_pkg;
 ////////////////////////////////////////////////////////////////////////////////
 
     // VIP layer parameter structure
-    // TODO: the structure is packed to workaround a Verilator bug
-    `ifdef VERILATOR
-    typedef struct packed {
-    `else
     typedef struct {
-    `endif
         bit DRV;  // drive response from response delay line
     } tcb_vip_t;
 
@@ -303,8 +268,8 @@ package tcb_pkg;
         localparam CFG_BUS_MAX = $clog2(CFG_BUS_BYT);
         localparam CFG_BUS_SIZ = $clog2(CFG_BUS_MAX+1);
 
-        localparam int unsigned LEFT  = (CFG.BUS.ORD == TCB_ORD_DESCENDING) ? CFG_BUS_BYT-1 : 0;
-        localparam int unsigned RIGHT = (CFG.BUS.ORD == TCB_ORD_DESCENDING) ? 0 : CFG_BUS_BYT-1;
+        localparam int unsigned LEFT  = (CFG.PCK.ORD == TCB_ORD_DESCENDING) ? CFG_BUS_BYT-1 : 0;
+        localparam int unsigned RIGHT = (CFG.PCK.ORD == TCB_ORD_DESCENDING) ? 0 : CFG_BUS_BYT-1;
 
         typedef logic [LEFT:RIGHT]        ben_t;
         typedef logic [LEFT:RIGHT][8-1:0] dat_t;
@@ -331,6 +296,8 @@ package tcb_pkg;
             // address and next address
             logic [CFG.BUS.ADR-1:0] adr;  // current address
             logic [CFG.BUS.ADR-1:0] nxt;  // next address
+            logic [CFG.BUS.ADR-1:0] wad;  // write address
+            logic [CFG.BUS.ADR-1:0] rad;  // read  address
             // data sizing
             logic [CFG_BUS_SIZ-1:0] siz;  // logarithmic transfer size
             ben_t                   byt;  // byte enable
@@ -388,6 +355,8 @@ package tcb_pkg;
         // address and next address
         logic [DEF_ADR-1:0]        adr;  // current address
         logic [DEF_ADR-1:0]        nxt;  // next address
+        logic [DEF_ADR-1:0]        wad;  // write address
+        logic [DEF_ADR-1:0]        rad;  // read  address
         // data sizing
         logic [DEF_SIZ-1:0]        siz;  // logarithmic transfer size
         logic [DEF_BYT-1:0]        byt;  // byte enable

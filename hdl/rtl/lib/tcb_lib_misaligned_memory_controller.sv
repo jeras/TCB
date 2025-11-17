@@ -38,7 +38,7 @@ module tcb_lib_misaligned_memory_controller
     output logic                            mem_wen,  // write enable
     output logic [MEM_CEN-1:0][MEM_ADR-1:0] mem_adr,  // address
     output logic [MEM_CEN-1:0][MEM_DAT-1:0] mem_wdt,  // write data
-    input  logic [MEM_CEN-1:0][MEM_DAT-1:0] mem_rdt   // read data
+    input  wire  [MEM_CEN-1:0][MEM_DAT-1:0] mem_rdt   // read data
 );
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -47,10 +47,8 @@ module tcb_lib_misaligned_memory_controller
 
     // BUS parameters
     initial begin
-        // channel configuration
-        assert (tcb.CFG.BUS.CHN != TCB_CHN_FULL_DUPLEX) else $error("unsupported (tcb.CFG.BUS.CHN = %0s) == TCB_CHN_FULL_DUPLEX", tcb.CFG.BUS.CHN.name());
         // data sizing mode
-        assert (tcb.CFG.BUS.MOD == TCB_MOD_BYTE_ENA)    else $error("unsupported (tcb.CFG.BUS.MOD = %0s) != TCB_MOD_BYTE_ENA", tcb.CFG.BUS.MOD.name());
+        assert (tcb.CFG.PCK.MOD == TCB_MOD_BYTE_ENA)    else $error("unsupported (tcb.CFG.BUS.MOD = %0s) != TCB_MOD_BYTE_ENA", tcb.CFG.PCK.MOD.name());
         // other parameters
 //        assert (      sub.BUS.FRM  ==       man.BUS.FRM ) else $error("mismatch (      sub.BUS.FRM  = %0d) != (      man.BUS.FRM  = %0d)",       sub.BUS.FRM       ,       man.BUS.FRM       );
 //        assert (      sub.BUS.PRF  ==       man.BUS.PRF ) else $error("mismatch (      sub.BUS.PRF  = %0s) != (      man.BUS.PRF  = %0s)",       sub.BUS.PRF.name(),       man.BUS.PRF.name());
@@ -135,7 +133,7 @@ module tcb_lib_misaligned_memory_controller
 
     generate
         // next address
-        if (tcb.CFG.BUS.NXT == TCB_NXT_PRESENT) begin
+        if (tcb.CFG.BUS.NXT) begin
             assign nxt = tcb.req.nxt[CFG_BUS_MAX+:MEM_ADR];
         end else begin
             assign nxt = adr + 1;
@@ -148,14 +146,8 @@ module tcb_lib_misaligned_memory_controller
     endgenerate
 
     // request/response data
-    generate
-        if (tcb.CFG.BUS.CHN != TCB_CHN_READ_ONLY) begin
-            assign mem_wdt = tcb.req.wdt;
-        end
-        if (tcb.CFG.BUS.CHN != TCB_CHN_WRITE_ONLY) begin
-            assign tcb.rsp.rdt = mem_rdt;
-        end
-    endgenerate
+    assign mem_wdt = tcb.req.wdt;
+    assign tcb.rsp.rdt = mem_rdt;
 
 ////////////////////////////////////////////////////////////////////////////////
 // response

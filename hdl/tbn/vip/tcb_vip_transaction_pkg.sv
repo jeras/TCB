@@ -90,8 +90,9 @@ package tcb_vip_transaction_pkg;
             logic                   rpt;  // repeated address
             logic                   inc;  // incremented address
             // address and next address
-            logic [CFG.BUS.ADR-1:0] adr;  // current address
-            logic [CFG.BUS.ADR-1:0] nxt;  // next address
+            logic [CFG.BUS.ADR-1:0] wad;  // write   address
+            logic [CFG.BUS.ADR-1:0] rad;  // read    address
+            logic [CFG.BUS.ADR-1:0] nad;  // next    address
             // endianness
             logic                   ndn;  // endianness
             // write data
@@ -158,31 +159,9 @@ package tcb_vip_transaction_pkg;
             if (wen) assert (wdt_size == 2**wdt_siz) else $error("Write data array size is not a power of 2.");
             if (ren) assert (rdt_size == 2**rdt_siz) else $error("Read  data array size is not a power of 2.");
 
-            case (CFG.BUS.CHN)
-                TCB_CHN_HALF_DUPLEX: begin
-                    assert ((wen & ren) == 1'b0) else $error("Attempt to create swap transaction on half duplex bus.");
-                    if (wen)  size = wdt_size;
-                    else      size = rdt_size;
-                end
-                TCB_CHN_FULL_DUPLEX: begin
-                    if (wen & ren) begin
-                        // swap operation
-                        assert (wdt_size == rdt_size) else $error("Attempt to create swap transaction with mismatched write/read data size.");
-                    end
-                    if (wen)  size = wdt_size;
-                    else      size = rdt_size;
-                end
-                TCB_CHN_WRITE_ONLY : begin
-                    assert ( wen) else $error("Attempt to create write transaction of size 0.");
-                    assert (~ren) else $error("Attempt to create read  transaction on write only bus.");
-                    size = wdt_size;
-                end
-                TCB_CHN_READ_ONLY  : begin
-                    assert (~wen) else $error("Attempt to create write transaction on read only bus.");
-                    assert ( ren) else $error("Attempt to create read  transaction of size 0.");
-                    size = rdt_size;
-                end
-            endcase
+            // check whether read/write transactions are supported by the bus
+            assert (CFG.PMA.WEN ? 1'b1 : !wen) $warning("Attempt to create write transaction on bus without write support.");
+            assert (CFG.PMA.REN ? 1'b1 : !ren) $warning("Attempt to create write transaction on bus without write support.");
 
             // endianness
             ndn = endianness(transaction.req.ndn, tcb.CFG);
@@ -212,7 +191,7 @@ package tcb_vip_transaction_pkg;
                 if (ndn)  idx = size-1-i;  //    big-endian (start with MSB end)
                 else      idx =        i;  // little-endian (start with LSB end)
                 // mode logarithmic size vs. byte enable
-                case (CFG.BUS.MOD)
+                case (CFG.PCK.MOD)
                   TCB_MOD_LOG_SIZE:  byt =  idx                                       % CFG_BUS_BYT;  // all data bytes are LSB aligned
                   TCB_MOD_BYTE_ENA:  byt = (i + transaction.req.adr[CFG_BUS_MAX-1:0]) % CFG_BUS_BYT;
                 endcase
@@ -226,25 +205,21 @@ package tcb_vip_transaction_pkg;
 
                 // last byte in current transfer or entire transaction
                 if (edg || (i == size-1)) begin
-                    // write/read enable
+                    // transaction locking
                     tmp.req.lck = (i == size-1) ? 1'b0 : 1'b1;
-                    if (CFG.BUS.CHN == TCB_CHN_FULL_DUPLEX) begin
-                        tmp.req.wen = wen;
-                        tmp.req.ren = ren;
-                    end
-                    if (CFG.BUS.CHN == TCB_CHN_HALF_DUPLEX) begin
-                        tmp.req.wen = wen;
-                    end
+                    // write/read enable
+                    tmp.req.wen = wen;
+                    tmp.req.ren = ren;
                     // prefetch TODO
-                    if (CFG.BUS.PRF == TCB_PRF_PRESENT) begin
-                        tmp.req.rpt = 1'b0;
-                        tmp.req.inc = 1'b0;
-                    end
-                    // address
-                    tmp.req.adr = transaction.req.adr + cnt*CFG_BUS_BYT;
-                    if (CFG.BUS.NXT == TCB_NXT_PRESENT) begin
-                        tmp.req.nxt = tmp.req.adr + CFG_BUS_BYT;
-                    end
+//                    if (CFG.BUS.PRF == TCB_PRF_PRESENT) begin
+//                        tmp.req.rpt = 1'b0;
+//                        tmp.req.inc = 1'b0;
+//                    end
+//                    // address
+//                    tmp.req.adr = transaction.req.adr + cnt*CFG_BUS_BYT;
+//                    if (CFG.BUS.NXT == TCB_NXT_PRESENT) begin
+//                        tmp.req.nxt = tmp.req.adr + CFG_BUS_BYT;
+//                    end
                     // atomic
                     if ($isunknown(transaction.req.aen)) begin
                         tmp.req.aen = 1'b0;
@@ -262,7 +237,7 @@ package tcb_vip_transaction_pkg;
                         else     tmp.req.len = rdt_size;
                     end
                     // size
-                    case (CFG.BUS.MOD)
+                    case (CFG.PCK.MOD)
                         TCB_MOD_LOG_SIZE: begin
                             tmp.req.siz = $clog2(size);
                             tmp.req.byt = 'x;
@@ -272,9 +247,9 @@ package tcb_vip_transaction_pkg;
                         end
                     endcase
                     // endianness
-                    if (CFG.BUS.NDN == TCB_NDN_BI_NDN) begin
+//                    if (CFG.BUS.NDN == TCB_NDN_BI_NDN) begin
                         tmp.req.ndn = ndn;
-                    end
+//                    end
                     // response
                     tmp.rsp.sts = transaction.rsp.sts;
                     // ID
@@ -317,14 +292,16 @@ package tcb_vip_transaction_pkg;
             transfer_t tmp;
 
             // write/read enable
-            wen = tcb.write(transfer_queue[0].req.wen);
-            ren = tcb.read (transfer_queue[0].req.wen, transfer_queue[0].req.ren);
+            wen = transfer_queue[0].req.wen;
+            ren = transfer_queue[0].req.ren;
 
             // endianness
             transaction.req.ndn = endianness(transfer_queue[0].req.ndn, tcb.CFG);
 
             // request signals (first transfer)
-            transaction.req.adr = transfer_queue[0].req.adr;
+            transaction.req.wad = transfer_queue[0].req.wad;
+            transaction.req.rad = transfer_queue[0].req.rad;
+            transaction.req.nad = transfer_queue[0].req.nad;
 
             // initialize response
             transaction.rsp.sts = '0;
@@ -335,26 +312,20 @@ package tcb_vip_transaction_pkg;
 //                $display("DEBUG: tmp = %p", tmp);
                 // request signals
                 // read/write enable continuity checks
-                case (CFG.BUS.CHN)
-                    TCB_CHN_HALF_DUPLEX: begin
-                        assert (tmp.req.wen == wen) else $error("wen continuity %0b %0b", tmp.req.wen, wen);
-                    end
-                    TCB_CHN_FULL_DUPLEX: begin
-                        assert (tmp.req.wen == wen) else $error("wen continuity %0b %0b", tmp.req.wen, wen);
-                        assert (tmp.req.ren == ren) else $error("ren continuity %0b %0b", tmp.req.ren, ren);
-                    end
-                endcase
+                assert (tmp.req.wen == wen) else $error("wen continuity %0b %0b", tmp.req.wen, wen);
+                assert (tmp.req.ren == ren) else $error("ren continuity %0b %0b", tmp.req.ren, ren);
                 // endianness continuity checks
-                if (CFG.BUS.NDN == TCB_NDN_BI_NDN) begin
+                if (CFG.BUS.NDN) begin
                     assert (tmp.req.ndn == transaction.req.ndn) else $error("ndn continuity %0b %0b", tmp.req.ndn, transaction.req.ndn);
                 end
                 // TODO: address continuity depends on transfer type
-                assert (tmp.req.adr == transaction.req.adr + cnt*CFG_BUS_BYT) else $error("adr continuity");
+                if (wen)  assert (tmp.req.wad == transaction.req.wad + cnt*CFG_BUS_BYT) else $error("wad continuity");
+                if (ren)  assert (tmp.req.wad == transaction.req.wad + cnt*CFG_BUS_BYT) else $error("rad continuity");
                 // response status
                 transaction.rsp.sts |= tmp.rsp.sts;
 
                 // mode logarithmic size vs. byte enable
-                case (CFG.BUS.MOD)
+                case (CFG.PCK.MOD)
                     TCB_MOD_LOG_SIZE: begin
                         int unsigned siz = tmp.req.siz;
                         // data signals
@@ -371,7 +342,7 @@ package tcb_vip_transaction_pkg;
                             int unsigned byt = (i + tmp.req.adr[CFG_BUS_MAX-1:0]) % CFG_BUS_BYT;
                             if (tmp.req.byt[byt]) begin
                                 // endianness request/response data
-                                if (tmp.req.ndn ~^ CFG.BUS.ORD) begin
+                                if (tmp.req.ndn ~^ CFG.PCK.ORD) begin
                                     if (wen) wdt.push_back(tmp.req.wdt[byt]);
                                     if (ren) rdt.push_back(tmp.rsp.rdt[byt]);
                                 end else begin
