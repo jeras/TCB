@@ -59,7 +59,7 @@ package tcb_vip_transfer_pkg;
         string DIR = "";
 
         //constructor
-        function new(
+        function new (
             tcb_vif_t tcb,
             string DIR = "MON"
         );

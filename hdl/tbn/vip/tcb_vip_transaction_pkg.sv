@@ -50,7 +50,7 @@ package tcb_vip_transaction_pkg;
     );
 
         // constructor
-        function new(
+        function new (
             tcb_vif_t tcb,
             string DIR = "MON"
         );
