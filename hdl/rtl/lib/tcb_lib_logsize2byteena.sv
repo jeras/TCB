@@ -165,7 +165,7 @@ module tcb_lib_logsize2byteena
         // byte enable
         always_comb
         for (int unsigned i=0; i<sub.CFG_BUS_BYT; i++) begin: ben
-            man.req.byt[i] = sub_req_ben[(i-req_off) % sub.CFG_BUS_BYT];
+            man.req.byt[i] = sub_req_ben[(i-integer'(req_off)) % sub.CFG_BUS_BYT];
         end: ben
 
         if (sub.CFG.BUS.CHN != TCB_CHN_READ_ONLY) begin: write
@@ -173,9 +173,9 @@ module tcb_lib_logsize2byteena
             always_comb
             for (int unsigned i=0; i<sub.CFG_BUS_BYT; i++) begin: wdt
                 unique case (req_ndn)
-                    TCB_LITTLE:  man.req.wdt[i] = sub.req.wdt[(             i-req_off) % sub.CFG_BUS_BYT];
-                    TCB_BIG   :  man.req.wdt[i] = sub.req.wdt[(2**req_siz-1-i+req_off) % sub.CFG_BUS_BYT];
-                    default   :  man.req.wdt[i] = '{default: 8'hxx};
+                    TCB_LITTLE:  man.req.wdt[i] = sub.req.wdt[(             i-integer'(req_off)) % sub.CFG_BUS_BYT];
+                    TCB_BIG   :  man.req.wdt[i] = sub.req.wdt[(2**req_siz-1-i+integer'(req_off)) % sub.CFG_BUS_BYT];
+                    default   :  man.req.wdt[i] = 8'hxx;
                 endcase
             end: wdt
         end: write
@@ -185,9 +185,9 @@ module tcb_lib_logsize2byteena
             always_comb
             for (int unsigned i=0; i<sub.CFG_BUS_BYT; i++) begin: rdt
                 unique case (rsp_ndn)
-                    TCB_LITTLE:  sub.rsp.rdt[i] = man.rsp.rdt[(             i+rsp_off) % sub.CFG_BUS_BYT];
-                    TCB_BIG   :  sub.rsp.rdt[i] = man.rsp.rdt[(2**rsp_siz-1-i+rsp_off) % sub.CFG_BUS_BYT];
-                    default   :  sub.rsp.rdt[i] = '{default: 8'hxx};
+                    TCB_LITTLE:  sub.rsp.rdt[i] = man.rsp.rdt[(             i+integer'(rsp_off)) % sub.CFG_BUS_BYT];
+                    TCB_BIG   :  sub.rsp.rdt[i] = man.rsp.rdt[(2**rsp_siz-1-i+integer'(rsp_off)) % sub.CFG_BUS_BYT];
+                    default   :  sub.rsp.rdt[i] = 8'hxx;
                 endcase
             end: rdt
         end: read
