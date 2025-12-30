@@ -30,7 +30,7 @@ module tcb_vip_memory
     parameter  bit [IFN-1:0] WRM = '1
 )(
     // TCB interface
-    tcb_if.sub tcb [IFN-1:0]
+    tcb_if tcb [IFN-1:0]
 );
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -61,7 +61,7 @@ module tcb_vip_memory
     // load memory at initial if a file is provided as parameter
     initial
     begin
-        if (MFN.len()) begin
+        if (MFN.len()>0) begin
             void'(read_bin(MFN));
         end
     end
@@ -113,8 +113,11 @@ module tcb_vip_memory
     for (genvar i=0; i<IFN; i++) begin: port
 
         // local copies of TCB BUS parameters
-        localparam DLY = tcb[i].CFG.HSK.DLY;
-        localparam BYT = tcb[i].CFG_BUS_BYT;
+        localparam tcb_cfg_t CFG = tcb[i].CFG;
+        localparam int unsigned DLY = CFG.HSK.DLY;
+        localparam tcb_bus_mode_t MOD = CFG.BUS.MOD;
+        //localparam int unsigned DLY = tcb[i].CFG.HSK.DLY;
+        localparam int unsigned BYT = tcb[i].CFG_BUS_BYT;
 
         // request address and size (TCB_LOG_SIZE mode)
         int unsigned adr;
@@ -135,7 +138,7 @@ module tcb_vip_memory
             if (tcb[i].trn) begin
                 if (tcb[i].req.wen) begin: write
                     for (int unsigned b=0; b<BYT; b++) begin: bytes
-                        case (tcb[i].CFG.BUS.MOD)
+                        case (MOD)
                           TCB_MOD_LOG_SIZE: begin: log_size
                               // write only transfer size bytes
                               if (b < siz)  mem[(adr+b)%SIZ] <= tcb[i].req.wdt[b];
@@ -159,7 +162,7 @@ module tcb_vip_memory
         if (tcb[i].trn) begin
             if (~tcb[i].req.wen) begin: read
                 for (int unsigned b=0; b<BYT; b++) begin: bytes
-                    case (tcb[i].CFG.BUS.MOD)
+                    case (MOD)
                         TCB_MOD_LOG_SIZE: begin: log_size
                             // read only transfer size bytes, the rest remains undefined
                             if (b < siz)  tcb[i].rsp_dly[0].rdt[b] = mem[(adr+b)%SIZ];

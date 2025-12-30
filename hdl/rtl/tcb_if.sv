@@ -209,25 +209,28 @@ interface tcb_if
     req_t req_dly [0:CFG.HSK.DLY];
     rsp_t rsp_dly [0:CFG.HSK.DLY];
 
+    // continuous assignment
+    assign trn_dly[0] = trn;
+    assign req_dly[0] = req;
+//  assign rsp_dly[0] = rsp;  // response assigned by VIP
+
     generate
         // delay line
-        for (genvar i=0; i<=CFG.HSK.DLY; i++) begin: dly
-            // handshake transfer
-            if (i==0) begin: dly_0
-                // continuous assignment
-                assign trn_dly[0] = trn;
-                assign req_dly[0] = req;
-                // response assigned by VIP
-            end: dly_0
-            else begin: dly_i
-                // propagate through delay line
-                always_ff @(posedge clk)
-                begin
-                                      trn_dly[i] <= trn_dly[i-1];
-                    if (trn_dly[i-1]) req_dly[i] <= req_dly[i-1];
-                    if (trn_dly[i-1]) rsp_dly[i] <= rsp_dly[i-1];
-                end
-            end: dly_i
+        for (genvar i=1; i<=CFG.HSK.DLY; i++) begin: dly
+            logic trn_tmp;
+            req_t req_tmp;
+            rsp_t rsp_tmp;
+            // continuous assignment
+            assign trn_dly[i] = trn_tmp;
+            assign req_dly[i] = req_tmp;
+            assign rsp_dly[i] = rsp_tmp;
+            // propagate through delay line
+            always_ff @(posedge clk)
+            begin
+                                  trn_tmp <= trn_dly[i-1];
+                if (trn_dly[i-1]) req_tmp <= req_dly[i-1];
+                if (trn_dly[i-1]) rsp_tmp <= rsp_dly[i-1];
+            end
         end: dly
 
         if (VIP.DRV) begin: vip
