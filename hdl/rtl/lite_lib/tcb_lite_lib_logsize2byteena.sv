@@ -16,7 +16,7 @@
 // limitations under the License.
 ////////////////////////////////////////////////////////////////////////////////
 
-module tcb_lite_lib_siz2byt #(
+module tcb_lite_lib_logsize2byteena #(
     parameter bit ALIGNED = 1'b1
 )(
     // interfaces
@@ -75,14 +75,14 @@ module tcb_lite_lib_siz2byt #(
     endfunction: prefix_or
 
     // request/response address offset, logarithmic size
-    assign req_off = sub.req                     .adr[sub.WIDTH/8-1:0];
-    assign rsp_off = sub.req_dly[sub.CFG.HSK.DLY].adr[sub.WIDTH/8-1:0];
-    assign req_siz = sub.req                     .siz;
-    assign rsp_siz = sub.req_dly[sub.CFG.HSK.DLY].siz;
+    assign req_off = sub.adr_dly[0        ][$clog2(sub.WIDTH/8)-1:0];
+    assign rsp_off = sub.adr_dly[sub.DELAY][$clog2(sub.WIDTH/8)-1:0];
+    assign req_siz = sub.siz_dly[0        ];
+    assign rsp_siz = sub.siz_dly[sub.DELAY];
 
     // endianness
-    assign req_ndn = sub.req                     .ndn;
-    assign rsp_ndn = sub.req_dly[man.CFG.HSK.DLY].ndn;
+    assign req_ndn = sub.ndn_dly[0        ];
+    assign rsp_ndn = sub.ndn_dly[sub.DELAY];
 
 ////////////////////////////////////////////////////////////////////////////////
 // multiplexers
@@ -142,9 +142,9 @@ module tcb_lite_lib_siz2byt #(
         always_comb
         for (int unsigned i=0; i<sub.WIDTH/8; i++) begin: wdt
             unique case (req_ndn)
-                TCB_LITTLE:  man.wdt[i] = sub.wdt[(             i-integer'(req_off)) % sub.WIDTH/8];
-                TCB_BIG   :  man.wdt[i] = sub.wdt[(2**req_siz-1-i+integer'(req_off)) % sub.WIDTH/8];
-                default   :  man.wdt[i] = 8'hxx;
+                1'b0   :  man.wdt[i] = sub.wdt[(             i-integer'(req_off)) % sub.WIDTH/8];
+                1'b1   :  man.wdt[i] = sub.wdt[(2**req_siz-1-i+integer'(req_off)) % sub.WIDTH/8];
+                default:  man.wdt[i] = 8'hxx;
             endcase
         end: wdt
 
@@ -152,9 +152,9 @@ module tcb_lite_lib_siz2byt #(
         always_comb
         for (int unsigned i=0; i<sub.WIDTH/8; i++) begin: rdt
             unique case (rsp_ndn)
-                TCB_LITTLE:  sub.rdt[i] = man.rdt[(             i+integer'(rsp_off)) % sub.WIDTH/8];
-                TCB_BIG   :  sub.rdt[i] = man.rdt[(2**rsp_siz-1-i+integer'(rsp_off)) % sub.WIDTH/8];
-                default   :  sub.rdt[i] = 8'hxx;
+                1'b0   :  sub.rdt[i] = man.rdt[(             i+integer'(rsp_off)) % sub.WIDTH/8];
+                1'b1   :  sub.rdt[i] = man.rdt[(2**rsp_siz-1-i+integer'(rsp_off)) % sub.WIDTH/8];
+                default:  sub.rdt[i] = 8'hxx;
             endcase
         end: rdt
 
@@ -171,4 +171,4 @@ module tcb_lite_lib_siz2byt #(
     // handshake
     assign sub.rdy = man.rdy;
 
-endmodule: tcb_lite_lib_siz2byt
+endmodule: tcb_lite_lib_logsize2byteena

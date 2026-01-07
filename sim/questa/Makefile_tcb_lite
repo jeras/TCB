@@ -1,0 +1,70 @@
+################################################################################
+# DUT, TOP and source files
+################################################################################
+
+# source files
+include ../filelist_tcb_lite.mk
+
+# top level module
+TOP ?= tcb_lite_vip_tb
+
+################################################################################
+# tool specific flags
+################################################################################
+
+# TODO: add comment regarding this flag.
+# I think it is suppressing errors on clock transition at time 0.
+FLAGS  = -suppress 13178
+# suppress error caused by mixing combinational/sequential elements in the same unpacked array
+FLAGS += -suppress 7033
+# disable optimizations
+FLAGS += -voptargs=+acc
+
+################################################################################
+# Verilog define macros
+################################################################################
+
+# example
+# DEF += -defineall macro
+# DEF += -defineall macro=value
+
+# define TOOL_* macro (used to handle tool quirks)
+DEF = -defineall TOOL_QUESTA
+
+################################################################################
+# Verilog toplevel parameter override
+################################################################################
+
+# example
+# PAR += -Gparameter=value
+
+# list of parameter overrides
+
+# protocol
+BUS_PAR += -GDELAY=1
+BUS_PAR += -GWIDTH=32
+
+# combined manager/subordinate parameters
+#PAR = ${BUS_PAR}
+
+################################################################################
+# Verilog plusargs
+################################################################################
+
+# example
+# ARG += +key
+# ARG += +key=value
+
+################################################################################
+# targets
+################################################################################
+
+# uncomment the GUI target for debugging purposes
+#all: gui
+all: run
+
+run: ${HDL}
+	qrun -makelib work -sv ${HDL} -end ${DEF} ${PAR} ${FLAGS} ${ARG} -top ${TOP}
+
+gui:
+	qrun -makelib work -sv ${HDL} -end ${DEF} ${PAR} ${FLAGS} ${ARG} -top ${TOP} -gui
