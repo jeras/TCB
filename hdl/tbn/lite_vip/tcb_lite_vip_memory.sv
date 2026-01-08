@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// TCB lite (Tightly Coupled Bus) VIP (Verification IP) memory
+// TCB-Lite (Tightly Coupled Bus) VIP (Verification IP) memory
 ////////////////////////////////////////////////////////////////////////////////
 // Copyright 2022 Iztok Jeras
 //
@@ -23,7 +23,7 @@ module tcb_lite_vip_memory
     // memory file name
     parameter  string        MFN = "",
     // memory size
-    parameter  int unsigned  SIZ = 2**8,
+    parameter  int unsigned  SIZE = 2**8,
     // slave interface number
     parameter  int unsigned  IFN = 1,
     // write mask (which interfaces are allowed write access)
@@ -47,7 +47,7 @@ module tcb_lite_vip_memory
 // local signals
 ////////////////////////////////////////////////////////////////////////////////
 
-    logic [8-1:0] mem [0:SIZ-1];
+    logic [8-1:0] mem [0:SIZE-1];
 
 ////////////////////////////////////////////////////////////////////////////////
 // initialization
@@ -86,7 +86,7 @@ module tcb_lite_vip_memory
     function void write_hex (
         string fn,
         int unsigned start_addr = 0,
-        int unsigned end_addr = SIZ-1
+        int unsigned end_addr = SIZE-1
     );
         int fd;    // file descriptor
         fd = $fopen(fn, "w");
@@ -130,10 +130,10 @@ module tcb_lite_vip_memory
                     for (int unsigned b=0; b<BYTES; b++) begin: bytes
                         if (tcb[i].MODE == 1'b0) begin
                             // write only transfer size bytes
-                            if (b < siz)  mem[(adr+b)%SIZ] <= tcb[i].wdt[b*8+:8];
+                            if (b < siz)  mem[(adr+b)%SIZE] <= tcb[i].wdt[b*8+:8];
                         end else begin
                             // write only enabled bytes
-                            if (tcb[i].byt[(adr+b)%BYTES])  mem[(adr+b)%SIZ] <= tcb[i].wdt[(adr+b)%BYTES*8+:8];
+                            if (tcb[i].byt[(adr+b)%BYTES])  mem[(adr+b)%SIZE] <= tcb[i].wdt[(adr+b)%BYTES*8+:8];
                         end
                     end: bytes
                 end: write
@@ -151,18 +151,18 @@ module tcb_lite_vip_memory
                 for (int unsigned b=0; b<BYTES; b++) begin: bytes
                     if (tcb[i].MODE == 1'b0) begin
                         // read only transfer size bytes, the rest remains undefined
-                        if (b < siz)  tcb[i].rsp_dly[0].rdt[b*8+:8] = mem[(adr+b)%SIZ];
-                        else          tcb[i].rsp_dly[0].rdt[b*8+:8] = 'x;
+                        if (b < siz)  tcb[i].rdt_dly[0][b*8+:8] = mem[(adr+b)%SIZE];
+                        else          tcb[i].rdt_dly[0][b*8+:8] = 'x;
                     end else begin
                         // read only enabled bytes, the rest remains undefined
-                        if (tcb[i].byt[(adr+b)%BYTES])  tcb[i].rsp_dly[0].rdt[(adr+b)%BYTES*8+:8] = mem[(adr+b)%SIZ];
-                        else                            tcb[i].rsp_dly[0].rdt[(adr+b)%BYTES*8+:8] = 'x;
+                        if (tcb[i].byt[(adr+b)%BYTES])  tcb[i].rdt_dly[0][(adr+b)%BYTES*8+:8] = mem[(adr+b)%SIZE];
+                        else                            tcb[i].rdt_dly[0][(adr+b)%BYTES*8+:8] = 'x;
                     end
                 end: bytes
             end: read
             // as a memory model, there is no immediate need for error responses, this feature might be added in the future
             // TODO
-            tcb[i].rsp_dly[0].sts = '0; // '{err: 1'b0, default: '0};
+            tcb[i].err_dly[0] = '0;
         end
 
         // as a memory model, there is no immediate need for backpressure, this feature might be added in the future

@@ -176,6 +176,7 @@ package tcb_vip_transfer_pkg;
                 if (~tcb.rdy) itm.bpr++;
             end while (~tcb.trn);
             // sample request
+            // TODO: should be <= non-blocking assignment?
             itm.req = tcb.req;
             if (DEBUG)  $info("DEBUG: %t: handshake_monitor end ID = \"%s\".", $realtime, itm.id);
         endtask: handshake_monitor

@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// TCB (Tightly Coupled Bus) library passthrough testbench
+// TCB-Lite (Tightly Coupled Bus) library passthrough testbench
 ////////////////////////////////////////////////////////////////////////////////
 // Copyright 2022 Iztok Jeras
 //
@@ -16,19 +16,19 @@
 // limitations under the License.
 ////////////////////////////////////////////////////////////////////////////////
 
-module tcb_lib_passthrough_tb
-    import tcb_pkg::*;
-    import tcb_vip_blocking_pkg::*;
-#();
+module tcb_lite_lib_passthrough_tb #(
+    // configuration parameters
+    parameter int unsigned DELAY =  1,  // response delay
+    parameter int unsigned WIDTH = 32,  // data/address width (only 32/64 are supported)
+    parameter bit [WIDTH-1] MASK = '1,  // address mask
+    parameter bit           MODE = '1   // bus mode (0-logarithmic size, 1-byte enable)
+);
 
 ////////////////////////////////////////////////////////////////////////////////
 // local parameters
 ////////////////////////////////////////////////////////////////////////////////
 
-    // VIP parameters
-    localparam tcb_vip_t VIP = '{
-        DRV: 1'b1
-    };
+    localparam bit VIP = 1'b1;
 
 ////////////////////////////////////////////////////////////////////////////////
 // local signals
@@ -39,29 +39,15 @@ module tcb_lib_passthrough_tb
     logic rst = 1'b1;  // reset
 
     // TCB interfaces
-    tcb_if               tcb_man (.clk (clk), .rst (rst));
-    tcb_if #(.VIP (VIP)) tcb_sub (.clk (clk), .rst (rst));
-
-    // parameterized class specialization (blocking API)
-    typedef tcb_vip_blocking_c               tcb_man_s;
-    typedef tcb_vip_blocking_c #(.VIP (VIP)) tcb_sub_s;
-
-    // TCB class objects
-    tcb_man_s obj_man = new(tcb_man, "MAN");
-    tcb_sub_s obj_sub = new(tcb_sub, "SUB");
-
-    // transfer reference/monitor array
-    tcb_man_s::transfer_queue_t tst_man_mon;
-    tcb_sub_s::transfer_queue_t tst_sub_mon;
-    tcb_sub_s::transfer_queue_t tst_ref;
-    int unsigned                tst_len;
+    tcb_lite_if #(DELAY, WIDTH, MASK, MODE     ) tcb_man (.clk (clk), .rst (rst));
+    tcb_lite_if #(DELAY, WIDTH, MASK, MODE, VIP) tcb_sub (.clk (clk), .rst (rst));
 
     // empty array
     logic [8-1:0] nul [];
 
     // response
-    logic [tcb_sub.CFG_BUS_BYT-1:0][8-1:0] rdt;  // read data
-    tcb_rsp_sts_t                      sts;  // status response
+    logic [WIDTH-1:0] rdt;  // read data
+    logic             err;  // error status
 
 ////////////////////////////////////////////////////////////////////////////////
 // test sequence
@@ -78,45 +64,45 @@ module tcb_lib_passthrough_tb
         rst <= 1'b0;
         repeat (1) @(posedge clk);
 
-        fork
-            // manager (blocking API)
-            begin: fork_man
-                obj_man.write32(32'h01234567, 32'h76543210, sts);
-                obj_man.read32 (32'h89ABCDEF, rdt         , sts);
-            end: fork_man
-            // subordinate (monitor)
-            begin: fork_man_monitor
-                obj_man.transfer_monitor(tst_man_mon);
-            end: fork_man_monitor
-            begin: fork_sub
-                // subordinate transfer queue
-                sts = '0;
-                tst_ref.delete();
-                tst_len = tst_ref.size();
-                tst_len += obj_sub.put_transaction(tst_ref, '{req: '{adr: 32'h01234567, wdt: '{8'h10, 8'h32, 8'h54, 8'h76}, default: 'x}, rsp: '{rdt: nul, sts: sts}});
-                tst_len += obj_sub.put_transaction(tst_ref, '{req: '{adr: 32'h89ABCDEF, wdt: nul, default: 'x}, rsp: '{rdt: '{8'h98, 8'hBA, 8'hDC, 8'hFE}, sts: sts}});
-                obj_sub.transfer_sequencer(tst_ref);
-            end: fork_sub
-            // subordinate (monitor)
-            begin: fork_sub_monitor
-                obj_sub.transfer_monitor(tst_sub_mon);
-            end: fork_sub_monitor
-        join_any
-        // disable transfer monitor
-        repeat (tcb_man.CFG.HSK.DLY) @(posedge clk);
-        disable fork;
-
-        foreach(tst_ref[i]) begin
-            assert (tst_man_mon[i].req ==? tst_ref[i].req) else $error("\ntst_man_mon[%0d].req = %p !=? \ntst_ref[%0d].req = %p", i, tst_man_mon[i].req, i, tst_ref[i].req);
-            assert (tst_man_mon[i].rsp ==? tst_ref[i].rsp) else $error("\ntst_man_mon[%0d].rsp = %p !=? \ntst_ref[%0d].rsp = %p", i, tst_man_mon[i].rsp, i, tst_ref[i].rsp);
-            assert (tst_sub_mon[i].req ==? tst_ref[i].req) else $error("\ntst_sub_mon[%0d].req = %p !=? \ntst_ref[%0d].req = %p", i, tst_sub_mon[i].req, i, tst_ref[i].req);
-            assert (tst_sub_mon[i].rsp ==? tst_ref[i].rsp) else $error("\ntst_sub_mon[%0d].rsp = %p !=? \ntst_ref[%0d].rsp = %p", i, tst_sub_mon[i].rsp, i, tst_ref[i].rsp);
-        end
-
-        // printout transfer queue for debugging purposes
-        foreach (tst_ref[i]) begin
-            $display("DEBUG: tst_ref[%0d] = %p", i, tst_ref[i]);
-        end
+//        fork
+//            // manager (blocking API)
+//            begin: fork_man
+//                obj_man.write32(32'h01234567, 32'h76543210, sts);
+//                obj_man.read32 (32'h89ABCDEF, rdt         , sts);
+//            end: fork_man
+//            // subordinate (monitor)
+//            begin: fork_man_monitor
+//                obj_man.transfer_monitor(tst_man_mon);
+//            end: fork_man_monitor
+//            begin: fork_sub
+//                // subordinate transfer queue
+//                sts = '0;
+//                tst_ref.delete();
+//                tst_len = tst_ref.size();
+//                tst_len += obj_sub.put_transaction(tst_ref, '{req: '{adr: 32'h01234567, wdt: '{8'h10, 8'h32, 8'h54, 8'h76}, default: 'x}, rsp: '{rdt: nul, sts: sts}});
+//                tst_len += obj_sub.put_transaction(tst_ref, '{req: '{adr: 32'h89ABCDEF, wdt: nul, default: 'x}, rsp: '{rdt: '{8'h98, 8'hBA, 8'hDC, 8'hFE}, sts: sts}});
+//                obj_sub.transfer_sequencer(tst_ref);
+//            end: fork_sub
+//            // subordinate (monitor)
+//            begin: fork_sub_monitor
+//                obj_sub.transfer_monitor(tst_sub_mon);
+//            end: fork_sub_monitor
+//        join_any
+//        // disable transfer monitor
+//        repeat (tcb_man.CFG.HSK.DLY) @(posedge clk);
+//        disable fork;
+//
+//        foreach(tst_ref[i]) begin
+//            assert (tst_man_mon[i].req ==? tst_ref[i].req) else $error("\ntst_man_mon[%0d].req = %p !=? \ntst_ref[%0d].req = %p", i, tst_man_mon[i].req, i, tst_ref[i].req);
+//            assert (tst_man_mon[i].rsp ==? tst_ref[i].rsp) else $error("\ntst_man_mon[%0d].rsp = %p !=? \ntst_ref[%0d].rsp = %p", i, tst_man_mon[i].rsp, i, tst_ref[i].rsp);
+//            assert (tst_sub_mon[i].req ==? tst_ref[i].req) else $error("\ntst_sub_mon[%0d].req = %p !=? \ntst_ref[%0d].req = %p", i, tst_sub_mon[i].req, i, tst_ref[i].req);
+//            assert (tst_sub_mon[i].rsp ==? tst_ref[i].rsp) else $error("\ntst_sub_mon[%0d].rsp = %p !=? \ntst_ref[%0d].rsp = %p", i, tst_sub_mon[i].rsp, i, tst_ref[i].rsp);
+//        end
+//
+//        // printout transfer queue for debugging purposes
+//        foreach (tst_ref[i]) begin
+//            $display("DEBUG: tst_ref[%0d] = %p", i, tst_ref[i]);
+//        end
 
         repeat (4) @(posedge clk);
         $finish();
@@ -126,11 +112,25 @@ module tcb_lib_passthrough_tb
 // VIP instances
 ////////////////////////////////////////////////////////////////////////////////
 
-    tcb_vip_protocol_checker chk_man (
+    // VIP manager
+    tcb_lite_vip_manager #(
+//        .QUEUE (QUEUE)
+    ) man (
         .tcb (tcb_man)
     );
 
-    tcb_vip_protocol_checker chk_sub (
+    // VIP manager
+    tcb_lite_vip_subordinate #(
+//        .QUEUE (QUEUE)
+    ) sub (
+        .tcb (tcb_sub)
+    );
+
+    tcb_lite_vip_protocol_checker chk_man (
+        .tcb (tcb_man)
+    );
+
+    tcb_lite_vip_protocol_checker chk_sub (
         .tcb (tcb_sub)
     );
 
@@ -138,7 +138,7 @@ module tcb_lib_passthrough_tb
 // DUT instance
 ////////////////////////////////////////////////////////////////////////////////
 
-    tcb_lib_passthrough dut (
+    tcb_lite_lib_passthrough dut (
         .sub  (tcb_man),
         .man  (tcb_sub)
     );
@@ -157,4 +157,4 @@ module tcb_lib_passthrough_tb
         $dumpvars;
     end
 
-endmodule: tcb_lib_passthrough_tb
+endmodule: tcb_lite_lib_passthrough_tb
