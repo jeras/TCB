@@ -21,6 +21,13 @@ module tcb_lite_vip_subordinate (
     tcb_lite_if.sub tcb
 );
 
+    // local parameters
+    localparam int unsigned DLY = tcb.DLY;
+    localparam int unsigned DAT = tcb.DAT;
+    localparam int unsigned ADR = tcb.ADR;
+    localparam int unsigned BYT = tcb.BYT;
+    localparam int unsigned SIZ = tcb.SIZ;
+
 ////////////////////////////////////////////////////////////////////////////////
 // TCB access
 ////////////////////////////////////////////////////////////////////////////////
@@ -33,5 +40,24 @@ module tcb_lite_vip_subordinate (
 
     // the response status is always an error
     assign tcb.err_dly[0] = 1'b1;
+
+////////////////////////////////////////////////////////////////////////////////
+// transfer response pipeline
+////////////////////////////////////////////////////////////////////////////////
+
+    // transfer response structure
+    typedef struct {
+        logic [DAT-1:0] rdt;
+        logic           err;
+    } rsp_t;
+
+    rsp_t rsp [$];
+
+    always_ff @(posedge tcb.clk)
+    begin
+        if (tcb.trn_dly[DLY]) begin
+            rsp.push_back('{tcb.rdt, tcb.err});
+        end
+    end
 
 endmodule: tcb_lite_vip_subordinate

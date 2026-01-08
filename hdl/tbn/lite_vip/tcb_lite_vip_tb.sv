@@ -17,11 +17,12 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 module tcb_lite_vip_tb #(
-    // configuration parameters
-    parameter int unsigned DELAY =  1,  // response delay
-    parameter int unsigned WIDTH = 32,  // data/address width (only 32/64 are supported)
-    parameter bit [WIDTH-1] MASK = '1,  // address mask
-    parameter bit           MODE = '1   // bus mode (0-logarithmic size, 1-byte enable)
+    // RTL configuration parameters
+    parameter  int unsigned DLY =    1,  // response delay
+    parameter  int unsigned DAT =   32,  // data    width (only 32/64 are supported)
+    parameter  int unsigned ADR =  DAT,  // address width (only 32/64 are supported)
+    parameter  bit [DAT-1]  MSK =   '1,  // address mask
+    parameter  bit          MOD = 1'b1   // bus mode (0-logarithmic size, 1-byte enable)
 );
 
     localparam bit VIP = 1'b1;
@@ -31,28 +32,28 @@ module tcb_lite_vip_tb #(
 ////////////////////////////////////////////////////////////////////////////////
 
     // system signals
-    logic clk;  // clock
-    logic rst;  // reset
+    logic clk = 1'b1;  // clock
+    logic rst = 1'b1;  // reset
 
     // testbench status signals
     string       testname;  // test name
     int unsigned errorcnt;  // ERROR counter
 
     // TCB interfaces
-    tcb_lite_if #(DELAY, WIDTH, MASK, MODE, VIP) tcb (.clk (clk), .rst (rst));
+    tcb_lite_if #(DLY, DAT, ADR, MSK, MOD, VIP) tcb (.clk (clk), .rst (rst));
 
 ////////////////////////////////////////////////////////////////////////////////
 // reference data for tests
 ////////////////////////////////////////////////////////////////////////////////
 
     // data organized into packed bytes
-    typedef logic [tcb.WIDTH-1:0] data_t;
+    typedef logic [tcb.DAT-1:0] data_t;
 
     // created data for tests
     function automatic data_t data_test_f (
         input logic [8/2-1:0] val = 'x
     );
-        for (int unsigned i=0; i<tcb.WIDTH/8; i++) begin
+        for (int unsigned i=0; i<tcb.BYT; i++) begin
             data_test_f[i] = {val, i[8/2-1:0]};
         end
     endfunction: data_test_f
@@ -61,20 +62,17 @@ module tcb_lite_vip_tb #(
 // manager/subordinate VIP devices
 ////////////////////////////////////////////////////////////////////////////////
 
-    // VIP manager
-    tcb_lite_vip_manager #(
-//        .QUEUE (QUEUE)
-    ) man (
+    // manager VIP
+    tcb_lite_vip_manager #() man (
         .tcb (tcb)
     );
 
-    // VIP manager
-    tcb_lite_vip_subordinate #(
-//        .QUEUE (QUEUE)
-    ) sub (
+    // subordinate  VIP
+    tcb_lite_vip_subordinate #() sub (
         .tcb (tcb)
     );
 
+    // TCB-Lite protocol checker
     tcb_lite_vip_protocol_checker chk (
         .tcb (tcb)
     );
@@ -99,14 +97,12 @@ module tcb_lite_vip_tb #(
 ////////////////////////////////////////////////////////////////////////////////
 
     // clock
-    initial          clk = 1'b1;
     always #(20ns/2) clk = ~clk;
 
     // test sequence
     initial
     begin
         // reset sequence
-        rst = 1'b1;
         repeat (2) @(posedge clk);
         rst = 1'b0;
         repeat (1) @(posedge clk);

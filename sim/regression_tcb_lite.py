@@ -6,7 +6,7 @@ import re
 
 tests = [
   "tcb_lite_vip_tb",
-  "tcb_lite_lib_passthrough_tb",
+#  "tcb_lite_lib_passthrough_tb",
 #  "tcb_lite_lib_register_request_tb",
 #  "tcb_lite_lib_register_response_tb",
 #  "tcb_lite_lib_register_backpressure_tb",

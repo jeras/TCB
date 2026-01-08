@@ -72,11 +72,11 @@ module tcb_lite_vip_protocol_checker (
             // write enable
             assert (!$isunknown(tcb.wen)) else $error("TCB: tcb.wen is unknown during a transfer cycle.");
             // address
-            assert (!$isunknown(tcb.adr & tcb.MASK)) else $error("TCB: tcb.adr is unknown during a transfer cycle.");
-            if (tcb.MODE == 1'b0) begin
+            assert (!$isunknown(tcb.adr & tcb.MSK)) else $error("TCB: tcb.adr is unknown during a transfer cycle.");
+            if (tcb.MOD == 1'b0) begin
                 // transfer size
                 assert (!$isunknown(tcb.siz)) else $error("TCB: tcb.req.siz is unknown during a transfer cycle.");
-                assert (tcb.siz <= $clog2($clog2(tcb.WIDTH/8))) else $error("TCB: tcb.req.siz is outside range.");  // TODO: fix formula
+                assert (tcb.siz <= $clog2($clog2(tcb.BYT))) else $error("TCB: tcb.req.siz is outside range.");  // TODO: fix formula
                 // write data
                 if (tcb.wen == 1'b1) begin
                     for (int unsigned i=0; i<2**tcb.siz; i++) begin
@@ -84,13 +84,13 @@ module tcb_lite_vip_protocol_checker (
                     end
                 end
             end
-            if (tcb.MODE == 1'b1) begin
+            if (tcb.MOD == 1'b1) begin
                 // byte enable
                 assert (!$isunknown(tcb.byt)) else $error("TCB: tcb.byt is unknown during a transfer cycle.");
                 // TODO: add checks for valid byte enable combinations
                 // write data
                 if (tcb.wen == 1'b1) begin
-                    for (int unsigned i=0; i<tcb.WIDTH/8; i++) begin
+                    for (int unsigned i=0; i<tcb.BYT; i++) begin
                         if (tcb.byt[i]) begin 
                             assert (!$isunknown(tcb.wdt[8*i+:8])) else $error("TCB: tcb.wdt[8*%0d+:8] is unknown during a transfer cycle.", i);
                         end
@@ -104,16 +104,16 @@ module tcb_lite_vip_protocol_checker (
     always_ff @(posedge tcb.clk)
     if ($realtime > 0) begin
         // response/read data bus and data sizing
-        if (tcb.trn_dly[tcb.DELAY]) begin
-            if (~tcb.wen_dly[tcb.DELAY]) begin
-                if (tcb.MODE == 1'b0) begin
-                    for (int unsigned i=0; i<2**tcb.siz_dly[tcb.DELAY]; i++) begin
+        if (tcb.trn_dly[tcb.DLY]) begin
+            if (~tcb.wen_dly[tcb.DLY]) begin
+                if (tcb.MOD == 1'b0) begin
+                    for (int unsigned i=0; i<2**tcb.siz_dly[tcb.DLY]; i++) begin
                         assert (!$isunknown(tcb.rdt[8*i+:8])) else $error("TCB: tcb.rsp.rdt[%0d] is unknown during a transfer cycle.", i);
                     end
                 end
-                if (tcb.MODE == 1'b1) begin
-                    for (int unsigned i=0; i<tcb.WIDTH/8; i++) begin
-                        if (tcb.byt_dly[tcb.DELAY][i]) begin
+                if (tcb.MOD == 1'b1) begin
+                    for (int unsigned i=0; i<tcb.BYT; i++) begin
+                        if (tcb.byt_dly[tcb.DLY][i]) begin
                             assert (!$isunknown(tcb.rdt[8*i+:8])) else $error("TCB: tcb.rsp.rdt[%0d] is unknown during a transfer cycle.", i);
                         end
                     end

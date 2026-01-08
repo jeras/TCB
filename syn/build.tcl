@@ -1,0 +1,1 @@
+read_slang ../hdl/rtl/tcb_lite_if.sv ../hdl/rtl/lite_lib/tcb_lite_lib_passthrough.sv tcb_lite_top.sv

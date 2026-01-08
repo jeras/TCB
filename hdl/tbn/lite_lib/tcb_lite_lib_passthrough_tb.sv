@@ -112,24 +112,24 @@ module tcb_lite_lib_passthrough_tb #(
 // VIP instances
 ////////////////////////////////////////////////////////////////////////////////
 
-    // VIP manager
+    // manager VIP
     tcb_lite_vip_manager #(
-//        .QUEUE (QUEUE)
     ) man (
         .tcb (tcb_man)
     );
 
-    // VIP manager
+    // subordinate VIP
     tcb_lite_vip_subordinate #(
-//        .QUEUE (QUEUE)
     ) sub (
         .tcb (tcb_sub)
     );
 
+    // manager TCB-Lite protocol checker
     tcb_lite_vip_protocol_checker chk_man (
         .tcb (tcb_man)
     );
 
+    // subordinate TCB-Lite protocol checker
     tcb_lite_vip_protocol_checker chk_sub (
         .tcb (tcb_sub)
     );
