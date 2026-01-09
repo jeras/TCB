@@ -16,10 +16,7 @@
 // limitations under the License.
 ////////////////////////////////////////////////////////////////////////////////
 
-module tcb_lite_vip_memory
-    import tcb_pkg::*;
-//    import tcb_vip_blocking_pkg::*;
-#(
+module tcb_lite_vip_memory #(
     // memory file name
     parameter  string        MFN = "",
     // memory size
@@ -105,35 +102,40 @@ module tcb_lite_vip_memory
 ////////////////////////////////////////////////////////////////////////////////
 
     generate
-    for (genvar i=0; i<IFN; i++) begin: port
+    for (genvar i=0; i<IFN; i++) begin: ifn
 
-        localparam int unsigned BYTES = tcb[i].WIDTH/8;
+        localparam int unsigned BYT = tcb[i].BYT;
 
         // request address and size (TCB_LOG_SIZE mode)
         int unsigned adr;
         int unsigned siz;
 
         // request address and size
-        assign adr =    int'(tcb[i].adr);
-        assign siz = 2**int'(tcb[i].siz);
+        assign adr =    int'(tcb[i].req.adr);
+        assign siz = 2**int'(tcb[i].req.siz);
+
+        logic [BYT-1:0][8-1:0] wdt;
+        logic [BYT-1:0][8-1:0] rdt;
 
         // write mask (which interfaces are allowed write access)
         // NOTE: `always_ff` provides better simulator performance than `always`,
         //       but allows only one statement to be able to write into the `mem` array
+
+        assign wdt = tcb[i].req.wdt;
 
         if (WRM[i]) begin: write_mask
 
             // write access
             always_ff @(posedge tcb[i].clk)
             if (tcb[i].trn) begin
-                if (tcb[i].wen) begin: write
-                    for (int unsigned b=0; b<BYTES; b++) begin: bytes
-                        if (tcb[i].MODE == 1'b0) begin
+                if (tcb[i].req.wen) begin: write
+                    for (int unsigned b=0; b<BYT; b++) begin: bytes
+                        if (tcb[i].MOD == 1'b0) begin
                             // write only transfer size bytes
-                            if (b < siz)  mem[(adr+b)%SIZE] <= tcb[i].wdt[b*8+:8];
+                            if (b < siz)  mem[(adr+b)%SIZE] <= wdt[b];
                         end else begin
                             // write only enabled bytes
-                            if (tcb[i].byt[(adr+b)%BYTES])  mem[(adr+b)%SIZE] <= tcb[i].wdt[(adr+b)%BYTES*8+:8];
+                            if (tcb[i].req.byt[(adr+b)%BYT])  mem[(adr+b)%SIZE] <= wdt[(adr+b)%BYT];
                         end
                     end: bytes
                 end: write
@@ -145,30 +147,34 @@ module tcb_lite_vip_memory
         // TODO: some simulator might detect multiple drivers even if there is a single interface
         //       but at least on Questa always_comb provides faster execution
         //always @(*)
-        always_comb
+        always_latch
         if (tcb[i].trn) begin
-            if (~tcb[i].wen) begin: read
-                for (int unsigned b=0; b<BYTES; b++) begin: bytes
-                    if (tcb[i].MODE == 1'b0) begin
+            if (~tcb[i].req.wen) begin: read
+                for (int unsigned b=0; b<BYT; b++) begin: bytes
+                    if (tcb[i].MOD == 1'b0) begin
                         // read only transfer size bytes, the rest remains undefined
-                        if (b < siz)  tcb[i].rdt_dly[0][b*8+:8] = mem[(adr+b)%SIZE];
-                        else          tcb[i].rdt_dly[0][b*8+:8] = 'x;
+                        if (b < siz)  rdt[b] = mem[(adr+b)%SIZE];
+                        else          rdt[b] = 'x;
                     end else begin
                         // read only enabled bytes, the rest remains undefined
-                        if (tcb[i].byt[(adr+b)%BYTES])  tcb[i].rdt_dly[0][(adr+b)%BYTES*8+:8] = mem[(adr+b)%SIZE];
-                        else                            tcb[i].rdt_dly[0][(adr+b)%BYTES*8+:8] = 'x;
+                        if (tcb[i].req.byt[(adr+b)%BYT])  rdt[(adr+b)%BYT] = mem[(adr+b)%SIZE];
+                        else                              rdt[(adr+b)%BYT] = 'x;
                     end
                 end: bytes
             end: read
             // as a memory model, there is no immediate need for error responses, this feature might be added in the future
             // TODO
-            tcb[i].err_dly[0] = '0;
+            tcb[i].rsp_dly[0].err = '0;
         end
+
+        // continuous assignment
+        assign tcb[i].rsp_dly[0].rdt = rdt;
+        assign tcb[i].rsp_dly[0].err = '0;
 
         // as a memory model, there is no immediate need for backpressure, this feature might be added in the future
         assign tcb[i].rdy = 1'b1;
 
-    end: port
+    end: ifn
     endgenerate
 
 endmodule: tcb_lite_vip_memory

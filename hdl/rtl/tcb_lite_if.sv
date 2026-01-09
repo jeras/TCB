@@ -135,6 +135,19 @@ interface tcb_lite_if #(
         end: dly
 
         if (VIP) begin: vip
+            // response delay line
+            for (genvar i=1; i<=DLY; i++) begin: dly
+                rsp_t rsp_tmp;
+                // continuous assignment
+                assign rsp_dly[i] = rsp_tmp;
+                // propagate through delay line
+                always_ff @(posedge clk)
+                begin
+                    if (trn_dly[i-1]) begin
+                        rsp_tmp <= rsp_dly[i-i];
+                    end
+                end
+            end: dly
             // continuous assignment
             if (DLY == 0) begin
                 assign rsp = trn ? rsp_dly[DLY] : '{default: 'z};

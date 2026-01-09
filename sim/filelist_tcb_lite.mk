@@ -32,8 +32,9 @@ RTL+=${PATH_HDL}/rtl/lite_lib/tcb_lite_lib_passthrough.sv
 TBN+=${PATH_HDL}/tbn/lite_vip/tcb_lite_vip_manager.sv
 TBN+=${PATH_HDL}/tbn/lite_vip/tcb_lite_vip_protocol_checker.sv
 TBN+=${PATH_HDL}/tbn/lite_vip/tcb_lite_vip_subordinate.sv
-#TBN+=${PATH_HDL}/tbn/lite_vip/tcb_lite_vip_memory.sv
+TBN+=${PATH_HDL}/tbn/lite_vip/tcb_lite_vip_memory.sv
 TBN+=${PATH_HDL}/tbn/lite_vip/tcb_lite_vip_tb.sv
+TBN+=${PATH_HDL}/tbn/lite_vip/tcb_lite_vip_memory_tb.sv
 # LIBrary
 TBN+=${PATH_HDL}/tbn/lite_lib/tcb_lite_lib_passthrough_tb.sv
 #TBN+=${PATH_HDL}/tbn/lite_lib/tcb_lite_lib_register_request_tb.sv
