@@ -62,7 +62,9 @@ module tcb_lite_lib_passthrough_tb #(
     begin: test
         // reset sequence
         repeat (2) @(posedge clk);
+        /* verilator lint_off INITIALDLY */
         rst <= 1'b0;
+        /* verilator lint_on INITIALDLY */
         repeat (1) @(posedge clk);
 
 //        fork
