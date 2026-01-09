@@ -32,29 +32,29 @@ module tcb_lite_top #(
     input  logic clk = 1'b1,  // clock
     input  logic rst = 1'b1,  // reset
     // subordinate IF
-    input  logic           sub_vld,  // handshake: valid
-    output logic           sub_rdy,  // handshake: ready
-    input  logic           sub_lck,  // request: arbitration lock
-    input  logic           sub_ndn,  // request: endianness (0-little, 1-big)
-    input  logic           sub_wen,  // request: write enable (0-read, 1-write)
-    input  logic [ADR-1:0] sub_adr,  // request: address
-    input  logic [SIZ-1:0] sub_siz,  // request: transfer size
-    input  logic [BYT-1:0] sub_byt,  // request: byte enable
-    input  logic [DAT-1:0] sub_wdt,  // request: write data
-    output logic [DAT-1:0] sub_rdt,  // response: read data
-    output logic           sub_err,  // response: bus error
+    input  logic           sub_vld    ,  // handshake: valid
+    output logic           sub_rdy    ,  // handshake: ready
+    input  logic           sub_req_lck,  // request: arbitration lock
+    input  logic           sub_req_ndn,  // request: endianness (0-little, 1-big)
+    input  logic           sub_req_wen,  // request: write enable (0-read, 1-write)
+    input  logic [ADR-1:0] sub_req_adr,  // request: address
+    input  logic [SIZ-1:0] sub_req_siz,  // request: transfer size
+    input  logic [BYT-1:0] sub_req_byt,  // request: byte enable
+    input  logic [DAT-1:0] sub_req_wdt,  // request: write data
+    output logic [DAT-1:0] sub_rsp_rdt,  // response: read data
+    output logic           sub_rsp_err,  // response: bus error
     // manager IF
-    output logic           man_vld,  // handshake: valid
-    input  logic           man_rdy,  // handshake: ready
-    output logic           man_lck,  // request: arbitration lock
-    output logic           man_ndn,  // request: endianness (0-little, 1-big)
-    output logic           man_wen,  // request: write enable (0-read, 1-write)
-    output logic [ADR-1:0] man_adr,  // request: address
-    output logic [SIZ-1:0] man_siz,  // request: transfer size
-    output logic [BYT-1:0] man_byt,  // request: byte enable
-    output logic [DAT-1:0] man_wdt,  // request: write data
-    input  logic [DAT-1:0] man_rdt,  // response: read data
-    input  logic           man_err   // response: bus error
+    output logic           man_vld    ,  // handshake: valid
+    input  logic           man_rdy    ,  // handshake: ready
+    output logic           man_req_lck,  // request: arbitration lock
+    output logic           man_req_ndn,  // request: endianness (0-little, 1-big)
+    output logic           man_req_wen,  // request: write enable (0-read, 1-write)
+    output logic [ADR-1:0] man_req_adr,  // request: address
+    output logic [SIZ-1:0] man_req_siz,  // request: transfer size
+    output logic [BYT-1:0] man_req_byt,  // request: byte enable
+    output logic [DAT-1:0] man_req_wdt,  // request: write data
+    input  logic [DAT-1:0] man_rsp_rdt,  // response: read data
+    input  logic           man_rsp_err   // response: bus error
 );
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -70,17 +70,17 @@ module tcb_lite_top #(
 ////////////////////////////////////////////////////////////////////////////////
 
     // subordinate ports
-    assign tcb_sub.vld =     sub_vld;
-    assign     sub_rdy = tcb_sub.rdy;
-    assign tcb_sub.lck =     sub_lck;
-    assign tcb_sub.ndn =     sub_ndn;
-    assign tcb_sub.wen =     sub_wen;
-    assign tcb_sub.adr =     sub_adr;
-    assign tcb_sub.siz =     sub_siz;
-    assign tcb_sub.byt =     sub_byt;
-    assign tcb_sub.wdt =     sub_wdt;
-    assign     sub_rdt = tcb_sub.rdt;
-    assign     sub_err = tcb_sub.err;
+    assign tcb_sub.vld     =         sub_vld    ;
+    assign     sub_rdy     =     tcb_sub.rdy    ;
+    assign tcb_sub.req.lck =         sub_req_lck;
+    assign tcb_sub.req.ndn =         sub_req_ndn;
+    assign tcb_sub.req.wen =         sub_req_wen;
+    assign tcb_sub.req.adr =         sub_req_adr;
+    assign tcb_sub.req.siz =         sub_req_siz;
+    assign tcb_sub.req.byt =         sub_req_byt;
+    assign tcb_sub.req.wdt =         sub_req_wdt;
+    assign     sub_rsp_rdt     = tcb_sub.rsp.rdt;
+    assign     sub_rsp_err     = tcb_sub.rsp.err;
 
     // passthrough
     tcb_lite_lib_passthrough dut (
@@ -89,16 +89,16 @@ module tcb_lite_top #(
     );
 
     // manager ports
-    assign     sub_vld = tcb_sub.vld;
-    assign tcb_sub.rdy =     sub_rdy;
-    assign     sub_lck = tcb_sub.lck;
-    assign     sub_ndn = tcb_sub.ndn;
-    assign     sub_wen = tcb_sub.wen;
-    assign     sub_adr = tcb_sub.adr;
-    assign     sub_siz = tcb_sub.siz;
-    assign     sub_byt = tcb_sub.byt;
-    assign     sub_wdt = tcb_sub.wdt;
-    assign tcb_sub.rdt =     sub_rdt;
-    assign tcb_sub.err =     sub_err;
+    assign     sub_vld     = tcb_sub.vld    ;
+    assign tcb_sub.rdy     =     sub_rdy    ;
+    assign     sub_req_lck = tcb_sub.req.lck;
+    assign     sub_req_ndn = tcb_sub.req.ndn;
+    assign     sub_req_wen = tcb_sub.req.wen;
+    assign     sub_req_adr = tcb_sub.req.adr;
+    assign     sub_req_siz = tcb_sub.req.siz;
+    assign     sub_req_byt = tcb_sub.req.byt;
+    assign     sub_req_wdt = tcb_sub.req.wdt;
+    assign tcb_sub.rsp.rdt =     sub_rsp_rdt;
+    assign tcb_sub.rsp.err =     sub_rsp_err;
 
 endmodule: tcb_lite_top

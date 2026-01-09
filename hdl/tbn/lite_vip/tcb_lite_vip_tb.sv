@@ -18,11 +18,11 @@
 
 module tcb_lite_vip_tb #(
     // RTL configuration parameters
-    parameter  int unsigned DLY =    1,  // response delay
-    parameter  int unsigned DAT =   32,  // data    width (only 32/64 are supported)
-    parameter  int unsigned ADR =  DAT,  // address width (only 32/64 are supported)
-    parameter  bit [DAT-1]  MSK =   '1,  // address mask
-    parameter  bit          MOD = 1'b1   // bus mode (0-logarithmic size, 1-byte enable)
+    parameter  int unsigned  DLY =    1,  // response delay
+    parameter  int unsigned  DAT =   32,  // data    width (only 32/64 are supported)
+    parameter  int unsigned  ADR =  DAT,  // address width (only 32/64 are supported)
+    parameter  bit [DAT-1:0] MSK =   '1,  // address mask
+    parameter  bit           MOD = 1'b1   // bus mode (0-logarithmic size, 1-byte enable)
 );
 
     localparam bit VIP = 1'b1;
@@ -47,16 +47,16 @@ module tcb_lite_vip_tb #(
 ////////////////////////////////////////////////////////////////////////////////
 
     // data organized into packed bytes
-    typedef logic [tcb.DAT-1:0] data_t;
+    typedef logic [DAT-1:0] data_t;
 
-    // created data for tests
-    function automatic data_t data_test_f (
-        input logic [8/2-1:0] val = 'x
-    );
-        for (int unsigned i=0; i<tcb.BYT; i++) begin
-            data_test_f[i] = {val, i[8/2-1:0]};
-        end
-    endfunction: data_test_f
+//    // created data for tests
+//    function automatic data_t data_test_f (
+//        input logic [8/2-1:0] val = 'x
+//    );
+//        for (int unsigned i=0; i<tcb.BYT; i++) begin
+//            data_test_f[i] = {val, i[8/2-1:0]};
+//        end
+//    endfunction: data_test_f
 
 ////////////////////////////////////////////////////////////////////////////////
 // manager/subordinate VIP devices

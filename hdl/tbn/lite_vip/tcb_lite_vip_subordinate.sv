@@ -18,7 +18,7 @@
 
 module tcb_lite_vip_subordinate (
     // system bus interface
-    tcb_lite_if.sub tcb
+    tcb_lite_if tcb
 );
 
     // local parameters
@@ -36,27 +36,24 @@ module tcb_lite_vip_subordinate (
     assign tcb.rdy = 1'b1;
 
     // read data is don't care
-    assign tcb.rdt_dly[0] = 'x;
+    assign tcb.rsp_dly[0].rdt = 'x;
 
     // the response status is always an error
-    assign tcb.err_dly[0] = 1'b1;
+    assign tcb.rsp_dly[0].err = 1'b1;
 
 ////////////////////////////////////////////////////////////////////////////////
 // transfer response pipeline
 ////////////////////////////////////////////////////////////////////////////////
 
     // transfer response structure
-    typedef struct {
-        logic [DAT-1:0] rdt;
-        logic           err;
-    } rsp_t;
+    typedef tcb.rsp_t rsp_t;
 
     rsp_t rsp [$];
 
     always_ff @(posedge tcb.clk)
     begin
         if (tcb.trn_dly[DLY]) begin
-            rsp.push_back('{tcb.rdt, tcb.err});
+            rsp.push_back(tcb.rsp);
         end
     end
 

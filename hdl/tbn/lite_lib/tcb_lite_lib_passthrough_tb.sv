@@ -17,11 +17,12 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 module tcb_lite_lib_passthrough_tb #(
-    // configuration parameters
-    parameter int unsigned DELAY =  1,  // response delay
-    parameter int unsigned WIDTH = 32,  // data/address width (only 32/64 are supported)
-    parameter bit [WIDTH-1] MASK = '1,  // address mask
-    parameter bit           MODE = '1   // bus mode (0-logarithmic size, 1-byte enable)
+    // RTL configuration parameters
+    parameter  int unsigned  DLY =    1,  // response delay
+    parameter  int unsigned  DAT =   32,  // data    width (only 32/64 are supported)
+    parameter  int unsigned  ADR =  DAT,  // address width (only 32/64 are supported)
+    parameter  bit [DAT-1:0] MSK =   '1,  // address mask
+    parameter  bit           MOD = 1'b1   // bus mode (0-logarithmic size, 1-byte enable)
 );
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -39,15 +40,15 @@ module tcb_lite_lib_passthrough_tb #(
     logic rst = 1'b1;  // reset
 
     // TCB interfaces
-    tcb_lite_if #(DELAY, WIDTH, MASK, MODE     ) tcb_man (.clk (clk), .rst (rst));
-    tcb_lite_if #(DELAY, WIDTH, MASK, MODE, VIP) tcb_sub (.clk (clk), .rst (rst));
+    tcb_lite_if #(DLY, DAT, ADR, MSK, MOD     ) tcb_man (.clk (clk), .rst (rst));
+    tcb_lite_if #(DLY, DAT, ADR, MSK, MOD, VIP) tcb_sub (.clk (clk), .rst (rst));
 
     // empty array
     logic [8-1:0] nul [];
 
     // response
-    logic [WIDTH-1:0] rdt;  // read data
-    logic             err;  // error status
+    logic [DAT-1:0] rdt;  // read data
+    logic           err;  // error status
 
 ////////////////////////////////////////////////////////////////////////////////
 // test sequence

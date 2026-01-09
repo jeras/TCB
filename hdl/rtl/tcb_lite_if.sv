@@ -37,6 +37,23 @@ interface tcb_lite_if #(
     localparam int unsigned MAX = $clog2(BYT);  // maximum logarithmic size
     localparam int unsigned SIZ = $clog2(BYT);  // logarithmic size width
 
+    // request type
+    typedef struct {
+        logic           lck;  // arbitration lock
+        logic           ndn;  // endianness (0-little, 1-big)
+        logic           wen;  // write enable (0-read, 1-write)
+        logic [ADR-1:0] adr;  // address
+        logic [SIZ-1:0] siz;  // transfer size
+        logic [BYT-1:0] byt;  // byte enable
+        logic [DAT-1:0] wdt;  // write data
+    } req_t;
+
+    // response type
+    typedef struct {
+        logic [DAT-1:0] rdt;  // read data
+        logic           err;  // bus error
+    } rsp_t;
+
 ////////////////////////////////////////////////////////////////////////////////
 // I/O ports
 ////////////////////////////////////////////////////////////////////////////////
@@ -45,18 +62,9 @@ interface tcb_lite_if #(
     logic vld;  // valid
     logic rdy;  // ready
 
-    // request
-    logic           lck;  // arbitration lock
-    logic           ndn;  // endianness (0-little, 1-big)
-    logic           wen;  // write enable (0-read, 1-write)
-    logic [ADR-1:0] adr;  // address
-    logic [SIZ-1:0] siz;  // transfer size
-    logic [BYT-1:0] byt;  // byte enable
-    logic [DAT-1:0] wdt;  // write data
-
-    // response
-    logic [DAT-1:0] rdt;  // read data
-    logic           err;  // bus error
+    // request/response
+    req_t req;
+    rsp_t rsp;
 
 ////////////////////////////////////////////////////////////////////////////////
 // parameter validation
@@ -99,70 +107,29 @@ interface tcb_lite_if #(
 // request/response delay
 ////////////////////////////////////////////////////////////////////////////////
 
-    // transfer
-    logic           trn_dly [0:DLY];  // transfer
+    // delay line
+    logic trn_dly [0:DLY];  // handshake transfer
+    req_t req_dly [0:DLY];  // request
+    rsp_t rsp_dly [0:DLY];  // response
 
-    // request
-    logic           lck_dly [0:DLY];  // arbitration lock
-    logic           ndn_dly [0:DLY];  // endianness (0-little, 1-big)
-    logic           wen_dly [0:DLY];  // write enable (0-read, 1-write)
-    logic [DAT-1:0] adr_dly [0:DLY];  // address
-    logic [SIZ-1:0] siz_dly [0:DLY];  // transfer size
-    logic [BYT-1:0] byt_dly [0:DLY];  // byte enable
-    logic [DAT-1:0] wdt_dly [0:DLY];  // write data
-
-    // response
-    logic [DAT-1:0] rdt_dly [0:DLY];  // read data
-    logic           err_dly [0:DLY];  // bus error
-
-    // transfer delay (continuous assignment)
+    // zero delay (continuous assignment)
     assign trn_dly[0] = trn;
-    // request delay (continuous assignment)
-    assign lck_dly[0] = lck;
-    assign ndn_dly[0] = ndn;
-    assign wen_dly[0] = wen;
-    assign adr_dly[0] = adr;
-    assign siz_dly[0] = siz;
-    assign byt_dly[0] = byt;
-    assign wdt_dly[0] = wdt;
+    assign req_dly[0] = req;
 
     generate
-        // delay line
+        // handshake/request delay line
         for (genvar i=1; i<=DLY; i++) begin: dly
-            // transfer
-            logic           trn_tmp;  // transfer
-            // request
-            logic           lck_tmp;  // arbitration lock
-            logic           ndn_tmp;  // endianness (0-little, 1-big)
-            logic           wen_tmp;  // write enable (0-read, 1-write)
-            logic [DAT-1:0] adr_tmp;  // address
-            logic [SIZ-1:0] siz_tmp;  // transfer size
-            logic [BYT-1:0] byt_tmp;  // byte enable
-            logic [DAT-1:0] wdt_tmp;  // write data
-            
-            // transfer (continuous assignment)
+            logic trn_tmp;
+            req_t req_tmp;
+            // continuous assignment
             assign trn_dly[i] = trn_tmp;
-            // request (continuous assignment)
-            assign lck_dly[i] = lck_tmp;
-            assign ndn_dly[i] = ndn_tmp;
-            assign wen_dly[i] = wen_tmp;
-            assign adr_dly[i] = adr_tmp;
-            assign siz_dly[i] = siz_tmp;
-            assign byt_dly[i] = byt_tmp;
-            assign wdt_dly[i] = wdt_tmp;
-
+            assign req_dly[i] = req_tmp;
             // propagate through delay line
             always_ff @(posedge clk)
             begin
                 trn_tmp <= trn_dly[i-1];
                 if (trn_dly[i-1]) begin
-                    lck_tmp <= lck_dly[i-i];
-                    ndn_tmp <= ndn_dly[i-i];
-                    wen_tmp <= wen_dly[i-i];
-                    adr_tmp <= adr_dly[i-i];
-                    siz_tmp <= siz_dly[i-i];
-                    byt_tmp <= byt_dly[i-i];
-                    wdt_tmp <= wdt_dly[i-i];
+                    req_tmp <= req_dly[i-i];
                 end
             end
         end: dly
@@ -170,16 +137,10 @@ interface tcb_lite_if #(
         if (VIP) begin: vip
             // continuous assignment
             if (DLY == 0) begin
-                assign rdt = trn ? rdt_dly[DLY] : 'z;
-                assign err = trn ? err_dly[DLY] : 'z;
+                assign rsp = trn ? rsp_dly[DLY] : '{default: 'z};
             end else begin
-                if (HLD) begin
-                    assign rdt =                rdt_dly[DLY];
-                    assign err =                err_dly[DLY];
-                end else begin
-                    assign rdt = trn_dly[DLY] ? rdt_dly[DLY] : 'x;
-                    assign err = trn_dly[DLY] ? err_dly[DLY] : 'x;
-                end
+                if (HLD)  assign rsp =                rsp_dly[DLY];
+                else      assign rsp = trn_dly[DLY] ? rsp_dly[DLY] : '{default: 'x};
             end
         end: vip
 
@@ -201,30 +162,13 @@ interface tcb_lite_if #(
         input  trn,
         input  stl,
         input  idl,
-        // request
-        output lck,
-        output ndn,
-        output wen,
-        output adr,
-        output siz,
-        output byt,
-        output wdt,
-        // response
-        input  rdt,
-        input  err,
-        // transfer (delay line)
+        // request/response
+        output req,
+        input  rsp,
+        // delay line
         input  trn_dly,
-        // request (delay line)
-        input  lck_dly,
-        input  ndn_dly,
-        input  wen_dly,
-        input  adr_dly,
-        input  siz_dly,
-        input  byt_dly,
-        input  wdt_dly,
-        // response (delay line)
-        input  rdt_dly,
-        input  err_dly
+        input  req_dly,
+        input  rsp_dly
     );
 
     // monitor
@@ -239,30 +183,13 @@ interface tcb_lite_if #(
         input  trn,
         input  stl,
         input  idl,
-        // request
-        input  lck,
-        input  ndn,
-        input  wen,
-        input  adr,
-        input  siz,
-        input  byt,
-        input  wdt,
-        // response
-        input  rdt,
-        input  err,
-        // transfer (delay line)
+        // request/response
+        input  req,
+        input  rsp,
+        // delay line
         input  trn_dly,
-        // request (delay line)
-        input  lck_dly,
-        input  ndn_dly,
-        input  wen_dly,
-        input  adr_dly,
-        input  siz_dly,
-        input  byt_dly,
-        input  wdt_dly,
-        // response (delay line)
-        input  rdt_dly,
-        input  err_dly
+        input  req_dly,
+        input  rsp_dly
     );
 
     // subordinate
@@ -277,30 +204,13 @@ interface tcb_lite_if #(
         input  trn,
         input  stl,
         input  idl,
-        // request
-        input  lck,
-        input  ndn,
-        input  wen,
-        input  adr,
-        input  siz,
-        input  byt,
-        input  wdt,
-        // response
-        output rdt,
-        output err,
-        // transfer (delay line)
+        // request/response
+        input  req,
+        output rsp,
+        // delay line
         input  trn_dly,
-        // request (delay line)
-        input  lck_dly,
-        input  ndn_dly,
-        input  wen_dly,
-        input  adr_dly,
-        input  siz_dly,
-        input  byt_dly,
-        input  wdt_dly,
-        // response (delay line)
-        input  rdt_dly,
-        input  err_dly
+        input  req_dly,
+        input  rsp_dly
     );
 
 endinterface: tcb_lite_if

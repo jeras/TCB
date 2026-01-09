@@ -19,9 +19,9 @@ tests = [
 #  "tcb_lite_peri_uart_tb",
 ]
 
-simulator = "questa"
+#simulator = "questa"
 #simulator = "vivado"
-#simulator = "verilator"
+simulator = "verilator"
 
 report = []
 

@@ -37,13 +37,7 @@ module tcb_lite_vip_manager (
         // idle
         tcb.vld = 1'b0;
         // request don't care
-        tcb.lck = 'x;
-        tcb.ndn = 'x;
-        tcb.wen = 'x;
-        tcb.adr = 'x;
-        tcb.siz = 'x;
-        tcb.byt = 'x;
-        tcb.wdt = 'x;
+        tcb.req = '{default: 'x};
     end
     
     // request driver
@@ -53,7 +47,7 @@ module tcb_lite_vip_manager (
         input  logic           ndn = 1'b0,
         input  logic           wen,
         input  logic [ADR-1:0] adr,
-        input  logic [SIZ-1:0] siz = $clog2(BYT),
+        input  logic [SIZ-1:0] siz = tcb.SIZ'($clog2(BYT)),
         input  logic [BYT-1:0] byt = '1,
         input  logic [DAT-1:0] wdt,
         // idle/backpressure timing
@@ -69,13 +63,13 @@ module tcb_lite_vip_manager (
                 // start handshake
                 tcb.vld <= 1'b1;
                 // request
-                tcb.lck <= lck;
-                tcb.ndn <= ndn;
-                tcb.wen <= wen;
-                tcb.adr <= adr;
-                tcb.siz <= siz;
-                tcb.byt <= byt;
-                tcb.wdt <= wdt;
+                tcb.req.lck <= lck;
+                tcb.req.ndn <= ndn;
+                tcb.req.wen <= wen;
+                tcb.req.adr <= adr;
+                tcb.req.siz <= siz;
+                tcb.req.byt <= byt;
+                tcb.req.wdt <= wdt;
             end
             @(posedge tcb.clk);
             if (~tcb.vld) cyc++;
@@ -88,17 +82,14 @@ module tcb_lite_vip_manager (
 ////////////////////////////////////////////////////////////////////////////////
 
     // transfer response structure
-    typedef struct {
-        logic [DAT-1:0] rdt;
-        logic           err;
-    } rsp_t;
+    typedef tcb.rsp_t rsp_t;
 
     rsp_t rsp [$];
 
     always_ff @(posedge tcb.clk)
     begin
         if (tcb.trn_dly[DLY]) begin
-            rsp.push_back('{tcb.rdt, tcb.err});
+            rsp.push_back(tcb.rsp);
         end
     end
 
@@ -110,8 +101,8 @@ module tcb_lite_vip_manager (
     // current endianness
     bit cfg_ndn;
     
-    logic [BYT-1:0] tmp_dat;
-    logic             tmp_err;
+    logic [DAT-1:0] tmp_dat;
+    logic           tmp_err;
 
     initial cfg_ndn = 1'b0;
 
@@ -130,7 +121,7 @@ module tcb_lite_vip_manager (
         logic [DAT-1:0] dat = 'x;
         // logarithmic size
         if (tcb.MOD == 1'b0) begin
-            siz = $clog2(len/8);
+            siz = tcb.SIZ'($clog2(len/8));
             for (int unsigned i=0; i<len/8; i++) begin
                 if (wen) begin
                     dat[8*i+:8] = wdt[8*i+:8];
@@ -159,8 +150,8 @@ module tcb_lite_vip_manager (
                 do begin
                     @(posedge tcb.clk);
                 end while (~tcb.trn_dly[DLY]);
-                tmp_dat <= tcb.rdt;
-                tmp_err <= tcb.err;
+                tmp_dat <= tcb.rsp.rdt;
+                tmp_err <= tcb.rsp.err;
             end: response
         join
         // logarithmic size
@@ -191,46 +182,50 @@ module tcb_lite_vip_manager (
 
     task automatic write8 (
         input  logic [DAT-1:0] adr,
-        input  logic [  8-1:0] wdt,
+        input  logic [  8-1:0] dat,
         output logic           err,
         input  logic           ndn = 1'b0
     );
+        logic [DAT-1:0] wdt = DAT'(dat);
         logic [DAT-1:0] rdt;
-        //      wen, adr,      wdt , rdt, err; len, ndn
-        access(1'b1, adr, DAT'(wdt), rdt, err,   8, ndn);
+        //      wen, adr, wdt, rdt, err; len, ndn
+        access(1'b1, adr, wdt, rdt, err,   8, ndn);
     endtask: write8
 
     task automatic write16 (
         input  logic [DAT-1:0] adr,
-        input  logic [ 16-1:0] wdt,
+        input  logic [ 16-1:0] dat,
         output logic           err,
         input  logic           ndn = 1'b0
     );
+        logic [DAT-1:0] wdt = DAT'(dat);
         logic [DAT-1:0] rdt;
-        //      wen, adr,      wdt , rdt, err, len, ndn
-        access(1'b1, adr, DAT'(wdt), rdt, err,  16, ndn);
+        //      wen, adr, wdt, rdt, err, len, ndn
+        access(1'b1, adr, wdt, rdt, err,  16, ndn);
     endtask: write16
 
     task automatic write32 (
         input  logic [DAT-1:0] adr,
-        input  logic [ 32-1:0] wdt,
+        input  logic [ 32-1:0] dat,
         output logic           err,
         input  logic           ndn = 1'b0
     );
+        logic [DAT-1:0] wdt = DAT'(dat);
         logic [DAT-1:0] rdt;
-        //      wen, adr,      wdt , rdt, err, len, ndn
-        access(1'b1, adr, DAT'(wdt), rdt, err,  32, ndn);
+        //      wen, adr, wdt , rdt, err, len, ndn
+        access(1'b1, adr, wdt, rdt, err,  32, ndn);
     endtask: write32
 
     task automatic write64 (
         input  logic [DAT-1:0] adr,
-        input  logic [ 64-1:0] wdt,
+        input  logic [ 64-1:0] dat,
         output logic           err,
         input  logic           ndn = 1'b0
     );
+        logic [DAT-1:0] wdt = DAT'(dat);
         logic [DAT-1:0] rdt;
-        //      wen, adr,      wdt , rdt, err, len, ndn
-        access(1'b1, adr, DAT'(wdt), rdt, err,  64, ndn);
+        //      wen, adr, wdt, rdt, err, len, ndn
+        access(1'b1, adr, wdt, rdt, err,  64, ndn);
     endtask: write64
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -239,46 +234,54 @@ module tcb_lite_vip_manager (
 
     task automatic read8 (
         input  logic [DAT-1:0] adr,
-        output logic [  8-1:0] rdt,
+        output logic [  8-1:0] dat,
         output logic           err,
         input  logic           ndn = 1'b0
     );
         logic [DAT-1:0] wdt = 'x;
+        logic [DAT-1:0] rdt;
         //      wen, adr,      wdt , rdt, err, len, ndn
         access(1'b0, adr, DAT'(wdt), rdt, err,   8, ndn);
+        dat = 8'(rdt);
     endtask: read8
 
     task automatic read16 (
         input  logic [DAT-1:0] adr,
-        output logic [ 16-1:0] rdt,
+        output logic [ 16-1:0] dat,
         output logic           err,
         input  logic           ndn = 1'b0
     );
         logic [DAT-1:0] wdt = 'x;
+        logic [DAT-1:0] rdt;
         //      wen, adr,      wdt , rdt, err, len, ndn
         access(1'b0, adr, DAT'(wdt), rdt, err,  16, ndn);
+        dat = 16'(rdt);
     endtask: read16
 
     task automatic read32 (
         input  logic [DAT-1:0] adr,
-        output logic [ 32-1:0] rdt,
+        output logic [ 32-1:0] dat,
         output logic           err,
         input  logic           ndn = 1'b0
     );
         logic [DAT-1:0] wdt = 'x;
+        logic [DAT-1:0] rdt;
         //      wen, adr,      wdt , rdt, err, len, ndn
         access(1'b0, adr, DAT'(wdt), rdt, err,  32, ndn);
+        dat = 32'(rdt);
     endtask: read32
 
     task automatic read64 (
         input  logic [DAT-1:0] adr,
-        output logic [ 64-1:0] rdt,
+        output logic [ 64-1:0] dat,
         output logic           err,
         input  logic           ndn = 1'b0
     );
         logic [DAT-1:0] wdt = 'x;
+        logic [DAT-1:0] rdt;
         //      wen, adr,      wdt , rdt, err, len, ndn
         access(1'b0, adr, DAT'(wdt), rdt, err,  64, ndn);
+        dat = 64'(rdt);
     endtask: read64
 
 endmodule: tcb_lite_vip_manager
