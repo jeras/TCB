@@ -10,9 +10,9 @@ PATH_HDL=../../hdl
 RTL+=${PATH_HDL}/rtl/tcb_lite_if.sv
 # LIBrary
 RTL+=${PATH_HDL}/rtl/lite_lib/tcb_lite_lib_passthrough.sv
-#RTL+=${PATH_HDL}/rtl/lite_lib/tcb_lite_lib_register_request.sv
-#RTL+=${PATH_HDL}/rtl/lite_lib/tcb_lite_lib_register_response.sv
-#RTL+=${PATH_HDL}/rtl/lite_lib/tcb_lite_lib_register_backpressure.sv
+RTL+=${PATH_HDL}/rtl/lite_lib/tcb_lite_lib_register_request.sv
+RTL+=${PATH_HDL}/rtl/lite_lib/tcb_lite_lib_register_response.sv
+RTL+=${PATH_HDL}/rtl/lite_lib/tcb_lite_lib_register_backpressure.sv
 RTL+=${PATH_HDL}/rtl/lite_lib/tcb_lite_lib_error.sv
 #RTL+=${PATH_HDL}/rtl/lite_lib/tcb_lite_lib_arbiter.sv
 #RTL+=${PATH_HDL}/rtl/lite_lib/tcb_lite_lib_multiplexer.sv
@@ -37,9 +37,9 @@ TBN+=${PATH_HDL}/tbn/lite_vip/tcb_lite_vip_tb.sv
 TBN+=${PATH_HDL}/tbn/lite_vip/tcb_lite_vip_memory_tb.sv
 # LIBrary
 TBN+=${PATH_HDL}/tbn/lite_lib/tcb_lite_lib_passthrough_tb.sv
-#TBN+=${PATH_HDL}/tbn/lite_lib/tcb_lite_lib_register_request_tb.sv
-#TBN+=${PATH_HDL}/tbn/lite_lib/tcb_lite_lib_register_response_tb.sv
-#TBN+=${PATH_HDL}/tbn/lite_lib/tcb_lite_lib_register_backpressure_tb.sv
+TBN+=${PATH_HDL}/tbn/lite_lib/tcb_lite_lib_register_request_tb.sv
+TBN+=${PATH_HDL}/tbn/lite_lib/tcb_lite_lib_register_response_tb.sv
+TBN+=${PATH_HDL}/tbn/lite_lib/tcb_lite_lib_register_backpressure_tb.sv
 TBN+=${PATH_HDL}/tbn/lite_lib/tcb_lite_lib_error_tb.sv
 #TBN+=${PATH_HDL}/tbn/lite_lib/tcb_lite_lib_arbiter_tb.sv
 #TBN+=${PATH_HDL}/tbn/lite_lib/tcb_lite_lib_multiplexer_tb.sv

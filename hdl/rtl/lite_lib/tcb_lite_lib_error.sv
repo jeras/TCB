@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// TCB lite (Tightly Coupled Bus) library error subordinate
+// TCB-Lite (Tightly Coupled Bus) library error subordinate
 ////////////////////////////////////////////////////////////////////////////////
 // Copyright 2022 Iztok Jeras
 //
@@ -29,9 +29,9 @@ module tcb_lite_lib_error (
     assign sub.rdy = 1'b1;
 
     // read data is don't care
-    assign sub.rdt = 'x;
+    assign sub.rsp.rdt = 'x;
 
     // the response status is always an error
-    assign sub.err = 1'b1;
+    assign sub.rsp.err = 1'b1;
 
 endmodule: tcb_lite_lib_error

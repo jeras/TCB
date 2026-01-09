@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// TCB lite (Tightly Coupled Bus) library register slice for request path
+// TCB-Lite (Tightly Coupled Bus) library register slice for request path
 ////////////////////////////////////////////////////////////////////////////////
 // Copyright 2022 Iztok Jeras
 //
@@ -30,10 +30,12 @@ module tcb_lite_lib_register_request (
     // comparing subordinate and manager interface parameters
     initial
     begin
-        assert (man.DELAY == sub.DELAY) else $error("Parameter (man.DELAY = %p) != (sub.DELAY = %p)", man.DELAY, sub.DELAY);
-        assert (man.WIDTH == sub.WIDTH) else $error("Parameter (man.WIDTH = %p) != (sub.WIDTH = %p)", man.WIDTH, sub.WIDTH);
-        assert (man.MASK  == sub.MASK ) else $error("Parameter (man.MASK  = %p) != (sub.MASK  = %p)", man.MASK , sub.MASK );
-        assert (man.MODE  == sub.MODE ) else $error("Parameter (man.MODE  = %p) != (sub.MODE  = %p)", man.MODE , sub.MODE );
+        assert (man.DLY+1 == sub.DLY) else $error("Parameter (man.DLY = %p)+1 != (sub.DLY = %p)", man.DLY, sub.DLY);
+
+        assert (man.DAT == sub.DAT) else $error("Parameter (man.DAT = %p) != (sub.DAT = %p)", man.DAT, sub.DAT);
+        assert (man.ADR == sub.ADR) else $error("Parameter (man.ADR = %p) != (sub.ADR = %p)", man.ADR, sub.ADR);
+        assert (man.MSK == sub.MSK) else $error("Parameter (man.MSK = %p) != (sub.MSK = %p)", man.MSK, sub.MSK);
+        assert (man.MOD == sub.MOD) else $error("Parameter (man.MOD = %p) != (sub.MOD = %p)", man.MOD, sub.MOD);
     end
 `endif
 
@@ -54,22 +56,22 @@ module tcb_lite_lib_register_request (
     // request
     always_ff @(posedge sub.clk)
     begin
-        man.wen <= sub.wen;
-        man.lck <= sub.lck;
-        man.adr <= sub.adr;
-        if (sub.MODE == 1'b0)  man.siz <= sub.siz;  // logarithmic size
-        else                   man.byt <= sub.byt;  // byte enable
-        if (sub.wen) begin
-            for (int unsigned i=0; i<sub.WIDTH/8; i++) begin
-                if (sub.MODE == 1'b0)  if (i < 2**sub.siz) man.wdt[i*8+:8] <= sub.wdt[i*8+:8];  // logarithmic size
-                else                   if (sub.byt[i])     man.wdt[i*8+:8] <= sub.wdt[i*8+:8];  // byte enable
+        man.req.wen <= sub.req.wen;
+        man.req.lck <= sub.req.lck;
+        man.req.adr <= sub.req.adr;
+        if (sub.MOD == 1'b0)  man.req.siz <= sub.req.siz;  // logarithmic size
+        else                  man.req.byt <= sub.req.byt;  // byte enable
+        if (sub.req.wen) begin
+            for (int unsigned i=0; i<sub.BYT; i++) begin
+                if (sub.MOD == 1'b0)  if (i < 2**sub.req.siz) man.req.wdt[i*8+:8] <= sub.req.wdt[i*8+:8];  // logarithmic size
+                else                  if (sub.req.byt[i])     man.req.wdt[i*8+:8] <= sub.req.wdt[i*8+:8];  // byte enable
             end
         end
     end
 
     // response
-    assign sub.rdt = man.rdt;
-    assign sub.err = man.err;
+    assign sub.rsp.rdt = man.rsp.rdt;
+    assign sub.rsp.err = man.rsp.err;
 
     // handshake (valid is checked to avoid pipeline bubbles)
     assign sub.rdy = man.rdy | ~man.vld;

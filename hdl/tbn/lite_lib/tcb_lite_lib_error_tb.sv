@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// TCB-Lite (Tightly Coupled Bus) library passthrough testbench
+// TCB-Lite (Tightly Coupled Bus) library error testbench
 ////////////////////////////////////////////////////////////////////////////////
 // Copyright 2022 Iztok Jeras
 //
@@ -16,7 +16,7 @@
 // limitations under the License.
 ////////////////////////////////////////////////////////////////////////////////
 
-module tcb_lite_lib_passthrough_tb #(
+module tcb_lite_lib_error_tb #(
     // RTL configuration parameters
     parameter  int unsigned  DLY =    1,  // response delay
     parameter  int unsigned  DAT =   32,  // data    width (only 32/64 are supported)
@@ -29,8 +29,6 @@ module tcb_lite_lib_passthrough_tb #(
 // local parameters
 ////////////////////////////////////////////////////////////////////////////////
 
-    localparam bit VIP = 1'b1;
-
 ////////////////////////////////////////////////////////////////////////////////
 // local signals
 ////////////////////////////////////////////////////////////////////////////////
@@ -41,7 +39,6 @@ module tcb_lite_lib_passthrough_tb #(
 
     // TCB interfaces
     tcb_lite_if #(DLY, DAT, ADR, MSK, MOD     ) tcb_man (.clk (clk), .rst (rst));
-    tcb_lite_if #(DLY, DAT, ADR, MSK, MOD, VIP) tcb_sub (.clk (clk), .rst (rst));
 
     // empty array
     logic [8-1:0] nul [];
@@ -121,29 +118,17 @@ module tcb_lite_lib_passthrough_tb #(
         .tcb (tcb_man)
     );
 
-    // subordinate VIP
-    tcb_lite_vip_subordinate #(
-    ) sub (
-        .tcb (tcb_sub)
-    );
-
     // manager TCB-Lite protocol checker
     tcb_lite_vip_protocol_checker chk_man (
         .tcb (tcb_man)
-    );
-
-    // subordinate TCB-Lite protocol checker
-    tcb_lite_vip_protocol_checker chk_sub (
-        .tcb (tcb_sub)
     );
 
 ////////////////////////////////////////////////////////////////////////////////
 // DUT instance
 ////////////////////////////////////////////////////////////////////////////////
 
-    tcb_lite_lib_passthrough dut (
-        .sub  (tcb_man),
-        .man  (tcb_sub)
+    tcb_lite_lib_error dut (
+        .sub  (tcb_man)
     );
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -160,4 +145,4 @@ module tcb_lite_lib_passthrough_tb #(
         $dumpvars;
     end
 
-endmodule: tcb_lite_lib_passthrough_tb
+endmodule: tcb_lite_lib_error_tb

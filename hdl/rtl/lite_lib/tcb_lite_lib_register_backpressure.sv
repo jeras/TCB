@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// TCB lite (Tightly Coupled Bus) library register slice for backpressure path
+// TCB-Lite (Tightly Coupled Bus) library register slice for backpressure path
 ////////////////////////////////////////////////////////////////////////////////
 // Copyright 2022 Iztok Jeras
 //
@@ -30,10 +30,11 @@ module tcb_lite_lib_register_backpressure (
     // comparing subordinate and manager interface parameters
     initial
     begin
-        assert (man.DELAY == sub.DELAY) else $error("Parameter (man.DELAY = %p) != (sub.DELAY = %p)", man.DELAY, sub.DELAY);
-        assert (man.WIDTH == sub.WIDTH) else $error("Parameter (man.WIDTH = %p) != (sub.WIDTH = %p)", man.WIDTH, sub.WIDTH);
-        assert (man.MASK  == sub.MASK ) else $error("Parameter (man.MASK  = %p) != (sub.MASK  = %p)", man.MASK , sub.MASK );
-        assert (man.MODE  == sub.MODE ) else $error("Parameter (man.MODE  = %p) != (sub.MODE  = %p)", man.MODE , sub.MODE );
+        assert (man.DLY == sub.DLY) else $error("Parameter (man.DLY = %p) != (sub.DLY = %p)", man.DLY, sub.DLY);
+        assert (man.DAT == sub.DAT) else $error("Parameter (man.DAT = %p) != (sub.DAT = %p)", man.DAT, sub.DAT);
+        assert (man.ADR == sub.ADR) else $error("Parameter (man.ADR = %p) != (sub.ADR = %p)", man.ADR, sub.ADR);
+        assert (man.MSK == sub.MSK) else $error("Parameter (man.MSK = %p) != (sub.MSK = %p)", man.MSK, sub.MSK);
+        assert (man.MOD == sub.MOD) else $error("Parameter (man.MOD = %p) != (sub.MOD = %p)", man.MOD, sub.MOD);
     end
 `endif
 
@@ -41,13 +42,10 @@ module tcb_lite_lib_register_backpressure (
 // register backpressure path
 ////////////////////////////////////////////////////////////////////////////////
 
+    typedef sub.req_t req_t;
+
     // request temporary buffer
-    logic                   lck;  // arbitration lock
-    logic                   wen;  // write enable (0-read, 1-write)
-    logic [sub.WIDTH  -1:0] adr;  // address
-    logic [          2-1:0] siz;  // transfer size
-    logic [sub.WIDTH/8-1:0] byt;  // byte enable
-    logic [sub.WIDTH  -1:0] wdt;  // write data
+    req_t tmp_req;
 
     // handshake
     assign man.vld = sub.rdy ? sub.vld : 1'b1;
@@ -56,31 +54,37 @@ module tcb_lite_lib_register_backpressure (
     always_ff @(posedge sub.clk)
     begin
         if (sub.vld & sub.rdy & ~man.rdy) begin
-            man.wen <= sub.wen;
-            man.lck <= sub.lck;
-            man.adr <= sub.adr;
-            if (sub.MODE == 1'b0)  man.siz <= sub.siz;  // logarithmic size
-            else                   man.byt <= sub.byt;  // byte enable
-            if (sub.wen) begin
-                for (int unsigned i=0; i<sub.WIDTH/8; i++) begin
-                    if (sub.MODE == 1'b0)  if (i < 2**sub.siz) man.wdt[i*8+:8] <= sub.wdt[i*8+:8];  // logarithmic size
-                    else                   if (sub.byt[i])     man.wdt[i*8+:8] <= sub.wdt[i*8+:8];  // byte enable
+            tmp_req.lck <= sub.req.lck;
+            tmp_req.ndn <= sub.req.ndn;
+            tmp_req.wen <= sub.req.wen;
+            tmp_req.adr <= sub.req.adr;
+            if (sub.MOD == 1'b0)  tmp_req.siz <= sub.req.siz;  // logarithmic size
+            else                  tmp_req.byt <= sub.req.byt;  // byte enable
+            if (sub.req.wen) begin
+                for (int unsigned i=0; i<sub.BYT; i++) begin
+                    if (sub.MOD == 1'b0)  if (i < 2**sub.req.siz   ) tmp_req.wdt[i*8+:8] <= sub.req.wdt[i*8+:8];  // logarithmic size
+                    else                  if (       sub.req.byt[i]) tmp_req.wdt[i*8+:8] <= sub.req.wdt[i*8+:8];  // byte enable
                 end
             end
         end
     end
 
     // request
-    assign man.lck = sub.rdy ? sub.lck : lck;
-    assign man.wen = sub.rdy ? sub.wen : wen;
-    assign man.adr = sub.rdy ? sub.adr : adr;
-    assign man.siz = sub.rdy ? sub.siz : siz;
-    assign man.byt = sub.rdy ? sub.byt : byt;
-    assign man.wdt = sub.rdy ? sub.wdt : wdt;
+`ifdef SLANG
+    assign man.req.lck = sub.rdy ? sub.req.lck : tmp_req.lck;
+    assign man.req.ndn = sub.rdy ? sub.req.ndn : tmp_req.ndn;
+    assign man.req.wen = sub.rdy ? sub.req.wen : tmp_req.wen;
+    assign man.req.adr = sub.rdy ? sub.req.adr : tmp_req.adr;
+    assign man.req.siz = sub.rdy ? sub.req.siz : tmp_req.siz;
+    assign man.req.byt = sub.rdy ? sub.req.byt : tmp_req.byt;
+    assign man.req.wdt = sub.rdy ? sub.req.wdt : tmp_req.wdt;
+`else
+    assign man.req = sub.rdy ? sub.req : tmp_req;
+`endif
 
     // response
-    assign sub.rdt = man.rdt;
-    assign sub.err = man.err;
+    assign sub.rsp.rdt = man.rsp.rdt;
+    assign sub.rsp.err = man.rsp.err;
 
     // handshake
     always_ff @(posedge sub.clk, posedge sub.rst)

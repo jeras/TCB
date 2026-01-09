@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// TCB lite (Tightly Coupled Bus) library register slice for response path
+// TCB-Lite (Tightly Coupled Bus) library register slice for response path
 ////////////////////////////////////////////////////////////////////////////////
 // Copyright 2022 Iztok Jeras
 //
@@ -30,10 +30,12 @@ module tcb_lite_lib_register_response (
     // comparing subordinate and manager interface parameters
     initial
     begin
-        assert (man.DELAY == sub.DELAY) else $error("Parameter (man.DELAY = %p) != (sub.DELAY = %p)", man.DELAY, sub.DELAY);
-        assert (man.WIDTH == sub.WIDTH) else $error("Parameter (man.WIDTH = %p) != (sub.WIDTH = %p)", man.WIDTH, sub.WIDTH);
-        assert (man.MASK  == sub.MASK ) else $error("Parameter (man.MASK  = %p) != (sub.MASK  = %p)", man.MASK , sub.MASK );
-        assert (man.MODE  == sub.MODE ) else $error("Parameter (man.MODE  = %p) != (sub.MODE  = %p)", man.MODE , sub.MODE );
+        assert (man.DLY+1 == sub.DLY) else $error("Parameter (man.DLY = %p)+1 != (sub.DLY = %p)", man.DLY, sub.DLY);
+
+        assert (man.DAT == sub.DAT) else $error("Parameter (man.DAT = %p) != (sub.DAT = %p)", man.DAT, sub.DAT);
+        assert (man.ADR == sub.ADR) else $error("Parameter (man.ADR = %p) != (sub.ADR = %p)", man.ADR, sub.ADR);
+        assert (man.MSK == sub.MSK) else $error("Parameter (man.MSK = %p) != (sub.MSK = %p)", man.MSK, sub.MSK);
+        assert (man.MOD == sub.MOD) else $error("Parameter (man.MOD = %p) != (sub.MOD = %p)", man.MOD, sub.MOD);
     end
 `endif
 
@@ -45,25 +47,30 @@ module tcb_lite_lib_register_response (
     assign man.vld = sub.vld;
 
     // request
-    assign man.wen = sub.wen;
-    assign man.lck = sub.lck;
-    assign man.adr = sub.adr;
-    assign man.siz = sub.siz;
-    assign man.byt = sub.byt;
-    assign man.wdt = sub.wdt;
+`ifdef SLANG
+    assign man.req.lck = sub.req.lck;
+    assign man.req.ndn = sub.req.ndn;
+    assign man.req.wen = sub.req.wen;
+    assign man.req.adr = sub.req.adr;
+    assign man.req.siz = sub.req.siz;
+    assign man.req.byt = sub.req.byt;
+    assign man.req.wdt = sub.req.wdt;
+`else
+    assign man.req = sub.req;
+`endif
 
     // response
     always_ff @(posedge man.clk)
     begin
         // TODO: only on read enable, and byte enable (problem is what to do with LOG_SIZE
-        if (man.dly[man.DELAY]) begin
-            if (~sub.wen) begin
-                for (int unsigned i=0; i<sub.WIDTH/8; i++) begin
-                    if (sub.MODE == 1'b0)  if (i < 2**sub.siz) sub.rdt[i*8+:8] <= man.rdt[i*8+:8];  // logarithmic size
-                    else                   if (sub.byt[i])     sub.rdt[i*8+:8] <= man.rdt[i*8+:8];  // byte enable
+        if (man.trn_dly[man.DLY]) begin
+            if (~sub.req.wen) begin
+                for (int unsigned i=0; i<sub.BYT; i++) begin
+                    if (sub.MOD == 1'b0)  if (i < 2**sub.req.siz) sub.rsp.rdt[i*8+:8] <= man.rsp.rdt[i*8+:8];  // logarithmic size
+                    else                  if (sub.req.byt[i])     sub.rsp.rdt[i*8+:8] <= man.rsp.rdt[i*8+:8];  // byte enable
                 end
             end
-            sub.err <= man.err;
+            sub.rsp.err <= man.rsp.err;
         end
     end
 
