@@ -35,7 +35,9 @@ module tcb_lite_lib_logsize2byteena #(
         assert (man.DAT == sub.DAT) else $error("Parameter (man.DAT = %p) != (sub.DAT = %p)", man.DAT, sub.DAT);
         assert (man.ADR == sub.ADR) else $error("Parameter (man.ADR = %p) != (sub.ADR = %p)", man.ADR, sub.ADR);
         assert (man.MSK == sub.MSK) else $error("Parameter (man.MSK = %p) != (sub.MSK = %p)", man.MSK, sub.MSK);
-        assert (man.MOD == sub.MOD) else $error("Parameter (man.MOD = %p) != (sub.MOD = %p)", man.MOD, sub.MOD);
+
+        assert (man.MOD == 1'b1)    else $error("Parameter (man.MOD = %p) != 1'b1"          , man.MOD);
+        assert (sub.MOD == 1'b0)    else $error("Parameter (sub.MOD = %p) != 1'b0"          , sub.MOD);
     end
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -46,7 +48,6 @@ module tcb_lite_lib_logsize2byteena #(
     assign man.vld = sub.vld;
 
     // request
-`ifdef SLANG
     assign man.req.lck = sub.req.lck;
     assign man.req.ndn = sub.req.ndn;
     assign man.req.wen = sub.req.wen;
@@ -54,9 +55,6 @@ module tcb_lite_lib_logsize2byteena #(
     assign man.req.siz = sub.req.siz;
     assign man.req.byt = sub.req.byt;
     assign man.req.wdt = sub.req.wdt;
-`else
-    assign man.req = sub.req;
-`endif
 
 ////////////////////////////////////////////////////////////////////////////////
 // local signals
@@ -64,7 +62,7 @@ module tcb_lite_lib_logsize2byteena #(
 
     // request/response
     logic               req_ndn, rsp_ndn;  // endianness
-    logic [sub.OFF-1:0] req_off, rsp_off;  // address offset
+    logic [sub.MAX-1:0] req_off, rsp_off;  // address offset
     logic [sub.SIZ-1:0] req_siz, rsp_siz;  // logarithmic size
 
     // manager/subordinate read/write data
@@ -72,11 +70,11 @@ module tcb_lite_lib_logsize2byteena #(
     logic [sub.BYT-1:0][8-1:0] sub_rdt, man_rdt;
 
     // prefix OR operation
-    function automatic [sub.BYT-1:0] prefix_or (
-        input logic [sub.BYT-1:0] val
+    function automatic [sub.MAX-1:0] prefix_or (
+        input logic [sub.MAX-1:0] val
     );
-        prefix_or[sub.BYT-1] = val[sub.BYT-1];
-        for (int unsigned i=sub.BYT-1; i>0; i--) begin
+        prefix_or[sub.MAX-1] = val[sub.MAX-1];
+        for (int unsigned i=sub.MAX-1; i>0; i--) begin
             prefix_or[i-1] = prefix_or[i] | val[i-1];
         end
     endfunction: prefix_or
@@ -105,18 +103,18 @@ module tcb_lite_lib_logsize2byteena #(
     if (ALIGNED == 1'b1) begin: aligned
 
         // offset mask
-        logic [sub.BYT-1:0] req_msk;
+        logic [sub.MAX-1:0] req_msk;
 
         // offset mask
         always_comb
-        for (int unsigned i=0; i<sub.BYT; i++) begin
+        for (int unsigned i=0; i<sub.MAX; i++) begin
             req_msk[i] = (i >= req_siz);
         end
 
         // byte enable
         always_comb
         for (int unsigned i=0; i<sub.BYT; i++) begin
-            man.req.byt[i] = (req_off & req_msk) == (i[sub.BYT-1:0] & req_msk);
+            man.req.byt[i] = (req_off & req_msk) == (i[sub.MAX-1:0] & req_msk);
         end
 
         // TODO: add big endian support, maybe ASCENDING also
@@ -124,13 +122,13 @@ module tcb_lite_lib_logsize2byteena #(
         // write access
         always_comb
         for (int unsigned i=0; i<sub.BYT; i++) begin
-            man_wdt[i] = sub_wdt[i[sub.BYT-1:0] & ~req_msk];
+            man_wdt[i] = sub_wdt[i[sub.MAX-1:0] & ~req_msk];
         end
 
         // read access
         always_comb
         for (int unsigned i=0; i<sub.BYT; i++) begin
-            sub_rdt[i] = man_rdt[(~prefix_or(i[sub.BYT-1:0]) & rsp_off) | i[sub.BYT-1:0]];
+            sub_rdt[i] = man_rdt[(~prefix_or(i[sub.MAX-1:0]) & rsp_off) | i[sub.MAX-1:0]];
         end
 
     end: aligned
