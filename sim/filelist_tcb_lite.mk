@@ -18,7 +18,7 @@ RTL+=${PATH_HDL}/rtl/lite_lib/tcb_lite_lib_error.sv
 #RTL+=${PATH_HDL}/rtl/lite_lib/tcb_lite_lib_multiplexer.sv
 #RTL+=${PATH_HDL}/rtl/lite_lib/tcb_lite_lib_decoder.sv
 #RTL+=${PATH_HDL}/rtl/lite_lib/tcb_lite_lib_demultiplexer.sv
-#RTL+=${PATH_HDL}/rtl/lite_lib/tcb_lite_lib_logsize2byteena.sv
+RTL+=${PATH_HDL}/rtl/lite_lib/tcb_lite_lib_logsize2byteena.sv
 #RTL+=${PATH_HDL}/rtl/lite_lib/tcb_lite_lib_misaligned_memory_controller.sv
 ## GPIO RTL
 #RTL+=${PATH_HDL}/rtl/peri_lite/gpio/tcb_lite_peri_gpio.sv
@@ -45,7 +45,7 @@ TBN+=${PATH_HDL}/tbn/lite_lib/tcb_lite_lib_error_tb.sv
 #TBN+=${PATH_HDL}/tbn/lite_lib/tcb_lite_lib_multiplexer_tb.sv
 #TBN+=${PATH_HDL}/tbn/lite_lib/tcb_lite_lib_decoder_tb.sv
 #TBN+=${PATH_HDL}/tbn/lite_lib/tcb_lite_lib_demultiplexer_tb.sv
-#TBN+=${PATH_HDL}/tbn/lite_lib/tcb_lite_lib_logsize2byteena_tb.sv
+TBN+=${PATH_HDL}/tbn/lite_lib/tcb_lite_lib_logsize2byteena_tb.sv
 #TBN+=${PATH_HDL}/tbn/lite_lib/tcb_lite_lib_misaligned_memory_controller_tb.sv
 # RAM models
 #TBN+=${PATH_HDL}/tbn/peri/sram/sram_model.sv

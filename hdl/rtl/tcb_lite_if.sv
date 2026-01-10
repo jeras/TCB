@@ -36,6 +36,7 @@ interface tcb_lite_if #(
     localparam int unsigned BYT = DAT/8;        // byte enable width
     localparam int unsigned MAX = $clog2(BYT);  // maximum logarithmic size
     localparam int unsigned SIZ = $clog2(BYT);  // logarithmic size width
+    localparam int unsigned OFF = 2; // TODO
 
     // request type
     typedef struct {

@@ -20,8 +20,8 @@ module tcb_lite_lib_logsize2byteena #(
     parameter bit ALIGNED = 1'b1
 )(
     // interfaces
-    tcb_lite_if.sub sub,    // TCB subordinate interface (manager     device connects here)
-    tcb_lite_if.man man     // TCB manager     interface (subordinate device connects here)
+    tcb_lite_if.sub sub,  // TCB subordinate interface (manager     device connects here)
+    tcb_lite_if.man man   // TCB manager     interface (subordinate device connects here)
 );
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -31,11 +31,11 @@ module tcb_lite_lib_logsize2byteena #(
     // BUS parameters
     initial
     begin
-        assert (man.DELAY == sub.DELAY) else $error("Parameter (man.DELAY = %p) != (sub.DELAY = %p)", man.DELAY, sub.DELAY);
-        assert (man.WIDTH == sub.WIDTH) else $error("Parameter (man.WIDTH = %p) != (sub.WIDTH = %p)", man.WIDTH, sub.WIDTH);
-        assert (man.MASK  == sub.MASK ) else $error("Parameter (man.MASK  = %p) != (sub.MASK  = %p)", man.MASK , sub.MASK );
-        assert (man.MODE  == 1'b1)      else $error("Parameter (man.MODE  = %p) != 1'b1"            , man.MODE);
-        assert (sub.MODE  == 1'b0)      else $error("Parameter (sub.MODE  = %p) != 1'b0"            , sub.MODE);
+        assert (man.DLY == sub.DLY) else $error("Parameter (man.DLY = %p) != (sub.DLY = %p)", man.DLY, sub.DLY);
+        assert (man.DAT == sub.DAT) else $error("Parameter (man.DAT = %p) != (sub.DAT = %p)", man.DAT, sub.DAT);
+        assert (man.ADR == sub.ADR) else $error("Parameter (man.ADR = %p) != (sub.ADR = %p)", man.ADR, sub.ADR);
+        assert (man.MSK == sub.MSK) else $error("Parameter (man.MSK = %p) != (sub.MSK = %p)", man.MSK, sub.MSK);
+        assert (man.MOD == sub.MOD) else $error("Parameter (man.MOD = %p) != (sub.MOD = %p)", man.MOD, sub.MOD);
     end
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -46,127 +46,144 @@ module tcb_lite_lib_logsize2byteena #(
     assign man.vld = sub.vld;
 
     // request
-    assign man.lck = sub.lck;
-    assign man.wen = sub.wen;
-    assign man.adr = sub.adr;
-    assign man.siz = sub.siz;
-    assign man.byt = sub.byt;
-    assign man.wdt = sub.wdt;
+`ifdef SLANG
+    assign man.req.lck = sub.req.lck;
+    assign man.req.ndn = sub.req.ndn;
+    assign man.req.wen = sub.req.wen;
+    assign man.req.adr = sub.req.adr;
+    assign man.req.siz = sub.req.siz;
+    assign man.req.byt = sub.req.byt;
+    assign man.req.wdt = sub.req.wdt;
+`else
+    assign man.req = sub.req;
+`endif
 
 ////////////////////////////////////////////////////////////////////////////////
 // local signals
 ////////////////////////////////////////////////////////////////////////////////
 
-    // request/response address offset, logarithmic size
-    logic [$clog2(sub.WIDTH)-1:0] req_off, rsp_off;
-    logic [                2-1:0] req_siz, rsp_siz;
+    // request/response
+    logic               req_ndn, rsp_ndn;  // endianness
+    logic [sub.OFF-1:0] req_off, rsp_off;  // address offset
+    logic [sub.SIZ-1:0] req_siz, rsp_siz;  // logarithmic size
 
-    // endianness
-    logic                   req_ndn, rsp_ndn;
+    // manager/subordinate read/write data
+    logic [sub.BYT-1:0][8-1:0] sub_wdt, man_wdt;
+    logic [sub.BYT-1:0][8-1:0] sub_rdt, man_rdt;
 
     // prefix OR operation
-    function automatic [sub.WIDTH/8-1:0] prefix_or (
-        input logic [sub.WIDTH/8-1:0] val
+    function automatic [sub.BYT-1:0] prefix_or (
+        input logic [sub.BYT-1:0] val
     );
-        prefix_or[sub.WIDTH/8-1] = val[sub.WIDTH/8-1];
-        for (int unsigned i=sub.WIDTH/8-1; i>0; i--) begin
+        prefix_or[sub.BYT-1] = val[sub.BYT-1];
+        for (int unsigned i=sub.BYT-1; i>0; i--) begin
             prefix_or[i-1] = prefix_or[i] | val[i-1];
         end
     endfunction: prefix_or
 
-    // request/response address offset, logarithmic size
-    assign req_off = sub.adr_dly[0        ][$clog2(sub.WIDTH/8)-1:0];
-    assign rsp_off = sub.adr_dly[sub.DELAY][$clog2(sub.WIDTH/8)-1:0];
-    assign req_siz = sub.siz_dly[0        ];
-    assign rsp_siz = sub.siz_dly[sub.DELAY];
+    // request/response endianness
+    assign req_ndn = sub.req_dly[0      ].ndn;
+    assign rsp_ndn = sub.req_dly[sub.DLY].ndn;
 
-    // endianness
-    assign req_ndn = sub.ndn_dly[0        ];
-    assign rsp_ndn = sub.ndn_dly[sub.DELAY];
+    // request/response address offset
+    assign req_off = sub.req_dly[0      ].adr[$clog2(sub.BYT)-1:0];
+    assign rsp_off = sub.req_dly[sub.DLY].adr[$clog2(sub.BYT)-1:0];
+
+    // request/response logarithmic size
+    assign req_siz = sub.req_dly[0      ].siz;
+    assign rsp_siz = sub.req_dly[sub.DLY].siz;
 
 ////////////////////////////////////////////////////////////////////////////////
 // multiplexers
 ////////////////////////////////////////////////////////////////////////////////
 
+    // local data signals
+    assign sub_wdt = sub.req.wdt;
+    assign man_rdt = man.rsp.rdt;
+
     generate
     if (ALIGNED == 1'b1) begin: aligned
 
         // offset mask
-        logic [sub.WIDTH/8-1:0] req_msk;
+        logic [sub.BYT-1:0] req_msk;
 
         // offset mask
         always_comb
-        for (int unsigned i=0; i<sub.WIDTH/8; i++) begin
-            req_msk[i] = (i >= sub.siz);
+        for (int unsigned i=0; i<sub.BYT; i++) begin
+            req_msk[i] = (i >= req_siz);
         end
 
         // byte enable
         always_comb
-        for (int unsigned i=0; i<sub.WIDTH/8; i++) begin
-            man.byt[i] = (req_off & req_msk) == (i[sub.WIDTH/8-1:0] & req_msk);
+        for (int unsigned i=0; i<sub.BYT; i++) begin
+            man.req.byt[i] = (req_off & req_msk) == (i[sub.BYT-1:0] & req_msk);
         end
 
         // TODO: add big endian support, maybe ASCENDING also
 
         // write access
         always_comb
-        for (int unsigned i=0; i<sub.WIDTH/8; i++) begin
-            man.wdt[i] = sub.wdt[i[sub.WIDTH/8-1:0] & ~req_msk];
+        for (int unsigned i=0; i<sub.BYT; i++) begin
+            man_wdt[i] = sub_wdt[i[sub.BYT-1:0] & ~req_msk];
         end
 
         // read access
         always_comb
-        for (int unsigned i=0; i<sub.WIDTH/8; i++) begin
-            sub.rdt[i] = man.rdt[(~prefix_or(i[sub.WIDTH/8-1:0]) & rsp_off) | i[sub.WIDTH/8-1:0]];
+        for (int unsigned i=0; i<sub.BYT; i++) begin
+            sub_rdt[i] = man_rdt[(~prefix_or(i[sub.BYT-1:0]) & rsp_off) | i[sub.BYT-1:0]];
         end
 
     end: aligned
     else begin: unaligned
 
         // byte enable
-        logic [sub.WIDTH/8-1:0] sub_req_ben;
+        logic [sub.BYT-1:0] sub_req_ben;
 
         // logarithmic size mode (subordinate interface) byte enable
         always_comb
-        for (int unsigned i=0; i<sub.WIDTH/8; i++) begin: logsize2byteena
-            sub_req_ben[i] = (i < 2**sub.siz) ? 1'b1 : 1'b0;
+        for (int unsigned i=0; i<sub.BYT; i++) begin: logsize2byteena
+            sub_req_ben[i] = (i < 2**rsp_siz) ? 1'b1 : 1'b0;
         end: logsize2byteena
 
         // byte enable
         always_comb
-        for (int unsigned i=0; i<sub.WIDTH/8; i++) begin: ben
-            man.byt[i] = sub_req_ben[(i-integer'(req_off)) % sub.WIDTH/8];
+        for (int unsigned i=0; i<sub.BYT; i++) begin: ben
+            man.req.byt[i] = sub_req_ben[(i-integer'(req_off)) % sub.BYT];
         end: ben
 
         // write data
         always_comb
-        for (int unsigned i=0; i<sub.WIDTH/8; i++) begin: wdt
+        for (int unsigned i=0; i<sub.BYT; i++) begin: wdt
             unique case (req_ndn)
-                1'b0   :  man.wdt[i] = sub.wdt[(             i-integer'(req_off)) % sub.WIDTH/8];
-                1'b1   :  man.wdt[i] = sub.wdt[(2**req_siz-1-i+integer'(req_off)) % sub.WIDTH/8];
-                default:  man.wdt[i] = 8'hxx;
+                1'b0   :  man_wdt[i] = sub_wdt[(             i-integer'(req_off)) % sub.BYT];
+                1'b1   :  man_wdt[i] = sub_wdt[(2**req_siz-1-i+integer'(req_off)) % sub.BYT];
+                default:  man_wdt[i] = 8'hxx;
             endcase
         end: wdt
 
         // read data
         always_comb
-        for (int unsigned i=0; i<sub.WIDTH/8; i++) begin: rdt
+        for (int unsigned i=0; i<sub.BYT; i++) begin: rdt
             unique case (rsp_ndn)
-                1'b0   :  sub.rdt[i] = man.rdt[(             i+integer'(rsp_off)) % sub.WIDTH/8];
-                1'b1   :  sub.rdt[i] = man.rdt[(2**rsp_siz-1-i+integer'(rsp_off)) % sub.WIDTH/8];
-                default:  sub.rdt[i] = 8'hxx;
+                1'b0   :  sub_rdt[i] = man_rdt[(             i+integer'(rsp_off)) % sub.BYT];
+                1'b1   :  sub_rdt[i] = man_rdt[(2**rsp_siz-1-i+integer'(rsp_off)) % sub.BYT];
+                default:  sub_rdt[i] = 8'hxx;
             endcase
         end: rdt
 
     end: unaligned
     endgenerate
 
+    // local data signals
+    assign sub.rsp.rdt = sub_rdt;
+    assign man.req.wdt = man_wdt;
+
 ////////////////////////////////////////////////////////////////////////////////
 // response
 ////////////////////////////////////////////////////////////////////////////////
 
     // response status error
-    assign sub.err = man.err;
+    assign sub.rsp.err = man.rsp.err;
 
     // handshake
     assign sub.rdy = man.rdy;
