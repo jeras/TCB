@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// TCB lite (Tightly Coupled Bus) library demultiplexer
+// TCB-Lite (Tightly Coupled Bus) library demultiplexer
 ////////////////////////////////////////////////////////////////////////////////
 // Copyright 2022 Iztok Jeras
 //
@@ -38,10 +38,11 @@ module tcb_lite_lib_demultiplexer #(
     generate
     for (genvar i=0; i<IFN; i++) begin: param
         initial begin    
-            assert (man[i].DELAY == sub.DELAY) else $error("Parameter (man[%0d].DELAY = %p) != (sub.DELAY = %p)", i, man[i].DELAY, sub.DELAY);
-            assert (man[i].WIDTH == sub.WIDTH) else $error("Parameter (man[%0d].WIDTH = %p) != (sub.WIDTH = %p)", i, man[i].WIDTH, sub.WIDTH);
-            assert (man[i].MASK  == sub.MASK ) else $error("Parameter (man[%0d].MASK  = %p) != (sub.MASK  = %p)", i, man[i].MASK , sub.MASK );
-            assert (man[i].MODE  == sub.MODE ) else $error("Parameter (man[%0d].MODE  = %p) != (sub.MODE  = %p)", i, man[i].MODE , sub.MODE );
+            assert (man[i].DLY == sub.DLY) else $error("Parameter (man[%0d].DLY = %p) != (sub.DLY = %p)", i, man[i].DLY, sub.DLY);
+            assert (man[i].DAT == sub.DAT) else $error("Parameter (man[%0d].DAT = %p) != (sub.DAT = %p)", i, man[i].DAT, sub.DAT);
+            assert (man[i].ADR == sub.ADR) else $error("Parameter (man[%0d].ADR = %p) != (sub.ADR = %p)", i, man[i].ADR, sub.ADR);
+            assert (man[i].MSK == sub.MSK) else $error("Parameter (man[%0d].MSK = %p) != (sub.MSK = %p)", i, man[i].MSK, sub.MSK);
+            assert (man[i].MOD == sub.MOD) else $error("Parameter (man[%0d].MOD = %p) != (sub.MOD = %p)", i, man[i].MOD, sub.MOD);
         end
     end: param
     endgenerate
@@ -56,10 +57,15 @@ module tcb_lite_lib_demultiplexer #(
     logic [IFL-1:0] man_sel;
     
     // response
-    logic [sub.WIDTH  -1:0] rdt [IFN-1:0];  // read data
-    logic                   err [IFN-1:0];  // bus error
+`ifdef SLANG
+    logic [sub.DAT-1:0] rdt [IFN-1:0];  // read data
+    logic               err [IFN-1:0];  // bus error
+`else
+    typedef sub.rsp_t rsp_t;
+    rsp_t rsp [IFN-1:0];
+`endif
     // handshake
-    logic                   rdy [IFN-1:0];
+    logic rdy [IFN-1:0];
 
 ////////////////////////////////////////////////////////////////////////////////
 // control
@@ -86,12 +92,18 @@ module tcb_lite_lib_demultiplexer #(
         // handshake
         assign man[i].vld = (sub_sel == i) ? sub.vld : 1'b0;
         // request
-        assign man[i].lck = (sub_sel == i) ? sub.lck :   'x;
-        assign man[i].wen = (sub_sel == i) ? sub.wen :   'x;
-        assign man[i].adr = (sub_sel == i) ? sub.adr :   'x;
-        assign man[i].siz = (sub_sel == i) ? sub.siz :   'x;
-        assign man[i].byt = (sub_sel == i) ? sub.byt :   'x;
-        assign man[i].wdt = (sub_sel == i) ? sub.wdt :   'x;
+`ifdef SLANG
+        assign man[i].req.lck = (sub_sel == i) ? sub.lck : 'x;
+        assign man[i].req.ndn = (sub_sel == i) ? sub.ndn : 'x;
+        assign man[i].req.wen = (sub_sel == i) ? sub.wen : 'x;
+        assign man[i].req.adr = (sub_sel == i) ? sub.adr : 'x;
+        assign man[i].req.siz = (sub_sel == i) ? sub.siz : 'x;
+        assign man[i].req.byt = (sub_sel == i) ? sub.byt : 'x;
+        assign man[i].req.wdt = (sub_sel == i) ? sub.wdt : 'x;
+`else
+        assign man[i].req = (sub_sel == i) ? sub.req : '{default: 'x};
+`endif
+
     end: gen_req
     endgenerate
 
@@ -104,16 +116,24 @@ module tcb_lite_lib_demultiplexer #(
     generate
     for (genvar i=0; i<IFN; i++) begin: gen_rsp
         // response
-        assign rdt[i] = man[i].rdt;
-        assign err[i] = man[i].err;
+`ifdef SLANG
+        assign rdt[i] = man[i].rsp.rdt;
+        assign err[i] = man[i].rsp.err;
+`else
+        assign rsp[i] = man[i].rsp;
+`endif
         // handshake
         assign rdy[i] = man[i].rdy;
     end: gen_rsp
     endgenerate
 
     // response multiplexer
+`ifdef SLANG
     assign sub.rdt = rdt[man_sel];
     assign sub.err = err[man_sel];
+`else
+    assign sub.rsp = rsp[man_sel];
+`endif
     // handshake multiplexer
     assign sub.rdy = rdy[sub_sel];
 

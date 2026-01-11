@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// TCB lite (Tightly Coupled Bus) library multiplexer
+// TCB-Lite (Tightly Coupled Bus) library multiplexer
 ////////////////////////////////////////////////////////////////////////////////
 // Copyright 2022 Iztok Jeras
 //
@@ -38,10 +38,11 @@ module tcb_lite_lib_multiplexer #(
     generate
     for (genvar i=0; i<IFN; i++) begin: param
         initial begin
-            assert (man.DELAY == sub[i].DELAY) else $error("Parameter (man.DELAY = %p) != (sub[%0d].DELAY = %p)", man.DELAY, i, sub[i].DELAY);
-            assert (man.WIDTH == sub[i].WIDTH) else $error("Parameter (man.WIDTH = %p) != (sub[%0d].WIDTH = %p)", man.WIDTH, i, sub[i].WIDTH);
-            assert (man.MASK  == sub[i].MASK ) else $error("Parameter (man.MASK  = %p) != (sub[%0d].MASK  = %p)", man.MASK , i, sub[i].MASK );
-            assert (man.MODE  == sub[i].MODE ) else $error("Parameter (man.MODE  = %p) != (sub[%0d].MODE  = %p)", man.MODE , i, sub[i].MODE );
+            assert (man.DLY == sub[i].DLY) else $error("Parameter (man.DLY = %p) != (sub[%0d].DLY = %p)", man.DLY, i, sub[i].DLY);
+            assert (man.DAT == sub[i].DAT) else $error("Parameter (man.DAT = %p) != (sub[%0d].DAT = %p)", man.DAT, i, sub[i].DAT);
+            assert (man.ADR == sub[i].ADR) else $error("Parameter (man.ADR = %p) != (sub[%0d].ADR = %p)", man.ADR, i, sub[i].ADR);
+            assert (man.MSK == sub[i].MSK) else $error("Parameter (man.MSK = %p) != (sub[%0d].MSK = %p)", man.MSK, i, sub[i].MSK);
+            assert (man.MOD == sub[i].MOD) else $error("Parameter (man.MOD = %p) != (sub[%0d].MOD = %p)", man.MOD, i, sub[i].MOD);
         end
     end: param
     endgenerate
@@ -56,14 +57,21 @@ module tcb_lite_lib_multiplexer #(
     logic [IFL-1:0] man_sel;
 
     // handshake
-    logic                   vld [IFN-1:0];
+    logic vld [IFN-1:0];
+
     // request
-    logic                   lck [IFN-1:0];  // arbitration lock
-    logic                   wen [IFN-1:0];  // write enable (0-read, 1-write)
-    logic [man.WIDTH  -1:0] adr [IFN-1:0];  // address
-    logic [          2-1:0] siz [IFN-1:0];  // transfer size
-    logic [man.WIDTH/8-1:0] byt [IFN-1:0];  // byte enable
-    logic [man.WIDTH  -1:0] wdt [IFN-1:0];  // write data
+`ifdef SLANG
+    logic               lck [IFN-1:0];  // arbitration lock
+    logic               ndn [IFN-1:0];  // endianness (0-little, 1-big)
+    logic               wen [IFN-1:0];  // write enable (0-read, 1-write)
+    logic [man.ADR-1:0] adr [IFN-1:0];  // address
+    logic [man.SIZ-1:0] siz [IFN-1:0];  // transfer size
+    logic [man.BYT-1:0] byt [IFN-1:0];  // byte enable
+    logic [man.DAT-1:0] wdt [IFN-1:0];  // write data
+`else
+    typedef man.req_t req_t;
+    req_t req [IFN-1:0];
+`endif
 
 ////////////////////////////////////////////////////////////////////////////////
 // control
@@ -91,24 +99,34 @@ module tcb_lite_lib_multiplexer #(
         // handshake
         assign vld[i] = sub[i].vld;
         // request
-        assign lck[i] = sub[i].lck;
-        assign wen[i] = sub[i].wen;
-        assign adr[i] = sub[i].adr;
-        assign siz[i] = sub[i].siz;
-        assign byt[i] = sub[i].byt;
-        assign wdt[i] = sub[i].wdt;
+`ifdef SLANG
+        assign lck[i] = sub[i].req.lck;
+        assign ndn[i] = sub[i].req.ndn;
+        assign wen[i] = sub[i].req.wen;
+        assign adr[i] = sub[i].req.adr;
+        assign siz[i] = sub[i].req.siz;
+        assign byt[i] = sub[i].req.byt;
+        assign wdt[i] = sub[i].req.wdt;
+`else
+        assign req[i] = sub[i].req;
+`endif
     end: gen_req
     endgenerate
 
     // handshake multiplexer
     assign man.vld = vld[sub_sel];
     // request multiplexer
-    assign man.lck = lck[sub_sel];
-    assign man.wen = wen[sub_sel];
-    assign man.adr = adr[sub_sel];
-    assign man.siz = siz[sub_sel];
-    assign man.byt = byt[sub_sel];
-    assign man.wdt = wdt[sub_sel];
+`ifdef SLANG
+    assign man.req.lck = lck[sub_sel];
+    assign man.req.ndn = ndn[sub_sel];
+    assign man.req.wen = wen[sub_sel];
+    assign man.req.adr = adr[sub_sel];
+    assign man.req.siz = siz[sub_sel];
+    assign man.req.byt = byt[sub_sel];
+    assign man.req.wdt = wdt[sub_sel];
+`else
+    assign man.req = req[sub_sel];
+`endif
 
 ////////////////////////////////////////////////////////////////////////////////
 // response
@@ -118,8 +136,12 @@ module tcb_lite_lib_multiplexer #(
     generate
     for (genvar i=0; i<IFN; i++) begin: gen_rsp
         // response
-        assign sub[i].rdt = (man_sel == i[IFL-1:0]) ? man.rdt : 'x;
-        assign sub[i].err = (man_sel == i[IFL-1:0]) ? man.err : 'x;
+`ifdef SLANG
+        assign sub[i].rsp.rdt = (man_sel == i[IFL-1:0]) ? man.rsp.rdt : 'x;
+        assign sub[i].rsp.err = (man_sel == i[IFL-1:0]) ? man.rsp.err : 'x;
+`else
+        assign sub[i].rsp = (man_sel == i[IFL-1:0]) ? man.rsp : '{default: 'x};
+`endif
         // handshake
         assign sub[i].rdy = (sub_sel == i[IFL-1:0]) ? man.rdy : '0;
     end: gen_rsp

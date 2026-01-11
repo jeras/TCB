@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// TCB lite (Tightly Coupled Bus) library decoder
+// TCB-Lite (Tightly Coupled Bus) library decoder
 ////////////////////////////////////////////////////////////////////////////////
 // Copyright 2022 Iztok Jeras
 //
@@ -18,12 +18,12 @@
 
 module tcb_lite_lib_decoder #(
     // TCB parameters (contains address width)
-    parameter  int unsigned WIDTH = 32,
+    parameter  int unsigned ADR = 32,
     // interconnect parameters (subordinate interface number and logarithm)
     parameter  int unsigned IFN = 2,
     localparam int unsigned IFL = $clog2(IFN),
     // decoder address and mask array
-    parameter  logic [WIDTH-1:0] MAP [IFN-1:0] = '{default: 'x}
+    parameter  logic [ADR-1:0] DAM [IFN-1:0] = '{default: 'x}
 )(
     // TCB interfaces
     tcb_lite_if.sub tcb,  // TCB subordinate interface (manager device connects here)
@@ -39,8 +39,27 @@ module tcb_lite_lib_decoder #(
 // TODO
 
 ////////////////////////////////////////////////////////////////////////////////
+// local signals
+////////////////////////////////////////////////////////////////////////////////
+
+    logic [ADR-1:0] adr;
+
+    // extract address from TCB
+    assign adr = tcb.req.adr;
+
+////////////////////////////////////////////////////////////////////////////////
 // decoder
 ////////////////////////////////////////////////////////////////////////////////
+
+//    // match
+//    function [IFN-1:0] match (
+//        logic [BUS.ADR-1:0] val,           // input
+//        logic [BUS.ADR-1:0] mch [IFN-1:0]   // matching reference
+//    );
+//        for (int unsigned i=0; i<IFN; i++) begin
+//            assign match[i] = val ==? mch[i];
+//        end
+//    endfunction: match
 
     // match
     logic mch [IFN-1:0];
@@ -48,7 +67,7 @@ module tcb_lite_lib_decoder #(
     // match
     generate
         for (genvar i=0; i<IFN; i++) begin
-            assign mch[i] = tcb.adr ==? MAP[i];
+            assign mch[i] = adr ==? DAM[i];
         end
     endgenerate
 
@@ -61,6 +80,7 @@ module tcb_lite_lib_decoder #(
     endfunction: encode
 
     // address decoder
+//    assign sel = encode(match(adr, DAM));
     assign sel = encode(mch);
 
 endmodule: tcb_lite_lib_decoder
