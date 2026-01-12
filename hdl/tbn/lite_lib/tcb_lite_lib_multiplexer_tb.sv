@@ -25,7 +25,7 @@ module tcb_lite_lib_multiplexer_tb #(
     parameter  bit           MOD = 1'b1,  // bus mode (0-logarithmic size, 1-byte enable)
     // interconnect parameters (interface number)
     parameter  int unsigned  IFN = 3,
-    parameter  int unsigned  IFL = $clog2(IFN)
+    localparam int unsigned  IFL = $clog2(IFN)
 );
 
 ////////////////////////////////////////////////////////////////////////////////
