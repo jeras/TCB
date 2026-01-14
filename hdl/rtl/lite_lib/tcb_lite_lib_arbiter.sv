@@ -23,7 +23,7 @@ module tcb_lite_lib_arbiter #(
     parameter  int unsigned IFN = 2,
     localparam int unsigned IFL = $clog2(IFN),
     // interface priorities (lower number is higher priority)
-    parameter  bit unsigned [IFL-1:0] PRI [IFN-1:0] = '{1'd1, 1'd0}
+    parameter  bit unsigned [IFL-1:0] PRI [IFN-1:0]
 )(
     // TCB interfaces
     tcb_lite_if.sub sub [IFN-1:0],   // TCB subordinate interfaces (manager devices connect here)
@@ -42,13 +42,22 @@ module tcb_lite_lib_arbiter #(
 // local signals
 ////////////////////////////////////////////////////////////////////////////////
 
-    logic vld [IFN-1:0];
+    // interface signal copies which can be indexed
+    logic           tcb_vld [IFN-1:0];  // valid
+    logic           tcb_trn [IFN-1:0];  // transfer
+    logic           tcb_lck [IFN-1:0];  // lock
+    // select signal
+    logic [IFL-1:0] sel_cmb;  // combinational
+    logic [IFL-1:0] sel_reg;  // registered
+    logic           sel_lck;  // locked
 
-    // extract valid from TCB
+    // extract valid and transfer from TCB interfaces
     generate
-        for (genvar i=0; i<IFN; i++) begin: map
-            assign vld[i] = sub[i].vld;
-        end: map
+    for (genvar i=0; i<IFN; i++) begin: map
+        assign tcb_vld[i] = sub[i].vld;
+        assign tcb_trn[i] = sub[i].trn;
+        assign tcb_lck[i] = sub[i].req.lck;
+    end: map
     endgenerate
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -75,7 +84,27 @@ module tcb_lite_lib_arbiter #(
         end
     endfunction: encode
 
-    // priority arbiter
-    assign sel = PRI[encode(reorder(vld, PRI))];
+    // combinational select
+    assign sel_cmb = PRI[encode(reorder(tcb_vld, PRI))];
+
+    // locking
+    always_ff @(posedge sub[0].clk, posedge sub[0].rst)
+    if (sub[0].rst) begin
+        sel_lck <= 1'b0;
+    end else begin
+        if (tcb_trn[sel_cmb]) begin
+            sel_lck <= tcb_lck[sel_cmb];
+        end
+
+    end
+
+    // registered select
+    always_ff @(posedge sub[0].clk)
+    if (tcb_trn[sel_cmb] & tcb_lck[sel_cmb]) begin
+        sel_reg <= sel_cmb;
+    end
+
+    // multiplexer between combinational and registered priority
+    assign sel = sel_lck ? sel_reg : sel_cmb;
 
 endmodule: tcb_lite_lib_arbiter
