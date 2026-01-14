@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// TCB-Lite (Tightly Coupled Bus) interconnect (synthesis test top wrapper)
+// TCB-Lite (Tightly Coupled Bus) DUT (synthesis test top wrapper)
 ////////////////////////////////////////////////////////////////////////////////
 // Copyright 2022 Iztok Jeras
 //
@@ -16,7 +16,7 @@
 // limitations under the License.
 ////////////////////////////////////////////////////////////////////////////////
 
-module tcb_lite_interconnect_wrapper #(
+module tcb_lite_dut_wrapper #(
     // RTL configuration parameters
     parameter  int unsigned  DLY =    1,  // response delay
     parameter  int unsigned  DAT =   32,  // data    width (only 32/64 are supported)
@@ -28,9 +28,11 @@ module tcb_lite_interconnect_wrapper #(
     localparam int unsigned  MAX = $clog2(BYT),  // maximum logarithmic size
     localparam int unsigned  SIZ = $clog2(BYT),  // logarithmic size width
     // interface array parameters
-    parameter  int unsigned  DUT_INN = 2,        // DUT instance number
+    parameter  int unsigned  DUT_INN = 1,        // DUT instance number
     parameter  int unsigned  SUB_IFN = DUT_INN,  // subordinate interface number
-    parameter  int unsigned  MAN_IFN = DUT_INN   // manager     interface number
+    parameter  int unsigned  MAN_IFN = DUT_INN,  // manager     interface number
+    // select the DUT to test
+    parameter  string        DUT = "PASSTHROUGH"
 )(
     // system signals
     input  logic clk,  // clock
@@ -90,15 +92,107 @@ module tcb_lite_interconnect_wrapper #(
     end: sub_ifn
     endgenerate
 
-    // dut instances
+    // DUT instances
     generate
-    for (genvar i=0; i<SUB_IFN; i++) begin: dut_ifn
-        tcb_lite_lib_passthrough dut (
-            .sub (tcb_sub[i]),
-            .man (tcb_man[i])
-        );
-    end: dut_ifn
+    case (DUT)
+        "ERROR": begin: error
+            tcb_lite_lib_error dut (
+                .sub  (tcb_sub[0])
+            );
+        end: error
+        "PASSTHROUGH": begin: passthrough
+            tcb_lite_lib_passthrough dut (
+                .sub  (tcb_sub[0]),
+                .man  (tcb_man[0])
+            );
+        end: passthrough
+        "REGISTER_REQUEST": begin: register_request
+            tcb_lite_lib_register_request dut (
+                .sub  (tcb_sub[0]),
+                .man  (tcb_man[0])
+            );
+        end: register_request
+        "REGISTER_RESPONSE": begin: register_response
+            tcb_lite_lib_register_response dut (
+                .sub  (tcb_sub[0]),
+                .man  (tcb_man[0])
+            );
+        end: register_response
+        "REGISTER_BACKPRESSURE": begin: register_backpressure
+            tcb_lite_lib_register_backpressure dut (
+                .sub  (tcb_sub[0]),
+                .man  (tcb_man[0])
+            );
+        end: register_backpressure
+        "LOGSIZE2BYTEENA_ALIGNED_FALSE": begin: logsize2byteena_aligned_false
+            tcb_lite_lib_logsize2byteena #(
+                .ALIGNED (1'b0)
+            ) dut (
+                .sub  (tcb_sub[0]),
+                .man  (tcb_man[0])
+            );
+        end: logsize2byteena_aligned_false
+        "LOGSIZE2BYTEENA_ALIGNED_TRUE": begin: logsize2byteena_aligned_true
+            tcb_lite_lib_logsize2byteena #(
+                .ALIGNED (1'b1)
+            ) dut (
+                .sub  (tcb_sub[0]),
+                .man  (tcb_man[0])
+            );
+        end: logsize2byteena_aligned_true
+        "ARBITER_MULTIPLEXER": begin: arbiter_multiplexer
+            initial $info("SUB_IFN.", DUT);
+            // select
+            logic [$clog2(SUB_IFN)-1:0] sel;
+            tcb_lite_lib_arbiter #(
+                .IFN (SUB_IFN)
+            ) arb (
+                .sub  (tcb_sub),
+                .sel  (sel)
+            );
+            tcb_lite_lib_multiplexer mux (
+                .sel  (sel),
+                .sub  (tcb_sub),
+                .man  (tcb_man[0])
+            );
+        end: arbiter_multiplexer
+        "DECODER_DEMULTIPLEXER": begin: decoder_demultiplexer
+            logic [$clog2(MAN_IFN)-1:0] sel;
+            tcb_lite_lib_decoder #(
+                .IFN (MAN_IFN)
+            ) dec (
+                .sub  (tcb_sub[0]),
+                .sel  (sel)
+            );
+            tcb_lite_lib_demultiplexer dmx (
+                .sel  (sel),
+                .sub  (tcb_sub[0]),
+                .man  (tcb_man)
+            );
+        end: decoder_demultiplexer
+//        "READ_MODIFY_WRITE": begin: read_modify_write
+//            tcb_lib_read_modify_write dut (
+//                .sub  (tcb_sub[0]),
+//                .man  (tcb_man[0])
+//            );
+//        end: read_modify_write
+        "INTERCONNECT": begin: dut
+            tcb_lite_lib_interconnect #(
+                .SUB_IFN (SUB_IFN),
+                .MAN_IFN (MAN_IFN),
+                .DAM ('{32'h01XX_XXXX, 32'h02XX_XXXX}),
+                .TOPOLOGY ("STAR")
+            ) dut (
+                .tcb_sub (tcb_sub),
+                .tcb_man (tcb_man)
+            );
+        end: dut
+        default: begin: undefined
+            initial $error("DUT module '%s' not recognized.", DUT);
+        end: undefined
+    endcase
     endgenerate
+
 
     // manager interfaces
     generate
@@ -117,4 +211,4 @@ module tcb_lite_interconnect_wrapper #(
     end: man_ifn
     endgenerate
 
-endmodule: tcb_lite_interconnect_wrapper
+endmodule: tcb_lite_dut_wrapper

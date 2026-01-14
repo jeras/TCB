@@ -16,7 +16,9 @@
 // limitations under the License.
 ////////////////////////////////////////////////////////////////////////////////
 
-module tcb_lite_lib_register_response (
+module tcb_lite_lib_register_response #(
+    parameter string OPT = "POWER"  // optimization for "POWER" or "COMPLEXITY"
+)(
     tcb_lite_if.sub sub,  // TCB subordinate interface (manager     device connects here)
     tcb_lite_if.man man   // TCB manager     interface (subordinate device connects here)
 );
@@ -59,17 +61,31 @@ module tcb_lite_lib_register_response (
     assign man.req = sub.req;
 `endif
 
-    // response
+    // response (data)
+    generate
+    case (sub.MOD)
+        1'b0: begin: byt
+            // read data (logarithmic size)
+        // TODO: only on read enable, and byte enable (problem is what to do with LOG_SIZE
+            for (genvar i=0; i<sub.BYT; i++) begin: rdt
+                always_ff @(posedge man.clk)
+                if (man.trn_dly[man.DLY] & ~sub.req.wen & (i < 2**sub.req.siz   ))  sub.rsp.rdt[i*8+:8] <= man.rsp.rdt[i*8+:8];
+            end: rdt
+        end: byt
+        1'b1: begin: byt
+            // read data (byte enable)
+            for (genvar i=0; i<sub.BYT; i++) begin: rdt
+                always_ff @(posedge man.clk)
+                if (man.trn_dly[man.DLY] & ~sub.req.wen & (       sub.req.byt[i]))  sub.rsp.rdt[i*8+:8] <= man.rsp.rdt[i*8+:8];
+            end: rdt
+        end: byt
+    endcase
+    endgenerate
+
+    // response (error)
     always_ff @(posedge man.clk)
     begin
-        // TODO: only on read enable, and byte enable (problem is what to do with LOG_SIZE
         if (man.trn_dly[man.DLY]) begin
-            if (~sub.req.wen) begin
-                for (int unsigned i=0; i<sub.BYT; i++) begin
-                    if (sub.MOD == 1'b0)  if (i < 2**sub.req.siz) sub.rsp.rdt[i*8+:8] <= man.rsp.rdt[i*8+:8];  // logarithmic size
-                    else                  if (sub.req.byt[i])     sub.rsp.rdt[i*8+:8] <= man.rsp.rdt[i*8+:8];  // byte enable
-                end
-            end
             sub.rsp.err <= man.rsp.err;
         end
     end

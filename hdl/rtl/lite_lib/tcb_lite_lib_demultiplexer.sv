@@ -93,13 +93,13 @@ module tcb_lite_lib_demultiplexer #(
         assign man[i].vld = (sub_sel == i) ? sub.vld : 1'b0;
         // request
 `ifdef SLANG
-        assign man[i].req.lck = (sub_sel == i) ? sub.lck : 'x;
-        assign man[i].req.ndn = (sub_sel == i) ? sub.ndn : 'x;
-        assign man[i].req.wen = (sub_sel == i) ? sub.wen : 'x;
-        assign man[i].req.adr = (sub_sel == i) ? sub.adr : 'x;
-        assign man[i].req.siz = (sub_sel == i) ? sub.siz : 'x;
-        assign man[i].req.byt = (sub_sel == i) ? sub.byt : 'x;
-        assign man[i].req.wdt = (sub_sel == i) ? sub.wdt : 'x;
+        assign man[i].req.lck = (sub_sel == i) ? sub.req.lck : 'x;
+        assign man[i].req.ndn = (sub_sel == i) ? sub.req.ndn : 'x;
+        assign man[i].req.wen = (sub_sel == i) ? sub.req.wen : 'x;
+        assign man[i].req.adr = (sub_sel == i) ? sub.req.adr : 'x;
+        assign man[i].req.siz = (sub_sel == i) ? sub.req.siz : 'x;
+        assign man[i].req.byt = (sub_sel == i) ? sub.req.byt : 'x;
+        assign man[i].req.wdt = (sub_sel == i) ? sub.req.wdt : 'x;
 `else
         assign man[i].req = (sub_sel == i) ? sub.req : '{default: 'x};
 `endif
@@ -129,8 +129,8 @@ module tcb_lite_lib_demultiplexer #(
 
     // response multiplexer
 `ifdef SLANG
-    assign sub.rdt = rdt[man_sel];
-    assign sub.err = err[man_sel];
+    assign sub.rsp.rdt = rdt[man_sel];
+    assign sub.rsp.err = err[man_sel];
 `else
     assign sub.rsp = rsp[man_sel];
 `endif

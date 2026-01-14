@@ -26,7 +26,7 @@ module tcb_lite_lib_arbiter #(
     parameter  bit unsigned [IFL-1:0] PRI [IFN-1:0] = '{1'd1, 1'd0}
 )(
     // TCB interfaces
-    tcb_lite_if.sub tcb [IFN-1:0],   // TCB subordinate interfaces (manager devices connect here)
+    tcb_lite_if.sub sub [IFN-1:0],   // TCB subordinate interfaces (manager devices connect here)
     // control
     output logic [IFL-1:0] sel  // select
 );
@@ -47,7 +47,7 @@ module tcb_lite_lib_arbiter #(
     // extract valid from TCB
     generate
         for (genvar i=0; i<IFN; i++) begin: map
-            assign vld[i] = tcb[i].vld;
+            assign vld[i] = sub[i].vld;
         end: map
     endgenerate
 

@@ -16,7 +16,9 @@
 // limitations under the License.
 ////////////////////////////////////////////////////////////////////////////////
 
-module tcb_lite_lib_register_request (
+module tcb_lite_lib_register_request #(
+    parameter string OPT = "POWER"  // optimization for "POWER" or "COMPLEXITY"
+)(
     tcb_lite_if.sub sub,  // TCB subordinate interface (manager     device connects here)
     tcb_lite_if.man man   // TCB manager     interface (subordinate device connects here)
 );
@@ -55,19 +57,37 @@ module tcb_lite_lib_register_request (
 
     // request
     always_ff @(posedge sub.clk)
-    begin
-        man.req.wen <= sub.req.wen;
+    if (sub.trn) begin
         man.req.lck <= sub.req.lck;
+        man.req.ndn <= sub.req.ndn;
+        man.req.wen <= sub.req.wen;
         man.req.adr <= sub.req.adr;
-        if (sub.MOD == 1'b0)  man.req.siz <= sub.req.siz;  // logarithmic size
-        else                  man.req.byt <= sub.req.byt;  // byte enable
-        if (sub.req.wen) begin
-            for (int unsigned i=0; i<sub.BYT; i++) begin
-                if (sub.MOD == 1'b0)  if (i < 2**sub.req.siz) man.req.wdt[i*8+:8] <= sub.req.wdt[i*8+:8];  // logarithmic size
-                else                  if (sub.req.byt[i])     man.req.wdt[i*8+:8] <= sub.req.wdt[i*8+:8];  // byte enable
-            end
-        end
     end
+
+    generate
+    case (sub.MOD)
+        1'b0: begin: byt
+            // logarithmic size
+            always_ff @(posedge sub.clk)
+            if (sub.trn)  man.req.siz <= sub.req.siz;
+            // write data
+            for (genvar i=0; i<sub.BYT; i++) begin: wdt
+                always_ff @(posedge sub.clk)
+                if (sub.trn & sub.req.wen & (i < 2**sub.req.siz   ))  man.req.wdt[i*8+:8] <= sub.req.wdt[i*8+:8];
+            end: wdt
+        end: byt
+        1'b1: begin: byt
+            // byte enable
+            always_ff @(posedge sub.clk)
+            if (sub.trn)  man.req.byt <= sub.req.byt;
+            // write data
+            for (genvar i=0; i<sub.BYT; i++) begin: wdt
+                always_ff @(posedge sub.clk)
+                if (sub.trn & sub.req.wen & (       sub.req.byt[i]))  man.req.wdt[i*8+:8] <= sub.req.wdt[i*8+:8];
+            end: wdt
+        end: byt
+    endcase
+    endgenerate
 
     // response
     assign sub.rsp.rdt = man.rsp.rdt;

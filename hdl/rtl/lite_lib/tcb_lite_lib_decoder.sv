@@ -26,7 +26,7 @@ module tcb_lite_lib_decoder #(
     parameter  logic [ADR-1:0] DAM [IFN-1:0] = '{default: 'x}
 )(
     // TCB interfaces
-    tcb_lite_if.sub tcb,  // TCB subordinate interface (manager device connects here)
+    tcb_lite_if.sub sub,  // TCB subordinate interface (manager device connects here)
     // control
     output logic [IFL-1:0] sel  // select
 );
@@ -45,7 +45,7 @@ module tcb_lite_lib_decoder #(
     logic [ADR-1:0] adr;
 
     // extract address from TCB
-    assign adr = tcb.req.adr;
+    assign adr = sub.req.adr;
 
 ////////////////////////////////////////////////////////////////////////////////
 // decoder

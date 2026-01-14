@@ -16,7 +16,9 @@
 // limitations under the License.
 ////////////////////////////////////////////////////////////////////////////////
 
-module tcb_lite_lib_register_backpressure (
+module tcb_lite_lib_register_backpressure #(
+    parameter string OPT = "POWER"  // optimization for "POWER" or "COMPLEXITY"
+)(
     tcb_lite_if.sub sub,  // TCB subordinate interface (manager     device connects here)
     tcb_lite_if.man man   // TCB manager     interface (subordinate device connects here)
 );
@@ -45,29 +47,48 @@ module tcb_lite_lib_register_backpressure (
     typedef sub.req_t req_t;
 
     // request temporary buffer
+    logic tmp_trn;
     req_t tmp_req;
 
     // handshake
     assign man.vld = sub.rdy ? sub.vld : 1'b1;
 
-    // request buffer
+    // temporary handshake
+    assign tmp_trn = sub.vld & sub.rdy & ~man.rdy;
+
+    // request buffer (except for write data)
     always_ff @(posedge sub.clk)
-    begin
-        if (sub.vld & sub.rdy & ~man.rdy) begin
-            tmp_req.lck <= sub.req.lck;
-            tmp_req.ndn <= sub.req.ndn;
-            tmp_req.wen <= sub.req.wen;
-            tmp_req.adr <= sub.req.adr;
-            if (sub.MOD == 1'b0)  tmp_req.siz <= sub.req.siz;  // logarithmic size
-            else                  tmp_req.byt <= sub.req.byt;  // byte enable
-            if (sub.req.wen) begin
-                for (int unsigned i=0; i<sub.BYT; i++) begin
-                    if (sub.MOD == 1'b0)  if (i < 2**sub.req.siz   ) tmp_req.wdt[i*8+:8] <= sub.req.wdt[i*8+:8];  // logarithmic size
-                    else                  if (       sub.req.byt[i]) tmp_req.wdt[i*8+:8] <= sub.req.wdt[i*8+:8];  // byte enable
-                end
-            end
-        end
+    if (tmp_trn) begin
+        tmp_req.lck <= sub.req.lck;
+        tmp_req.ndn <= sub.req.ndn;
+        tmp_req.wen <= sub.req.wen;
+        tmp_req.adr <= sub.req.adr;
     end
+
+    generate
+    case (sub.MOD)
+        1'b0: begin: byt
+            // logarithmic size
+            always_ff @(posedge sub.clk)
+            if (tmp_trn)  tmp_req.siz <= sub.req.siz;
+            // write data
+            for (genvar i=0; i<sub.BYT; i++) begin: wdt
+                always_ff @(posedge sub.clk)
+                if (tmp_trn & sub.req.wen & (i < 2**sub.req.siz   ))  tmp_req.wdt[i*8+:8] <= sub.req.wdt[i*8+:8];
+            end: wdt
+        end: byt
+        1'b1: begin: byt
+            // byte enable
+            always_ff @(posedge sub.clk)
+            if (tmp_trn)  tmp_req.byt <= sub.req.byt;
+            // write data
+            for (genvar i=0; i<sub.BYT; i++) begin: wdt
+                always_ff @(posedge sub.clk)
+                if (tmp_trn & sub.req.wen & (       sub.req.byt[i]))  tmp_req.wdt[i*8+:8] <= sub.req.wdt[i*8+:8];
+            end: wdt
+        end: byt
+    endcase
+    endgenerate
 
     // request
 `ifdef SLANG
