@@ -93,15 +93,15 @@ module tcb_lite_lib_demultiplexer #(
         assign man[i].vld = (sub_sel == i) ? sub.vld : 1'b0;
         // request
 `ifdef SLANG
-        assign man[i].req.lck = (sub_sel == i) ? sub.req.lck : 'x;
-        assign man[i].req.ndn = (sub_sel == i) ? sub.req.ndn : 'x;
-        assign man[i].req.wen = (sub_sel == i) ? sub.req.wen : 'x;
-        assign man[i].req.adr = (sub_sel == i) ? sub.req.adr : 'x;
-        assign man[i].req.siz = (sub_sel == i) ? sub.req.siz : 'x;
-        assign man[i].req.byt = (sub_sel == i) ? sub.req.byt : 'x;
-        assign man[i].req.wdt = (sub_sel == i) ? sub.req.wdt : 'x;
+        assign man[i].req.lck = (sub_sel == i[IFL-1:0]) ? sub.req.lck : 'x;
+        assign man[i].req.ndn = (sub_sel == i[IFL-1:0]) ? sub.req.ndn : 'x;
+        assign man[i].req.wen = (sub_sel == i[IFL-1:0]) ? sub.req.wen : 'x;
+        assign man[i].req.adr = (sub_sel == i[IFL-1:0]) ? sub.req.adr : 'x;
+        assign man[i].req.siz = (sub_sel == i[IFL-1:0]) ? sub.req.siz : 'x;
+        assign man[i].req.byt = (sub_sel == i[IFL-1:0]) ? sub.req.byt : 'x;
+        assign man[i].req.wdt = (sub_sel == i[IFL-1:0]) ? sub.req.wdt : 'x;
 `else
-        assign man[i].req = (sub_sel == i) ? sub.req : '{default: 'x};
+        assign man[i].req = (sub_sel == i[IFL-1:0]) ? sub.req : '{default: 'x};
 `endif
 
     end: gen_req
