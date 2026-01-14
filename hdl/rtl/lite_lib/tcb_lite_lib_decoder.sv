@@ -23,7 +23,7 @@ module tcb_lite_lib_decoder #(
     parameter  int unsigned IFN = 2,
     localparam int unsigned IFL = $clog2(IFN),
     // decoder address and mask array
-    parameter  logic [ADR-1:0] DAM [IFN-1:0] = '{default: 'x}
+    parameter  logic [ADR-1:0] DAM [IFN-1:0]
 )(
     // TCB interfaces
     tcb_lite_if.sub sub,  // TCB subordinate interface (manager device connects here)
@@ -51,16 +51,6 @@ module tcb_lite_lib_decoder #(
 // decoder
 ////////////////////////////////////////////////////////////////////////////////
 
-//    // match
-//    function [IFN-1:0] match (
-//        logic [BUS.ADR-1:0] val,           // input
-//        logic [BUS.ADR-1:0] mch [IFN-1:0]   // matching reference
-//    );
-//        for (int unsigned i=0; i<IFN; i++) begin
-//            assign match[i] = val ==? mch[i];
-//        end
-//    endfunction: match
-
     // match
     logic mch [IFN-1:0];
 
@@ -71,16 +61,15 @@ module tcb_lite_lib_decoder #(
         end
     endgenerate
 
-    // encode
+    // encode (convert from one-hot to binary encoding)
     function logic [IFL-1:0] encode (logic val [IFN-1:0]);
-        encode = 'x;  // optimization of undefined encodings
-        for (int i=IFN; i>=0; i--) begin
-            if (val[i])  encode = i[IFL-1:0];
+        encode = '0;
+        for (int i=0; i<IFN; i++) begin
+            encode |= val[i] ? i[IFL-1:0] : '0;
         end
     endfunction: encode
 
     // address decoder
-//    assign sel = encode(match(adr, DAM));
     assign sel = encode(mch);
 
 endmodule: tcb_lite_lib_decoder
