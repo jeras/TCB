@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// TCB lite (Tightly Coupled Bus) SystemVerilog interface
+// TCB-Lite (Tightly Coupled Bus) SystemVerilog interface
 ////////////////////////////////////////////////////////////////////////////////
 // Copyright 2022 Iztok Jeras
 //
@@ -16,7 +16,9 @@
 // limitations under the License.
 ////////////////////////////////////////////////////////////////////////////////
 
-interface tcb_lite_if #(
+interface tcb_lite_if
+    import tcb_lite_pkg::*;
+#(
     // RTL configuration parameters
     parameter  int unsigned  DLY =    1,  // response delay
     parameter  int unsigned  DAT =   32,  // data    width (only 32/64 are supported)

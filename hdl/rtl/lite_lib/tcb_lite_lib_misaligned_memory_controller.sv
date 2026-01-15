@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// TCB (Tightly Coupled Bus) library log. size to byte enable mode conversion
+// TCB-Lite (Tightly Coupled Bus) library log. size to byte enable mode conversion
 ////////////////////////////////////////////////////////////////////////////////
 // Copyright 2022 Iztok Jeras
 //
@@ -16,8 +16,8 @@
 // limitations under the License.
 ////////////////////////////////////////////////////////////////////////////////
 
-module tcb_lib_misaligned_memory_controller
-    import tcb_pkg::*;
+module tcb_lite_lib_misaligned_memory_controller
+    import tcb_lite_pkg::*;
 #(
     // configuration parameters
     parameter  type cfg_t = tcb_cfg_t,   // configuration parameter type
@@ -167,4 +167,4 @@ module tcb_lib_misaligned_memory_controller
     // handshake
     assign tcb.rdy = 1'b1;
 
-endmodule: tcb_lib_misaligned_memory_controller
+endmodule: tcb_lite_lib_misaligned_memory_controller

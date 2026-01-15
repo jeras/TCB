@@ -16,12 +16,18 @@
 // limitations under the License.
 ////////////////////////////////////////////////////////////////////////////////
 
-module tcb_lite_lib_interconnect #(
+module tcb_lite_lib_interconnect
+    import tcb_lite_pkg::*;
+#(
     // interconnect parameters (subordinate/manager interface number and logarithm)
     parameter  int unsigned SUB_IFN = 2,
     parameter  int unsigned MAN_IFN = 2,
-    // decoder address map
-    parameter  logic [32-1:0] DAM [MAN_IFN-1:0] = '{default: 'x},
+    // local parameters
+    localparam int unsigned SUB_IFL = $clog2(SUB_IFN),
+    localparam int unsigned MAN_IFL = $clog2(MAN_IFN),
+    // arbiter priority and decoder address map
+    parameter  bit unsigned [SUB_IFL-1:0] PRI [SUB_IFN-1:0],
+    parameter  logic [32-1:0] DAM [MAN_IFN-1:0],
     // topology
     parameter  string TOPOLOGY = "STAR"  // "STAR", "MESH"
 )(
@@ -63,10 +69,6 @@ module tcb_lite_lib_interconnect #(
     case (TOPOLOGY)
         "STAR": begin: star
 
-            // local parameters
-            localparam int unsigned SUB_IFL = $clog2(SUB_IFN);
-            localparam int unsigned MAN_IFL = $clog2(MAN_IFN);
-
             // TCB interfaces
             tcb_lite_if #(tcb_sub[0].DLY, tcb_sub[0].DAT, tcb_sub[0].ADR, tcb_sub[0].MSK, tcb_sub[0].MOD) star_tcb_man (.clk (tcb_sub[0].clk), .rst (tcb_sub[0].rst));
             tcb_lite_if #(tcb_sub[0].DLY, tcb_sub[0].DAT, tcb_sub[0].ADR, tcb_sub[0].MSK, tcb_sub[0].MOD) star_tcb_sub (.clk (tcb_sub[0].clk), .rst (tcb_sub[0].rst));
@@ -84,7 +86,7 @@ module tcb_lite_lib_interconnect #(
                 // interface priorities (lower number is higher priority)
                 //.PRI  (PRI)
             ) star_arb (
-                .tcb  (tcb_sub),
+                .mon  (tcb_sub),
                 .sel  (arb_sel)
             );
         
@@ -107,7 +109,7 @@ module tcb_lite_lib_interconnect #(
                 // decoder address and mask array
                 .DAM  (DAM)
             ) star_dec (
-                .tcb  (star_tcb_sub),
+                .mon  (star_tcb_sub),
                 .sel  (dec_sel)
             );
         

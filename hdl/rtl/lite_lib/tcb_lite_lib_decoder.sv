@@ -16,7 +16,9 @@
 // limitations under the License.
 ////////////////////////////////////////////////////////////////////////////////
 
-module tcb_lite_lib_decoder #(
+module tcb_lite_lib_decoder
+    import tcb_lite_pkg::*;
+#(
     // TCB parameters (contains address width)
     parameter  int unsigned ADR = 32,
     // interconnect parameters (subordinate interface number and logarithm)
@@ -26,7 +28,7 @@ module tcb_lite_lib_decoder #(
     parameter  logic [ADR-1:0] DAM [IFN-1:0]
 )(
     // TCB interfaces
-    tcb_lite_if.sub sub,  // TCB subordinate interface (manager device connects here)
+    tcb_lite_if.mon mon,  // TCB subordinate interface (manager device connects here)
     // control
     output logic [IFL-1:0] sel  // select
 );
@@ -45,7 +47,7 @@ module tcb_lite_lib_decoder #(
     logic [ADR-1:0] adr;
 
     // extract address from TCB
-    assign adr = sub.req.adr;
+    assign adr = mon.req.adr;
 
 ////////////////////////////////////////////////////////////////////////////////
 // decoder

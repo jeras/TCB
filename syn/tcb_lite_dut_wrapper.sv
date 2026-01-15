@@ -67,9 +67,18 @@ module tcb_lite_dut_wrapper #(
 // local signals
 ////////////////////////////////////////////////////////////////////////////////
 
+    // logarithms of interface numbers
+    localparam int unsigned SUB_IFL = $clog2(SUB_IFN);  // subordinate interface number
+    localparam int unsigned MAN_IFL = $clog2(MAN_IFN);  // manager     interface number
+
+    // response delay
+    localparam int unsigned SUB_DLY = ((DUT == "REGISTER_REQUEST") || (DUT == "REGISTER_RESPONSE")) ? DLY+1 : DLY;
+    localparam int unsigned MAN_DLY =                                                                         DLY;
+    // TODO: test assertions
+
     // TCB interfaces
-    tcb_lite_if #(DLY, DAT, ADR, MSK, MOD) tcb_sub [SUB_IFN-1:0] (.clk (clk), .rst (rst));
-    tcb_lite_if #(DLY, DAT, ADR, MSK, MOD) tcb_man [MAN_IFN-1:0] (.clk (clk), .rst (rst));
+    tcb_lite_if #(SUB_DLY, DAT, ADR, MSK, MOD) tcb_sub [SUB_IFN-1:0] (.clk (clk), .rst (rst));
+    tcb_lite_if #(MAN_DLY, DAT, ADR, MSK, MOD) tcb_man [MAN_IFN-1:0] (.clk (clk), .rst (rst));
 
 ////////////////////////////////////////////////////////////////////////////////
 // DUT instances
@@ -101,9 +110,9 @@ module tcb_lite_dut_wrapper #(
             );
         end: error
         "PASSTHROUGH": begin: passthrough
-            tcb_lite_lib_passthrough dut (
-                .sub  (tcb_sub[0]),
-                .man  (tcb_man[0])
+            tcb_lite_lib_passthrough dut [SUB_IFN-1:0] (
+                .sub  (tcb_sub),
+                .man  (tcb_man)
             );
         end: passthrough
         "REGISTER_REQUEST": begin: register_request
@@ -141,13 +150,14 @@ module tcb_lite_dut_wrapper #(
             );
         end: logsize2byteena_aligned_true
         "ARBITER_MULTIPLEXER": begin: arbiter_multiplexer
-            initial $info("SUB_IFN.", DUT);
+            localparam bit unsigned [SUB_IFL-1:0] SUB_PRI [SUB_IFN-1:0] = '{1'd1, 1'd0};
             // select
             logic [$clog2(SUB_IFN)-1:0] sel;
             tcb_lite_lib_arbiter #(
-                .IFN (SUB_IFN)
+                .IFN (SUB_IFN),
+                .PRI (SUB_PRI)
             ) arb (
-                .sub  (tcb_sub),
+                .mon  (tcb_sub),
                 .sel  (sel)
             );
             tcb_lite_lib_multiplexer mux (
@@ -157,11 +167,13 @@ module tcb_lite_dut_wrapper #(
             );
         end: arbiter_multiplexer
         "DECODER_DEMULTIPLEXER": begin: decoder_demultiplexer
+            localparam logic [ADR-1:0] MAN_DAM [MAN_IFN-1:0] = '{{1'b0, 31'bx}, {1'b1, 31'bx}};
             logic [$clog2(MAN_IFN)-1:0] sel;
             tcb_lite_lib_decoder #(
-                .IFN (MAN_IFN)
+                .IFN (MAN_IFN),
+                .DAM (MAN_DAM)
             ) dec (
-                .sub  (tcb_sub[0]),
+                .mon  (tcb_sub[0]),
                 .sel  (sel)
             );
             tcb_lite_lib_demultiplexer dmx (
@@ -170,17 +182,14 @@ module tcb_lite_dut_wrapper #(
                 .man  (tcb_man)
             );
         end: decoder_demultiplexer
-//        "READ_MODIFY_WRITE": begin: read_modify_write
-//            tcb_lib_read_modify_write dut (
-//                .sub  (tcb_sub[0]),
-//                .man  (tcb_man[0])
-//            );
-//        end: read_modify_write
         "INTERCONNECT": begin: dut
+            localparam bit unsigned [SUB_IFL-1:0] SUB_PRI [SUB_IFN-1:0] = '{1'd1, 1'd0};
+            localparam logic [ADR-1:0] MAN_DAM [MAN_IFN-1:0] = '{{1'b0, 31'bx}, {1'b1, 31'bx}};
             tcb_lite_lib_interconnect #(
                 .SUB_IFN (SUB_IFN),
                 .MAN_IFN (MAN_IFN),
-                .DAM ('{32'h01XX_XXXX, 32'h02XX_XXXX}),
+                .DAM     (MAN_DAM),
+                .PRI     (SUB_PRI),
                 .TOPOLOGY ("STAR")
             ) dut (
                 .tcb_sub (tcb_sub),

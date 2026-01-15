@@ -16,7 +16,9 @@
 // limitations under the License.
 ////////////////////////////////////////////////////////////////////////////////
 
-module tcb_lite_lib_logsize2byteena #(
+module tcb_lite_lib_logsize2byteena
+    import tcb_lite_pkg::*;
+#(
     parameter bit ALIGNED = 1'b1
 )(
     // interfaces

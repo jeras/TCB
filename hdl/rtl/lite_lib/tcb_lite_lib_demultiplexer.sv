@@ -16,7 +16,9 @@
 // limitations under the License.
 ////////////////////////////////////////////////////////////////////////////////
 
-module tcb_lite_lib_demultiplexer #(
+module tcb_lite_lib_demultiplexer
+    import tcb_lite_pkg::*;
+#(
     // interconnect parameters (manager interface number and logarithm)
     parameter  int unsigned IFN = 2,
     localparam int unsigned IFL = $clog2(IFN)

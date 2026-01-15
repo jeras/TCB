@@ -16,7 +16,9 @@
 // limitations under the License.
 ////////////////////////////////////////////////////////////////////////////////
 
-module tcb_lite_lib_arbiter #(
+module tcb_lite_lib_arbiter
+    import tcb_lite_pkg::*;
+#(
     // arbitration priority mode
     parameter  string       MOD = "FX",  // "FX" - fixed priority, "RR" - round robin (TODO)
     // interconnect parameters (manager interface number and logarithm)
@@ -26,7 +28,7 @@ module tcb_lite_lib_arbiter #(
     parameter  bit unsigned [IFL-1:0] PRI [IFN-1:0]
 )(
     // TCB interfaces
-    tcb_lite_if.sub sub [IFN-1:0],   // TCB subordinate interfaces (manager devices connect here)
+    tcb_lite_if.mon mon [IFN-1:0],   // TCB subordinate interfaces (manager devices connect here)
     // control
     output logic [IFL-1:0] sel  // select
 );
@@ -54,9 +56,9 @@ module tcb_lite_lib_arbiter #(
     // extract valid and transfer from TCB interfaces
     generate
     for (genvar i=0; i<IFN; i++) begin: map
-        assign tcb_vld[i] = sub[i].vld;
-        assign tcb_trn[i] = sub[i].trn;
-        assign tcb_lck[i] = sub[i].req.lck;
+        assign tcb_vld[i] = mon[i].vld;
+        assign tcb_trn[i] = mon[i].trn;
+        assign tcb_lck[i] = mon[i].req.lck;
     end: map
     endgenerate
 

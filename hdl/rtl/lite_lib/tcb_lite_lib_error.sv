@@ -16,7 +16,9 @@
 // limitations under the License.
 ////////////////////////////////////////////////////////////////////////////////
 
-module tcb_lite_lib_error (
+module tcb_lite_lib_error
+    import tcb_lite_pkg::*;
+(
     // system bus interface
     tcb_lite_if.sub sub
 );

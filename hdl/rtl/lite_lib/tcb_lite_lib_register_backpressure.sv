@@ -16,7 +16,9 @@
 // limitations under the License.
 ////////////////////////////////////////////////////////////////////////////////
 
-module tcb_lite_lib_register_backpressure #(
+module tcb_lite_lib_register_backpressure
+    import tcb_lite_pkg::*;
+#(
     parameter string OPT = "POWER"  // optimization for "POWER" or "COMPLEXITY"
 )(
     tcb_lite_if.sub sub,  // TCB subordinate interface (manager     device connects here)
