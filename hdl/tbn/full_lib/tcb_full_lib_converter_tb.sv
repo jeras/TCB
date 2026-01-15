@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// TCB (Tightly Coupled Bus) library mode/alignment/order converter testbench
+// TCB-Full (Tightly Coupled Bus) library mode/alignment/order converter testbench
 ////////////////////////////////////////////////////////////////////////////////
 // Copyright 2022 Iztok Jeras
 //
@@ -16,9 +16,9 @@
 // limitations under the License.
 ////////////////////////////////////////////////////////////////////////////////
 
-module tcb_lib_converter_tb
-    import tcb_pkg::*;
-    import tcb_vip_blocking_pkg::*;
+module tcb_full_lib_converter_tb
+    import tcb_full_pkg::*;
+    import tcb_full_vip_blocking_pkg::*;
 #(
     // protocol
     parameter  int unsigned      MAN_DLY = TCB_PAR_BUS_DEF.HSK.DLY,  // response delay
@@ -92,9 +92,9 @@ module tcb_lib_converter_tb
     logic rst;  // reset
 
     // TCB interfaces
-    tcb_if #(.BUS (MAN_BUS)) tcb_man       (.clk (clk), .rst (rst));
-    tcb_if #(.BUS (SUB_BUS)) tcb_sub       (.clk (clk), .rst (rst));
-    tcb_if #(.BUS (SUB_BUS)) tcb_mem [0:0] (.clk (clk), .rst (rst));
+    tcb_full_if #(.BUS (MAN_BUS)) tcb_man       (.clk (clk), .rst (rst));
+    tcb_full_if #(.BUS (SUB_BUS)) tcb_sub       (.clk (clk), .rst (rst));
+    tcb_full_if #(.BUS (SUB_BUS)) tcb_mem [0:0] (.clk (clk), .rst (rst));
 
     // TCB class objects
     tcb_transfer_c #(.BUS (MAN_BUS)) obj_man;
@@ -165,26 +165,26 @@ module tcb_lib_converter_tb
 ////////////////////////////////////////////////////////////////////////////////
 
     // memory model subordinate
-    tcb_vip_memory #(
+    tcb_full_vip_memory #(
         .SIZ (2**8)
     ) mem (
         .tcb (tcb_mem)
     );
 
     // connect interfaces to interface array
-    tcb_lib_passthrough pas [0:0] (.sub (tcb_sub), .man (tcb_mem));
+    tcb_full_lib_passthrough pas [0:0] (.sub (tcb_sub), .man (tcb_mem));
 
 ////////////////////////////////////////////////////////////////////////////////
 // DUT instance
 ////////////////////////////////////////////////////////////////////////////////
 
-    tcb_lib_converter dut (
+    tcb_full_lib_converter dut (
         .sub  (tcb_man),
         .man  (tcb_sub),
         .mal  ()
     );
 
-//    tcb_lib_passthrough dut (
+//    tcb_full_lib_passthrough dut (
 //      .sub  (tcb_man),
 //      .man  (tcb_sub)
 //    );
@@ -199,4 +199,4 @@ module tcb_lib_converter_tb
         $dumpvars;
     end
 
-endmodule: tcb_lib_converter_tb
+endmodule: tcb_full_lib_converter_tb

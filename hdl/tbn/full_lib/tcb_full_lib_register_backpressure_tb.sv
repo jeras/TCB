@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// TCB (Tightly Coupled Bus) library passthrough testbench
+// TCB-Full (Tightly Coupled Bus) library register slice for backpressure path testbench
 ////////////////////////////////////////////////////////////////////////////////
 // Copyright 2022 Iztok Jeras
 //
@@ -16,17 +16,23 @@
 // limitations under the License.
 ////////////////////////////////////////////////////////////////////////////////
 
-module tcb_lib_passthrough_tb
-    import tcb_pkg::*;
-    import tcb_vip_blocking_pkg::*;
-#();
+module tcb_full_lib_register_backpressure_tb
+    import tcb_full_pkg::*;
+    import tcb_full_vip_blocking_pkg::*;
+#(
+    // TCB widths
+    int unsigned ADR = 32,       // address bus width
+    int unsigned DAT = 32,       // data    bus width
+    // response delay
+    int unsigned DLY = 1
+);
 
 ////////////////////////////////////////////////////////////////////////////////
 // local parameters
 ////////////////////////////////////////////////////////////////////////////////
 
     // VIP parameters
-    localparam tcb_vip_t VIP = '{
+    localparam tcb_full_vip_t VIP = '{
         DRV: 1'b1
     };
 
@@ -39,12 +45,12 @@ module tcb_lib_passthrough_tb
     logic rst = 1'b1;  // reset
 
     // TCB interfaces
-    tcb_if               tcb_man (.clk (clk), .rst (rst));
-    tcb_if #(.VIP (VIP)) tcb_sub (.clk (clk), .rst (rst));
+    tcb_full_if #(          ) tcb_man (.clk (clk), .rst (rst));
+    tcb_full_if #(.VIP (VIP)) tcb_sub (.clk (clk), .rst (rst));
 
     // parameterized class specialization (blocking API)
-    typedef tcb_vip_blocking_c               tcb_man_s;
-    typedef tcb_vip_blocking_c #(.VIP (VIP)) tcb_sub_s;
+    typedef tcb_full_vip_blocking_c #(          ) tcb_man_s;
+    typedef tcb_full_vip_blocking_c #(.VIP (VIP)) tcb_sub_s;
 
     // TCB class objects
     tcb_man_s obj_man = new(tcb_man, "MAN");
@@ -61,7 +67,7 @@ module tcb_lib_passthrough_tb
 
     // response
     logic [tcb_sub.CFG_BUS_BYT-1:0][8-1:0] rdt;  // read data
-    tcb_rsp_sts_t                      sts;  // status response
+    tcb_rsp_sts_t                          sts;  // status response
 
 ////////////////////////////////////////////////////////////////////////////////
 // test sequence
@@ -93,8 +99,8 @@ module tcb_lib_passthrough_tb
                 sts = '0;
                 tst_ref.delete();
                 tst_len = tst_ref.size();
-                tst_len += obj_sub.put_transaction(tst_ref, '{req: '{adr: 32'h01234567, wdt: '{8'h10, 8'h32, 8'h54, 8'h76}, default: 'x}, rsp: '{rdt: nul, sts: sts}});
-                tst_len += obj_sub.put_transaction(tst_ref, '{req: '{adr: 32'h89ABCDEF, wdt: nul, default: 'x}, rsp: '{rdt: '{8'h98, 8'hBA, 8'hDC, 8'hFE}, sts: sts}});
+                tst_len += {obj_sub.put_transaction(tst_ref, '{req: '{adr: 32'h01234567, wdt: '{8'h10, 8'h32, 8'h54, 8'h76}, default: 'x}, rsp: '{rdt: nul, sts: sts}})};
+                tst_len += {obj_sub.put_transaction(tst_ref, '{req: '{adr: 32'h89ABCDEF, wdt: nul, default: 'x}, rsp: '{rdt: '{8'h98, 8'hBA, 8'hDC, 8'hFE}, sts: sts}})};
                 obj_sub.transfer_sequencer(tst_ref);
             end: fork_sub
             // subordinate (monitor)
@@ -126,11 +132,11 @@ module tcb_lib_passthrough_tb
 // VIP instances
 ////////////////////////////////////////////////////////////////////////////////
 
-    tcb_vip_protocol_checker chk_man (
+    tcb_full_vip_protocol_checker chk_man (
         .tcb (tcb_man)
     );
 
-    tcb_vip_protocol_checker chk_sub (
+    tcb_full_vip_protocol_checker chk_sub (
         .tcb (tcb_sub)
     );
 
@@ -138,7 +144,7 @@ module tcb_lib_passthrough_tb
 // DUT instance
 ////////////////////////////////////////////////////////////////////////////////
 
-    tcb_lib_passthrough dut (
+    tcb_full_lib_register_backpressure dut (
         .sub  (tcb_man),
         .man  (tcb_sub)
     );
@@ -157,4 +163,4 @@ module tcb_lib_passthrough_tb
         $dumpvars;
     end
 
-endmodule: tcb_lib_passthrough_tb
+endmodule: tcb_full_lib_register_backpressure_tb

@@ -26,7 +26,7 @@ interface tcb_full_if
     parameter  type req_t = tcb_req_t,   // request
     parameter  type rsp_t = tcb_rsp_t,   // response
     // VIP (not to be used in RTL)
-    parameter  type vip_t = tcb_vip_t,   // VIP parameter type
+    parameter  type vip_t = tcb_full_vip_t,   // VIP parameter type
     parameter  vip_t VIP = TCB_VIP_DEF,  // VIP parameter
     // partial address decoding mask
     parameter  logic [CFG.BUS.ADR-1:0] MSK = '1

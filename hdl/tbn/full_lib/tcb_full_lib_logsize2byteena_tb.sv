@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// TCB (Tightly Coupled Bus) library logsize2byteena testbench
+// TCB-Full (Tightly Coupled Bus) library logsize2byteena testbench
 ////////////////////////////////////////////////////////////////////////////////
 // Copyright 2022 Iztok Jeras
 //
@@ -16,9 +16,9 @@
 // limitations under the License.
 ////////////////////////////////////////////////////////////////////////////////
 
-module tcb_lib_logsize2byteena_tb
-    import tcb_pkg::*;
-    import tcb_vip_blocking_pkg::*;
+module tcb_full_lib_logsize2byteena_tb
+    import tcb_full_pkg::*;
+    import tcb_full_vip_blocking_pkg::*;
 #(
     // handshake parameter
     parameter  int unsigned      DLY = TCB_HSK_DEF.DLY      // response delay
@@ -78,7 +78,7 @@ module tcb_lib_logsize2byteena_tb
         PMA: TCB_PMA_DEF
     };
 
-    localparam tcb_vip_t VIP = '{
+    localparam tcb_full_vip_t VIP = '{
         DRV: 1'b1
     };
 
@@ -100,13 +100,13 @@ module tcb_lib_logsize2byteena_tb
     string testname = "none";
 
     // TCB interfaces
-    tcb_if #(tcb_cfg_t, CFG_SIZ, req_t, rsp_t                ) tcb_man       (.clk (clk), .rst (rst));
-    tcb_if #(tcb_cfg_t, CFG_BYT, req_t, rsp_t                ) tcb_sub       (.clk (clk), .rst (rst));
-    tcb_if #(tcb_cfg_t, CFG_BYT, req_t, rsp_t, tcb_vip_t, VIP) tcb_mem [0:0] (.clk (clk), .rst (rst));
+    tcb_full_if #(tcb_cfg_t, CFG_SIZ, req_t, rsp_t                ) tcb_man       (.clk (clk), .rst (rst));
+    tcb_full_if #(tcb_cfg_t, CFG_BYT, req_t, rsp_t                ) tcb_sub       (.clk (clk), .rst (rst));
+    tcb_full_if #(tcb_cfg_t, CFG_BYT, req_t, rsp_t, tcb_full_vip_t, VIP) tcb_mem [0:0] (.clk (clk), .rst (rst));
 
     // parameterized class specialization (blocking API)
-    typedef tcb_vip_blocking_c #(tcb_cfg_t, CFG_SIZ, req_t, rsp_t) tcb_siz_s;
-    typedef tcb_vip_blocking_c #(tcb_cfg_t, CFG_BYT, req_t, rsp_t) tcb_byt_s;
+    typedef tcb_full_vip_blocking_c #(tcb_cfg_t, CFG_SIZ, req_t, rsp_t) tcb_siz_s;
+    typedef tcb_full_vip_blocking_c #(tcb_cfg_t, CFG_BYT, req_t, rsp_t) tcb_byt_s;
 
     // TCB class objects
     tcb_siz_s obj_man = new(tcb_man, "MAN");
@@ -475,21 +475,21 @@ module tcb_lib_logsize2byteena_tb
 ////////////////////////////////////////////////////////////////////////////////
 
     // connect singular interface to interface array
-    tcb_lib_passthrough pas [0:0] (
+    tcb_full_lib_passthrough pas [0:0] (
         .sub (tcb_sub),
         .man (tcb_mem)
     );
 
-    tcb_vip_protocol_checker chk_man (
+    tcb_full_vip_protocol_checker chk_man (
         .tcb (tcb_man)
     );
 
-    tcb_vip_protocol_checker chk_sub (
+    tcb_full_vip_protocol_checker chk_sub (
         .tcb (tcb_sub)
     );
 
     // memory model subordinate
-    tcb_vip_memory #(
+    tcb_full_vip_memory #(
         .SIZ (2**8)
     ) mem (
         .tcb (tcb_mem)
@@ -499,7 +499,7 @@ module tcb_lib_logsize2byteena_tb
 // DUT instance
 ////////////////////////////////////////////////////////////////////////////////
 
-    tcb_lib_logsize2byteena dut (
+    tcb_full_lib_logsize2byteena dut (
         .sub  (tcb_man),
         .man  (tcb_sub)
     );
@@ -514,4 +514,4 @@ module tcb_lib_logsize2byteena_tb
         $dumpvars;
     end
 
-endmodule: tcb_lib_logsize2byteena_tb
+endmodule: tcb_full_lib_logsize2byteena_tb

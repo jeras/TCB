@@ -283,7 +283,7 @@ module tcb_lite_lib_misaligned_memory_controller_tb
 // DUT instance
 ////////////////////////////////////////////////////////////////////////////////
 
-    tcb_lib_misaligned_memory_controller #(
+    tcb_lite_lib_misaligned_memory_controller #(
         .CFG      (CFG)
     ) dut (
         // TCB interface

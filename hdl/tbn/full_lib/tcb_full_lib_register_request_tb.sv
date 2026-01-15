@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// TCB (Tightly Coupled Bus) library register slice for backpressure path testbench
+// TCB-Full (Tightly Coupled Bus) library register slice for request path testbench
 ////////////////////////////////////////////////////////////////////////////////
 // Copyright 2022 Iztok Jeras
 //
@@ -16,9 +16,9 @@
 // limitations under the License.
 ////////////////////////////////////////////////////////////////////////////////
 
-module tcb_lib_register_backpressure_tb
-    import tcb_pkg::*;
-    import tcb_vip_blocking_pkg::*;
+module tcb_full_lib_register_request_tb
+    import tcb_full_pkg::*;
+    import tcb_full_vip_blocking_pkg::*;
 #(
     // TCB widths
     int unsigned ADR = 32,       // address bus width
@@ -31,8 +31,11 @@ module tcb_lib_register_backpressure_tb
 // local parameters
 ////////////////////////////////////////////////////////////////////////////////
 
+    localparam tcb_cfg_t CFG_MAN = '{HSK: '{DLY: DLY+1, HLD: 1'b1}, BUS: TCB_BUS_DEF, PMA: TCB_PMA_DEF};
+    localparam tcb_cfg_t CFG_SUB = '{HSK: '{DLY: DLY+0, HLD: 1'b1}, BUS: TCB_BUS_DEF, PMA: TCB_PMA_DEF};
+
     // VIP parameters
-    localparam tcb_vip_t VIP = '{
+    localparam tcb_full_vip_t VIP = '{
         DRV: 1'b1
     };
 
@@ -45,12 +48,12 @@ module tcb_lib_register_backpressure_tb
     logic rst = 1'b1;  // reset
 
     // TCB interfaces
-    tcb_if #(          ) tcb_man (.clk (clk), .rst (rst));
-    tcb_if #(.VIP (VIP)) tcb_sub (.clk (clk), .rst (rst));
+    tcb_full_if #(.CFG (CFG_MAN)            ) tcb_man (.clk (clk), .rst (rst));
+    tcb_full_if #(.CFG (CFG_SUB), .VIP (VIP)) tcb_sub (.clk (clk), .rst (rst));
 
     // parameterized class specialization (blocking API)
-    typedef tcb_vip_blocking_c #(          ) tcb_man_s;
-    typedef tcb_vip_blocking_c #(.VIP (VIP)) tcb_sub_s;
+    typedef tcb_full_vip_blocking_c #(.CFG (CFG_MAN)            ) tcb_man_s;
+    typedef tcb_full_vip_blocking_c #(.CFG (CFG_SUB), .VIP (VIP)) tcb_sub_s;
 
     // TCB class objects
     tcb_man_s obj_man = new(tcb_man, "MAN");
@@ -132,11 +135,11 @@ module tcb_lib_register_backpressure_tb
 // VIP instances
 ////////////////////////////////////////////////////////////////////////////////
 
-    tcb_vip_protocol_checker chk_man (
+    tcb_full_vip_protocol_checker chk_man (
         .tcb (tcb_man)
     );
 
-    tcb_vip_protocol_checker chk_sub (
+    tcb_full_vip_protocol_checker chk_sub (
         .tcb (tcb_sub)
     );
 
@@ -144,7 +147,7 @@ module tcb_lib_register_backpressure_tb
 // DUT instance
 ////////////////////////////////////////////////////////////////////////////////
 
-    tcb_lib_register_backpressure dut (
+    tcb_full_lib_register_request dut (
         .sub  (tcb_man),
         .man  (tcb_sub)
     );
@@ -163,4 +166,4 @@ module tcb_lib_register_backpressure_tb
         $dumpvars;
     end
 
-endmodule: tcb_lib_register_backpressure_tb
+endmodule: tcb_full_lib_register_request_tb

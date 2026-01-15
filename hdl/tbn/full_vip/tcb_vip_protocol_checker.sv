@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// TCB (Tightly Coupled Bus) VIP (Verification IP) protocol checker
+// TCB-Full (Tightly Coupled Bus) VIP (Verification IP) protocol checker
 ////////////////////////////////////////////////////////////////////////////////
 // Copyright 2022 Iztok Jeras
 //
@@ -16,12 +16,12 @@
 // limitations under the License.
 ////////////////////////////////////////////////////////////////////////////////
 
-module tcb_vip_protocol_checker (
+module tcb_full_vip_protocol_checker
+    import tcb_full_pkg::*;
+(
     // TCB interface
-    tcb_if.mon tcb
+    tcb_full_if.mon tcb
 );
-
-    import tcb_pkg::*;
 
 ////////////////////////////////////////////////////////////////////////////////
 // handshake layer
@@ -154,4 +154,4 @@ module tcb_vip_protocol_checker (
 // Transaction framing layer
 ////////////////////////////////////////////////////////////////////////////////
 
-endmodule: tcb_vip_protocol_checker
+endmodule: tcb_full_vip_protocol_checker

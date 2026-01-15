@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// TCB (Tightly Coupled Bus) VIP (Verification IP) memory
+// TCB-Full (Tightly Coupled Bus) VIP (Verification IP) memory
 ////////////////////////////////////////////////////////////////////////////////
 // Copyright 2022 Iztok Jeras
 //
@@ -16,9 +16,9 @@
 // limitations under the License.
 ////////////////////////////////////////////////////////////////////////////////
 
-module tcb_vip_memory
-    import tcb_pkg::*;
-//    import tcb_vip_blocking_pkg::*;
+module tcb_full_vip_memory
+    import tcb_full_pkg::*;
+//    import tcb_full_vip_blocking_pkg::*;
 #(
     // memory file name
     parameter  string        MFN = "",
@@ -30,7 +30,7 @@ module tcb_vip_memory
     parameter  bit [IFN-1:0] WRM = '1
 )(
     // TCB interface
-    tcb_if tcb [IFN-1:0]
+    tcb_full_if tcb [IFN-1:0]
 );
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -187,4 +187,4 @@ module tcb_vip_memory
     end: port
     endgenerate
 
-endmodule: tcb_vip_memory
+endmodule: tcb_full_vip_memory

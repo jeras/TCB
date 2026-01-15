@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// TCB (Tightly Coupled Bus) VIP (Verification IP) miscelaneous package
+// TCB-Full (Tightly Coupled Bus) VIP (Verification IP) miscelaneous package
 ////////////////////////////////////////////////////////////////////////////////
 // Copyright 2022 Iztok Jeras
 //
@@ -16,9 +16,9 @@
 // limitations under the License.
 ////////////////////////////////////////////////////////////////////////////////
 
-package tcb_vip_pkg;
+package tcb_full_vip_pkg;
 
-    import tcb_pkg::*;
+    import tcb_full_pkg::*;
 
     // endianness
     // NOTE: If the bus endianness is hardcoded, the transaction endianness must:
@@ -50,4 +50,4 @@ package tcb_vip_pkg;
         endcase
     endfunction: endianness
 
-endpackage: tcb_vip_pkg
+endpackage: tcb_full_vip_pkg

@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// TCB (Tightly Coupled Bus) VIP (Verification IP) transaction package
+// TCB-Full (Tightly Coupled Bus) VIP (Verification IP) transaction package
 ////////////////////////////////////////////////////////////////////////////////
 // Copyright 2022 Iztok Jeras
 //
@@ -16,18 +16,18 @@
 // limitations under the License.
 ////////////////////////////////////////////////////////////////////////////////
 
-package tcb_vip_transaction_pkg;
+package tcb_full_vip_transaction_pkg;
 
-    import tcb_pkg::*;
-    import tcb_vip_pkg::*;
-    import tcb_vip_transfer_pkg::*;
-    export tcb_vip_transfer_pkg::*;
+    import tcb_full_pkg::*;
+    import tcb_full_vip_pkg::*;
+    import tcb_full_vip_transfer_pkg::*;
+    export tcb_full_vip_transfer_pkg::*;
 
 ////////////////////////////////////////////////////////////////////////////////
 // TCB transaction class
 ////////////////////////////////////////////////////////////////////////////////
 
-    class tcb_vip_transaction_c #(
+    class tcb_full_vip_transaction_c #(
         // configuration parameters
         parameter  type cfg_t = tcb_cfg_t,   // configuration parameter type
         parameter  cfg_t CFG = TCB_CFG_DEF,  // configuration parameter
@@ -35,11 +35,11 @@ package tcb_vip_transaction_pkg;
         parameter  type req_t = tcb_req_t,   // request
         parameter  type rsp_t = tcb_rsp_t,   // response
         // VIP (not to be used in RTL)
-        parameter  type vip_t = tcb_vip_t,   // VIP parameter type
+        parameter  type vip_t = tcb_full_vip_t,   // VIP parameter type
         parameter  vip_t VIP = TCB_VIP_DEF,  // VIP parameter
         // debugging options
         parameter  bit  DEBUG = 1'b0
-    ) extends tcb_vip_transfer_c #(
+    ) extends tcb_full_vip_transfer_c #(
         .cfg_t (cfg_t),
         .CFG   (CFG),
         .req_t (req_t),
@@ -393,6 +393,6 @@ package tcb_vip_transaction_pkg;
             return(cnt);
         endfunction: get_transaction
 
-    endclass: tcb_vip_transaction_c
+    endclass: tcb_full_vip_transaction_c
 
-endpackage: tcb_vip_transaction_pkg
+endpackage: tcb_full_vip_transaction_pkg

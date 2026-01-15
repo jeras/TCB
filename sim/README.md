@@ -27,3 +27,25 @@ tcb_lite_lib_passthrough_tb.sv
 tcb_lite_lib_register_backpressure_tb.sv
 tcb_lite_lib_register_request_tb.sv
 tcb_lite_lib_register_response_tb.sv
+
+git mv tcb_lib_converter_tb.sv tcb_full_lib_converter_tb.sv
+git mv tcb_lib_demultiplexer_tb.sv tcb_full_lib_demultiplexer_tb.sv
+git mv tcb_lib_logsize2byteena_tb.sv tcb_full_lib_logsize2byteena_tb.sv
+git mv tcb_lib_misaligned_memory_controller_tb.sv tcb_full_lib_misaligned_memory_controller_tb.sv
+git mv tcb_lib_multiplexer_tb.sv tcb_full_lib_multiplexer_tb.sv
+git mv tcb_lib_passthrough_tb.sv tcb_full_lib_passthrough_tb.sv
+git mv tcb_lib_read_modify_write_tb.sv tcb_full_lib_read_modify_write_tb.sv
+git mv tcb_lib_register_backpressure_tb.sv tcb_full_lib_register_backpressure_tb.sv
+git mv tcb_lib_register_request_tb.sv tcb_full_lib_register_request_tb.sv
+git mv tcb_lib_register_response_tb.sv tcb_full_lib_register_response_tb.sv
+
+
+
+
+
+
+
+
+
+
+

@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// TCB (Tightly Coupled Bus) library multiplexer/arbiter testbench
+// TCB-Full (Tightly Coupled Bus) library demultiplexer/decoder testbench
 ////////////////////////////////////////////////////////////////////////////////
 // Copyright 2022 Iztok Jeras
 //
@@ -16,9 +16,9 @@
 // limitations under the License.
 ////////////////////////////////////////////////////////////////////////////////
 
-module tcb_lib_multiplexer_tb
-    import tcb_pkg::*;
-    import tcb_vip_blocking_pkg::*;
+module tcb_full_lib_demultiplexer_tb
+    import tcb_full_pkg::*;
+    import tcb_full_vip_blocking_pkg::*;
 #(
     // response delay
     parameter  int unsigned DLY = TCB_HSK_DEF.DLY,
@@ -34,8 +34,12 @@ module tcb_lib_multiplexer_tb
 // local parameters
 ////////////////////////////////////////////////////////////////////////////////
 
-    // interface priorities (lower number is higher priority)
-    localparam int unsigned PRI [IFN-1:0] = '{2, 1, 0};
+    // decoder address and mask array
+    localparam logic [ADR-1:0] DAM [IFN-1:0] = '{
+        ADR'({14'bx, 2'b1x, 16'hxxxx}),
+        ADR'({14'bx, 2'b01, 16'hxxxx}),
+        ADR'({14'bx, 2'b00, 16'hxxxx})
+    };
 
     localparam tcb_cfg_t CFG = '{
         // handshake parameter
@@ -58,7 +62,7 @@ module tcb_lib_multiplexer_tb
         PMA: TCB_PMA_DEF
     };
 
-    localparam tcb_vip_t VIP = '{
+    localparam tcb_full_vip_t VIP = '{
         DRV: 1'b1
     };
 
@@ -80,29 +84,28 @@ module tcb_lib_multiplexer_tb
     string testname = "none";
 
     // TCB interfaces
-    tcb_if #(tcb_cfg_t, CFG, req_t, rsp_t                ) tcb_man [IFN-1:0] (.clk (clk), .rst (rst));
-    tcb_if #(tcb_cfg_t, CFG, req_t, rsp_t, tcb_vip_t, VIP) tcb_sub           (.clk (clk), .rst (rst));
+    tcb_full_if #(tcb_cfg_t, CFG, req_t, rsp_t                ) tcb_man           (.clk (clk), .rst (rst));
+    tcb_full_if #(tcb_cfg_t, CFG, req_t, rsp_t, tcb_full_vip_t, VIP) tcb_sub [IFN-1:0] (.clk (clk), .rst (rst));
 
     // parameterized class specialization (blocking API)
-    typedef tcb_vip_blocking_c #(tcb_cfg_t, CFG, req_t, rsp_t                ) tcb_man_s;
-    typedef tcb_vip_blocking_c #(tcb_cfg_t, CFG, req_t, rsp_t, tcb_vip_t, VIP) tcb_sub_s;
+    typedef tcb_full_vip_blocking_c #(tcb_cfg_t, CFG, req_t, rsp_t                ) tcb_man_s;
+    typedef tcb_full_vip_blocking_c #(tcb_cfg_t, CFG, req_t, rsp_t, tcb_full_vip_t, VIP) tcb_sub_s;
 
     // TCB class objects
-    tcb_man_s obj_man [IFN];
-    tcb_sub_s obj_sub = new(tcb_sub, "SUB");
+    tcb_man_s obj_man = new(tcb_man, "MAN");
+    tcb_sub_s obj_sub [IFN];
 
     // transfer reference/monitor array
-    tcb_sub_s::transfer_queue_t tst_sub;
-    tcb_sub_s::transfer_queue_t tst_mon;
+    tcb_sub_s::transfer_queue_t tst_sub [IFN];
+    tcb_sub_s::transfer_queue_t tst_mon [IFN];
     int unsigned                tst_len;
 
     // empty array
     logic [8-1:0] nul [];
 
     // response
-    logic [tcb_sub.CFG_BUS_BYT-1:0][8-1:0] rdt_man [IFN];  // read data
-    tcb_rsp_sts_t                          sts_man [IFN];  // status response
-    tcb_rsp_sts_t                          sts_sub;  // status response
+    logic [tcb_man.CFG_BUS_BYT-1:0][8-1:0] rdt;  // read data
+    tcb_rsp_sts_t                          sts;  // status response
 
     // control
     logic [IFL-1:0] sel;  // select
@@ -115,67 +118,59 @@ module tcb_lib_multiplexer_tb
         // write sequence
         $display("write sequence");
         testname = "write";
-        tst_mon.delete();
+        for (int i=0; i<IFN; i++) begin
+            tst_sub[i].delete();
+            tst_mon[i].delete();
+        end
         fork
             // manager (blocking API)
             begin: fork_man
-                fork
-                    obj_man[0].write32(0*tcb_sub.CFG_BUS_BYT, {4{8'd0}}, sts_man[0]);
-                    obj_man[1].write32(1*tcb_sub.CFG_BUS_BYT, {4{8'd1}}, sts_man[1]);
-                    obj_man[2].write32(2*tcb_sub.CFG_BUS_BYT, {4{8'd2}}, sts_man[2]);
-                join
-                fork
-                    obj_man[0].read32 (0*tcb_sub.CFG_BUS_BYT, rdt_man[0][4-1:0], sts_man[0]);
-                    obj_man[1].read32 (1*tcb_sub.CFG_BUS_BYT, rdt_man[1][4-1:0], sts_man[1]);
-                    obj_man[2].read32 (2*tcb_sub.CFG_BUS_BYT, rdt_man[2][4-1:0], sts_man[2]);
-                join
-//                for (int unsigned i=0; i<IFN; i++) begin: fork_write
-//                    fork
-//                        obj_man[i].write32(i*tcb_sub.BUS_BYT, {4{8'(i)}}, sts_man[i]);
-//                    join_none
-//                end: fork_write
-//                wait fork;
-//                for (int unsigned i=0; i<IFN; i++) begin: fork_read
-//                    fork
-//                        obj_man[i].read32(i*tcb_sub.BUS_BYT, rdt_man[i][4-1:0], sts_man[i]);
-//                    join_none
-//                end: fork_read
-//                wait fork;
+                for (int unsigned i=0; i<IFN; i++) begin
+                    obj_man.write32((i<<16) + 32'h00000000, 32'h76543210, sts);
+                    obj_man.write32((i<<16) + 32'h00000020, 32'hfedcba98, sts);
+                    obj_man.read32 ((i<<16) + 32'h00000000, rdt[4-1:0], sts);
+                    obj_man.read32 ((i<<16) + 32'h00000020, rdt[4-1:0], sts);
+                end
             end: fork_man
             // subordinate (driver)
+            for (int unsigned i=0; i<IFN; i++)
             begin: fork_sub_driver
-                tst_sub.delete();
-                sts_sub = '0;
-                tst_len = tst_sub.size();
-                for (int unsigned i=0; i<IFN; i++) begin: write
-                    // append reference transfers to queue               adr                       , wdt             ,                      rdt
-                    tst_len += obj_sub.put_transaction(tst_sub, '{req: '{adr: i*tcb_sub.CFG_BUS_BYT, wdt: '{4{8'(i)}}, default: 'x}, rsp: '{nul, sts_sub}});
-                end: write
-                for (int unsigned i=0; i<IFN; i++) begin: read
-                    // append reference transfers to queue               adr                       , wdt                   ,        rdt
-                    tst_len += obj_sub.put_transaction(tst_sub, '{req: '{adr: i*tcb_sub.CFG_BUS_BYT, wdt: nul, default: 'x}, rsp: '{'{4{8'(i)}}, sts_sub}});
-                end: read
-                obj_sub.transfer_sequencer(tst_sub);
+                sts[i] = '0;
+                tst_len[i] = tst_sub[i].size();
+                // append reference transfers to queue                        adr                wdt
+                tst_len[i] += obj_sub[i].put_transaction(tst_sub[i], '{req: '{adr: 32'h00000000, wdt: '{8'h10, 8'h32, 8'h54, 8'h76}, default: 'x}, rsp: '{nul, sts}});
+                tst_len[i] += obj_sub[i].put_transaction(tst_sub[i], '{req: '{adr: 32'h00000020, wdt: '{8'h98, 8'hba, 8'hdc, 8'hfe}, default: 'x}, rsp: '{nul, sts}});
+                tst_len[i] += obj_sub[i].put_transaction(tst_sub[i], '{req: '{adr: 32'h00000000, wdt: nul, default: 'x}, rsp: '{'{8'h10, 8'h32, 8'h54, 8'h76}, sts}});
+                tst_len[i] += obj_sub[i].put_transaction(tst_sub[i], '{req: '{adr: 32'h00000020, wdt: nul, default: 'x}, rsp: '{'{8'h98, 8'hba, 8'hdc, 8'hfe}, sts}});
+//                for (int unsigned j=0; j<tst_sub[i].size(); j++) begin
+//                  $display("DEBUG: tst_sub[%0d][%0d] = %p", i, j, tst_sub[i][j]);
+//                end
+                obj_sub[i].transfer_sequencer(tst_sub[i]);
             end: fork_sub_driver
             // subordinate (monitor)
+            for (int unsigned i=0; i<IFN; i++)
             begin: fork_sub_monitor
-                obj_sub.transfer_monitor(tst_mon);
+                obj_sub[i].transfer_monitor(tst_mon[i]);
             end: fork_sub_monitor
         join_any
         // disable transfer monitor
-        repeat (tcb_sub.CFG.HSK.DLY) @(posedge clk);
+        repeat (tcb_man.CFG.HSK.DLY) @(posedge clk);
         disable fork;
-        // compare transfers from monitor to reference
-        // wildcard operator is used to ignore data byte comparison, when the reference data is 8'hxx
-        foreach (tst_sub[i]) begin
-            assert (tst_mon[i].req ==? tst_sub[i].req) else $error("\ntst_mon[%0d].req = %p !=? \ntst_sub[%0d].req = %p", i, tst_mon[i].req, i, tst_sub[i].req);
-            assert (tst_mon[i].rsp ==? tst_sub[i].rsp) else $error("\ntst_mon[%0d].rsp = %p !=? \ntst_sub[%0d].rsp = %p", i, tst_mon[i].rsp, i, tst_sub[i].rsp);
+        // reference transfer queue
+        for (int unsigned i=0; i<IFN; i++)
+        begin
+            // compare transfers from monitor to reference
+            // wildcard operator is used to ignore data byte comparison, when the reference data is 8'hxx
+            for (int unsigned j=0; j<tst_sub[i].size(); j++) begin
+                assert (tst_mon[i][j].req ==? tst_sub[i][j].req) else $error("\ntst_mon[%0d][%0d].req = %p !=? \ntst_sub[%0d][%0d].req = %p", i, j, tst_mon[i][j].req, i, j, tst_sub[i][j].req);
+                assert (tst_mon[i][j].rsp ==? tst_sub[i][j].rsp) else $error("\ntst_mon[%0d][%0d].rsp = %p !=? \ntst_sub[%0d][%0d].rsp = %p", i, j, tst_mon[i][j].rsp, i, j, tst_sub[i][j].rsp);
+            end
+//            // printout transfer queue for debugging purposes
+//            for (int unsigned j=0; j<tst_sub[i].size(); j++) begin
+//              $display("DEBUG: tst_sub[%0d][%0d] = %p", i, j, tst_sub[i][j]);
+//              $display("DEBUG: tst_mon[%0d][%0d] = %p", i, j, tst_mon[i][j]);
+//            end
         end
-//        // printout transfer queue for debugging purposes
-//        foreach (tst_sub[i]) begin
-//            $display("DEBUG: tst_sub[%0d] = %p", i, tst_sub[i]);
-//            $display("DEBUG: tst_mon[%0d] = %p", i, tst_mon[i]);
-//        end
     endtask: test_simple
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -189,7 +184,7 @@ module tcb_lib_multiplexer_tb
     generate
     for (genvar i=0; i<IFN; i++) begin
         initial begin
-            obj_man[i] = new(tcb_man[i], "MAN");
+            obj_sub[i] = new(tcb_sub[i], "SUB");
         end
     end
     endgenerate
@@ -218,14 +213,14 @@ module tcb_lib_multiplexer_tb
     end: timeout
 
 ////////////////////////////////////////////////////////////////////////////////
-// VIP component instances
+// VIP instances
 ////////////////////////////////////////////////////////////////////////////////
 
-    tcb_vip_protocol_checker chk_man [IFN-1:0] (
+    tcb_full_vip_protocol_checker chk_man (
         .tcb (tcb_man)
     );
 
-    tcb_vip_protocol_checker chk_sub (
+    tcb_full_vip_protocol_checker chk_sub [IFN-1:0] (
         .tcb (tcb_sub)
     );
 
@@ -233,24 +228,22 @@ module tcb_lib_multiplexer_tb
 // DUT instances
 ////////////////////////////////////////////////////////////////////////////////
 
-    // RTL arbiter DUT
-    tcb_lib_arbiter #(
-        // arbitration priority mode
-//      .MD   (),
+    // RTL decoder DUT
+    tcb_full_lib_decoder #(
         // interconnect parameters
         .IFN  (IFN),
-        // interface priorities (lower number is higher priority)
-        .PRI  (PRI)
-    ) dut_arb (
+        // decoder address and mask array
+        .DAM  (DAM)
+    ) dut_dec (
         .tcb  (tcb_man),
         .sel  (sel)
     );
 
-    // RTL multiplexer DUT
-    tcb_lib_multiplexer #(
+    // RTL demultiplexer DUT
+    tcb_full_lib_demultiplexer #(
         // interconnect parameters
         .IFN   (IFN)
-    ) dut_mux (
+    ) dut_dmx (
         // control
         .sel  (sel),
         // TCB interfaces
@@ -272,4 +265,4 @@ module tcb_lib_multiplexer_tb
         $dumpvars;
     end
 
-endmodule: tcb_lib_multiplexer_tb
+endmodule: tcb_full_lib_demultiplexer_tb

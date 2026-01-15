@@ -249,10 +249,10 @@ package tcb_full_pkg;
     typedef struct {
     `endif
         bit DRV;  // drive response from response delay line
-    } tcb_vip_t;
+    } tcb_full_vip_t;
 
     // VIP default value
-    localparam tcb_vip_t TCB_VIP_DEF = '{
+    localparam tcb_full_vip_t TCB_VIP_DEF = '{
         DRV: 1'b0
     };
 

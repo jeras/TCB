@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// TCB (Tightly Coupled Bus) VIP (Verification IP) transfer PacKaGe
+// TCB-Full (Tightly Coupled Bus) VIP (Verification IP) transfer PacKaGe
 ////////////////////////////////////////////////////////////////////////////////
 // Copyright 2022 Iztok Jeras
 //
@@ -16,15 +16,15 @@
 // limitations under the License.
 ////////////////////////////////////////////////////////////////////////////////
 
-package tcb_vip_transfer_pkg;
+package tcb_full_vip_transfer_pkg;
 
-    import tcb_pkg::*;
+    import tcb_full_pkg::*;
 
 ////////////////////////////////////////////////////////////////////////////////
 // TCB class
 ////////////////////////////////////////////////////////////////////////////////
 
-    class tcb_vip_transfer_c #(
+    class tcb_full_vip_transfer_c #(
         // configuration parameters
         parameter  type cfg_t = tcb_cfg_t,   // configuration parameter type
         parameter  cfg_t CFG = TCB_CFG_DEF,  // configuration parameter
@@ -32,7 +32,7 @@ package tcb_vip_transfer_pkg;
         parameter  type req_t = tcb_req_t,   // request
         parameter  type rsp_t = tcb_rsp_t,   // response
         // VIP (not to be used in RTL)
-        parameter  type vip_t = tcb_vip_t,   // VIP parameter type
+        parameter  type vip_t = tcb_full_vip_t,   // VIP parameter type
         parameter  vip_t VIP = TCB_VIP_DEF,  // VIP parameter
         // debugging options
         parameter  bit  DEBUG = 1'b0
@@ -43,7 +43,7 @@ package tcb_vip_transfer_pkg;
     ///////////////////////////////////////
 
         // virtual interface type definition
-        typedef virtual tcb_if #(
+        typedef virtual tcb_full_if #(
             .cfg_t (cfg_t),
             .CFG   (CFG),
             .req_t (req_t),
@@ -252,6 +252,6 @@ package tcb_vip_transfer_pkg;
             if (DEBUG)  $info("DEBUG: %t: transfer_monitor stopped.", $realtime);
         endtask: transfer_monitor
 
-    endclass: tcb_vip_transfer_c
+    endclass: tcb_full_vip_transfer_c
 
-endpackage: tcb_vip_transfer_pkg
+endpackage: tcb_full_vip_transfer_pkg

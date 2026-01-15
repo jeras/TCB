@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// TCB (Tightly Coupled Bus) VIP (Verification IP) manager/monitor/subordinate TestBench
+// TCB-Full (Tightly Coupled Bus) VIP (Verification IP) manager/monitor/subordinate TestBench
 ////////////////////////////////////////////////////////////////////////////////
 // Copyright 2022 Iztok Jeras
 //
@@ -16,11 +16,11 @@
 // limitations under the License.
 ////////////////////////////////////////////////////////////////////////////////
 
-module tcb_vip_tb
-    import tcb_pkg::*;
-    import tcb_vip_transfer_pkg::*;
-    import tcb_vip_nonblocking_pkg::*;
-    import tcb_vip_blocking_pkg::*;
+module tcb_full_vip_tb
+    import tcb_full_pkg::*;
+    import tcb_full_vip_transfer_pkg::*;
+    import tcb_full_vip_nonblocking_pkg::*;
+    import tcb_full_vip_blocking_pkg::*;
 #(
     // response delay
     parameter  int unsigned DLY = TCB_HSK_DEF.DLY,
@@ -34,7 +34,7 @@ module tcb_vip_tb
 
     // interface configuration
     localparam tcb_cfg_t CFG = TCB_CFG_DEF;
-    localparam tcb_vip_t VIP = '{DRV: 1'b1};
+    localparam tcb_full_vip_t VIP = '{DRV: 1'b1};
 
 ////////////////////////////////////////////////////////////////////////////////
 // local signals
@@ -49,10 +49,10 @@ module tcb_vip_tb
     int unsigned errorcnt;  // ERROR counter
 
     // TCB interfaces
-    tcb_if #(tcb_cfg_t, CFG, tcb_req_t, tcb_rsp_t, tcb_vip_t, VIP) tcb (.clk (clk), .rst (rst));
+    tcb_full_if #(tcb_cfg_t, CFG, tcb_req_t, tcb_rsp_t, tcb_full_vip_t, VIP) tcb (.clk (clk), .rst (rst));
 
     // parameterized class specialization (non-blocking API)
-    typedef tcb_vip_blocking_c #(tcb_cfg_t, CFG, tcb_req_t, tcb_rsp_t, tcb_vip_t, VIP) tcb_s;
+    typedef tcb_full_vip_blocking_c #(tcb_cfg_t, CFG, tcb_req_t, tcb_rsp_t, tcb_full_vip_t, VIP) tcb_s;
 
     // TCB class objects
     tcb_s obj_ref = new(tcb, "MAN");
@@ -335,4 +335,4 @@ module tcb_vip_tb
         $dumpvars;
     end
 
-endmodule: tcb_vip_tb
+endmodule: tcb_full_vip_tb

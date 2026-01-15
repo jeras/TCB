@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// TCB (Tightly Coupled Bus) library misaligned_memory_controller testbench
+// TCB-Full (Tightly Coupled Bus) library misaligned_memory_controller testbench
 ////////////////////////////////////////////////////////////////////////////////
 // Copyright 2022 Iztok Jeras
 //
@@ -16,9 +16,9 @@
 // limitations under the License.
 ////////////////////////////////////////////////////////////////////////////////
 
-module tcb_lib_misaligned_memory_controller_tb
-    import tcb_pkg::*;
-    import tcb_vip_blocking_pkg::*;
+module tcb_full_lib_misaligned_memory_controller_tb
+    import tcb_full_pkg::*;
+    import tcb_full_vip_blocking_pkg::*;
 #(
     // handshake parameter
     parameter  int unsigned      DLY = TCB_HSK_DEF.DLY      // response delay
@@ -71,13 +71,13 @@ module tcb_lib_misaligned_memory_controller_tb
     string testname = "none";
 
     // TCB interfaces
-    tcb_if #(tcb_cfg_t, CFG, req_t, rsp_t) tcb (.clk (clk), .rst (rst));
+    tcb_full_if #(tcb_cfg_t, CFG, req_t, rsp_t) tcb (.clk (clk), .rst (rst));
 
     // parameterized class specialization (blocking API)
-    typedef tcb_vip_blocking_c #(tcb_cfg_t, CFG, req_t, rsp_t) tcb_vip_s;
+    typedef tcb_full_vip_blocking_c #(tcb_cfg_t, CFG, req_t, rsp_t) tcb_full_vip_s;
 
     // TCB class objects
-    tcb_vip_s obj = new(tcb, "MAN");
+    tcb_full_vip_s obj = new(tcb, "MAN");
 
     // empty array
     logic [8-1:0] nul [];
@@ -189,10 +189,10 @@ module tcb_lib_misaligned_memory_controller_tb
                 // local response
                 tcb_rsp_sts_t sts;  // response status
                 // local transactions
-                tcb_vip_s::transaction_t transaction_w;  // reference write transaction
-                tcb_vip_s::transaction_t transaction_r;  // reference read  transaction
+                tcb_full_vip_s::transaction_t transaction_w;  // reference write transaction
+                tcb_full_vip_s::transaction_t transaction_r;  // reference read  transaction
                 // local transfers
-                automatic tcb_vip_s::transfer_queue_t transfer = '{};  // manager transfer queue
+                automatic tcb_full_vip_s::transfer_queue_t transfer = '{};  // manager transfer queue
 
                 // ID
                 id = $sformatf("siz=%0d off=%0d", siz, off);
@@ -263,7 +263,7 @@ module tcb_lib_misaligned_memory_controller_tb
 // VIP instances
 ////////////////////////////////////////////////////////////////////////////////
 
-    tcb_vip_protocol_checker chk (
+    tcb_full_vip_protocol_checker chk (
         .tcb (tcb)
     );
 
@@ -284,7 +284,7 @@ module tcb_lib_misaligned_memory_controller_tb
 // DUT instance
 ////////////////////////////////////////////////////////////////////////////////
 
-    tcb_lib_misaligned_memory_controller #(
+    tcb_full_lib_misaligned_memory_controller #(
         .CFG      (CFG)
     ) dut (
         // TCB interface
@@ -311,4 +311,4 @@ module tcb_lib_misaligned_memory_controller_tb
         $dumpvars;
     end
 
-endmodule: tcb_lib_misaligned_memory_controller_tb
+endmodule: tcb_full_lib_misaligned_memory_controller_tb
