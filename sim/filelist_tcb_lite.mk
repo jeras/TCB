@@ -6,7 +6,7 @@
 PATH_HDL=../../hdl
 
 # SystemVerilog interface
-#RTL+=${PATH_HDL}/rtl/tcb_pkg.sv
+RTL+=${PATH_HDL}/rtl/tcb_lite_pkg.sv
 RTL+=${PATH_HDL}/rtl/tcb_lite_if.sv
 # LIBrary
 RTL+=${PATH_HDL}/rtl/lite_lib/tcb_lite_lib_passthrough.sv
