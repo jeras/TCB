@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// TCB (Tightly Coupled Bus) library error subordinate
+// TCB-Full (Tightly Coupled Bus) library error subordinate
 ////////////////////////////////////////////////////////////////////////////////
 // Copyright 2022 Iztok Jeras
 //
@@ -16,9 +16,9 @@
 // limitations under the License.
 ////////////////////////////////////////////////////////////////////////////////
 
-module tcb_lib_error (
+module tcb_full_lib_error (
     // system bus interface
-    tcb_if.sub sub
+    tcb_full_if.sub sub
 );
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -34,4 +34,4 @@ module tcb_lib_error (
     // the response status is always an error
     assign sub.rsp.sts.err = 1'b1;
 
-endmodule: tcb_lib_error
+endmodule: tcb_full_lib_error

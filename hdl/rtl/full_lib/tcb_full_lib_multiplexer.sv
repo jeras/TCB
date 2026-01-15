@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// TCB (Tightly Coupled Bus) library demultiplexer
+// TCB-Full (Tightly Coupled Bus) library multiplexer
 ////////////////////////////////////////////////////////////////////////////////
 // Copyright 2022 Iztok Jeras
 //
@@ -16,18 +16,18 @@
 // limitations under the License.
 ////////////////////////////////////////////////////////////////////////////////
 
-module tcb_lib_demultiplexer
-    import tcb_pkg::*;
+module tcb_full_lib_multiplexer
+    import tcb_full_pkg::*;
 #(
-    // interconnect parameters (manager interface number and logarithm)
+    // interconnect parameters (subordinate interface number and logarithm)
     parameter  int unsigned IFN = 2,
     localparam int unsigned IFL = $clog2(IFN)
 )(
     // control
     input  logic [IFL-1:0] sel,  // select
     // TCB interfaces
-    tcb_if.sub sub         ,  // TCB subordinate interface  (manager     device connects here)
-    tcb_if.man man[IFN-1:0]   // TCB manager     interfaces (subordinate devices connect here)
+    tcb_full_if.sub sub[IFN-1:0],  // TCB subordinate interfaces (manager     devices connect here)
+    tcb_full_if.man man            // TCB manager     interface  (subordinate device connects here)
 );
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -48,34 +48,40 @@ module tcb_lib_demultiplexer
 // local signals
 ////////////////////////////////////////////////////////////////////////////////
 
-    // demultiplexer signals
+    // multiplexer select
     logic [IFL-1:0] sub_sel;
     logic [IFL-1:0] man_sel;
-    
+
 //    // TODO: remove once simulators support access to types inside interfaces
-//    // response
+//    // request
 //    typedef struct packed {
-//        logic [sub.BUS.DAT-1:0] rdt;  // read data
-//        tcb_rsp_sts_t           sts;  // status (optional)
-//    } sub_rsp_t;
-    
-    typedef sub.rsp_t sub_rsp_t;
-    
-    sub_rsp_t       tmp_rsp [IFN-1:0];  // response
-    logic           tmp_rdy [IFN-1:0];  // handshake
+//        tcb_req_cmd_def_t       cmd;  // command (optional)
+//        logic                   wen;  // write enable
+//        logic                   ren;  // write enable
+//        logic                   ndn;  // endianness
+//        logic [man.BUS.ADR-1:0] adr;  // address
+//        logic [man.BUS_SIZ-1:0] siz;  // transfer size
+//        logic [man.BUS_BYT-1:0] ben;  // byte enable
+//        logic [man.BUS.DAT-1:0] wdt;  // write data
+//    } man_req_t;
+
+    typedef man.req_t man_req_t;
+
+    logic           tmp_vld [IFN-1:0];  // handshake
+    man_req_t       tmp_req [IFN-1:0];  // request
 
 ////////////////////////////////////////////////////////////////////////////////
 // control
 ////////////////////////////////////////////////////////////////////////////////
 
-    // select
+    // subordinate (request) select
     assign sub_sel = sel;
 
-    // demultiplexer select
-    always_ff @(posedge sub.clk, posedge sub.rst)
-    if (sub.rst) begin
+    // multiplexer select
+    always_ff @(posedge man.clk, posedge man.rst)
+    if (man.rst) begin
         man_sel <= '0;
-    end else if (sub.trn) begin
+    end else if (man.trn) begin
         man_sel <= sub_sel;
     end
 
@@ -83,29 +89,29 @@ module tcb_lib_demultiplexer
 // request
 ////////////////////////////////////////////////////////////////////////////////
 
-    // replicate request signals
+    // organize request signals into indexable array
+    // since a dynamix index can't be used on an array of interfaces
     generate
     for (genvar i=0; i<IFN; i++) begin: gen_req
-        assign man[i].vld = (sub_sel == i) ? sub.vld : 1'b0;  // handshake
-        assign man[i].req = (sub_sel == i) ? sub.req :   'x;  // request
+        assign tmp_vld[i] = sub[i].vld;  // handshake
+        assign tmp_req[i] = sub[i].req;  // request
     end: gen_req
     endgenerate
+
+    // multiplexer
+    assign man.vld = tmp_vld[sub_sel];  // handshake
+    assign man.req = tmp_req[sub_sel];  // request
 
 ////////////////////////////////////////////////////////////////////////////////
 // response
 ////////////////////////////////////////////////////////////////////////////////
 
-    // organize response signals into indexable array
-    // since a dynamic index can't be used on an array of interfaces
+    // replicate response signals
     generate
     for (genvar i=0; i<IFN; i++) begin: gen_rsp
-        assign tmp_rsp[i] = man[i].rsp;  // response
-        assign tmp_rdy[i] = man[i].rdy;  // handshake
+        assign sub[i].rsp = (man_sel == i[IFL-1:0]) ? man.rsp : 'x;  // response
+        assign sub[i].rdy = (sub_sel == i[IFL-1:0]) ? man.rdy : '0;  // handshake
     end: gen_rsp
     endgenerate
 
-    // multiplexer
-    assign sub.rsp = tmp_rsp[man_sel];  // response
-    assign sub.rdy = tmp_rdy[sub_sel];  // handskake
-
-endmodule: tcb_lib_demultiplexer
+endmodule: tcb_full_lib_multiplexer

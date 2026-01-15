@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// TCB (Tightly Coupled Bus) library log. size to byte enable mode conversion
+// TCB-Full (Tightly Coupled Bus) library log. size to byte enable mode conversion
 ////////////////////////////////////////////////////////////////////////////////
 // Copyright 2022 Iztok Jeras
 //
@@ -16,8 +16,8 @@
 // limitations under the License.
 ////////////////////////////////////////////////////////////////////////////////
 
-module tcb_lib_misaligned_memory_controller
-    import tcb_pkg::*;
+module tcb_full_lib_misaligned_memory_controller
+    import tcb_full_pkg::*;
 #(
     // configuration parameters
     parameter  type cfg_t = tcb_cfg_t,   // configuration parameter type
@@ -32,7 +32,7 @@ module tcb_lib_misaligned_memory_controller
     // TODO
 )(
     // TCB interface
-    tcb_if.sub tcb,  // TCB subordinate interface (manager device connects here)
+    tcb_full_if.sub tcb,  // TCB subordinate interface (manager device connects here)
     // SRAM interface
     output logic [MEM_CEN-1:0]              mem_cen,  // chip enable
     output logic                            mem_wen,  // write enable
@@ -167,4 +167,4 @@ module tcb_lib_misaligned_memory_controller
     // handshake
     assign tcb.rdy = 1'b1;
 
-endmodule: tcb_lib_misaligned_memory_controller
+endmodule: tcb_full_lib_misaligned_memory_controller

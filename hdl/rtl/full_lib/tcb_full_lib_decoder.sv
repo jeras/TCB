@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// TCB (Tightly Coupled Bus) library decoder
+// TCB-Full (Tightly Coupled Bus) library decoder
 ////////////////////////////////////////////////////////////////////////////////
 // Copyright 2022 Iztok Jeras
 //
@@ -16,8 +16,8 @@
 // limitations under the License.
 ////////////////////////////////////////////////////////////////////////////////
 
-module tcb_lib_decoder
-    import tcb_pkg::*;
+module tcb_full_lib_decoder
+    import tcb_full_pkg::*;
 #(
     // TCB parameters (contains address width)
     parameter  int unsigned ADR = 32,
@@ -28,7 +28,7 @@ module tcb_lib_decoder
     parameter  logic [ADR-1:0] DAM [IFN-1:0] = '{default: 'x}
 )(
     // TCB interfaces
-    tcb_if.sub tcb,  // TCB subordinate interface (manager device connects here)
+    tcb_full_if.sub tcb,  // TCB subordinate interface (manager device connects here)
     // control
     output logic [IFL-1:0] sel  // select
 );
@@ -85,4 +85,4 @@ module tcb_lib_decoder
 //    assign sel = encode(match(adr, DAM));
     assign sel = encode(mch);
 
-endmodule: tcb_lib_decoder
+endmodule: tcb_full_lib_decoder

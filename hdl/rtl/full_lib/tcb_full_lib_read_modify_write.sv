@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// TCB (Tightly Coupled Bus) library: read modify write
+// TCB-Full (Tightly Coupled Bus) library: read modify write
 ////////////////////////////////////////////////////////////////////////////////
 // Copyright 2022 Iztok Jeras
 //
@@ -16,12 +16,12 @@
 // limitations under the License.
 ////////////////////////////////////////////////////////////////////////////////
 
-module tcb_lib_read_modify_write
-    import tcb_pkg::*;
+module tcb_full_lib_read_modify_write
+    import tcb_full_pkg::*;
 (
     // interfaces
-    tcb_if.sub sub,    // TCB subordinate interface (manager     device connects here)
-    tcb_if.man man     // TCB manager     interface (subordinate device connects here)
+    tcb_full_if.sub sub,    // TCB subordinate interface (manager     device connects here)
+    tcb_full_if.man man     // TCB manager     interface (subordinate device connects here)
 );
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -164,4 +164,4 @@ module tcb_lib_read_modify_write
     // handshake
     assign sub.rdy = man.rdy;
 
-endmodule: tcb_lib_read_modify_write
+endmodule: tcb_full_lib_read_modify_write

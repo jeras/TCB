@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// TCB (Tightly Coupled Bus) library log. size to byte enable mode conversion
+// TCB-Full (Tightly Coupled Bus) library log. size to byte enable mode conversion
 ////////////////////////////////////////////////////////////////////////////////
 // Copyright 2022 Iztok Jeras
 //
@@ -16,12 +16,12 @@
 // limitations under the License.
 ////////////////////////////////////////////////////////////////////////////////
 
-module tcb_lib_logsize2byteena
-    import tcb_pkg::*;
+module tcb_full_lib_logsize2byteena
+    import tcb_full_pkg::*;
 (
     // interfaces
-    tcb_if.sub sub,    // TCB subordinate interface (manager     device connects here)
-    tcb_if.man man     // TCB manager     interface (subordinate device connects here)
+    tcb_full_if.sub sub,    // TCB subordinate interface (manager     device connects here)
+    tcb_full_if.man man     // TCB manager     interface (subordinate device connects here)
 );
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -205,4 +205,4 @@ module tcb_lib_logsize2byteena
     // handshake
     assign sub.rdy = man.rdy;
 
-endmodule: tcb_lib_logsize2byteena
+endmodule: tcb_full_lib_logsize2byteena

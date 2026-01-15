@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// TCB (Tightly Coupled Bus) library priority/round-robin arbiter
+// TCB-Full (Tightly Coupled Bus) library priority/round-robin arbiter
 ////////////////////////////////////////////////////////////////////////////////
 // Copyright 2022 Iztok Jeras
 //
@@ -16,8 +16,8 @@
 // limitations under the License.
 ////////////////////////////////////////////////////////////////////////////////
 
-module tcb_lib_arbiter
-    import tcb_pkg::*;
+module tcb_full_lib_arbiter
+    import tcb_full_pkg::*;
 #(
     // arbitration priority mode
     parameter  string       MOD = "FX",  // "FX" - fixed priority, "RR" - round robin (TODO)
@@ -28,7 +28,7 @@ module tcb_lib_arbiter
     parameter  bit unsigned [IFL-1:0] PRI [IFN-1:0] = '{1'd1, 1'd0}
 )(
     // TCB interfaces
-    tcb_if.sub tcb [IFN-1:0],   // TCB subordinate interfaces (manager devices connect here)
+    tcb_full_if.sub tcb [IFN-1:0],   // TCB subordinate interfaces (manager devices connect here)
     // control
     output logic [IFL-1:0] sel  // select
 );
@@ -80,4 +80,4 @@ module tcb_lib_arbiter
     // priority arbiter
     assign sel = PRI[encode(reorder(vld, PRI))];
 
-endmodule: tcb_lib_arbiter
+endmodule: tcb_full_lib_arbiter

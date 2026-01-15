@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// TCB (Tightly Coupled Bus) library common to independant channel conversion
+// TCB-Full (Tightly Coupled Bus) library common to independent channel conversion
 ////////////////////////////////////////////////////////////////////////////////
 // Copyright 2022 Iztok Jeras
 //
@@ -16,12 +16,12 @@
 // limitations under the License.
 ////////////////////////////////////////////////////////////////////////////////
 
-module tcb_lib_common2independent (
+module tcb_full_lib_common2independent (
     // TCB common subordinate interface (manager device connects here)
-    tcb_if.sub tcb_cmn_sub,
+    tcb_full_if.sub tcb_cmn_sub,
     // TCB independant manager ports (subordinate device connects here)
-    tcb_if.man tcb_rdc_man,
-    tcb_if.man tcb_wrc_man
+    tcb_full_if.man tcb_rdc_man,
+    tcb_full_if.man tcb_wrc_man
 );
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -57,4 +57,4 @@ module tcb_lib_common2independent (
     assign tcb_cmn_sub.rsp =  tcb_cmn_sub.dly[tcb_cmn_sub.HSK.DLY].ren ? tcb_rdc_man.rsp
                                                                        : tcb_wrc_man.rsp;
 
-endmodule: tcb_lib_common2independent
+endmodule: tcb_full_lib_common2independent

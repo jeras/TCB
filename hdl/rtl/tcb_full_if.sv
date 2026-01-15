@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// TCB (Tightly Coupled Bus) SystemVerilog interface
+// TCB-Full (Tightly Coupled Bus) SystemVerilog interface
 ////////////////////////////////////////////////////////////////////////////////
 // Copyright 2022 Iztok Jeras
 //
@@ -16,8 +16,8 @@
 // limitations under the License.
 ////////////////////////////////////////////////////////////////////////////////
 
-interface tcb_if
-    import tcb_pkg::*;
+interface tcb_full_if
+    import tcb_full_pkg::*;
 #(
     // configuration parameters
     parameter  type cfg_t = tcb_cfg_t,   // configuration parameter type
@@ -321,4 +321,4 @@ interface tcb_if
         import write, read
     );
 
-endinterface: tcb_if
+endinterface: tcb_full_if
