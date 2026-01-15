@@ -5,18 +5,18 @@ import pprint
 import re
 
 tests = [
-  "tcb_vip_tb",
-  "tcb_lib_passthrough_tb",
-  "tcb_lib_register_request_tb",
-  "tcb_lib_register_response_tb",
-  "tcb_lib_register_backpressure_tb",
-  "tcb_lib_demultiplexer_tb",
-  "tcb_lib_multiplexer_tb",
-  "tcb_lib_logsize2byteena_tb",
-  "tcb_lib_misaligned_memory_controller_tb",
-  "tcb_lib_read_modify_write_tb",
-  "tcb_peri_gpio_tb",
-  "tcb_peri_uart_tb",
+  "tcb_full_vip_tb",
+  "tcb_full_lib_passthrough_tb",
+  "tcb_full_lib_register_request_tb",
+  "tcb_full_lib_register_response_tb",
+  "tcb_full_lib_register_backpressure_tb",
+  "tcb_full_lib_demultiplexer_tb",
+  "tcb_full_lib_multiplexer_tb",
+  "tcb_full_lib_logsize2byteena_tb",
+  "tcb_full_lib_misaligned_memory_controller_tb",
+  "tcb_full_lib_read_modify_write_tb",
+  "tcb_full_peri_gpio_tb",
+  "tcb_full_peri_uart_tb",
 ]
 
 simulator = "questa"
