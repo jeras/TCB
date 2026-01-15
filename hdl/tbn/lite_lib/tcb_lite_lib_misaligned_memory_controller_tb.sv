@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// TCB (Tightly Coupled Bus) library misaligned_memory_controller testbench
+// TCB-Lite (Tightly Coupled Bus) library misaligned_memory_controller testbench
 ////////////////////////////////////////////////////////////////////////////////
 // Copyright 2022 Iztok Jeras
 //
@@ -16,9 +16,8 @@
 // limitations under the License.
 ////////////////////////////////////////////////////////////////////////////////
 
-module tcb_lib_misaligned_memory_controller_tb
-    import tcb_pkg::*;
-    import tcb_vip_blocking_pkg::*;
+module tcb_lite_lib_misaligned_memory_controller_tb
+    import tcb_lite_pkg::*;
 #(
     // handshake parameter
     parameter  int unsigned      DLY = TCB_HSK_DEF.DLY      // response delay
@@ -311,4 +310,4 @@ module tcb_lib_misaligned_memory_controller_tb
         $dumpvars;
     end
 
-endmodule: tcb_lib_misaligned_memory_controller_tb
+endmodule: tcb_lite_lib_misaligned_memory_controller_tb

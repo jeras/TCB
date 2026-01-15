@@ -16,7 +16,9 @@
 // limitations under the License.
 ////////////////////////////////////////////////////////////////////////////////
 
-module tcb_lite_lib_register_response_tb #(
+module tcb_lite_lib_register_response_tb
+    import tcb_lite_pkg::*;
+#(
     // RTL configuration parameters
     parameter  int unsigned  DLY =    1,  // response delay
     parameter  int unsigned  DAT =   32,  // data    width (only 32/64 are supported)

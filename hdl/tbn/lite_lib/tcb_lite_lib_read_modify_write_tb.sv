@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// TCB (Tightly Coupled Bus) library read_modify_write testbench
+// TCB-Lite (Tightly Coupled Bus) library read_modify_write testbench
 ////////////////////////////////////////////////////////////////////////////////
 // Copyright 2022 Iztok Jeras
 //
@@ -16,9 +16,8 @@
 // limitations under the License.
 ////////////////////////////////////////////////////////////////////////////////
 
-module tcb_lib_read_modify_write_tb
-    import tcb_pkg::*;
-    import tcb_vip_blocking_pkg::*;
+module tcb_lite_lib_read_modify_write_tb
+    import tcb_lite_pkg::*;
 #(
     // handshake parameter
     parameter  int unsigned      DLY = TCB_HSK_DEF.DLY      // response delay
@@ -282,7 +281,7 @@ module tcb_lib_read_modify_write_tb
 // DUT instance
 ////////////////////////////////////////////////////////////////////////////////
 
-    tcb_lib_read_modify_write dut (
+    tcb_lite_lib_read_modify_write dut (
         .sub  (tcb_man),
         .man  (tcb_sub)
     );
@@ -297,4 +296,4 @@ module tcb_lib_read_modify_write_tb
         $dumpvars;
     end
 
-endmodule: tcb_lib_read_modify_write_tb
+endmodule: tcb_lite_lib_read_modify_write_tb
