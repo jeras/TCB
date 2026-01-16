@@ -70,8 +70,8 @@ module tcb_lite_lib_interconnect
         "STAR": begin: star
 
             // TCB interfaces
-            tcb_lite_if #(tcb_sub[0].DLY, tcb_sub[0].DAT, tcb_sub[0].ADR, tcb_sub[0].MSK, tcb_sub[0].MOD) star_tcb_man (.clk (tcb_sub[0].clk), .rst (tcb_sub[0].rst));
-            tcb_lite_if #(tcb_sub[0].DLY, tcb_sub[0].DAT, tcb_sub[0].ADR, tcb_sub[0].MSK, tcb_sub[0].MOD) star_tcb_sub (.clk (tcb_sub[0].clk), .rst (tcb_sub[0].rst));
+            tcb_lite_if #(tcb_sub[0].CFG) star_tcb_man (.clk (tcb_sub[0].clk), .rst (tcb_sub[0].rst));
+            tcb_lite_if #(tcb_sub[0].CFG) star_tcb_sub (.clk (tcb_sub[0].clk), .rst (tcb_sub[0].rst));
 
             // control
             logic [SUB_IFL-1:0] arb_sel;  // arbiter select

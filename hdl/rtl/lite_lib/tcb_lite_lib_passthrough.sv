@@ -49,11 +49,13 @@ module tcb_lite_lib_passthrough
     assign man.req.lck = sub.req.lck;
     assign man.req.ndn = sub.req.ndn;
     assign man.req.wen = sub.req.wen;
+    assign man.req.ctl = sub.req.ctl;
     assign man.req.adr = sub.req.adr;
     assign man.req.siz = sub.req.siz;
     assign man.req.byt = sub.req.byt;
     assign man.req.wdt = sub.req.wdt;
     assign sub.rsp.rdt = man.rsp.rdt;
+    assign sub.rsp.sts = man.rsp.sts;
     assign sub.rsp.err = man.rsp.err;
 `else
     assign man.req = sub.req;

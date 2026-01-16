@@ -61,6 +61,7 @@ module tcb_lite_lib_demultiplexer
     // response
 `ifdef SLANG
     logic [sub.DAT-1:0] rdt [IFN-1:0];  // read data
+    logic [sub.STS-1:0] sts [IFN-1:0];  // status
     logic               err [IFN-1:0];  // bus error
 `else
     typedef sub.rsp_t rsp_t;
@@ -98,6 +99,7 @@ module tcb_lite_lib_demultiplexer
         assign man[i].req.lck = (sub_sel == i[IFL-1:0]) ? sub.req.lck : 'x;
         assign man[i].req.ndn = (sub_sel == i[IFL-1:0]) ? sub.req.ndn : 'x;
         assign man[i].req.wen = (sub_sel == i[IFL-1:0]) ? sub.req.wen : 'x;
+        assign man[i].req.ctl = (sub_sel == i[IFL-1:0]) ? sub.req.ctl : 'x;
         assign man[i].req.adr = (sub_sel == i[IFL-1:0]) ? sub.req.adr : 'x;
         assign man[i].req.siz = (sub_sel == i[IFL-1:0]) ? sub.req.siz : 'x;
         assign man[i].req.byt = (sub_sel == i[IFL-1:0]) ? sub.req.byt : 'x;
@@ -120,6 +122,7 @@ module tcb_lite_lib_demultiplexer
         // response
 `ifdef SLANG
         assign rdt[i] = man[i].rsp.rdt;
+        assign sts[i] = man[i].rsp.sts;
         assign err[i] = man[i].rsp.err;
 `else
         assign rsp[i] = man[i].rsp;
@@ -132,6 +135,7 @@ module tcb_lite_lib_demultiplexer
     // response multiplexer
 `ifdef SLANG
     assign sub.rsp.rdt = rdt[man_sel];
+    assign sub.rsp.sts = sts[man_sel];
     assign sub.rsp.err = err[man_sel];
 `else
     assign sub.rsp = rsp[man_sel];

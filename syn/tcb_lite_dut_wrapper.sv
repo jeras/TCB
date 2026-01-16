@@ -115,7 +115,8 @@ module tcb_lite_dut_wrapper #(
     case (DUT)
         "ERROR": begin: error
             tcb_lite_lib_error dut (
-                .sub  (tcb_sub[0])
+                .sub  (tcb_sub[0]),
+                .sts  ('0)
             );
         end: error
         "PASSTHROUGH": begin: passthrough

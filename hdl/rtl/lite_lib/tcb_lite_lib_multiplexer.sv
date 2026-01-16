@@ -63,13 +63,14 @@ module tcb_lite_lib_multiplexer
 
     // request
 `ifdef SLANG
-    logic               lck [IFN-1:0];  // arbitration lock
-    logic               ndn [IFN-1:0];  // endianness (0-little, 1-big)
-    logic               wen [IFN-1:0];  // write enable (0-read, 1-write)
-    logic [man.ADR-1:0] adr [IFN-1:0];  // address
-    logic [man.SIZ-1:0] siz [IFN-1:0];  // transfer size
-    logic [man.BYT-1:0] byt [IFN-1:0];  // byte enable
-    logic [man.DAT-1:0] wdt [IFN-1:0];  // write data
+    logic               lck [IFN-1:0];
+    logic               ndn [IFN-1:0];
+    logic               wen [IFN-1:0];
+    logic [man.CTL-1:0] ctl [IFN-1:0];
+    logic [man.ADR-1:0] adr [IFN-1:0];
+    logic [man.SIZ-1:0] siz [IFN-1:0];
+    logic [man.BYT-1:0] byt [IFN-1:0];
+    logic [man.DAT-1:0] wdt [IFN-1:0];
 `else
     typedef man.req_t req_t;
     req_t req [IFN-1:0];
@@ -105,6 +106,7 @@ module tcb_lite_lib_multiplexer
         assign lck[i] = sub[i].req.lck;
         assign ndn[i] = sub[i].req.ndn;
         assign wen[i] = sub[i].req.wen;
+        assign ctl[i] = sub[i].req.ctl;
         assign adr[i] = sub[i].req.adr;
         assign siz[i] = sub[i].req.siz;
         assign byt[i] = sub[i].req.byt;
@@ -122,6 +124,7 @@ module tcb_lite_lib_multiplexer
     assign man.req.lck = lck[sub_sel];
     assign man.req.ndn = ndn[sub_sel];
     assign man.req.wen = wen[sub_sel];
+    assign man.req.ctl = ctl[sub_sel];
     assign man.req.adr = adr[sub_sel];
     assign man.req.siz = siz[sub_sel];
     assign man.req.byt = byt[sub_sel];
@@ -140,6 +143,7 @@ module tcb_lite_lib_multiplexer
         // response
 `ifdef SLANG
         assign sub[i].rsp.rdt = (man_sel == i[IFL-1:0]) ? man.rsp.rdt : 'x;
+        assign sub[i].rsp.sts = (man_sel == i[IFL-1:0]) ? man.rsp.sts : 'x;
         assign sub[i].rsp.err = (man_sel == i[IFL-1:0]) ? man.rsp.err : 'x;
 `else
         assign sub[i].rsp = (man_sel == i[IFL-1:0]) ? man.rsp : '{default: 'x};

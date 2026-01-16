@@ -65,6 +65,7 @@ module tcb_lite_lib_register_backpressure
         tmp_req.ndn <= sub.req.ndn;
         tmp_req.wen <= sub.req.wen;
         tmp_req.adr <= sub.req.adr;
+        tmp_req.ctl <= sub.req.ctl;
     end
 
     generate
@@ -97,6 +98,7 @@ module tcb_lite_lib_register_backpressure
     assign man.req.lck = sub.rdy ? sub.req.lck : tmp_req.lck;
     assign man.req.ndn = sub.rdy ? sub.req.ndn : tmp_req.ndn;
     assign man.req.wen = sub.rdy ? sub.req.wen : tmp_req.wen;
+    assign man.req.ctl = sub.rdy ? sub.req.ctl : tmp_req.ctl;
     assign man.req.adr = sub.rdy ? sub.req.adr : tmp_req.adr;
     assign man.req.siz = sub.rdy ? sub.req.siz : tmp_req.siz;
     assign man.req.byt = sub.rdy ? sub.req.byt : tmp_req.byt;
@@ -106,8 +108,13 @@ module tcb_lite_lib_register_backpressure
 `endif
 
     // response
+`ifdef SLANG
     assign sub.rsp.rdt = man.rsp.rdt;
+    assign sub.rsp.sts = man.rsp.sts;
     assign sub.rsp.err = man.rsp.err;
+`else
+    assign sub.rsp = man.rsp;
+`endif
 
     // handshake
     always_ff @(posedge sub.clk, posedge sub.rst)

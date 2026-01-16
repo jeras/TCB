@@ -20,7 +20,9 @@ module tcb_lite_lib_error
     import tcb_lite_pkg::*;
 (
     // system bus interface
-    tcb_lite_if.sub sub
+    tcb_lite_if.sub sub,
+    // default response status
+    input  logic [sub.STS-1:0] sts
 );
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -34,6 +36,7 @@ module tcb_lite_lib_error
     assign sub.rsp.rdt = 'x;
 
     // the response status is always an error
+    assign sub.rsp.sts =  sts;
     assign sub.rsp.err = 1'b1;
 
 endmodule: tcb_lite_lib_error

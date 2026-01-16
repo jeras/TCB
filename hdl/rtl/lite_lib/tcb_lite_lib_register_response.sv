@@ -55,6 +55,7 @@ module tcb_lite_lib_register_response
     assign man.req.lck = sub.req.lck;
     assign man.req.ndn = sub.req.ndn;
     assign man.req.wen = sub.req.wen;
+    assign man.req.ctl = sub.req.ctl;
     assign man.req.adr = sub.req.adr;
     assign man.req.siz = sub.req.siz;
     assign man.req.byt = sub.req.byt;
@@ -88,6 +89,7 @@ module tcb_lite_lib_register_response
     always_ff @(posedge man.clk)
     begin
         if (man.trn_dly[man.DLY]) begin
+            sub.rsp.sts <= man.rsp.sts;
             sub.rsp.err <= man.rsp.err;
         end
     end
