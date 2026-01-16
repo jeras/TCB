@@ -16,7 +16,9 @@
 // limitations under the License.
 ////////////////////////////////////////////////////////////////////////////////
 
-module tcb_lite_vip_subordinate (
+module tcb_lite_vip_subordinate
+    import tcb_lite_pkg::*;
+(
     // system bus interface
     tcb_lite_if tcb
 );

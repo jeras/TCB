@@ -69,7 +69,7 @@ module tcb_lite_lib_read_modify_write_tb
         PMA: TCB_PMA_DEF
     };
 
-    localparam tcb_vip_t VIP = '{
+    localparam tcb_lite_vip_t VIP = '{
         DRV: 1'b1
     };
 
@@ -95,8 +95,8 @@ module tcb_lite_lib_read_modify_write_tb
     tcb_if #(tcb_cfg_t, CFG_SUB, req_t, rsp_t) tcb_sub (.clk (clk), .rst (rst));
 
     // parameterized class specialization (blocking API)
-    typedef tcb_vip_blocking_c #(tcb_cfg_t, CFG_MAN, req_t, rsp_t) tcb_man_s;
-    typedef tcb_vip_blocking_c #(tcb_cfg_t, CFG_SUB, req_t, rsp_t) tcb_sub_s;
+    typedef tcb_lite_vip_blocking_c #(tcb_cfg_t, CFG_MAN, req_t, rsp_t) tcb_man_s;
+    typedef tcb_lite_vip_blocking_c #(tcb_cfg_t, CFG_SUB, req_t, rsp_t) tcb_sub_s;
 
     // TCB class objects
     tcb_man_s obj_man = new(tcb_man, "MAN");
@@ -253,11 +253,11 @@ module tcb_lite_lib_read_modify_write_tb
 // VIP instances
 ////////////////////////////////////////////////////////////////////////////////
 
-    tcb_vip_protocol_checker chk_man (
+    tcb_lite_vip_protocol_checker chk_man (
         .tcb (tcb_man)
     );
 
-    tcb_vip_protocol_checker chk_sub (
+    tcb_lite_vip_protocol_checker chk_sub (
         .tcb (tcb_sub)
     );
 

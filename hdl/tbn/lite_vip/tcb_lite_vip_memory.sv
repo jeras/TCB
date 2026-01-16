@@ -16,7 +16,9 @@
 // limitations under the License.
 ////////////////////////////////////////////////////////////////////////////////
 
-module tcb_lite_vip_memory #(
+module tcb_lite_vip_memory
+    import tcb_lite_pkg::*;
+#(
     // memory file name
     parameter  string        MFN = "",
     // memory size

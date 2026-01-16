@@ -19,22 +19,25 @@
 interface tcb_lite_if
     import tcb_lite_pkg::*;
 #(
-    // RTL configuration parameters
-    parameter  int unsigned  DLY =    1,  // response delay
-    parameter  int unsigned  DAT =   32,  // data    width (only 32/64 are supported)
-    parameter  int unsigned  ADR =  DAT,  // address width (only 32/64 are supported)
-    parameter  bit [ADR-1:0] MSK =   '1,  // address mask
-    parameter  bit           MOD = 1'b1,  // bus mode (0-logarithmic size, 1-byte enable)
-    // VIP configuration parameters
-    parameter  bit           VIP = 1'b0,  // enable VIP functionality
-    parameter  bit           HLD = 1'b0   // hold last response stable
+    // configuration parameters
+    parameter tcb_lite_cfg_t CFG = TCB_LITE_CFG_DEF,
+    // enable testbench VIP functionality
+    parameter bit            VIP = 1'b0
 )(
     // system signals
     input  logic clk,  // clock
     input  logic rst   // reset
 );
 
-    // local parameters
+    // local handshake parameters (configuration shorthand)
+    localparam int unsigned DLY = CFG.HSK.DLY;  // response delay
+    localparam bit          HLD = CFG.HSK.HLD;  // response hold
+    localparam bit          MOD = CFG.BUS.MOD;  // bus mode (0-logarithmic size, 1-byte enable)
+    localparam int unsigned CTL = CFG.BUS.CTL;  // control width (user defined request signals)
+    localparam int unsigned ADR = CFG.BUS.ADR;  // address width
+    localparam int unsigned DAT = CFG.BUS.DAT;  // data    width
+    localparam int unsigned STS = CFG.BUS.STS;  // status  width (user defined response signals)
+    // local parameters (calculated from configuration)
     localparam int unsigned BYT = DAT/8;          // byte enable width
     localparam int unsigned MAX = $clog2(BYT);    // maximum logarithmic size
     localparam int unsigned SIZ = $clog2(MAX+1);  // logarithmic size width
@@ -44,6 +47,7 @@ interface tcb_lite_if
         logic           lck;  // arbitration lock
         logic           ndn;  // endianness (0-little, 1-big)
         logic           wen;  // write enable (0-read, 1-write)
+        logic [CTL-1:0] ctl;  // control (user defined request signals)
         logic [ADR-1:0] adr;  // address
         logic [SIZ-1:0] siz;  // transfer size
         logic [BYT-1:0] byt;  // byte enable
@@ -53,6 +57,7 @@ interface tcb_lite_if
     // response type
     typedef struct {
         logic [DAT-1:0] rdt;  // read data
+        logic [STS-1:0] sts;  // status (user defined response signals)
         logic           err;  // bus error
     } rsp_t;
 

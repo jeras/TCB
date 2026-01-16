@@ -16,7 +16,9 @@
 // limitations under the License.
 ////////////////////////////////////////////////////////////////////////////////
 
-module tcb_lite_vip_manager (
+module tcb_lite_vip_manager
+    import tcb_lite_pkg::*;
+(
     // system bus interface
     tcb_lite_if.man tcb
 );

@@ -3,18 +3,17 @@ yosys -import
 
 set PATH_HDL "../hdl"
 
-#foreach dut { \
-#    "ERROR" \
-#    "PASSTHROUGH" \
-#    "REGISTER_REQUEST" \
-#    "REGISTER_RESPONSE" \
-#    "REGISTER_BACKPRESSURE" \
-#    "LOGSIZE2BYTEENA_ALIGNED_FALSE" \
-#    "LOGSIZE2BYTEENA_ALIGNED_TRUE" \
-#    "ARBITER_MULTIPLEXER" \
-#    "DECODER_DEMULTIPLEXER" \
-#}
-foreach dut {"DECODER_DEMULTIPLEXER"} {
+foreach dut { \
+    "ERROR" \
+    "PASSTHROUGH" \
+    "REGISTER_REQUEST" \
+    "REGISTER_RESPONSE" \
+    "REGISTER_BACKPRESSURE" \
+    "LOGSIZE2BYTEENA_ALIGNED_FALSE" \
+    "LOGSIZE2BYTEENA_ALIGNED_TRUE" \
+    "ARBITER_MULTIPLEXER" \
+    "DECODER_DEMULTIPLEXER" \
+} {
     if {$dut == "ARBITER_MULTIPLEXER"   || $dut == "PASSTHROUGH"} { set sub_ifn 2 } else { set sub_ifn 1 }
     if {$dut == "DECODER_DEMULTIPLEXER" || $dut == "PASSTHROUGH"} { set man_ifn 2 } else { set man_ifn 1 }
 

@@ -19,10 +19,13 @@
 module tcb_lite_dut_wrapper #(
     // RTL configuration parameters
     parameter  int unsigned  DLY =    1,  // response delay
-    parameter  int unsigned  DAT =   32,  // data    width (only 32/64 are supported)
-    parameter  int unsigned  ADR =  DAT,  // address width (only 32/64 are supported)
-    parameter  bit [ADR-1:0] MSK =   '1,  // address mask
+    parameter  bit           HLD = 1'b0,  // response delay
     parameter  bit           MOD = 1'b1,  // bus mode (0-logarithmic size, 1-byte enable)
+    parameter  int unsigned  CTL =    0,  // control width (user defined request signals)
+    parameter  int unsigned  ADR =   32,  // address width (only 32/64 are supported)
+    parameter  int unsigned  DAT =   32,  // data    width (only 32/64 are supported)
+    parameter  int unsigned  STS =    0,  // status  width (user defined response signals)
+//  parameter  bit [ADR-1:0] MSK =   '1,  // address mask
     // local parameters
     localparam int unsigned  BYT = DAT/8,        // byte enable width
     localparam int unsigned  MAX = $clog2(BYT),  // maximum logarithmic size
@@ -63,6 +66,8 @@ module tcb_lite_dut_wrapper #(
     input  logic           man_rsp_err[MAN_IFN-1:0]   // response: bus error
 );
 
+    import tcb_lite_pkg::*;
+
 ////////////////////////////////////////////////////////////////////////////////
 // local signals
 ////////////////////////////////////////////////////////////////////////////////
@@ -76,9 +81,13 @@ module tcb_lite_dut_wrapper #(
     localparam int unsigned MAN_DLY =                                                                         DLY;
     // TODO: test assertions
 
+    // TCB configurations
+    localparam tcb_lite_cfg_t SUB_CFG = '{HSK: '{SUB_DLY, HLD}, BUS: '{MOD, CTL, ADR, DAT, STS}};
+    localparam tcb_lite_cfg_t MAN_CFG = '{HSK: '{MAN_DLY, HLD}, BUS: '{MOD, CTL, ADR, DAT, STS}};
+
     // TCB interfaces
-    tcb_lite_if #(SUB_DLY, DAT, ADR, MSK, MOD) tcb_sub [SUB_IFN-1:0] (.clk (clk), .rst (rst));
-    tcb_lite_if #(MAN_DLY, DAT, ADR, MSK, MOD) tcb_man [MAN_IFN-1:0] (.clk (clk), .rst (rst));
+    tcb_lite_if #(SUB_CFG) tcb_sub [SUB_IFN-1:0] (.clk (clk), .rst (rst));
+    tcb_lite_if #(MAN_CFG) tcb_man [MAN_IFN-1:0] (.clk (clk), .rst (rst));
 
 ////////////////////////////////////////////////////////////////////////////////
 // DUT instances

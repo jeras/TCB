@@ -43,7 +43,7 @@ module tcb_lite_lib_multiplexer
             assert (man.DLY == sub[i].DLY) else $error("Parameter (man.DLY = %p) != (sub[%0d].DLY = %p)", man.DLY, i, sub[i].DLY);
             assert (man.DAT == sub[i].DAT) else $error("Parameter (man.DAT = %p) != (sub[%0d].DAT = %p)", man.DAT, i, sub[i].DAT);
             assert (man.ADR == sub[i].ADR) else $error("Parameter (man.ADR = %p) != (sub[%0d].ADR = %p)", man.ADR, i, sub[i].ADR);
-            assert (man.MSK == sub[i].MSK) else $error("Parameter (man.MSK = %p) != (sub[%0d].MSK = %p)", man.MSK, i, sub[i].MSK);
+//            assert (man.MSK == sub[i].MSK) else $error("Parameter (man.MSK = %p) != (sub[%0d].MSK = %p)", man.MSK, i, sub[i].MSK);
             assert (man.MOD == sub[i].MOD) else $error("Parameter (man.MOD = %p) != (sub[%0d].MOD = %p)", man.MOD, i, sub[i].MOD);
         end
     end: param

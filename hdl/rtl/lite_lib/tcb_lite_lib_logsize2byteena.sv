@@ -36,7 +36,7 @@ module tcb_lite_lib_logsize2byteena
         assert (man.DLY == sub.DLY) else $error("Parameter (man.DLY = %p) != (sub.DLY = %p)", man.DLY, sub.DLY);
         assert (man.DAT == sub.DAT) else $error("Parameter (man.DAT = %p) != (sub.DAT = %p)", man.DAT, sub.DAT);
         assert (man.ADR == sub.ADR) else $error("Parameter (man.ADR = %p) != (sub.ADR = %p)", man.ADR, sub.ADR);
-        assert (man.MSK == sub.MSK) else $error("Parameter (man.MSK = %p) != (sub.MSK = %p)", man.MSK, sub.MSK);
+//        assert (man.MSK == sub.MSK) else $error("Parameter (man.MSK = %p) != (sub.MSK = %p)", man.MSK, sub.MSK);
 
         assert (man.MOD == 1'b1)    else $error("Parameter (man.MOD = %p) != 1'b1"          , man.MOD);
         assert (sub.MOD == 1'b0)    else $error("Parameter (sub.MOD = %p) != 1'b0"          , sub.MOD);

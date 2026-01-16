@@ -90,8 +90,8 @@ module tcb_lite_lib_arbiter
     assign sel_cmb = PRI[encode(reorder(tcb_vld, PRI))];
 
     // locking
-    always_ff @(posedge sub[0].clk, posedge sub[0].rst)
-    if (sub[0].rst) begin
+    always_ff @(posedge mon[0].clk, posedge mon[0].rst)
+    if (mon[0].rst) begin
         sel_lck <= 1'b0;
     end else begin
         if (tcb_trn[sel_cmb]) begin
@@ -101,7 +101,7 @@ module tcb_lite_lib_arbiter
     end
 
     // registered select
-    always_ff @(posedge sub[0].clk)
+    always_ff @(posedge mon[0].clk)
     if (tcb_trn[sel_cmb] & tcb_lck[sel_cmb]) begin
         sel_reg <= sel_cmb;
     end

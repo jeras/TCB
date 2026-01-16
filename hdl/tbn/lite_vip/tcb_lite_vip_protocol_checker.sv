@@ -16,7 +16,9 @@
 // limitations under the License.
 ////////////////////////////////////////////////////////////////////////////////
 
-module tcb_lite_vip_protocol_checker (
+module tcb_lite_vip_protocol_checker
+    import tcb_lite_pkg::*;
+(
     // TCB interface
     tcb_lite_if.mon tcb
 );
