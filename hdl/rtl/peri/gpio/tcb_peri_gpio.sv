@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// TCB interface: GPIO controller
+// TCB peripheral: GPIO controller
 //
 // NOTE: In case this module is connected to asynchronous signals,
 //       the input signals `gpio_i` require a CDC synchronizer.
@@ -22,20 +22,29 @@
 
 module tcb_peri_gpio #(
     // GPIO parameters
-    int unsigned GW = 32,   // GPIO width
-    int unsigned CFG_CDC = 2,     // implement clock domain crossing stages (0 - bypass)
-    // TCB parameters
-    bit          CFG_RSP_REG = 1'b1,  // register response path (by default the response is registered giving a CFG.HSK.DLY of 1)
-    bit          CFG_RSP_MIN = 1'b0,  // minimalistic response implementation
-    // implementation device (ASIC/FPGA vendor/device)
-    string       CHIP = ""
+    parameter  int unsigned GDW = 32,  // GPIO data width
+    parameter  int unsigned CDC =  2,  // implement clock domain crossing stages (0 - bypass)
+    // system interface parameters
+    localparam int unsigned ADR = 2,
+    parameter  int unsigned DAT = 32,
+    parameter  bit          CFG_RSP_REG = 1'b1,  // register response path (by default the response is registered giving a CFG.HSK.DLY of 1)
+    parameter  bit          CFG_RSP_MIN = 1'b0   // minimalistic response implementation
 )(
     // GPIO signals
-    output logic [GW-1:0] gpio_o,
-    output logic [GW-1:0] gpio_e,
-    input  logic [GW-1:0] gpio_i,
-    // TCB interface
-    tcb_if.sub tcb
+    output logic [GDW-1:0] gpio_o,
+    output logic [GDW-1:0] gpio_e,
+    input  logic [GDW-1:0] gpio_i,
+    // system signals
+    input  logic           clk,  // clock
+    input  logic           rst,  // reset
+    // system write interface
+    input  logic           wen,  // write enable
+    input  logic [ADR-1:0] wad,  // write address
+    input  logic [DAT-1:0] wdt,  // write data
+    // system read interface
+    input  logic           ren,  // read enable
+    input  logic [ADR-1:0] rad,  // read address
+    output logic [DAT-1:0] rdt   // read data
 );
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -43,65 +52,66 @@ module tcb_peri_gpio #(
 ////////////////////////////////////////////////////////////////////////////////
 
     initial begin
-        assert (tcb.CFG.HSK.DLY ==  0) else $error("unsupported CFG.HSK.DLY = %0d", tcb.CFG.HSK.DLY);
-        assert (tcb.CFG.BUS.DAT >= GW) else $error("unsupported (CFG.BUS.DAT = %0d) < (GW = %0d)", tcb.CFG.BUS.DAT, GW);
+        assert (DAT >= GDW) else $error("More GPIO signals (GDW=%0d) than system bus data width (DAT=%0d).", GDW, DAT);
     end
 
 ////////////////////////////////////////////////////////////////////////////////
-// clock domain crossing
+// local signals
+////////////////////////////////////////////////////////////////////////////////
+
+    // GPIO registers
+    logic [DAT-1:0] gpio_oe;
+    logic [DAT-1:0] gpio_od;
+    logic [DAT-1:0] gpio_ie;
+    logic [DAT-1:0] gpio_id;
+
+////////////////////////////////////////////////////////////////////////////////
+// GPIO output drivers
+////////////////////////////////////////////////////////////////////////////////
+
+    assign gpio_o = GDW'(gpio_od);  // output data   register cast to GPIO out
+    assign gpio_e = GDW'(gpio_oe);  // output enable register cast to GPIO ena
+
+////////////////////////////////////////////////////////////////////////////////
+// GPIO input CDC (clock domain crossing)
 ////////////////////////////////////////////////////////////////////////////////
 
     // read value
-    logic [GW-1:0] gpio_r;
+    logic [GDW-1:0] gpio_r;
 
     generate
-    if (CFG_CDC > 0) begin: gen_cdc
+    if (CDC > 1) begin: gen_cdc_stages
 
-        // GPIO input synchronizer
-        if ((CHIP == "ARTIX_XPM") || (CHIP == "ARTIX_GEN")) begin: gen_artix
+        tcb_peri_gpio_cdc #(
+            .GDW (GDW),
+            .CDC (CDC)
+        ) cdc (
+            .gpio_i  (gpio_i),
+            .gpio_r  (gpio_r)
+        );
 
-            // xpm_cdc_array_single: Single-bit Array Synchronizer
-            // Xilinx Parameterized Macro, version 2021.2
-            xpm_cdc_array_single #(
-                .DEST_SYNC_FF   (CFG_CDC),  // DECIMAL; range: 2-10
-                .INIT_SYNC_FF   (0),        // DECIMAL; 0=disable simulation init values, 1=enable simulation init values
-                .SIM_ASSERT_CHK (0),        // DECIMAL; 0=disable simulation messages, 1=enable simulation messages
-                .SRC_INPUT_REG  (0),        // DECIMAL; 0=do not register input, 1=register input
-                .WIDTH          (GW)        // DECIMAL; range: 1-1024
-            ) gpio_cdc (
-                .src_clk  (tcb.clk),
-                .src_in   (gpio_i),
-                .dest_clk (tcb.clk),
-                .dest_out (gpio_r)
-            );
+    end: gen_cdc_stages
+    else if (CDC == 1) begin: gen_cdc_error
 
-        end: gen_artix
-        else begin: gen_default
+        initial $error("GPIO CDC of a single stage is not supported.");
 
-            // temporary signal for synchronization
-            logic [CFG_CDC-2:0][GW-1:0] gpio_t;
-
-            // asynchronous input synchronization
-            always_ff @(posedge tcb.clk, posedge tcb.rst)
-            if (tcb.rst) begin
-                {gpio_r, gpio_t} <= '0;
-            end else begin
-                {gpio_r, gpio_t} <= {gpio_t, gpio_i};
-            end
-
-        end: gen_default
-
-    end: gen_cdc
-    else begin: gen_nocdc
+    end: gen_cdc_error
+    else begin: gen_cdc_bypass
 
         // bypass CDC code
         assign gpio_r = gpio_i;
 
-    end: gen_nocdc
+        // NOTE: the assumption is, it is done externally
+        initial $warning("GPIO CDC bypass, assuming it is done externally.");
+
+    end: gen_cdc_bypass
     endgenerate
 
+    // system access mapping
+    assign gpio_id = gpio_ie & DAT'(gpio_r);
+
 ////////////////////////////////////////////////////////////////////////////////
-// TCB read access
+// system read access
 ////////////////////////////////////////////////////////////////////////////////
 
     // read access
@@ -110,19 +120,19 @@ module tcb_peri_gpio #(
     if (CFG_RSP_MIN) begin: gen_rsp_min
 
         // only the GPIO input can be read
-        assign tcb.rsp.rdt = gpio_r;
+        assign rdt = gpio_id;
 
     end: gen_rsp_min
     // normal implementation
     else begin: gen_rsp_nrm
 
-        // GPIO output/enable registers and GPIO input are decoded
+        // GPIO output/input enable/data are decoded
         always_comb
-        case (tcb.req.adr[4-1:0])
-            4'h0:    tcb.rsp.rdt = gpio_o;
-            4'h4:    tcb.rsp.rdt = gpio_e;
-            4'h8:    tcb.rsp.rdt = gpio_r;
-            default: tcb.rsp.rdt = 'x;
+        case (rad)
+            2'd0:    rdt = gpio_oe;  // output enable
+            2'd1:    rdt = gpio_od;  // output data
+            2'd2:    rdt = gpio_ie;  // input enable
+            default: rdt = gpio_id;  // input data
         endcase
 
     end: gen_rsp_nrm
@@ -132,32 +142,19 @@ module tcb_peri_gpio #(
 // TCB write access
 ////////////////////////////////////////////////////////////////////////////////
 
-    logic [tcb.CFG.BUS.DAT-1:0] wdt;
-
-    // casting write data
-    assign wdt = tcb.req.wdt;
-
     // write output and output enable
-    always_ff @(posedge tcb.clk, posedge tcb.rst)
-    if (tcb.rst) begin
+    always_ff @(posedge clk, posedge rst)
+    if (rst) begin
         gpio_o <= '0;
         gpio_e <= '0;
-    end else if (tcb.trn) begin
-        if (tcb.req.wen) begin
-            // write access
-            case (tcb.req.adr[4-1:0])
-                4'h0:    gpio_o <= wdt[GW-1:0];
-                4'h4:    gpio_e <= wdt[GW-1:0];
-                default: ;  // do nothing
-            endcase
-        end
+    end else if (wen) begin
+        // write access
+        case (rad)
+            2'h0:    gpio_oe <= wdt[GDW-1:0];
+            2'h1:    gpio_od <= wdt[GDW-1:0];
+            2'h2:    gpio_ie <= wdt[GDW-1:0];
+            default: ;  // do nothing
+        endcase
     end
 
-    // controller response is immediate
-    assign tcb.rdy = 1'b1;
-
-    // there are no error cases
-    assign tcb.rsp.sts = '0;
-
 endmodule: tcb_peri_gpio
-

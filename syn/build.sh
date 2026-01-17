@@ -1,3 +1,3 @@
 #! /bin/bash
 
-yosys -m slang
+yosys -m slang build.tcl

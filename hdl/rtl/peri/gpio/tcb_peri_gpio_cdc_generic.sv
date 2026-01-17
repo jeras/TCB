@@ -1,0 +1,50 @@
+////////////////////////////////////////////////////////////////////////////////
+// TCB peripheral: GPIO controller: generic CDC implementation for inference
+////////////////////////////////////////////////////////////////////////////////
+// Copyright 2023 Iztok Jeras
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+////////////////////////////////////////////////////////////////////////////////
+
+module tcb_peri_gpio_cdc #(
+    // GPIO parameters
+    parameter  int unsigned GDW = 32,  // GPIO data width
+    parameter  int unsigned CDC =  2   // implement clock domain crossing stages (0 - bypass)
+)(
+    // system signals
+    input  logic           clk,  // clock
+    input  logic           rst,  // reset
+    // GPIO signals
+    input  logic [GDW-1:0] gpio_i,
+    output logic [GDW-1:0] gpio_r
+);
+
+////////////////////////////////////////////////////////////////////////////////
+// GPIO input CDC (clock domain crossing)
+////////////////////////////////////////////////////////////////////////////////
+
+    // temporary signal for synchronization
+    logic [GDW-1:0] gpio_t [CDC-1:0];
+
+    // asynchronous input synchronization
+    always_ff @(posedge clk, posedge rst)
+    if (rst) begin
+        gpio_t <= '{default: '0};
+    end else begin
+        gpio_t[CDC-1:1] <= gpio_t[CDC-2:0];
+        gpio_t[      0] <= gpio_i;
+    end
+
+    assign gpio_r = gpio_t[CDC-1];
+
+endmodule: tcb_peri_gpio_cdc
