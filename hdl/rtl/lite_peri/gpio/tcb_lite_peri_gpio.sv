@@ -22,18 +22,22 @@
 
 module tcb_lite_peri_gpio #(
     // GPIO parameters
-    int unsigned GDW = 32,  // GPIO data width
-    int unsigned CDC =  2,  // implement clock domain crossing stages (0 - bypass)
-    // TCB parameters
-    bit          CFG_RSP_REG = 1'b1,  // register response path (by default the response is registered giving a CFG.HSK.DLY of 1)
-    bit          CFG_RSP_MIN = 1'b0   // minimalistic response implementation
+    parameter  int unsigned GDW = 32,  // GPIO data width
+    parameter  int unsigned CDC =  2,  // implement clock domain crossing stages (0 - bypass)
+    // optional implementation configuration
+    parameter  bit           CFG_IEN =   '0,  // input enable implementation
+    parameter  bit [GDW-1:0] CFG_IRQ =   '1,  // interrupt request implementation mask
+    parameter  bit           CFG_MIN = 1'b0   // minimalistic response implementation (configuration is write only)
+    // NOTE 1: if none of the interrupts are enabled, the controller has a smaller address space
 )(
     // GPIO signals
     output logic [GDW-1:0] gpio_o,
     output logic [GDW-1:0] gpio_e,
     input  logic [GDW-1:0] gpio_i,
     // TCB interface
-    tcb_lite_if.sub sub
+    tcb_lite_if.sub sub,
+    // IRQ interface
+    output logic irq
 );
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -41,43 +45,54 @@ module tcb_lite_peri_gpio #(
 ////////////////////////////////////////////////////////////////////////////////
 
     initial begin
-        assert (sub.DLY ==   0) else $error("unsupported CFG.HSK.DLY = %0d", sub.DLY);
-        assert (sub.DAT >= GDW) else $error("unsupported (CFG.BUS.DAT = %0d) < (GW = %0d)", sub.DAT, GDW);
+        assert (sub.DLY ==   0) else $error("unsupported DLY = %0d (must be 0)", sub.DLY);
+        assert (sub.DAT >= GDW) else $error("unsupported (DAT = %0d) < (GDW = %0d)", sub.DAT, GDW);
     end
-
-////////////////////////////////////////////////////////////////////////////////
-// local signals
-////////////////////////////////////////////////////////////////////////////////
-
 
 ////////////////////////////////////////////////////////////////////////////////
 // GPIO instance
 ////////////////////////////////////////////////////////////////////////////////
 
+    logic [3-1:0] sys_req_adr;
+
+    // check whether at least one GPIO pin has enabled interrupt support
+    generate
+    if (~CFG_IRQ) begin
+        assign sys_req_adr =        sub.req.adr[sub.MAX+:3];
+    end else begin
+        assign sys_req_adr = {1'b0, sub.req.adr[sub.MAX+:2]};
+    end
+    endgenerate
+
+
     tcb_peri_gpio #(
         // GPIO parameters
-        .GDW          (GDW),
-        .CDC          (CDC),
+        .GDW      (GDW),
+        .CDC      (CDC),
         // system interface parameters
-        .DAT          (sub.DAT),
-        .CFG_RSP_REG  (CFG_RSP_REG),
-        .CFG_RSP_MIN  (CFG_RSP_MIN)
+        .DAT      (sub.DAT),
+        // optional implementation configuration
+        .CFG_IEN  (CFG_IEN),
+        .CFG_IRQ  (CFG_IRQ),
+        .CFG_MIN  (CFG_MIN)
     ) gpio (
         // GPIO signals
-        .gpio_o  (gpio_o),
-        .gpio_e  (gpio_e),
-        .gpio_i  (gpio_i),
+        .gpio_o   (gpio_o),
+        .gpio_e   (gpio_e),
+        .gpio_i   (gpio_i),
         // system signals
-        .clk  (sub.clk),
-        .rst  (sub.rst),
+        .clk      (sub.clk),
+        .rst      (sub.rst),
         // system write interface
-        .wen  (sub.req.wen & sub.trn),
-        .wad  (sub.req.adr[sub.MAX+:2]),
-        .wdt  (sub.req.wdt),
+        .sys_wen  (sub.req.wen & sub.trn),
+        .sys_wad  (sys_req_adr),
+        .sys_wdt  (sub.req.wdt),
         // system read interface
-        .ren  (~sub.req.wen & sub.trn),
-        .rad  (sub.req.adr[sub.MAX+:2]),
-        .rdt  (sub.rsp.rdt)
+        .sys_ren  (~sub.req.wen & sub.trn),
+        .sys_rad  (sys_req_adr),
+        .sys_rdt  (sub.rsp.rdt),
+        // interrupt request interface
+        .irq      (irq)
     );
 
     // status response

@@ -25,10 +25,13 @@ module tcb_peri_gpio #(
     parameter  int unsigned GDW = 32,  // GPIO data width
     parameter  int unsigned CDC =  2,  // implement clock domain crossing stages (0 - bypass)
     // system interface parameters
-    localparam int unsigned ADR = 2,
+    localparam int unsigned ADR = 3,
     parameter  int unsigned DAT = 32,
-    parameter  bit          CFG_RSP_REG = 1'b1,  // register response path (by default the response is registered giving a CFG.HSK.DLY of 1)
-    parameter  bit          CFG_RSP_MIN = 1'b0   // minimalistic response implementation
+    // optional implementation configuration
+    parameter  bit           CFG_IEN =   '0,  // input enable implementation
+    parameter  bit [GDW-1:0] CFG_IRQ =   '1,  // interrupt request implementation mask
+    parameter  bit           CFG_MIN = 1'b0   // minimalistic response implementation (configuration is write only)
+    // NOTE 1: if none of the interrupts are enabled, the controller has a smaller address space
 )(
     // GPIO signals
     output logic [GDW-1:0] gpio_o,
@@ -37,14 +40,16 @@ module tcb_peri_gpio #(
     // system signals
     input  logic           clk,  // clock
     input  logic           rst,  // reset
-    // system write interface
-    input  logic           wen,  // write enable
-    input  logic [ADR-1:0] wad,  // write address
-    input  logic [DAT-1:0] wdt,  // write data
-    // system read interface
-    input  logic           ren,  // read enable
-    input  logic [ADR-1:0] rad,  // read address
-    output logic [DAT-1:0] rdt   // read data
+    // system bus write interface
+    input  logic           sys_wen,  // write enable
+    input  logic [ADR-1:0] sys_wad,  // write address
+    input  logic [DAT-1:0] sys_wdt,  // write data
+    // system bus read interface
+    input  logic           sys_ren,  // read enable
+    input  logic [ADR-1:0] sys_rad,  // read address
+    output logic [DAT-1:0] sys_rdt,  // read data
+    // interrupt request interface
+    output logic           irq
 );
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -59,11 +64,24 @@ module tcb_peri_gpio #(
 // local signals
 ////////////////////////////////////////////////////////////////////////////////
 
-    // GPIO registers
-    logic [DAT-1:0] gpio_oe;
-    logic [DAT-1:0] gpio_od;
-    logic [DAT-1:0] gpio_ie;
-    logic [DAT-1:0] gpio_id;
+    // GPIO data registers
+    // TODO: using GDW would make more sense
+    logic [DAT-1:0] gpio_oe;  // output enable
+    logic [DAT-1:0] gpio_od;  // output data
+    logic [DAT-1:0] gpio_ie;  // input enable
+    logic [DAT-1:0] gpio_id;  // input data
+
+    // GPIO interrupt registers
+    logic [GDW-1:0] irq_ena;  // interrupt enable
+    logic [GDW-1:0] irq_mod;  // mode (0-value, 1-edge pulse)
+    logic [GDW-1:0] irq_pol;  // value/edge polarity (0-low/falling, 1-high/rising);
+
+    // GPIO interrupt signals
+    logic [GDW-1:0] irq_val;  // interrupt value input
+    logic [GDW-1:0] irq_dly;  // interrupt delay register
+    logic [GDW-1:0] irq_edg;  // interrupt edge detection status
+    logic [GDW-1:0] irq_sts;  // interrupt status
+    logic [GDW-1:0] irq_clr;  // interrupt clear
 
 ////////////////////////////////////////////////////////////////////////////////
 // GPIO output drivers
@@ -84,9 +102,11 @@ module tcb_peri_gpio #(
 
         tcb_peri_gpio_cdc #(
             .GDW (GDW),
-            .CDC (CDC)
+            .CDC (CDC),
+            .IEN (CFG_IEN)
         ) cdc (
             .gpio_i  (gpio_i),
+            .gpio_e  (gpio_e),
             .gpio_r  (gpio_r)
         );
 
@@ -111,16 +131,45 @@ module tcb_peri_gpio #(
     assign gpio_id = gpio_ie & DAT'(gpio_r);
 
 ////////////////////////////////////////////////////////////////////////////////
+// interrupt logic
+////////////////////////////////////////////////////////////////////////////////
+
+    // synchronized GPIO inputs are used as input value into interrupt logic
+    // NOTE: interrupt enable is used early to minimize power
+    assign irq_val = (gpio_r ^ irq_pol) & irq_ena;
+
+    // input values are delayed (only the ones in edge mode, to save power)
+    always_ff @(posedge clk, posedge rst)
+    if (rst)  irq_dly <= '0;
+    else      irq_dly <= irq_ena & irq_mod;
+
+    // edge detection registers
+    always_ff @(posedge clk, posedge rst)
+    if (rst)  irq_dly <= '0;
+    else      irq_edg <= (irq_val ^ irq_dly) & ~irq_clr;
+
+    // either a level or pulse
+    assign irq_sts = (irq_val & ~irq_mod) | (irq_edg & irq_mod);
+
+    // unary OR of interrupt status masked by interrupt enable (both programmable and parameter)
+    assign irq = |(irq_sts & CFG_IRQ);
+
+////////////////////////////////////////////////////////////////////////////////
 // system read access
 ////////////////////////////////////////////////////////////////////////////////
 
     // read access
     generate
     // minimalistic implementation
-    if (CFG_RSP_MIN) begin: gen_rsp_min
+    if (CFG_MIN) begin: gen_rsp_min
 
-        // only the GPIO input can be read
-        assign rdt = gpio_id;
+        // only the status can be read (configuration is write only)
+        always_comb
+        case (sys_rad)
+            3'd3: sys_rdt = gpio_id;  // GPIO input data
+            3'd7: sys_rdt = irq_sts;  // IRQ status
+            default: sys_rdt = 'x;
+        endcase
 
     end: gen_rsp_min
     // normal implementation
@@ -128,11 +177,15 @@ module tcb_peri_gpio #(
 
         // GPIO output/input enable/data are decoded
         always_comb
-        case (rad)
-            2'd0:    rdt = gpio_oe;  // output enable
-            2'd1:    rdt = gpio_od;  // output data
-            2'd2:    rdt = gpio_ie;  // input enable
-            default: rdt = gpio_id;  // input data
+        case (sys_rad)
+            3'd0: sys_rdt = gpio_oe;  // GPIO output enable
+            3'd1: sys_rdt = gpio_od;  // GPIO output data
+            3'd2: sys_rdt = gpio_ie;  // GPIO input enable
+            3'd3: sys_rdt = gpio_id;  // GPIO input data
+            3'd4: sys_rdt = irq_ena;  // IRQ enable
+            3'd5: sys_rdt = irq_mod;  // IRQ mode
+            3'd6: sys_rdt = irq_pol;  // IRQ polarity
+            3'd7: sys_rdt = irq_sts;  // IRQ status
         endcase
 
     end: gen_rsp_nrm
@@ -145,16 +198,30 @@ module tcb_peri_gpio #(
     // write output and output enable
     always_ff @(posedge clk, posedge rst)
     if (rst) begin
-        gpio_o <= '0;
-        gpio_e <= '0;
-    end else if (wen) begin
-        // write access
-        case (rad)
-            2'h0:    gpio_oe <= wdt[GDW-1:0];
-            2'h1:    gpio_od <= wdt[GDW-1:0];
-            2'h2:    gpio_ie <= wdt[GDW-1:0];
-            default: ;  // do nothing
-        endcase
+        gpio_oe <= '0;
+        gpio_od <= '0;
+        gpio_ie <= '0;
+        irq_ena <= '0;
+        irq_mod <= '0;
+        irq_pol <= '0;
+    end else begin
+        if (sys_wen) begin
+            // write access
+            case (sys_wad)
+                3'h0: gpio_oe <= GDW'(sys_wdt);
+                3'h1: gpio_od <= GDW'(sys_wdt);
+                3'h2: gpio_ie <= GDW'(sys_wdt);
+            //  3'h3
+                3'd4: irq_ena <= GDW'(sys_wdt);
+                3'd5: irq_mod <= GDW'(sys_wdt);
+                3'd6: irq_pol <= GDW'(sys_wdt);
+            //  3'd7:
+                default: ;  // do nothing
+            endcase
+        end
     end
+
+    // interrupt clear pulse on write to interrupt status register
+    assign irq_clr = (sys_wen & (sys_wad == 3'd7)) ? GDW'(sys_wdt) : '0;
 
 endmodule: tcb_peri_gpio

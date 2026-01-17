@@ -18,8 +18,9 @@
 
 module tcb_peri_gpio_cdc #(
     // GPIO parameters
-    parameter  int unsigned GDW = 32,  // GPIO data width
-    parameter  int unsigned CDC =  2   // implement clock domain crossing stages (0 - bypass)
+    parameter  int unsigned GDW =   32,  // GPIO data width
+    parameter  int unsigned CDC =    2,  // implement clock domain crossing stages (0 - bypass)
+    parameter  bit          IEN = 1'b1   // implement input enable mask (to minimize toggling propagation)
 )(
     // system signals
     input  logic           clk,  // clock
@@ -28,6 +29,16 @@ module tcb_peri_gpio_cdc #(
     input  logic [GDW-1:0] gpio_i,
     output logic [GDW-1:0] gpio_r
 );
+
+////////////////////////////////////////////////////////////////////////////////
+// parameter validation
+////////////////////////////////////////////////////////////////////////////////
+
+    initial
+    begin
+        assert (CDC >= 2) else $error("Xilinx XPM CDC depth must be at least 2.");
+        assert (IEN == 1'b0) else $error("Xilinx CDC and input buffers do not support input enable.");
+    end
 
 ////////////////////////////////////////////////////////////////////////////////
 // GPIO input CDC (clock domain crossing)

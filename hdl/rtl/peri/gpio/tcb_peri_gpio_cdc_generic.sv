@@ -18,16 +18,28 @@
 
 module tcb_peri_gpio_cdc #(
     // GPIO parameters
-    parameter  int unsigned GDW = 32,  // GPIO data width
-    parameter  int unsigned CDC =  2   // implement clock domain crossing stages (0 - bypass)
+    parameter  int unsigned GDW =   32,  // GPIO data width
+    parameter  int unsigned CDC =    2,  // implement clock domain crossing stages (0 - bypass)
+    parameter  bit          IEN = 1'b1   // implement input enable mask (to minimize toggling propagation)
 )(
     // system signals
     input  logic           clk,  // clock
     input  logic           rst,  // reset
     // GPIO signals
-    input  logic [GDW-1:0] gpio_i,
-    output logic [GDW-1:0] gpio_r
+    input  logic [GDW-1:0] gpio_i,  // GPIO input data
+    input  logic [GDW-1:0] gpio_e,  // GPIO input enable
+    output logic [GDW-1:0] gpio_r   // GPIO registered/synchronized output
 );
+
+////////////////////////////////////////////////////////////////////////////////
+// parameter validation
+////////////////////////////////////////////////////////////////////////////////
+
+    initial
+    begin
+        assert (CDC >= 2) else $error("CDC depth must be at least 2.");
+        assert (IEN == 1'b0) else $warning("Input enable might not synthesize properly on FPGA.");
+    end
 
 ////////////////////////////////////////////////////////////////////////////////
 // GPIO input CDC (clock domain crossing)
@@ -41,8 +53,8 @@ module tcb_peri_gpio_cdc #(
     if (rst) begin
         gpio_t <= '{default: '0};
     end else begin
+        gpio_t[      0] <= gpio_i & gpio_e;
         gpio_t[CDC-1:1] <= gpio_t[CDC-2:0];
-        gpio_t[      0] <= gpio_i;
     end
 
     assign gpio_r = gpio_t[CDC-1];
