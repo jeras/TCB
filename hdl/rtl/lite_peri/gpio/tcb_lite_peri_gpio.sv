@@ -29,9 +29,9 @@ module tcb_lite_peri_gpio #(
     bit          CFG_RSP_MIN = 1'b0   // minimalistic response implementation
 )(
     // GPIO signals
-    output logic [GW-1:0] gpio_o,
-    output logic [GW-1:0] gpio_e,
-    input  logic [GW-1:0] gpio_i,
+    output logic [GDW-1:0] gpio_o,
+    output logic [GDW-1:0] gpio_e,
+    input  logic [GDW-1:0] gpio_i,
     // TCB interface
     tcb_lite_if.sub sub
 );
@@ -41,8 +41,8 @@ module tcb_lite_peri_gpio #(
 ////////////////////////////////////////////////////////////////////////////////
 
     initial begin
-        assert (sub.DLY ==  0) else $error("unsupported CFG.HSK.DLY = %0d", sub.DLY);
-        assert (sub.DAT >= GW) else $error("unsupported (CFG.BUS.DAT = %0d) < (GW = %0d)", sub.DAT, GW);
+        assert (sub.DLY ==   0) else $error("unsupported CFG.HSK.DLY = %0d", sub.DLY);
+        assert (sub.DAT >= GDW) else $error("unsupported (CFG.BUS.DAT = %0d) < (GW = %0d)", sub.DAT, GDW);
     end
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -56,8 +56,8 @@ module tcb_lite_peri_gpio #(
 
     tcb_peri_gpio #(
         // GPIO parameters
-        .GW           (GDW),
-        .CFG_CDC      (CDC),
+        .GDW          (GDW),
+        .CDC          (CDC),
         // system interface parameters
         .DAT          (sub.DAT),
         .CFG_RSP_REG  (CFG_RSP_REG),
@@ -72,11 +72,11 @@ module tcb_lite_peri_gpio #(
         .rst  (sub.rst),
         // system write interface
         .wen  (sub.req.wen & sub.trn),
-        .wad  (sub.req.adr),
+        .wad  (sub.req.adr[sub.MAX+:2]),
         .wdt  (sub.req.wdt),
         // system read interface
         .ren  (~sub.req.wen & sub.trn),
-        .rad  (sub.req.adr),
+        .rad  (sub.req.adr[sub.MAX+:2]),
         .rdt  (sub.rsp.rdt)
     );
 
