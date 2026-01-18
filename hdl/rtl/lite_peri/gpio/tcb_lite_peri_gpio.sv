@@ -1,9 +1,9 @@
 ////////////////////////////////////////////////////////////////////////////////
-// TCB-Lite peripheral: GPIO controller
+// TCB-Lite interface peripheral: GPIO controller
 //
 // NOTE: In case this module is connected to asynchronous signals,
 //       the input signals `gpio_i` require a CDC synchronizer.
-//       By default a 2 FF synchronizer is implemented by the CFG_CDC parameter.
+//       By default a 2 FF synchronizer is implemented by the SYS_CDC parameter.
 ////////////////////////////////////////////////////////////////////////////////
 // Copyright 2023 Iztok Jeras
 //
@@ -25,9 +25,9 @@ module tcb_lite_peri_gpio #(
     parameter  int unsigned GDW = 32,  // GPIO data width
     parameter  int unsigned CDC =  2,  // implement clock domain crossing stages (0 - bypass)
     // optional implementation configuration
-    parameter  bit           CFG_IEN =   '0,  // input enable implementation
-    parameter  bit [GDW-1:0] CFG_IRQ =   '1,  // interrupt request implementation mask
-    parameter  bit           CFG_MIN = 1'b0   // minimalistic response implementation (configuration is write only)
+    parameter  bit           SYS_IEN =   '0,  // input enable implementation
+    parameter  bit [GDW-1:0] SYS_IRQ =   '1,  // interrupt request implementation mask
+    parameter  bit           SYS_MIN = 1'b0   // minimalistic response implementation (configuration is write only)
     // NOTE 1: if none of the interrupts are enabled, the controller has a smaller address space
 )(
     // GPIO signals
@@ -57,24 +57,24 @@ module tcb_lite_peri_gpio #(
 
     // check whether at least one GPIO pin has enabled interrupt support
     generate
-    if (~CFG_IRQ) begin
+    if (~SYS_IRQ) begin
         assign sys_req_adr =        sub.req.adr[sub.MAX+:3];
     end else begin
         assign sys_req_adr = {1'b0, sub.req.adr[sub.MAX+:2]};
     end
     endgenerate
 
-
+    // TCB variant independent instance
     tcb_peri_gpio #(
         // GPIO parameters
         .GDW      (GDW),
         .CDC      (CDC),
         // system interface parameters
-        .DAT      (sub.DAT),
+        .SYS_DAT  (sub.DAT),
         // optional implementation configuration
-        .CFG_IEN  (CFG_IEN),
-        .CFG_IRQ  (CFG_IRQ),
-        .CFG_MIN  (CFG_MIN)
+        .SYS_IEN  (SYS_IEN),
+        .SYS_IRQ  (SYS_IRQ),
+        .SYS_MIN  (SYS_MIN)
     ) gpio (
         // GPIO signals
         .gpio_o   (gpio_o),
@@ -95,8 +95,11 @@ module tcb_lite_peri_gpio #(
         .irq      (irq)
     );
 
-    // status response
+    // TCB status response
     assign sub.rsp.sts =   '0;
     assign sub.rsp.err = 1'b0;
+
+    // TCB backpressure
+    assign sub.rdy = 1'b1;
 
 endmodule: tcb_lite_peri_gpio
