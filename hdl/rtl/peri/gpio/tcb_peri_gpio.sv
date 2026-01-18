@@ -66,10 +66,10 @@ module tcb_peri_gpio #(
 
     // GPIO data registers
     // TODO: using GDW would make more sense
-    logic [SYS_DAT-1:0] gpio_oe;  // output enable
-    logic [SYS_DAT-1:0] gpio_od;  // output data
-    logic [SYS_DAT-1:0] gpio_ie;  // input enable
-    logic [SYS_DAT-1:0] gpio_id;  // input data
+    logic [GDW-1:0] gpio_oe;  // output enable
+    logic [GDW-1:0] gpio_od;  // output data
+    logic [GDW-1:0] gpio_ie;  // input enable
+    logic [GDW-1:0] gpio_id;  // input data
 
     // GPIO interrupt registers
     logic [GDW-1:0] irq_ena;  // interrupt enable
@@ -87,8 +87,8 @@ module tcb_peri_gpio #(
 // GPIO output drivers
 ////////////////////////////////////////////////////////////////////////////////
 
-    assign gpio_o = GDW'(gpio_od);  // output data   register cast to GPIO out
-    assign gpio_e = GDW'(gpio_oe);  // output enable register cast to GPIO ena
+    assign gpio_o = gpio_od;  // output data   register cast to GPIO out
+    assign gpio_e = gpio_oe;  // output enable register cast to GPIO ena
 
 ////////////////////////////////////////////////////////////////////////////////
 // GPIO input CDC (clock domain crossing)
@@ -128,7 +128,7 @@ module tcb_peri_gpio #(
     endgenerate
 
     // system access mapping
-    assign gpio_id = gpio_ie & SYS_DAT'(gpio_r);
+    assign gpio_id = gpio_ie & gpio_r;
 
 ////////////////////////////////////////////////////////////////////////////////
 // interrupt logic
