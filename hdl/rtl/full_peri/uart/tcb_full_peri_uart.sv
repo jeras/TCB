@@ -16,7 +16,7 @@
 // limitations under the License.
 ////////////////////////////////////////////////////////////////////////////////
 
-module tcb_peri_uart #(
+module tcb_full_peri_uart #(
     // UART parameters
     int unsigned RW = 8,  // baudrate number width
     int unsigned DW = 8,  // shifter data width
@@ -240,5 +240,5 @@ module tcb_peri_uart #(
     // interrupt (RX FIFO load is above limit)
     assign irq_rx = (rx_sts_cnt > rx_cfg_irq);
 
-endmodule: tcb_peri_uart
+endmodule: tcb_full_peri_uart
 

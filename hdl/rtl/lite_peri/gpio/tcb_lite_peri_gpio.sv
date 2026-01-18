@@ -20,7 +20,9 @@
 // limitations under the License.
 ////////////////////////////////////////////////////////////////////////////////
 
-module tcb_lite_peri_gpio #(
+module tcb_lite_peri_gpio
+    import tcb_lite_pkg::*;
+#(
     // GPIO parameters
     parameter  int unsigned GDW = 32,  // GPIO data width
     parameter  int unsigned CDC =  2,  // implement clock domain crossing stages (0 - bypass)

@@ -17,10 +17,10 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 module tcb_peri_uart_fifo #(
-    int unsigned SZ = 32,            // size
-    int unsigned DW = 8,             // data width
-    int unsigned AW = $clog2(SZ),    // address width (clog2)
-    int unsigned CW = $clog2(SZ+1)   // counter width
+    parameter  int unsigned SZ = 32,            // size
+    localparam int unsigned AW = $clog2(SZ),    // address width (clog2)
+    localparam int unsigned CW = $clog2(SZ+1),  // counter width
+    parameter  int unsigned DW = 8              // data width
 )(
     // system signals
     input  logic          clk,

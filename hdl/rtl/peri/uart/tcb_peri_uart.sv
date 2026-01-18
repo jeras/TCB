@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// TCB-Full interface peripheral: UART controller
+// TCB peripheral: UART controller
 ////////////////////////////////////////////////////////////////////////////////
 // Copyright 2022 Iztok Jeras
 //
@@ -18,61 +18,66 @@
 
 module tcb_peri_uart #(
     // UART parameters
-    int unsigned RW = 8,  // baudrate number width
-    int unsigned DW = 8,  // shifter data width
+    parameter  int unsigned UART_RW = 8,  // baudrate number width
+    parameter  int unsigned UART_DW = 8,  // shifter data width
 //    parameter string PARITY   = "NONE",         // parity type "EVEN", "ODD", "NONE"
 //    parameter int    STOPSIZE = 1,              // number of stop bits
     // FIFO parameters
-    int unsigned SZ = 32,             // size
-    int unsigned AW = $clog2(SZ),     // address width
-    int unsigned CW = $clog2(SZ+1),   // counter width
+    parameter  int unsigned FIFO_SZ = 32,             // size
+    localparam int unsigned FIFO_AW = $clog2(FIFO_SZ),     // address width
+    localparam int unsigned FIFO_CW = $clog2(FIFO_SZ+1),   // counter width
     // configuration register parameters (write enable, reset value)
-    bit   CFG_TX_BDR_WEN = 1'b1,  logic [RW-1:0] CFG_TX_BDR_RST = '0,  // TX baudrate
-    bit   CFG_TX_IRQ_WEN = 1'b1,  logic [CW-1:0] CFG_TX_IRQ_RST = '0,  // TX interrupt level
-    bit   CFG_RX_BDR_WEN = 1'b1,  logic [RW-1:0] CFG_RX_BDR_RST = '0,  // RX baudrate
-    bit   CFG_RX_SMP_WEN = 1'b1,  logic [RW-1:0] CFG_RX_SMP_RST = '0,  // RX sample
-    bit   CFG_RX_IRQ_WEN = 1'b1,  logic [CW-1:0] CFG_RX_IRQ_RST = '0,  // RX interrupt level
+    parameter  bit CFG_TX_BDR_WEN = 1'b1, parameter  logic [UART_RW-1:0] CFG_TX_BDR_RST = '0,  // TX baudrate
+    parameter  bit CFG_TX_IRQ_WEN = 1'b1, parameter  logic [FIFO_CW-1:0] CFG_TX_IRQ_RST = '0,  // TX interrupt level
+    parameter  bit CFG_RX_BDR_WEN = 1'b1, parameter  logic [UART_RW-1:0] CFG_RX_BDR_RST = '0,  // RX baudrate
+    parameter  bit CFG_RX_SMP_WEN = 1'b1, parameter  logic [UART_RW-1:0] CFG_RX_SMP_RST = '0,  // RX sample
+    parameter  bit CFG_RX_IRQ_WEN = 1'b1, parameter  logic [FIFO_CW-1:0] CFG_RX_IRQ_RST = '0,  // RX interrupt level
+    // system interface parameters
+    localparam int unsigned SYS_ADR = 3,
+    parameter  int unsigned SYS_DAT = 32,
     // TCB parameters
-    bit   CFG_RSP_REG = 1'b1,  // register response path (by default the response is registered giving a CFG.HSK.DLY of 1)
-    bit   CFG_RSP_MIN = 1'b0   // minimalistic response implementation
+    parameter  bit          SYS_MIN = 1'b0   // minimalistic response implementation
 )(
-    // UART
+    // UART signals
     input  logic uart_rxd,  // receive
     output logic uart_txd,  // transmit
-    // interrupts
-    output logic irq_tx,    // TX FIFO load is below limit
-    output logic irq_rx,    // RX FIFO load is above limit
-    // TCB interface
-    tcb_full_if.sub   tcb
+    // system signals
+    input  logic               clk,  // clock
+    input  logic               rst,  // reset
+    // system bus write interface
+    input  logic               sys_wen,  // write enable
+    input  logic [SYS_ADR-1:0] sys_wad,  // write address
+    input  logic [SYS_DAT-1:0] sys_wdt,  // write data
+    // system bus read interface
+    input  logic               sys_ren,  // read enable
+    input  logic [SYS_ADR-1:0] sys_rad,  // read address
+    output logic [SYS_DAT-1:0] sys_rdt,  // read data
+    // interrupt request interface
+    output logic               irq_tx,   // TX FIFO load is below limit
+    output logic               irq_rx    // RX FIFO load is above limit
 );
-
-////////////////////////////////////////////////////////////////////////////////
-// parameter validation
-////////////////////////////////////////////////////////////////////////////////
-
-    initial assert (tcb.CFG.HSK.DLY == 0) else $error("unsupported CFG.HSK.DLY = %0d", tcb.CFG.HSK.DLY);
 
 ////////////////////////////////////////////////////////////////////////////////
 // local signals
 ////////////////////////////////////////////////////////////////////////////////
 
     // TX/RX baudrate signals
-    logic [RW-1:0] tx_cfg_bdr, rx_cfg_bdr;  //  baudrate time
-    logic [RW-1:0]             rx_cfg_smp;  //  sample time
+    logic [UART_RW-1:0] tx_cfg_bdr, rx_cfg_bdr;  //  baudrate time
+    logic [UART_RW-1:0]             rx_cfg_smp;  //  sample time
     // TX/RX FIFO status
-    logic [CW-1:0] tx_sts_cnt, rx_sts_cnt;  // counter
+    logic [FIFO_CW-1:0] tx_sts_cnt, rx_sts_cnt;  // counter
     // TX/RX IRQ configuration
-    logic [CW-1:0] tx_cfg_irq, rx_cfg_irq;  // level
+    logic [FIFO_CW-1:0] tx_cfg_irq, rx_cfg_irq;  // level
 
     // TX/RX FIFO stream (between TCB and FIFO)
-    logic          tx_bus_vld, rx_bus_vld;  // valid
-    logic [DW-1:0] tx_bus_dat, rx_bus_dat;  // data
-    logic          tx_bus_rdy, rx_bus_rdy;  // ready
+    logic               tx_bus_vld, rx_bus_vld;  // valid
+    logic [UART_DW-1:0] tx_bus_dat, rx_bus_dat;  // data
+    logic               tx_bus_rdy, rx_bus_rdy;  // ready
 
     // TX/RX Ser/des stream (between FIFO and SER/DES)
-    logic          tx_str_vld, rx_str_vld;  // valid
-    logic [DW-1:0] tx_str_dat, rx_str_dat;  // data
-    logic          tx_str_rdy, rx_str_rdy;  // ready
+    logic               tx_str_vld, rx_str_vld;  // valid
+    logic [UART_DW-1:0] tx_str_dat, rx_str_dat;  // data
+    logic               tx_str_rdy, rx_str_rdy;  // ready
 
 ////////////////////////////////////////////////////////////////////////////////
 // TCB read access
@@ -80,33 +85,33 @@ module tcb_peri_uart #(
 
     // read configuration/status and RX data
     always_comb
-    case (tcb.req.adr[6-1:0])
+    case (sys_rad)
         // TX channel
-        6'h00:   tcb.rsp.rdt =                 'x                  ;  // TX data
-        6'h04:   tcb.rsp.rdt =                      32'(tx_sts_cnt);  // TX FIFO load
-        6'h08:   tcb.rsp.rdt = (CFG_RSP_MIN) ? 'x : 32'(tx_cfg_bdr);  // TX baudrate
-        6'h0C:   tcb.rsp.rdt =                 'x                  ;  // TX reserved
-        6'h10:   tcb.rsp.rdt = (CFG_RSP_MIN) ? 'x : 32'(tx_cfg_irq);  // TX interrupt trigger level
+        4'h0: sys_rdt =           'x                       ;  // TX data
+        4'h1: sys_rdt =                SYS_DAT'(tx_sts_cnt);  // TX FIFO load
+        4'h2: sys_rdt = SYS_MIN ? 'x : SYS_DAT'(tx_cfg_bdr);  // TX baudrate
+        4'h3: sys_rdt =           'x                       ;  // TX reserved
+        4'h4: sys_rdt = SYS_MIN ? 'x : SYS_DAT'(tx_cfg_irq);  // TX interrupt trigger level
         // RX channel
-        6'h20:   tcb.rsp.rdt =                      32'(rx_bus_dat);  // RX data
-        6'h24:   tcb.rsp.rdt =                      32'(rx_sts_cnt);  // RX FIFO load
-        6'h28:   tcb.rsp.rdt = (CFG_RSP_MIN) ? 'x : 32'(rx_cfg_bdr);  // RX baudrate
-        6'h2C:   tcb.rsp.rdt = (CFG_RSP_MIN) ? 'x : 32'(rx_cfg_smp);  // RX sample phase
-        6'h30:   tcb.rsp.rdt = (CFG_RSP_MIN) ? 'x : 32'(rx_cfg_irq);  // RX interrupt trigger level
+        4'h8: sys_rdt =                SYS_DAT'(rx_bus_dat);  // RX data
+        4'h9: sys_rdt =                SYS_DAT'(rx_sts_cnt);  // RX FIFO load
+        4'ha: sys_rdt = SYS_MIN ? 'x : SYS_DAT'(rx_cfg_bdr);  // RX baudrate
+        4'hb: sys_rdt = SYS_MIN ? 'x : SYS_DAT'(rx_cfg_smp);  // RX sample phase
+        4'hc: sys_rdt = SYS_MIN ? 'x : SYS_DAT'(rx_cfg_irq);  // RX interrupt trigger level
         // default
-        default: tcb.rsp.rdt =                 'x                  ;
+        default: sys_rdt =        'x;
     endcase
 
-    // RX FIFO read ready
-    assign rx_bus_rdy = tcb.trn & ~tcb.req.wen & (tcb.req.adr[6-1:0] == 6'h20);
+    // RX FIFO read side effect
+    assign rx_bus_rdy = sys_ren & (sys_rad == 4'h8);
 
 ////////////////////////////////////////////////////////////////////////////////
 // TCB write access
 ////////////////////////////////////////////////////////////////////////////////
 
     // write configuration and TX data
-    always_ff @(posedge tcb.clk, posedge tcb.rst)
-    if (tcb.rst) begin
+    always_ff @(posedge clk, posedge rst)
+    if (rst) begin
         // TX channel
         tx_cfg_bdr <= CFG_TX_BDR_RST;
         tx_cfg_irq <= CFG_TX_IRQ_RST;
@@ -114,37 +119,31 @@ module tcb_peri_uart #(
         rx_cfg_bdr <= CFG_RX_BDR_RST;
         rx_cfg_smp <= CFG_RX_SMP_RST;
         rx_cfg_irq <= CFG_RX_IRQ_RST;
-    end else if (tcb.trn) begin
-        if (tcb.req.wen) begin
+    end else if (sys_wen) begin
+        if (sys_wen) begin
             // write access
-            case (tcb.req.adr[6-1:0])
+            case (sys_wad)
                 // TX channel
-                6'h00:    /* write data goes directly into the TX FIFO */     ;  // TX data
-                6'h04:                                                        ;  // TX FIFO load
-                6'h08:   if (CFG_TX_BDR_WEN) tx_cfg_bdr <= tcb.req.wdt[RW-1:0];  // TX baudrate
-                6'h0C:                                                        ;  // TX reserved
-                6'h10:   if (CFG_TX_IRQ_WEN) tx_cfg_irq <= tcb.req.wdt[CW-1:0];  // TX interrupt trigger level
+                4'h0:  /* write data goes directly into the TX FIFO      */ ;  // TX data
+                4'h1:                                                       ;  // TX FIFO load
+                4'h2: if (CFG_TX_BDR_WEN) tx_cfg_bdr <= sys_wdt[UART_RW-1:0];  // TX baudrate
+                4'h3:                                                       ;  // TX reserved
+                4'h4: if (CFG_TX_IRQ_WEN) tx_cfg_irq <= sys_wdt[FIFO_CW-1:0];  // TX interrupt trigger level
                 // RX channel
-                6'h20:                                                        ;  // RX data
-                6'h24:                                                        ;  // RX FIFO load
-                6'h28:   if (CFG_RX_BDR_WEN) rx_cfg_bdr <= tcb.req.wdt[RW-1:0];  // RX baudrate
-                6'h2C:   if (CFG_RX_SMP_WEN) rx_cfg_smp <= tcb.req.wdt[RW-1:0];  // RX sample phase
-                6'h30:   if (CFG_RX_IRQ_WEN) rx_cfg_irq <= tcb.req.wdt[CW-1:0];  // RX interrupt trigger level
+                4'h8:                                                       ;  // RX data
+                4'h9:                                                       ;  // RX FIFO load
+                4'ha: if (CFG_RX_BDR_WEN) rx_cfg_bdr <= sys_wdt[UART_RW-1:0];  // RX baudrate
+                4'hb: if (CFG_RX_SMP_WEN) rx_cfg_smp <= sys_wdt[UART_RW-1:0];  // RX sample phase
+                4'hc: if (CFG_RX_IRQ_WEN) rx_cfg_irq <= sys_wdt[FIFO_CW-1:0];  // RX interrupt trigger level
                 // default
                 default: ;  // do nothing
             endcase
         end
     end
 
-    // TX FIFO write valid
-    assign tx_bus_vld = tcb.trn & tcb.req.wen & (tcb.req.adr[6-1:0] == 6'h00);
-    assign tx_bus_dat = tcb.req.wdt[DW-1:0];
-
-    // controller response is immediate
-    assign tcb.rdy = 1'b1;
-
-    // there are no error cases
-    assign tcb.rsp.sts = '0;
+    // TX FIFO write side effect
+    assign tx_bus_vld = sys_wen & sys_wen & (sys_wad == 4'h0);
+    assign tx_bus_dat = sys_wdt[UART_DW-1:0];
 
 ////////////////////////////////////////////////////////////////////////////////
 // TX channel
@@ -152,14 +151,12 @@ module tcb_peri_uart #(
 
     // FIFO
     tcb_peri_uart_fifo #(
-        .SZ      (SZ),
-    //  .AW      (AW),
-    //  .CW      (CW),
-        .DW      (DW)
+        .SZ      (FIFO_SZ),
+        .DW      (UART_DW)
     )  tx_fifo (
         // system signals
-        .clk     (tcb.clk),
-        .rst     (tcb.rst),
+        .clk     (clk),
+        .rst     (rst),
         // parallel stream input
         .sti_vld (tx_bus_vld),
         .sti_dat (tx_bus_dat),
@@ -174,12 +171,12 @@ module tcb_peri_uart #(
 
     // serializer
     tcb_peri_uart_ser #(
-        .RW      (RW),
-        .DW      (DW)
+        .RW      (UART_RW),
+        .DW      (UART_DW)
     ) tx_ser (
         // system signals
-        .clk     (tcb.clk),
-        .rst     (tcb.rst),
+        .clk     (clk),
+        .rst     (rst),
         // configuration
         .cfg_bdr (tx_cfg_bdr),
         // parallel stream
@@ -199,14 +196,12 @@ module tcb_peri_uart #(
 
     // FIFO
     tcb_peri_uart_fifo #(
-        .SZ      (SZ),
-        .AW      (AW),
-    //  .CW      (8),
-        .DW      (DW)
+        .SZ      (FIFO_SZ),
+        .DW      (UART_DW)
     ) rx_fifo (
         // system signals
-        .clk     (tcb.clk),
-        .rst     (tcb.rst),
+        .clk     (clk),
+        .rst     (rst),
         // parallel stream input
         .sti_vld (rx_str_vld),
         .sti_dat (rx_str_dat),
@@ -221,12 +216,12 @@ module tcb_peri_uart #(
 
     // deserializer
     tcb_peri_uart_des #(
-        .RW      (RW),
-        .DW      (DW)
+        .RW      (UART_RW),
+        .DW      (UART_DW)
     ) rx_des (
         // system signals
-        .clk     (tcb.clk),
-        .rst     (tcb.rst),
+        .clk     (clk),
+        .rst     (rst),
         // configuration
         .cfg_bdr (rx_cfg_bdr),
         .cfg_smp (rx_cfg_smp),
@@ -241,4 +236,3 @@ module tcb_peri_uart #(
     assign irq_rx = (rx_sts_cnt > rx_cfg_irq);
 
 endmodule: tcb_peri_uart
-

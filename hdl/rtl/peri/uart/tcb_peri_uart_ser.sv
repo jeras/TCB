@@ -17,9 +17,9 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 module tcb_peri_uart_ser #(
-    int unsigned RW = 8,  // baudrate number width
-    int unsigned DW = 8,  // shifter data width
-    int unsigned SW = 1   // stop sequence width
+    parameter  int unsigned RW = 8,  // baudrate number width
+    parameter  int unsigned DW = 8,  // shifter data width
+    parameter  int unsigned SW = 1   // stop sequence width
 )(  
     // system signals
     input  logic          clk,
