@@ -59,14 +59,10 @@ module tcb_lite_lib_demultiplexer
     logic [IFL-1:0] man_sel;
     
     // response
-`ifdef SLANG
     logic [sub.DAT-1:0] rdt [IFN-1:0];  // read data
     logic [sub.STS-1:0] sts [IFN-1:0];  // status
     logic               err [IFN-1:0];  // bus error
-`else
-    typedef sub.rsp_t rsp_t;
-    rsp_t rsp [IFN-1:0];
-`endif
+
     // handshake
     logic rdy [IFN-1:0];
 
@@ -95,7 +91,6 @@ module tcb_lite_lib_demultiplexer
         // handshake
         assign man[i].vld = (sub_sel == i) ? sub.vld : 1'b0;
         // request
-`ifdef SLANG
         assign man[i].req.lck = (sub_sel == i[IFL-1:0]) ? sub.req.lck : 'x;
         assign man[i].req.ndn = (sub_sel == i[IFL-1:0]) ? sub.req.ndn : 'x;
         assign man[i].req.wen = (sub_sel == i[IFL-1:0]) ? sub.req.wen : 'x;
@@ -104,10 +99,6 @@ module tcb_lite_lib_demultiplexer
         assign man[i].req.siz = (sub_sel == i[IFL-1:0]) ? sub.req.siz : 'x;
         assign man[i].req.byt = (sub_sel == i[IFL-1:0]) ? sub.req.byt : 'x;
         assign man[i].req.wdt = (sub_sel == i[IFL-1:0]) ? sub.req.wdt : 'x;
-`else
-        assign man[i].req = (sub_sel == i[IFL-1:0]) ? sub.req : '{default: 'x};
-`endif
-
     end: gen_req
     endgenerate
 
@@ -120,26 +111,19 @@ module tcb_lite_lib_demultiplexer
     generate
     for (genvar i=0; i<IFN; i++) begin: gen_rsp
         // response
-`ifdef SLANG
         assign rdt[i] = man[i].rsp.rdt;
         assign sts[i] = man[i].rsp.sts;
         assign err[i] = man[i].rsp.err;
-`else
-        assign rsp[i] = man[i].rsp;
-`endif
         // handshake
         assign rdy[i] = man[i].rdy;
     end: gen_rsp
     endgenerate
 
     // response multiplexer
-`ifdef SLANG
     assign sub.rsp.rdt = rdt[man_sel];
     assign sub.rsp.sts = sts[man_sel];
     assign sub.rsp.err = err[man_sel];
-`else
-    assign sub.rsp = rsp[man_sel];
-`endif
+
     // handshake multiplexer
     assign sub.rdy = rdy[sub_sel];
 

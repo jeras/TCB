@@ -62,7 +62,6 @@ module tcb_lite_lib_multiplexer
     logic vld [IFN-1:0];
 
     // request
-`ifdef SLANG
     logic               lck [IFN-1:0];
     logic               ndn [IFN-1:0];
     logic               wen [IFN-1:0];
@@ -71,10 +70,6 @@ module tcb_lite_lib_multiplexer
     logic [man.SIZ-1:0] siz [IFN-1:0];
     logic [man.BYT-1:0] byt [IFN-1:0];
     logic [man.DAT-1:0] wdt [IFN-1:0];
-`else
-    typedef man.req_t req_t;
-    req_t req [IFN-1:0];
-`endif
 
 ////////////////////////////////////////////////////////////////////////////////
 // control
@@ -102,7 +97,6 @@ module tcb_lite_lib_multiplexer
         // handshake
         assign vld[i] = sub[i].vld;
         // request
-`ifdef SLANG
         assign lck[i] = sub[i].req.lck;
         assign ndn[i] = sub[i].req.ndn;
         assign wen[i] = sub[i].req.wen;
@@ -111,16 +105,12 @@ module tcb_lite_lib_multiplexer
         assign siz[i] = sub[i].req.siz;
         assign byt[i] = sub[i].req.byt;
         assign wdt[i] = sub[i].req.wdt;
-`else
-        assign req[i] = sub[i].req;
-`endif
     end: gen_req
     endgenerate
 
     // handshake multiplexer
     assign man.vld = vld[sub_sel];
     // request multiplexer
-`ifdef SLANG
     assign man.req.lck = lck[sub_sel];
     assign man.req.ndn = ndn[sub_sel];
     assign man.req.wen = wen[sub_sel];
@@ -129,9 +119,6 @@ module tcb_lite_lib_multiplexer
     assign man.req.siz = siz[sub_sel];
     assign man.req.byt = byt[sub_sel];
     assign man.req.wdt = wdt[sub_sel];
-`else
-    assign man.req = req[sub_sel];
-`endif
 
 ////////////////////////////////////////////////////////////////////////////////
 // response
@@ -141,13 +128,9 @@ module tcb_lite_lib_multiplexer
     generate
     for (genvar i=0; i<IFN; i++) begin: gen_rsp
         // response
-`ifdef SLANG
         assign sub[i].rsp.rdt = (man_sel == i[IFL-1:0]) ? man.rsp.rdt : 'x;
         assign sub[i].rsp.sts = (man_sel == i[IFL-1:0]) ? man.rsp.sts : 'x;
         assign sub[i].rsp.err = (man_sel == i[IFL-1:0]) ? man.rsp.err : 'x;
-`else
-        assign sub[i].rsp = (man_sel == i[IFL-1:0]) ? man.rsp : '{default: 'x};
-`endif
         // handshake
         assign sub[i].rdy = (sub_sel == i[IFL-1:0]) ? man.rdy : '0;
     end: gen_rsp

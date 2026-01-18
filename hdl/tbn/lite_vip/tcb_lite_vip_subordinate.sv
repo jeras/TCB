@@ -20,42 +20,36 @@ module tcb_lite_vip_subordinate
     import tcb_lite_pkg::*;
 (
     // system bus interface
-    tcb_lite_if tcb
+    tcb_lite_if sub
 );
-
-    // local parameters
-    localparam int unsigned DLY = tcb.DLY;
-    localparam int unsigned DAT = tcb.DAT;
-    localparam int unsigned ADR = tcb.ADR;
-    localparam int unsigned BYT = tcb.BYT;
-    localparam int unsigned SIZ = tcb.SIZ;
 
 ////////////////////////////////////////////////////////////////////////////////
 // TCB access
 ////////////////////////////////////////////////////////////////////////////////
 
     // response is immediate
-    assign tcb.rdy = 1'b1;
+    assign sub.rdy = 1'b1;
 
     // read data is don't care
-    assign tcb.rsp_dly[0].rdt = 'x;
+    assign sub.rsp_dly[0].rdt = 'x;
 
     // the response status is always an error
-    assign tcb.rsp_dly[0].err = 1'b1;
+    assign sub.rsp_dly[0].err =   'x;
+    assign sub.rsp_dly[0].err = 1'b1;
 
 ////////////////////////////////////////////////////////////////////////////////
 // transfer response pipeline
 ////////////////////////////////////////////////////////////////////////////////
 
     // transfer response structure
-    typedef tcb.rsp_t rsp_t;
+    typedef sub.rsp_t rsp_t;
 
     rsp_t rsp [$];
 
-    always_ff @(posedge tcb.clk)
+    always_ff @(posedge sub.clk)
     begin
-        if (tcb.trn_dly[DLY]) begin
-            rsp.push_back(tcb.rsp);
+        if (sub.trn_dly[sub.DLY]) begin
+            rsp.push_back(sub.rsp);
         end
     end
 

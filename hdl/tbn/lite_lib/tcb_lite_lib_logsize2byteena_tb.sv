@@ -20,16 +20,22 @@ module tcb_lite_lib_logsize2byteena_tb
     import tcb_lite_pkg::*;
 #(
     // RTL configuration parameters
-    parameter  int unsigned  DLY =    1,  // response delay
-    parameter  int unsigned  DAT =   32,  // data    width (only 32/64 are supported)
-    parameter  int unsigned  ADR =  DAT,  // address width (only 32/64 are supported)
-    parameter  bit [DAT-1:0] MSK =   '1,  // address mask
-    parameter  bit           MOD = 1'b1   // bus mode (0-logarithmic size, 1-byte enable)
+    parameter  int unsigned DLY =    1,  // response delay
+    parameter  bit          HLD = 1'b0,  // response hold
+    parameter  bit          MOD = 1'b0,  // bus mode (0-logarithmic size, 1-byte enable)
+    parameter  int unsigned CTL =    0,  // control width (user defined request signals)
+    parameter  int unsigned ADR =   32,  // address width (only 32/64 are supported)
+    parameter  int unsigned DAT =   32,  // data    width (only 32/64 are supported)
+    parameter  int unsigned STS =    0   // status  width (user defined response signals)
 );
 
 ////////////////////////////////////////////////////////////////////////////////
 // local parameters
 ////////////////////////////////////////////////////////////////////////////////
+
+    // TCB configurations               '{HSK: '{DLY, HLD}, BUS: '{ MOD, CTL, ADR, DAT, STS}}
+    localparam tcb_lite_cfg_t MAN_CFG = '{HSK: '{DLY, HLD}, BUS: '{1'b0, CTL, ADR, DAT, STS}};
+    localparam tcb_lite_cfg_t SUB_CFG = '{HSK: '{DLY, HLD}, BUS: '{1'b1, CTL, ADR, DAT, STS}};
 
     localparam bit VIP = 1'b1;
 
@@ -44,16 +50,17 @@ module tcb_lite_lib_logsize2byteena_tb
     string testname = "none";
 
     // TCB interfaces
-    tcb_lite_if #(DLY, DAT, ADR, MSK, 1'b0     ) tcb_man       (.clk (clk), .rst (rst));
-    tcb_lite_if #(DLY, DAT, ADR, MSK, 1'b1, VIP) tcb_sub       (.clk (clk), .rst (rst));
-    tcb_lite_if #(DLY, DAT, ADR, MSK, 1'b1, VIP) tcb_mem [0:0] (.clk (clk), .rst (rst));
+    tcb_lite_if #(MAN_CFG     ) tcb_man       (.clk (clk), .rst (rst));
+    tcb_lite_if #(SUB_CFG     ) tcb_sub       (.clk (clk), .rst (rst));
+    tcb_lite_if #(SUB_CFG, VIP) tcb_mem [0:0] (.clk (clk), .rst (rst));
 
     // empty array
     logic [8-1:0] nul [];
 
     // response
     logic [DAT-1:0] rdt;  // read data
-    logic           err;  // error status
+    logic [STS-1:0] sts;  // response status
+    logic           err;  // response error
 
 ////////////////////////////////////////////////////////////////////////////////
 // tests
@@ -410,7 +417,7 @@ module tcb_lite_lib_logsize2byteena_tb
     // manager VIP
     tcb_lite_vip_manager #(
     ) man (
-        .tcb (tcb_man)
+        .man (tcb_man)
     );
 
     // connect singular interface to interface array
@@ -421,12 +428,12 @@ module tcb_lite_lib_logsize2byteena_tb
 
     // manager TCB-Lite protocol checker
     tcb_lite_vip_protocol_checker chk_man (
-        .tcb (tcb_man)
+        .mon (tcb_man)
     );
 
     // subordinate TCB-Lite protocol checker
     tcb_lite_vip_protocol_checker chk_sub (
-        .tcb (tcb_sub)
+        .mon (tcb_sub)
     );
 
     // memory model subordinate

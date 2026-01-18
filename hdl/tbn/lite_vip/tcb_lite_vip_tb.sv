@@ -20,12 +20,21 @@ module tcb_lite_vip_tb
     import tcb_lite_pkg::*;
 #(
     // RTL configuration parameters
-    parameter  int unsigned  DLY =    1,  // response delay
-    parameter  int unsigned  DAT =   32,  // data    width (only 32/64 are supported)
-    parameter  int unsigned  ADR =  DAT,  // address width (only 32/64 are supported)
-    parameter  bit [DAT-1:0] MSK =   '1,  // address mask
-    parameter  bit           MOD = 1'b1   // bus mode (0-logarithmic size, 1-byte enable)
+    parameter  int unsigned DLY =    0,  // response delay
+    parameter  bit          HLD = 1'b0,  // response hold
+    parameter  bit          MOD = 1'b0,  // bus mode (0-logarithmic size, 1-byte enable)
+    parameter  int unsigned CTL =    0,  // control width (user defined request signals)
+    parameter  int unsigned ADR =   32,  // address width (only 32/64 are supported)
+    parameter  int unsigned DAT =   32,  // data    width (only 32/64 are supported)
+    parameter  int unsigned STS =    0   // status  width (user defined response signals)
 );
+
+////////////////////////////////////////////////////////////////////////////////
+// local parameters
+////////////////////////////////////////////////////////////////////////////////
+
+    // TCB configurations               '{HSK: '{DLY, HLD}, BUS: '{MOD, CTL, ADR, DAT, STS}}
+    localparam tcb_lite_cfg_t MAN_CFG = '{HSK: '{DLY, HLD}, BUS: '{MOD, CTL, ADR, DAT, STS}};
 
     localparam bit VIP = 1'b1;
 
@@ -42,7 +51,7 @@ module tcb_lite_vip_tb
     int unsigned errorcnt;  // ERROR counter
 
     // TCB interfaces
-    tcb_lite_if #(DLY, DAT, ADR, MSK, MOD, VIP) tcb (.clk (clk), .rst (rst));
+    tcb_lite_if #(MAN_CFG, VIP) tcb (.clk (clk), .rst (rst));
 
 ////////////////////////////////////////////////////////////////////////////////
 // reference data for tests
@@ -66,17 +75,17 @@ module tcb_lite_vip_tb
 
     // manager VIP
     tcb_lite_vip_manager #() man (
-        .tcb (tcb)
+        .man (tcb)
     );
 
     // subordinate  VIP
     tcb_lite_vip_subordinate #() sub (
-        .tcb (tcb)
+        .sub (tcb)
     );
 
     // TCB-Lite protocol checker
     tcb_lite_vip_protocol_checker chk (
-        .tcb (tcb)
+        .mon (tcb)
     );
 
 

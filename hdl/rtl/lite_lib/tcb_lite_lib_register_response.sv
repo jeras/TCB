@@ -51,7 +51,6 @@ module tcb_lite_lib_register_response
     assign man.vld = sub.vld;
 
     // request
-`ifdef SLANG
     assign man.req.lck = sub.req.lck;
     assign man.req.ndn = sub.req.ndn;
     assign man.req.wen = sub.req.wen;
@@ -60,9 +59,6 @@ module tcb_lite_lib_register_response
     assign man.req.siz = sub.req.siz;
     assign man.req.byt = sub.req.byt;
     assign man.req.wdt = sub.req.wdt;
-`else
-    assign man.req = sub.req;
-`endif
 
     // response (data)
     generate

@@ -44,8 +44,7 @@ module tcb_lite_lib_passthrough
     assign man.vld = sub.vld;
     assign sub.rdy = man.rdy;
 
-    // request/response
-`ifdef SLANG
+    // request
     assign man.req.lck = sub.req.lck;
     assign man.req.ndn = sub.req.ndn;
     assign man.req.wen = sub.req.wen;
@@ -54,12 +53,10 @@ module tcb_lite_lib_passthrough
     assign man.req.siz = sub.req.siz;
     assign man.req.byt = sub.req.byt;
     assign man.req.wdt = sub.req.wdt;
+
+    // response
     assign sub.rsp.rdt = man.rsp.rdt;
     assign sub.rsp.sts = man.rsp.sts;
     assign sub.rsp.err = man.rsp.err;
-`else
-    assign man.req = sub.req;
-    assign sub.rsp = man.rsp;
-`endif
 
 endmodule: tcb_lite_lib_passthrough

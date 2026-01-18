@@ -59,7 +59,7 @@ module tcb_lite_peri_gpio
 
     // check whether at least one GPIO pin has enabled interrupt support
     generate
-    if (~SYS_IRQ) begin
+    if (~|SYS_IRQ) begin
         assign sys_req_adr =        sub.req.adr[sub.MAX+:3];
     end else begin
         assign sys_req_adr = {1'b0, sub.req.adr[sub.MAX+:2]};

@@ -164,14 +164,12 @@ module tcb_lite_vip_memory
                     end
                 end: bytes
             end: read
-            // as a memory model, there is no immediate need for error responses, this feature might be added in the future
-            // TODO
-            tcb[i].rsp_dly[0].err = '0;
         end
 
         // continuous assignment
         assign tcb[i].rsp_dly[0].rdt = rdt;
-        assign tcb[i].rsp_dly[0].err = '0;
+        assign tcb[i].rsp_dly[0].sts = '0;
+        assign tcb[i].rsp_dly[0].err = 1'b0;
 
         // as a memory model, there is no immediate need for backpressure, this feature might be added in the future
         assign tcb[i].rdy = 1'b1;

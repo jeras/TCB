@@ -56,7 +56,6 @@ module tcb_lite_lib_logsize2byteena
     assign man.req.ctl = sub.req.ctl;
     assign man.req.adr = sub.req.adr;
     assign man.req.siz = sub.req.siz;
-    assign man.req.byt = sub.req.byt;
 
 ////////////////////////////////////////////////////////////////////////////////
 // local signals

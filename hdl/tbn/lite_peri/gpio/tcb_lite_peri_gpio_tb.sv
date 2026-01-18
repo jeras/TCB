@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// TCB-Full GPIO testbench
+// TCB-Lite GPIO testbench
 ////////////////////////////////////////////////////////////////////////////////
 // Copyright 2022 Iztok Jeras
 //
@@ -16,13 +16,17 @@
 // limitations under the License.
 ////////////////////////////////////////////////////////////////////////////////
 
-module tcb_peri_gpio_tb
-    import tcb_full_pkg::*;
-    import tcb_full_vip_blocking_pkg::*;
+module tcb_lite_peri_gpio_tb
+    import tcb_lite_pkg::*;
 #(
-    // TCB widths
-    int unsigned ADR = 32,
-    int unsigned DAT = 32
+    // RTL configuration parameters
+    parameter  int unsigned DLY =    0,  // response delay
+    parameter  bit          HLD = 1'b0,  // response hold
+    parameter  bit          MOD = 1'b0,  // bus mode (0-logarithmic size, 1-byte enable)
+    parameter  int unsigned CTL =    0,  // control width (user defined request signals)
+    parameter  int unsigned ADR =   32,  // address width (only 32/64 are supported)
+    parameter  int unsigned DAT =   32,  // data    width (only 32/64 are supported)
+    parameter  int unsigned STS =    0   // status  width (user defined response signals)
 );
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -30,43 +34,10 @@ module tcb_peri_gpio_tb
 ////////////////////////////////////////////////////////////////////////////////
 
     // GPIO width
-    localparam int unsigned GW = 32;
+    localparam int unsigned GDW = 32;
 
-    // configuration parameter
-    localparam tcb_cfg_t CFG = '{
-        // handshake parameter
-        HSK: '{
-            DLY: 0,
-            HLD: 1'b0
-        },
-        // bus parameter
-        BUS: '{
-            ADR: TCB_BUS_DEF.ADR,
-            DAT: TCB_BUS_DEF.DAT,
-            LEN: TCB_BUS_DEF.LEN,
-            LCK: TCB_LCK_PRESENT,
-            CHN: TCB_CHN_HALF_DUPLEX,
-            AMO: TCB_AMO_ABSENT,
-            PRF: TCB_PRF_ABSENT,
-            NXT: TCB_NXT_ABSENT,
-            MOD: TCB_MOD_LOG_SIZE,
-            ORD: TCB_ORD_DESCENDING,
-            NDN: TCB_NDN_BI_NDN
-        },
-        // physical interface parameter
-        PMA: TCB_PMA_DEF
-    };
-
-    localparam tcb_full_vip_t VIP = '{
-        DRV: 1'b1
-    };
-
-//    typedef tcb_c #(HSK, BUS_SIZ, PMA)::req_t req_t;
-//    typedef tcb_c #(HSK, BUS_SIZ, PMA)::rsp_t rsp_t;
-
-    // local request/response types are copies of packaged defaults
-    typedef tcb_req_t req_t;
-    typedef tcb_rsp_t rsp_t;
+    // TCB configurations               '{HSK: '{DLY, HLD}, BUS: '{MOD, CTL, ADR, DAT, STS}}
+    localparam tcb_lite_cfg_t MAN_CFG = '{HSK: '{DLY, HLD}, BUS: '{MOD, CTL, ADR, DAT, STS}};
 
 ////////////////////////////////////////////////////////////////////////////////
 // local signals
@@ -79,26 +50,24 @@ module tcb_peri_gpio_tb
     string testname = "none";
 
     // TCB interfaces
-    tcb_full_if #(tcb_cfg_t, CFG, req_t, rsp_t) tcb_man (.clk (clk), .rst (rst));
-
-    // parameterized class specialization (blocking API)
-    typedef tcb_full_vip_blocking_c #(tcb_cfg_t, CFG, req_t, rsp_t) tcb_man_s;
-
-    // TCB class objects
-    tcb_man_s obj_man = new(tcb_man, "MAN");
+    tcb_lite_if #(MAN_CFG) tcb_man (.clk (clk), .rst (rst));
 
     // response
-    logic [tcb_man.CFG_BUS_BYT-1:0][8-1:0] rdt;  // read data
-    tcb_rsp_sts_t                          sts;  // status response
+    logic [DAT-1:0] rdt;  // read data
+    logic [STS-1:0] sts;  // response status
+    logic           err;  // response error
+
+    // interrupt
+    logic           irq;
 
 ////////////////////////////////////////////////////////////////////////////////
 // data checking
 ////////////////////////////////////////////////////////////////////////////////
 
     // GPIO signals
-    logic [GW-1:0] gpio_o;
-    logic [GW-1:0] gpio_e;
-    logic [GW-1:0] gpio_i;
+    logic [GDW-1:0] gpio_o;
+    logic [GDW-1:0] gpio_e;
+    logic [GDW-1:0] gpio_i;
 
 ////////////////////////////////////////////////////////////////////////////////
 // test sequence
@@ -118,30 +87,36 @@ module tcb_peri_gpio_tb
         repeat (1) @(posedge clk);
 
         // write configuration (output and enable registers)
-        $display("(%t) INFO: writing configuration begin.", $time);
-        obj_man.write32('h00, 32'h01234567, sts);  // write output register
-        obj_man.write32('h04, 32'h76543210, sts);  // write enable register
-        $display("(%t) INFO: writing configuration end.", $time);
+        $info("writing configuration begin.");
+        man.write32('h04, 32'h01234567, sts, err);  // write output data register
+        man.write32('h00, 32'h76543210, sts, err);  // write output enable register
+        $info("writing configuration end.");
         repeat (1) @(posedge clk);
 
         // check configuration (output and enable registers)
-        $display("(%t) INFO: reading/checking configuration begin.", $time);
-        obj_man.check32('h00, 32'h01234567, sts);  // write output register
-        obj_man.check32('h04, 32'h76543210, sts);  // write enable register
-        $display("(%t) INFO: reading/checking configuration end.", $time);
+        $info("reading/checking configuration begin.");
+        man.read32('h04, rdt, sts, err);  // read output data register
+        assert (rdt == 32'h01234567) else $error("TCB read mismatch");
+        man.read32('h00, rdt, sts, err);  // read output enable register
+        assert (rdt == 32'h76543210) else $error("TCB read mismatch");
+        $info("reading/checking configuration end.");
         repeat (1) @(posedge clk);
 
         // read/check GPIO input status
-        $display("(%t) INFO: reading/checking input begin.", $time);
-        #10 gpio_i = GW'('h89abcdef);
+        man.write32('h08, 32'hffffffff, sts, err);  // write input enable register
+        repeat (1) @(posedge clk);
+        $info("reading/checking input begin.");
+        #10ns gpio_i = GDW'('h89abcdef);
         repeat (2) @(posedge clk);
-        obj_man.check32('h08, 32'h89abcdef, '0);  // read input register
-        #10 gpio_i = GW'('hfedcba98);
+        man.read32('h0c, rdt, sts, err);  // read input data register
+        assert (rdt == 32'h89abcdef) else $error("TCB read mismatch");
+        #10ns gpio_i = GDW'('hfedcba98);
         repeat (2) @(posedge clk);
-        obj_man.check32('h08, 32'hfedcba98, '0);  // read input register
-        $display("(%t) INFO: reading/checking input end.", $time);
+        man.read32('h0c, rdt, sts, err);  // read input data register
+        assert (rdt == 32'hfedcba98) else $error("TCB read mismatch");
+        $info("reading/checking input end.");
 
-        // TODO: add automatic testbench status report (SUCCESS/FAILURE)
+        // TODO: interrupt support
 
         // end simulation
         repeat (4) @(posedge clk);
@@ -152,8 +127,14 @@ module tcb_peri_gpio_tb
 // VIP instances
 ////////////////////////////////////////////////////////////////////////////////
 
-    tcb_full_vip_protocol_checker chk_man (
-        .tcb (tcb_man)
+    // manager VIP
+    tcb_lite_vip_manager #(
+    ) man (
+        .man (tcb_man)
+    );
+
+    tcb_lite_vip_protocol_checker chk_man (
+        .mon (tcb_man)
     );
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -161,22 +142,29 @@ module tcb_peri_gpio_tb
 ////////////////////////////////////////////////////////////////////////////////
 
     // TCB GPIO
-    tcb_peri_gpio #(
-        .GW      (GW),
+    tcb_lite_peri_gpio #(
+        .GDW     (GDW),
         // implementation details
 //        bit          CFG_MIN = 1'b0,  // minimalistic implementation
-        .CFG_CDC (2),
-        // implementation device (ASIC/FPGA vendor/device)
-        .CHIP    ("")
+        .CDC     (2)
     ) gpio (
         // GPIO signals
         .gpio_o  (gpio_o),
         .gpio_e  (gpio_e),
         .gpio_i  (gpio_i),
         // TCB interface
-        .tcb     (tcb_man)
+        .sub     (tcb_man),
+        // IRQ interface
+        .irq     (irq)
     );
 
+//    // GPIO three state drivers and loopback
+//    generate
+//    for (genvar i=0; i<GDW; i++) begin: io
+//        assign gpio_i[i] = gpio_e[i] ? gpio_o[i] : 'z;
+//    end: io
+//    endgenerate
+    
 ////////////////////////////////////////////////////////////////////////////////
 // VCD/FST waveform trace
 ////////////////////////////////////////////////////////////////////////////////
@@ -191,4 +179,4 @@ module tcb_peri_gpio_tb
         $dumpvars;
     end
 
-endmodule: tcb_peri_gpio_tb
+endmodule: tcb_lite_peri_gpio_tb

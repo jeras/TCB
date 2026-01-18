@@ -20,16 +20,21 @@ module tcb_lite_lib_error_tb
     import tcb_lite_pkg::*;
 #(
     // RTL configuration parameters
-    parameter  int unsigned  DLY =    1,  // response delay
-    parameter  int unsigned  DAT =   32,  // data    width (only 32/64 are supported)
-    parameter  int unsigned  ADR =  DAT,  // address width (only 32/64 are supported)
-    parameter  bit [DAT-1:0] MSK =   '1,  // address mask
-    parameter  bit           MOD = 1'b1   // bus mode (0-logarithmic size, 1-byte enable)
+    parameter  int unsigned DLY =    1,  // response delay
+    parameter  bit          HLD = 1'b0,  // response hold
+    parameter  bit          MOD = 1'b1,  // bus mode (0-logarithmic size, 1-byte enable)
+    parameter  int unsigned CTL =    0,  // control width (user defined request signals)
+    parameter  int unsigned ADR =   32,  // address width (only 32/64 are supported)
+    parameter  int unsigned DAT =   32,  // data    width (only 32/64 are supported)
+    parameter  int unsigned STS =    0   // status  width (user defined response signals)
 );
 
 ////////////////////////////////////////////////////////////////////////////////
 // local parameters
 ////////////////////////////////////////////////////////////////////////////////
+
+    // TCB configurations               '{HSK: '{DLY, HLD}, BUS: '{MOD, CTL, ADR, DAT, STS}}
+    localparam tcb_lite_cfg_t MAN_CFG = '{HSK: '{DLY, HLD}, BUS: '{MOD, CTL, ADR, DAT, STS}};
 
 ////////////////////////////////////////////////////////////////////////////////
 // local signals
@@ -40,14 +45,15 @@ module tcb_lite_lib_error_tb
     logic rst = 1'b1;  // reset
 
     // TCB interfaces
-    tcb_lite_if #(DLY, DAT, ADR, MSK, MOD     ) tcb_man (.clk (clk), .rst (rst));
+    tcb_lite_if #(MAN_CFG) tcb_man (.clk (clk), .rst (rst));
 
     // empty array
     logic [8-1:0] nul [];
 
     // response
     logic [DAT-1:0] rdt;  // read data
-    logic           err;  // error status
+    logic [STS-1:0] sts;  // response status
+    logic           err;  // response error
 
 ////////////////////////////////////////////////////////////////////////////////
 // test sequence
@@ -117,12 +123,12 @@ module tcb_lite_lib_error_tb
     // manager VIP
     tcb_lite_vip_manager #(
     ) man (
-        .tcb (tcb_man)
+        .man (tcb_man)
     );
 
     // manager TCB-Lite protocol checker
     tcb_lite_vip_protocol_checker chk_man (
-        .tcb (tcb_man)
+        .mon (tcb_man)
     );
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -130,7 +136,8 @@ module tcb_lite_lib_error_tb
 ////////////////////////////////////////////////////////////////////////////////
 
     tcb_lite_lib_error dut (
-        .sub  (tcb_man)
+        .sub  (tcb_man),
+        .sts  ('0)
     );
 
 ////////////////////////////////////////////////////////////////////////////////

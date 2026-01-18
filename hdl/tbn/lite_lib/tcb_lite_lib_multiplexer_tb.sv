@@ -20,14 +20,16 @@ module tcb_lite_lib_multiplexer_tb
     import tcb_lite_pkg::*;
 #(
     // RTL configuration parameters
-    parameter  int unsigned  DLY =    1,  // response delay
-    parameter  int unsigned  DAT =   32,  // data    width (only 32/64 are supported)
-    parameter  int unsigned  ADR =  DAT,  // address width (only 32/64 are supported)
-    parameter  bit [DAT-1:0] MSK =   '1,  // address mask
-    parameter  bit           MOD = 1'b1,  // bus mode (0-logarithmic size, 1-byte enable)
+    parameter  int unsigned DLY =    1,  // response delay
+    parameter  bit          HLD = 1'b0,  // response hold
+    parameter  bit          MOD = 1'b1,  // bus mode (0-logarithmic size, 1-byte enable)
+    parameter  int unsigned CTL =    0,  // control width (user defined request signals)
+    parameter  int unsigned ADR =   32,  // address width (only 32/64 are supported)
+    parameter  int unsigned DAT =   32,  // data    width (only 32/64 are supported)
+    parameter  int unsigned STS =    0,  // status  width (user defined response signals)
     // interconnect parameters (interface number)
-    parameter  int unsigned  IFN = 3,
-    localparam int unsigned  IFL = $clog2(IFN)
+    parameter  int unsigned IFN = 3,
+    localparam int unsigned IFL = $clog2(IFN)
 );
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -36,6 +38,10 @@ module tcb_lite_lib_multiplexer_tb
 
     // interface priorities (lower number is higher priority)
     localparam int unsigned PRI [IFN-1:0] = '{2, 1, 0};
+
+    // TCB configurations               '{HSK: '{DLY, HLD}, BUS: '{MOD, CTL, ADR, DAT, STS}}
+    localparam tcb_lite_cfg_t MAN_CFG = '{HSK: '{DLY, HLD}, BUS: '{MOD, CTL, ADR, DAT, STS}};
+    localparam tcb_lite_cfg_t SUB_CFG = '{HSK: '{DLY, HLD}, BUS: '{MOD, CTL, ADR, DAT, STS}};
 
     localparam bit VIP = 1'b1;
 
@@ -50,15 +56,16 @@ module tcb_lite_lib_multiplexer_tb
     string testname = "none";
 
     // TCB interfaces
-    tcb_lite_if #(DLY, DAT, ADR, MSK, MOD     ) tcb_man [IFN-1:0] (.clk (clk), .rst (rst));
-    tcb_lite_if #(DLY, DAT, ADR, MSK, MOD, VIP) tcb_sub           (.clk (clk), .rst (rst));
+    tcb_lite_if #(MAN_CFG) tcb_man [IFN-1:0] (.clk (clk), .rst (rst));
+    tcb_lite_if #(SUB_CFG) tcb_sub           (.clk (clk), .rst (rst));
 
     // empty array
     logic [8-1:0] nul [];
 
     // response
     logic [DAT-1:0] rdt;  // read data
-    logic           err;  // error status
+    logic [STS-1:0] sts;  // response status
+    logic           err;  // response error
 
     // control
     logic [IFL-1:0] sel;  // select
@@ -166,23 +173,23 @@ module tcb_lite_lib_multiplexer_tb
     // manager VIP
     tcb_lite_vip_manager #(
     ) man [IFN-1:0] (
-        .tcb (tcb_man)
+        .man (tcb_man)
     );
 
     // subordinate VIP
     tcb_lite_vip_subordinate #(
     ) sub (
-        .tcb (tcb_sub)
+        .sub (tcb_sub)
     );
 
     // manager TCB-Lite protocol checker
     tcb_lite_vip_protocol_checker chk_man [IFN-1:0] (
-        .tcb (tcb_man)
+        .mon (tcb_man)
     );
 
     // subordinate TCB-Lite protocol checker
     tcb_lite_vip_protocol_checker chk_sub (
-        .tcb (tcb_sub)
+        .mon (tcb_sub)
     );
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -198,7 +205,7 @@ module tcb_lite_lib_multiplexer_tb
         // interface priorities (lower number is higher priority)
         .PRI  (PRI)
     ) dut_arb (
-        .tcb  (tcb_man),
+        .mon  (tcb_man),
         .sel  (sel)
     );
 

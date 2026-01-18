@@ -57,8 +57,8 @@ interface tcb_lite_if
     // response type
     typedef struct {
         logic [DAT-1:0] rdt;  // read data
-        logic [STS-1:0] sts;  // status (user defined response signals)
-        logic           err;  // bus error
+        logic [STS-1:0] sts;  // response status (user defined response signals)
+        logic           err;  // response error
     } rsp_t;
 
 ////////////////////////////////////////////////////////////////////////////////

@@ -94,9 +94,6 @@ module tcb_peri_gpio #(
 // GPIO input CDC (clock domain crossing)
 ////////////////////////////////////////////////////////////////////////////////
 
-    // read value
-    logic [GDW-1:0] gpio_r;
-
     generate
     if (CDC > 1) begin: gen_cdc_stages
 
@@ -105,9 +102,13 @@ module tcb_peri_gpio #(
             .CDC (CDC),
             .IEN (SYS_IEN)
         ) cdc (
-            .gpio_i  (gpio_i),
-            .gpio_e  (gpio_e),
-            .gpio_r  (gpio_r)
+            // system signals
+            .clk     (clk),
+            .rst     (rst),
+            // GPIO signals
+            .gpio_i  (gpio_i ),
+            .gpio_e  (gpio_ie),
+            .gpio_r  (gpio_id)
         );
 
     end: gen_cdc_stages
@@ -119,7 +120,7 @@ module tcb_peri_gpio #(
     else begin: gen_cdc_bypass
 
         // bypass CDC code
-        assign gpio_r = gpio_i;
+        assign gpio_id = gpio_i;
 
         // NOTE: the assumption is, it is done externally
         initial $warning("GPIO CDC bypass, assuming it is done externally.");
@@ -127,16 +128,13 @@ module tcb_peri_gpio #(
     end: gen_cdc_bypass
     endgenerate
 
-    // system access mapping
-    assign gpio_id = gpio_ie & gpio_r;
-
 ////////////////////////////////////////////////////////////////////////////////
 // interrupt logic
 ////////////////////////////////////////////////////////////////////////////////
 
     // synchronized GPIO inputs are used as input value into interrupt logic
     // NOTE: interrupt enable is used early to minimize power
-    assign irq_val = (gpio_r ^ irq_pol) & irq_ena;
+    assign irq_val = (gpio_id ^ irq_pol) & irq_ena;
 
     // input values are delayed (only the ones in edge mode, to save power)
     always_ff @(posedge clk, posedge rst)
@@ -145,7 +143,7 @@ module tcb_peri_gpio #(
 
     // edge detection registers
     always_ff @(posedge clk, posedge rst)
-    if (rst)  irq_dly <= '0;
+    if (rst)  irq_edg <= '0;
     else      irq_edg <= (irq_val ^ irq_dly) & ~irq_clr;
 
     // either a level or pulse

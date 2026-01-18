@@ -93,13 +93,9 @@ module tcb_lite_lib_register_request
     endgenerate
 
     // response
-`ifdef SLANG
     assign sub.rsp.rdt = man.rsp.rdt;
     assign sub.rsp.sts = man.rsp.sts;
     assign sub.rsp.err = man.rsp.err;
-`else
-    assign sub.rsp = man.rsp;
-`endif
 
     // handshake (valid is checked to avoid pipeline bubbles)
     assign sub.rdy = man.rdy | ~man.vld;

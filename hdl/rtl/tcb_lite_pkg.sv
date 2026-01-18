@@ -30,7 +30,7 @@ package tcb_lite_pkg;
 
     // parameter defaults
     localparam tcb_lite_hsk_t TCB_LITE_HSK_DEF = '{
-        DLY: 1,
+        DLY:    1,
         HLD: 1'b0
     };
 
