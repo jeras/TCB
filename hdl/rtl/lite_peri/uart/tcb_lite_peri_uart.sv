@@ -49,7 +49,7 @@ module tcb_lite_peri_uart #(
 // GPIO instance
 ////////////////////////////////////////////////////////////////////////////////
 
-    logic [3-1:0] sys_req_adr;
+    logic [4-1:0] sys_req_adr;
 
     assign sys_req_adr = sub.req.adr[sub.MAX+:4];
 

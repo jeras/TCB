@@ -33,7 +33,7 @@ module tcb_peri_uart #(
     parameter  bit CFG_RX_SMP_WEN = 1'b1, parameter  logic [UART_RW-1:0] CFG_RX_SMP_RST = '0,  // RX sample
     parameter  bit CFG_RX_IRQ_WEN = 1'b1, parameter  logic [FIFO_CW-1:0] CFG_RX_IRQ_RST = '0,  // RX interrupt level
     // system interface parameters
-    localparam int unsigned SYS_ADR = 3,
+    localparam int unsigned SYS_ADR = 4,
     parameter  int unsigned SYS_DAT = 32,
     // TCB parameters
     parameter  bit          SYS_MIN = 1'b0   // minimalistic response implementation
@@ -119,7 +119,7 @@ module tcb_peri_uart #(
         rx_cfg_bdr <= CFG_RX_BDR_RST;
         rx_cfg_smp <= CFG_RX_SMP_RST;
         rx_cfg_irq <= CFG_RX_IRQ_RST;
-    end else if (sys_wen) begin
+    end else begin
         if (sys_wen) begin
             // write access
             case (sys_wad)

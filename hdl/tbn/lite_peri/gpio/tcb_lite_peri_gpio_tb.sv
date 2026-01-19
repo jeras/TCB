@@ -95,10 +95,8 @@ module tcb_lite_peri_gpio_tb
 
         // check configuration (output and enable registers)
         $info("reading/checking configuration begin.");
-        man.read32('h04, rdt, sts, err);  // read output data register
-        assert (rdt == 32'h01234567) else $error("TCB read mismatch");
-        man.read32('h00, rdt, sts, err);  // read output enable register
-        assert (rdt == 32'h76543210) else $error("TCB read mismatch");
+        man.read32('h04, rdt, sts, err);  assert (rdt == 32'h01234567) else $error("TCB read mismatch");  // read output data register
+        man.read32('h00, rdt, sts, err);  assert (rdt == 32'h76543210) else $error("TCB read mismatch");  // read output enable register
         $info("reading/checking configuration end.");
         repeat (1) @(posedge clk);
 
@@ -108,12 +106,10 @@ module tcb_lite_peri_gpio_tb
         $info("reading/checking input begin.");
         #10ns gpio_i = GDW'('h89abcdef);
         repeat (2) @(posedge clk);
-        man.read32('h0c, rdt, sts, err);  // read input data register
-        assert (rdt == 32'h89abcdef) else $error("TCB read mismatch");
+        man.read32('h0c, rdt, sts, err);  assert (rdt == 32'h89abcdef) else $error("TCB read mismatch");  // read input data register
         #10ns gpio_i = GDW'('hfedcba98);
         repeat (2) @(posedge clk);
-        man.read32('h0c, rdt, sts, err);  // read input data register
-        assert (rdt == 32'hfedcba98) else $error("TCB read mismatch");
+        man.read32('h0c, rdt, sts, err);  assert (rdt == 32'hfedcba98) else $error("TCB read mismatch");  // read input data register
         $info("reading/checking input end.");
 
         // TODO: interrupt support
