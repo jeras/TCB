@@ -47,8 +47,8 @@ module tcb_lite_peri_gpio
 ////////////////////////////////////////////////////////////////////////////////
 
     initial begin
-        assert (sub.DLY ==   0) else $error("unsupported DLY = %0d (must be 0)", sub.DLY);
-        assert (sub.DAT >= GDW) else $error("unsupported (DAT = %0d) < (GDW = %0d)", sub.DAT, GDW);
+        assert (sub.DLY ==   0) else $error("Unsupported DLY = %0d (must be 0)", sub.DLY);
+        assert (sub.DAT >= GDW) else $error("Unsupported (DAT = %0d) < (GDW = %0d)", sub.DAT, GDW);
     end
 
 ////////////////////////////////////////////////////////////////////////////////
