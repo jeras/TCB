@@ -48,16 +48,22 @@ module tcb_lite_vip_manager
     // transfer request driver
     always @(req_que.size())
     begin: driver
+        static int unsigned bpr = 0;
         if (req_que.size() > 0) begin
+            // idle cycles
             while (req_que[0].idl > 0) begin
                 @(posedge man.clk);
                 req_que[0].idl--;
             end
-            man.vld <= req_que[0].idl == 0;
+            // drive request
+            man.vld <= 1'b1;
             man.req <= req_que[0].req;
+            // backpressure cycles
             do begin
                 @(posedge man.clk);
+                bpr++;
             end while (~man.trn);
+            // remove request
             man.vld <= 1'b0;
             man.req <= '{default: 'x};
             void'(req_que.pop_front());
@@ -66,9 +72,9 @@ module tcb_lite_vip_manager
             man.req <= '{default: 'x};
         end
     end: driver
-    
+
 ////////////////////////////////////////////////////////////////////////////////
-// transfer response queue ans sampler
+// transfer response queue and sampler
 ////////////////////////////////////////////////////////////////////////////////
 
     // transfer response structure
@@ -85,11 +91,11 @@ module tcb_lite_vip_manager
 
     // transfer response sampler
     always_ff @(posedge man.clk)
-    begin
+    begin: sampler
         if (man.trn_dly[man.DLY]) begin
-            rsp_que.push_back('{rsp: man.rsp, bpr: 0});
+            rsp_que.push_back('{rsp: man.rsp, bpr: $past(driver.bpr, man.DLY)});
         end
-    end
+    end: sampler
 
 ////////////////////////////////////////////////////////////////////////////////
 // blocking write API

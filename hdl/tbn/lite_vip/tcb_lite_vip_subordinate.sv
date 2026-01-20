@@ -24,33 +24,80 @@ module tcb_lite_vip_subordinate
 );
 
 ////////////////////////////////////////////////////////////////////////////////
-// TCB access
+// transfer request queue and sampler
 ////////////////////////////////////////////////////////////////////////////////
 
-    // response is immediate
-    assign sub.rdy = 1'b1;
+    // transfer request structure
+    typedef sub.req_t req_t;
 
-    // read data is don't care
-    assign sub.rsp_dly[0].rdt = 'x;
+    // transfer request queue type
+    typedef struct {
+        req_t        req;  // TCB request structure
+        int unsigned idl;  // idle cycles number
+    } req_que_t;
 
-    // the response status is always an error
-    assign sub.rsp_dly[0].err =   'x;
-    assign sub.rsp_dly[0].err = 1'b1;
+    // transfer request queue
+    req_que_t req_que [$];
+
+    // transfer request sampler
+    always_ff @(posedge sub.clk)
+    begin: sampler
+        if (sub.trn) begin
+            req_que.push_back('{req: sub.req, idl: driver.idl});
+        end
+    end: sampler
 
 ////////////////////////////////////////////////////////////////////////////////
-// transfer response pipeline
+// transfer response queue and driver
 ////////////////////////////////////////////////////////////////////////////////
 
     // transfer response structure
     typedef sub.rsp_t rsp_t;
 
-    rsp_t rsp [$];
+    // transfer response queue type
+    typedef struct {
+        rsp_t        rsp;  // TCB response structure
+        int unsigned bpr;  // backpressure cycles number
+    } rsp_que_t;
 
-    always_ff @(posedge sub.clk)
-    begin
-        if (sub.trn_dly[sub.DLY]) begin
-            rsp.push_back(sub.rsp);
-        end
+    // transfer response queue
+    rsp_que_t rsp_que [$];
+
+    // transfer response initialization
+    initial begin
+        sub.rdy = 1'b0;
+        sub.rsp_dly[0] = '{default: 'x};
     end
 
+    // transfer response driver
+    always @(rsp_que.size())
+    begin: driver
+        static int unsigned idl = 0;
+        if (rsp_que.size() > 0) begin
+            // backpressure cycles
+            while (rsp_que[0].bpr > 0) begin
+                @(posedge sub.clk);
+                rsp_que[0].bpr--;
+            end
+            // drive response
+            sub.rdy <= 1'b1;
+//            sub.rsp_dly[0] <= rsp_que[0].rsp;
+            sub.rsp_dly[0].rdt <= rsp_que[0].rsp.rdt;
+            sub.rsp_dly[0].sts <= rsp_que[0].rsp.sts;
+            sub.rsp_dly[0].err <= rsp_que[0].rsp.err;
+            // idle cycles
+            do begin
+                @(posedge sub.clk);
+                idl++;
+            end while (~sub.trn);
+            // remove response
+            sub.rdy <= 1'b0;
+            sub.rsp_dly[0] <= '{default: 'x};
+            void'(rsp_que.pop_front());
+        end else begin
+            sub.rdy <= 1'b0;
+            sub.rsp_dly[0] <= '{default: 'x};
+        end
+    end: driver
+    
 endmodule: tcb_lite_vip_subordinate

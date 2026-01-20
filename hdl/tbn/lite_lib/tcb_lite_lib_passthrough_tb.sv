@@ -82,13 +82,12 @@ module tcb_lite_lib_passthrough_tb
 
         // manager (non-blocking API)
 
-        // setup subordinate response queue
-//        sub.rsp 
-
-
         //                              lck,  ndn,  wen, ctl,          adr,             siz,              byt,          wdt}, idl
         man.req_que.push_back('{req: '{1'b0, 1'b0, 1'b1,  'x, 32'h01234567, tcb_man.SIZ'(2), tcb_man.BYT'('1), 32'h76543210}, idl: 0});
         man.req_que.push_back('{req: '{1'b0, 1'b0, 1'b0,  'x, 32'h89ABCDEF, tcb_man.SIZ'(2), tcb_man.BYT'('1), 32'hxxxxxxxx}, idl: 0});
+        //                                      rdt, sts,  err}, bpr
+        sub.rsp_que.push_back('{rsp: '{32'hxxxxxxxx,  '0, 1'b0}, bpr: 0});
+        sub.rsp_que.push_back('{rsp: '{32'h76543210,  '0, 1'b0}, bpr: 0});
 
 //        // disable transfer monitor
 //        repeat (tcb_man.CFG.HSK.DLY) @(posedge clk);
