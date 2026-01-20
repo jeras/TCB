@@ -28,16 +28,10 @@ module tcb_lite_vip_manager
 ////////////////////////////////////////////////////////////////////////////////
 
     // transfer request structure
-    typedef man.req_t req_t;
-
-    // transfer request queue type
-    typedef struct {
-        req_t        req;  // TCB request structure
-        int unsigned idl;  // idle cycles number
-    } req_que_t;
+    typedef man.vip_req_t vip_req_t;
 
     // transfer request queue
-    req_que_t req_que [$];
+    vip_req_t vip_req [$];
 
     // transfer request initialization
     initial begin
@@ -46,18 +40,18 @@ module tcb_lite_vip_manager
     end
 
     // transfer request driver
-    always @(req_que.size())
+    always @(vip_req.size())
     begin: driver
         static int unsigned bpr = 0;
-        if (req_que.size() > 0) begin
+        if (vip_req.size() > 0) begin
             // idle cycles
-            while (req_que[0].idl > 0) begin
+            while (vip_req[0].idl > 0) begin
                 @(posedge man.clk);
-                req_que[0].idl--;
+                vip_req[0].idl--;
             end
             // drive request
             man.vld <= 1'b1;
-            man.req <= req_que[0].req;
+            man.req <= vip_req[0].req;
             // backpressure cycles
             do begin
                 @(posedge man.clk);
@@ -66,7 +60,7 @@ module tcb_lite_vip_manager
             // remove request
             man.vld <= 1'b0;
             man.req <= '{default: 'x};
-            void'(req_que.pop_front());
+            void'(vip_req.pop_front());
         end else begin
             man.vld <= 1'b0;
             man.req <= '{default: 'x};
@@ -79,21 +73,16 @@ module tcb_lite_vip_manager
 
     // transfer response structure
     typedef man.rsp_t rsp_t;
-
-    // transfer response queue type
-    typedef struct {
-        rsp_t        rsp;  // TCB response structure
-        int unsigned bpr;  // backpressure cycles number
-    } rsp_que_t;
+    typedef man.vip_rsp_t vip_rsp_t;
 
     // transfer response queue
-    rsp_que_t rsp_que [$];
+    vip_rsp_t vip_rsp [$];
 
     // transfer response sampler
     always_ff @(posedge man.clk)
     begin: sampler
         if (man.trn_dly[man.DLY]) begin
-            rsp_que.push_back('{rsp: man.rsp, bpr: $past(driver.bpr, man.DLY)});
+            vip_rsp.push_back('{rsp: rsp_t'(man.rsp), bpr: $past(driver.bpr, man.DLY)});
         end
     end: sampler
 
@@ -152,7 +141,7 @@ module tcb_lite_vip_manager
         fork
             begin: request
                 //                  req: '{ lck, ndn, wen, ctl, adr, siz, byt, wdt}, idl
-                req_que.push_back('{req: '{1'b0, ndn, wen, ctl, adr, siz, byt, dat}, idl: 0});
+                vip_req.push_back('{req: '{1'b0, ndn, wen, ctl, adr, siz, byt, dat}, idl: 0});
             end: request
             begin: response
                 do begin

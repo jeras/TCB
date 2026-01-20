@@ -28,22 +28,16 @@ module tcb_lite_vip_subordinate
 ////////////////////////////////////////////////////////////////////////////////
 
     // transfer request structure
-    typedef sub.req_t req_t;
-
-    // transfer request queue type
-    typedef struct {
-        req_t        req;  // TCB request structure
-        int unsigned idl;  // idle cycles number
-    } req_que_t;
+    typedef sub.vip_req_t vip_req_t;
 
     // transfer request queue
-    req_que_t req_que [$];
+    vip_req_t vip_req [$];
 
     // transfer request sampler
     always_ff @(posedge sub.clk)
     begin: sampler
         if (sub.trn) begin
-            req_que.push_back('{req: sub.req, idl: driver.idl});
+            vip_req.push_back('{req: sub.req, idl: driver.idl});
         end
     end: sampler
 
@@ -52,16 +46,10 @@ module tcb_lite_vip_subordinate
 ////////////////////////////////////////////////////////////////////////////////
 
     // transfer response structure
-    typedef sub.rsp_t rsp_t;
-
-    // transfer response queue type
-    typedef struct {
-        rsp_t        rsp;  // TCB response structure
-        int unsigned bpr;  // backpressure cycles number
-    } rsp_que_t;
+    typedef sub.vip_rsp_t vip_rsp_t;
 
     // transfer response queue
-    rsp_que_t rsp_que [$];
+    vip_rsp_t vip_rsp [$];
 
     // transfer response initialization
     initial begin
@@ -70,21 +58,21 @@ module tcb_lite_vip_subordinate
     end
 
     // transfer response driver
-    always @(rsp_que.size())
+    always @(vip_rsp.size())
     begin: driver
         static int unsigned idl = 0;
-        if (rsp_que.size() > 0) begin
+        if (vip_rsp.size() > 0) begin
             // backpressure cycles
-            while (rsp_que[0].bpr > 0) begin
+            while (vip_rsp[0].bpr > 0) begin
                 @(posedge sub.clk);
-                rsp_que[0].bpr--;
+                vip_rsp[0].bpr--;
             end
             // drive response
             sub.rdy <= 1'b1;
-//            sub.rsp_dly[0] <= rsp_que[0].rsp;
-            sub.rsp_dly[0].rdt <= rsp_que[0].rsp.rdt;
-            sub.rsp_dly[0].sts <= rsp_que[0].rsp.sts;
-            sub.rsp_dly[0].err <= rsp_que[0].rsp.err;
+//            sub.rsp_dly[0] <= vip_rsp[0].rsp;
+            sub.rsp_dly[0].rdt <= vip_rsp[0].rsp.rdt;
+            sub.rsp_dly[0].sts <= vip_rsp[0].rsp.sts;
+            sub.rsp_dly[0].err <= vip_rsp[0].rsp.err;
             // idle cycles
             do begin
                 @(posedge sub.clk);
@@ -93,7 +81,7 @@ module tcb_lite_vip_subordinate
             // remove response
             sub.rdy <= 1'b0;
             sub.rsp_dly[0] <= '{default: 'x};
-            void'(rsp_que.pop_front());
+            void'(vip_rsp.pop_front());
         end else begin
             sub.rdy <= 1'b0;
             sub.rsp_dly[0] <= '{default: 'x};

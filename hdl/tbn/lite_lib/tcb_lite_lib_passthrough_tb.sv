@@ -83,26 +83,28 @@ module tcb_lite_lib_passthrough_tb
         // manager (non-blocking API)
 
         //                              lck,  ndn,  wen, ctl,          adr,             siz,              byt,          wdt}, idl
-        man.req_que.push_back('{req: '{1'b0, 1'b0, 1'b1,  'x, 32'h01234567, tcb_man.SIZ'(2), tcb_man.BYT'('1), 32'h76543210}, idl: 0});
-        man.req_que.push_back('{req: '{1'b0, 1'b0, 1'b0,  'x, 32'h89ABCDEF, tcb_man.SIZ'(2), tcb_man.BYT'('1), 32'hxxxxxxxx}, idl: 0});
+        man.vip_req.push_back('{req: '{1'b0, 1'b0, 1'b1,  'x, 32'h01234567, tcb_man.SIZ'(2), tcb_man.BYT'('1), 32'h76543210}, idl: 0});
+        man.vip_req.push_back('{req: '{1'b0, 1'b0, 1'b0,  'x, 32'h89ABCDEF, tcb_man.SIZ'(2), tcb_man.BYT'('1), 32'hxxxxxxxx}, idl: 0});
         //                                      rdt, sts,  err}, bpr
-        sub.rsp_que.push_back('{rsp: '{32'hxxxxxxxx,  '0, 1'b0}, bpr: 0});
-        sub.rsp_que.push_back('{rsp: '{32'h76543210,  '0, 1'b0}, bpr: 0});
+        sub.vip_rsp.push_back('{rsp: '{32'hxxxxxxxx,  '0, 1'b0}, bpr: 0});
+        sub.vip_rsp.push_back('{rsp: '{32'h76543210,  '0, 1'b0}, bpr: 0});
 
         // wait for queues to get empty
         do begin
             @(posedge clk);
-        end while (man.req_que.size() > 0);
+        end while (man.vip_req.size() > 0);
         // wait for response delay cycles
         repeat(tcb_man.DLY) @(posedge clk);
 
         // debug printout
-        foreach(man.rsp_que[i])  $display("DEBUG: man.rsp_que[%0d] = %p", i, man.rsp_que[i]);
-        foreach(sub.req_que[i])  $display("DEBUG: sub.req_que[%0d] = %p", i, sub.req_que[i]);
-        foreach(mon_man.que[i])  $display("DEBUG: mon_man.que[%0d] = %p", i, mon_man.que[i]);
-        foreach(mon_sub.que[i])  $display("DEBUG: mon_sub.que[%0d] = %p", i, mon_sub.que[i]);
+        foreach(    man.vip_rsp[i])  $display("DEBUG: man.vip_rsp[%0d] = %p", i,     man.vip_rsp[i]);
+        foreach(    sub.vip_req[i])  $display("DEBUG: sub.vip_req[%0d] = %p", i,     sub.vip_req[i]);
+        foreach(mon_man.vip_bus[i])  $display("DEBUG: mon_man.que[%0d] = %p", i, mon_man.vip_bus[i]);
+        foreach(mon_sub.vip_bus[i])  $display("DEBUG: mon_sub.que[%0d] = %p", i, mon_sub.vip_bus[i]);
 
-//        foreach(man.rsp_que[i]) begin
+        // TODO: write automatic check
+
+//        foreach(man.vip_rsp[i]) begin
 //            assert (tst_man_mon[i].req ==? tst_ref[i].req) else $error("\ntst_man_mon[%0d].req = %p !=? \ntst_ref[%0d].req = %p", i, tst_man_mon[i].req, i, tst_ref[i].req);
 //            assert (tst_man_mon[i].rsp ==? tst_ref[i].rsp) else $error("\ntst_man_mon[%0d].rsp = %p !=? \ntst_ref[%0d].rsp = %p", i, tst_man_mon[i].rsp, i, tst_ref[i].rsp);
 //            assert (tst_sub_mon[i].req ==? tst_ref[i].req) else $error("\ntst_sub_mon[%0d].req = %p !=? \ntst_ref[%0d].req = %p", i, tst_sub_mon[i].req, i, tst_ref[i].req);

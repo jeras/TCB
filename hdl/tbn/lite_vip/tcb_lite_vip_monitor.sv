@@ -28,19 +28,10 @@ module tcb_lite_vip_monitor
 ////////////////////////////////////////////////////////////////////////////////
 
     // transfer request/response structures
-    typedef mon.req_t req_t;
-    typedef mon.rsp_t rsp_t;
-
-    // transfer request/response queue type
-    typedef struct {
-        req_t        req;  // TCB request structure
-        rsp_t        rsp;  // TCB response structure
-        int unsigned idl;  // idle cycles number
-        int unsigned bpr;  // backpressure cycles number
-    } que_t;
+    typedef mon.vip_bus_t vip_bus_t;
 
     // transfer request queue
-    que_t que [$];
+    vip_bus_t vip_bus [$];
 
     // idle/backpressure counters
     int unsigned idl = 0;
@@ -62,7 +53,10 @@ module tcb_lite_vip_monitor
     always_ff @(posedge mon.clk)
     begin: sampler
         if (mon.trn_dly[mon.DLY]) begin
-            que.push_back('{req: $past(mon.req, mon.DLY), rsp: mon.rsp, idl: $past(idl, mon.DLY), bpr: $past(bpr, mon.DLY)});
+            vip_bus.push_back('{
+                req: '{req: $past(mon.req, mon.DLY), idl: $past(idl, mon.DLY)},
+                rsp: '{rsp:       mon.rsp,           bpr: $past(bpr, mon.DLY)}
+            });
         end
     end: sampler
 
