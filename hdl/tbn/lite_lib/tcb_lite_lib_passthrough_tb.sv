@@ -59,6 +59,10 @@ module tcb_lite_lib_passthrough_tb
     logic [STS-1:0] sts;  // response status
     logic           err;  // response error
 
+    // timing
+    int unsigned    idl;  // idle
+    int unsigned    bpr;  // backpressure
+
 ////////////////////////////////////////////////////////////////////////////////
 // test sequence
 ////////////////////////////////////////////////////////////////////////////////
@@ -76,30 +80,16 @@ module tcb_lite_lib_passthrough_tb
         /* verilator lint_on INITIALDLY */
         repeat (1) @(posedge clk);
 
-//        fork
-//            // manager (blocking API)
-//            begin: fork_man
-//                obj_man.write32(32'h01234567, 32'h76543210, sts);
-//                obj_man.read32 (32'h89ABCDEF, rdt         , sts);
-//            end: fork_man
-//            // subordinate (monitor)
-//            begin: fork_man_monitor
-//                obj_man.transfer_monitor(tst_man_mon);
-//            end: fork_man_monitor
-//            begin: fork_sub
-//                // subordinate transfer queue
-//                sts = '0;
-//                tst_ref.delete();
-//                tst_len = tst_ref.size();
-//                tst_len += obj_sub.put_transaction(tst_ref, '{req: '{adr: 32'h01234567, wdt: '{8'h10, 8'h32, 8'h54, 8'h76}, default: 'x}, rsp: '{rdt: nul, sts: sts}});
-//                tst_len += obj_sub.put_transaction(tst_ref, '{req: '{adr: 32'h89ABCDEF, wdt: nul, default: 'x}, rsp: '{rdt: '{8'h98, 8'hBA, 8'hDC, 8'hFE}, sts: sts}});
-//                obj_sub.transfer_sequencer(tst_ref);
-//            end: fork_sub
-//            // subordinate (monitor)
-//            begin: fork_sub_monitor
-//                obj_sub.transfer_monitor(tst_sub_mon);
-//            end: fork_sub_monitor
-//        join_any
+        // manager (non-blocking API)
+
+        // setup subordinate response queue
+//        sub.rsp 
+
+
+        //                              lck,  ndn,  wen, ctl,          adr,             siz,              byt,          wdt}, idl
+        man.req_que.push_back('{req: '{1'b0, 1'b0, 1'b1,  'x, 32'h01234567, tcb_man.SIZ'(2), tcb_man.BYT'('1), 32'h76543210}, idl: 0});
+        man.req_que.push_back('{req: '{1'b0, 1'b0, 1'b0,  'x, 32'h89ABCDEF, tcb_man.SIZ'(2), tcb_man.BYT'('1), 32'hxxxxxxxx}, idl: 0});
+
 //        // disable transfer monitor
 //        repeat (tcb_man.CFG.HSK.DLY) @(posedge clk);
 //        disable fork;

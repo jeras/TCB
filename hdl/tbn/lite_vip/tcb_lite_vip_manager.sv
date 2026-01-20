@@ -24,80 +24,70 @@ module tcb_lite_vip_manager
 );
 
 ////////////////////////////////////////////////////////////////////////////////
-// transfer request driver
+// transfer request queue and driver
 ////////////////////////////////////////////////////////////////////////////////
 
-    // request initialization into idle state
+    // transfer request structure
+    typedef man.req_t req_t;
+
+    // transfer request queue type
+    typedef struct {
+        req_t        req;  // TCB request structure
+        int unsigned idl;  // idle cycles number
+    } req_que_t;
+
+    // transfer request queue
+    req_que_t req_que [$];
+
+    // transfer request initialization
     initial begin
-        // idle
         man.vld = 1'b0;
-        // request don't care
         man.req = '{default: 'x};
     end
-    
-    // request driver
-    task automatic req (
-        // request
-        input  logic               lck = 1'b0,
-        input  logic               ndn = 1'b0,
-        input  logic               wen,
-        input  logic [man.CTL-1:0] ctl,
-        input  logic [man.ADR-1:0] adr,
-        input  logic [man.SIZ-1:0] siz = man.SIZ'($clog2(man.BYT)),
-        input  logic [man.BYT-1:0] byt = '1,
-        input  logic [man.DAT-1:0] wdt,
-        // idle/backpressure timing
-        input  int unsigned        idl = 0,
-        output int unsigned        bpr
-    );
-        // cycle counter
-        int unsigned cyc = 0;
-        // sequence
-        bpr = 0;
-        do begin
-            if (cyc == idl) begin
-                // start handshake
-                man.vld <= 1'b1;
-                // request
-                man.req.lck <= lck;
-                man.req.ndn <= ndn;
-                man.req.wen <= wen;
-                man.req.ctl <= ctl;
-                man.req.adr <= adr;
-                man.req.siz <= siz;
-                man.req.byt <= byt;
-                man.req.wdt <= wdt;
-            end
-            @(posedge man.clk);
-            if (~man.vld) cyc++;
-            if (~man.rdy) bpr++;
-        end while (~man.trn);
-        // end handshake
-        man.vld <= 1'b0;
-        // request
-        man.req.lck <= 'x;
-        man.req.ndn <= 'x;
-        man.req.wen <= 'x;
-        man.req.ctl <= 'x;
-        man.req.adr <= 'x;
-        man.req.siz <= 'x;
-        man.req.byt <= 'x;
-        man.req.wdt <= 'x;
-    endtask: req
 
+    // transfer request driver
+    always @(req_que.size())
+    begin: driver
+        if (req_que.size() > 0) begin
+            while (req_que[0].idl > 0) begin
+                @(posedge man.clk);
+                req_que[0].idl--;
+            end
+            man.vld <= req_que[0].idl == 0;
+            man.req <= req_que[0].req;
+            do begin
+                @(posedge man.clk);
+            end while (~man.trn);
+            man.vld <= 1'b0;
+            man.req <= '{default: 'x};
+            void'(req_que.pop_front());
+        end else begin
+            man.vld <= 1'b0;
+            man.req <= '{default: 'x};
+        end
+    end: driver
+    
 ////////////////////////////////////////////////////////////////////////////////
-// transfer response queue
+// transfer response queue ans sampler
 ////////////////////////////////////////////////////////////////////////////////
 
     // transfer response structure
     typedef man.rsp_t rsp_t;
 
-    rsp_t rsp [$];
+    // transfer response queue type
+    typedef struct {
+        rsp_t        rsp;  // TCB response structure
+        int unsigned bpr;  // backpressure cycles number
+    } rsp_que_t;
 
+    // transfer response queue
+    rsp_que_t rsp_que [$];
+
+    // transfer response sampler
     always_ff @(posedge man.clk)
     begin
         if (man.trn_dly[man.DLY]) begin
-            rsp.push_back(man.rsp);
+            rsp_que.push_back('{rsp: man.rsp, bpr: 0});
         end
     end
 
@@ -155,9 +145,8 @@ module tcb_lite_vip_manager
         // transfer and delay
         fork
             begin: request
-                int unsigned bpr;
-                //   lck, ndn, wen, ctl, adr, siz, byt, wdt, idl, bpr
-                req(1'b0, ndn, wen, ctl, adr, siz, byt, dat,   0, bpr);
+                //                  req: '{ lck, ndn, wen, ctl, adr, siz, byt, wdt}, idl
+                req_que.push_back('{req: '{1'b0, ndn, wen, ctl, adr, siz, byt, dat}, idl: 0});
             end: request
             begin: response
                 do begin
