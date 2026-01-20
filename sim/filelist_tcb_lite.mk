@@ -33,8 +33,9 @@ RTL+=${PATH_HDL}/rtl/peri/uart/tcb_peri_uart.sv
 RTL+=${PATH_HDL}/rtl/lite_peri/uart/tcb_lite_peri_uart.sv
 
 # SystemVerilog VIP
-TBN+=${PATH_HDL}/tbn/lite_vip/tcb_lite_vip_manager.sv
 TBN+=${PATH_HDL}/tbn/lite_vip/tcb_lite_vip_protocol_checker.sv
+TBN+=${PATH_HDL}/tbn/lite_vip/tcb_lite_vip_manager.sv
+TBN+=${PATH_HDL}/tbn/lite_vip/tcb_lite_vip_monitor.sv
 TBN+=${PATH_HDL}/tbn/lite_vip/tcb_lite_vip_subordinate.sv
 TBN+=${PATH_HDL}/tbn/lite_vip/tcb_lite_vip_memory.sv
 TBN+=${PATH_HDL}/tbn/lite_vip/tcb_lite_vip_tb.sv

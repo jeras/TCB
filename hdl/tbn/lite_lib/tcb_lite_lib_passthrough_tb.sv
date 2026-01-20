@@ -89,11 +89,20 @@ module tcb_lite_lib_passthrough_tb
         sub.rsp_que.push_back('{rsp: '{32'hxxxxxxxx,  '0, 1'b0}, bpr: 0});
         sub.rsp_que.push_back('{rsp: '{32'h76543210,  '0, 1'b0}, bpr: 0});
 
-//        // disable transfer monitor
-//        repeat (tcb_man.CFG.HSK.DLY) @(posedge clk);
-//        disable fork;
-//
-//        foreach(tst_ref[i]) begin
+        // wait for queues to get empty
+        do begin
+            @(posedge clk);
+        end while (man.req_que.size() > 0);
+        // wait for response delay cycles
+        repeat(tcb_man.DLY) @(posedge clk);
+
+        // debug printout
+        foreach(man.rsp_que[i])  $display("DEBUG: man.rsp_que[%0d] = %p", i, man.rsp_que[i]);
+        foreach(sub.req_que[i])  $display("DEBUG: sub.req_que[%0d] = %p", i, sub.req_que[i]);
+        foreach(mon_man.que[i])  $display("DEBUG: mon_man.que[%0d] = %p", i, mon_man.que[i]);
+        foreach(mon_sub.que[i])  $display("DEBUG: mon_sub.que[%0d] = %p", i, mon_sub.que[i]);
+
+//        foreach(man.rsp_que[i]) begin
 //            assert (tst_man_mon[i].req ==? tst_ref[i].req) else $error("\ntst_man_mon[%0d].req = %p !=? \ntst_ref[%0d].req = %p", i, tst_man_mon[i].req, i, tst_ref[i].req);
 //            assert (tst_man_mon[i].rsp ==? tst_ref[i].rsp) else $error("\ntst_man_mon[%0d].rsp = %p !=? \ntst_ref[%0d].rsp = %p", i, tst_man_mon[i].rsp, i, tst_ref[i].rsp);
 //            assert (tst_sub_mon[i].req ==? tst_ref[i].req) else $error("\ntst_sub_mon[%0d].req = %p !=? \ntst_ref[%0d].req = %p", i, tst_sub_mon[i].req, i, tst_ref[i].req);
@@ -113,27 +122,13 @@ module tcb_lite_lib_passthrough_tb
 // VIP instances
 ////////////////////////////////////////////////////////////////////////////////
 
-    // manager VIP
-    tcb_lite_vip_manager #(
-    ) man (
-        .man (tcb_man)
-    );
-
-    // subordinate VIP
-    tcb_lite_vip_subordinate #(
-    ) sub (
-        .sub (tcb_sub)
-    );
-
-    // manager TCB-Lite protocol checker
-    tcb_lite_vip_protocol_checker chk_man (
-        .mon (tcb_man)
-    );
-
-    // subordinate TCB-Lite protocol checker
-    tcb_lite_vip_protocol_checker chk_sub (
-        .mon (tcb_sub)
-    );
+    // VIP
+    tcb_lite_vip_manager              man (.man (tcb_man));
+    tcb_lite_vip_subordinate          sub (.sub (tcb_sub));
+    tcb_lite_vip_monitor          mon_man (.mon (tcb_man));
+    tcb_lite_vip_monitor          mon_sub (.mon (tcb_man));
+    tcb_lite_vip_protocol_checker chk_man (.mon (tcb_man));
+    tcb_lite_vip_protocol_checker chk_sub (.mon (tcb_sub));
 
 ////////////////////////////////////////////////////////////////////////////////
 // DUT instance
