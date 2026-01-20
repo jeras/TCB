@@ -37,10 +37,10 @@ module tcb_lite_vip_monitor
         rsp_t        rsp;  // TCB response structure
         int unsigned idl;  // idle cycles number
         int unsigned bpr;  // backpressure cycles number
-    } que_t;
+    } bus_que_t;
 
     // transfer request queue
-    que_t que [$];
+    bus_que_t bus_que [$];
 
     // idle/backpressure counters
     int unsigned idl = 0;
@@ -62,7 +62,7 @@ module tcb_lite_vip_monitor
     always_ff @(posedge mon.clk)
     begin: sampler
         if (mon.trn_dly[mon.DLY]) begin
-            que.push_back('{req: $past(mon.req, mon.DLY), rsp: mon.rsp, idl: $past(idl, mon.DLY), bpr: $past(bpr, mon.DLY)});
+            bus_que.push_back('{req: $past(mon.req, mon.DLY), rsp: mon.rsp, idl: $past(idl, mon.DLY), bpr: $past(bpr, mon.DLY)});
         end
     end: sampler
 

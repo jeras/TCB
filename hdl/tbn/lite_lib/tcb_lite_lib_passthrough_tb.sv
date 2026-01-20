@@ -97,10 +97,10 @@ module tcb_lite_lib_passthrough_tb
         repeat(tcb_man.DLY) @(posedge clk);
 
         // debug printout
-        foreach(man.rsp_que[i])  $display("DEBUG: man.rsp_que[%0d] = %p", i, man.rsp_que[i]);
-        foreach(sub.req_que[i])  $display("DEBUG: sub.req_que[%0d] = %p", i, sub.req_que[i]);
-        foreach(mon_man.que[i])  $display("DEBUG: mon_man.que[%0d] = %p", i, mon_man.que[i]);
-        foreach(mon_sub.que[i])  $display("DEBUG: mon_sub.que[%0d] = %p", i, mon_sub.que[i]);
+        foreach(    man.rsp_que[i])  $display("DEBUG: man.rsp_que[%0d] = %p", i,     man.rsp_que[i]);
+        foreach(    sub.req_que[i])  $display("DEBUG: sub.req_que[%0d] = %p", i,     sub.req_que[i]);
+        foreach(mon_man.bus_que[i])  $display("DEBUG: mon_man.que[%0d] = %p", i, mon_man.bus_que[i]);
+        foreach(mon_sub.bus_que[i])  $display("DEBUG: mon_sub.que[%0d] = %p", i, mon_sub.bus_que[i]);
 
 //        foreach(man.rsp_que[i]) begin
 //            assert (tst_man_mon[i].req ==? tst_ref[i].req) else $error("\ntst_man_mon[%0d].req = %p !=? \ntst_ref[%0d].req = %p", i, tst_man_mon[i].req, i, tst_ref[i].req);
