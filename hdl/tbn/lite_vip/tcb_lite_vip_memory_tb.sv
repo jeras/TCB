@@ -77,7 +77,7 @@ module tcb_lite_vip_memory_tb
         testname = "write sequence";
         $display("TEST: %s", testname);
 
-        // manager (blocking API)
+        // aligned write
         man[0].write8 (32'h00000010,        8'h10, sts, err);
         man[0].write8 (32'h00000011,      8'h32  , sts, err);
         man[0].write8 (32'h00000012,    8'h54    , sts, err);
@@ -85,7 +85,7 @@ module tcb_lite_vip_memory_tb
         man[0].write16(32'h00000020,     16'h3210, sts, err);
         man[0].write16(32'h00000022, 16'h7654    , sts, err);
         man[0].write32(32'h00000030, 32'h76543210, sts, err);
-
+        // aligned read
         man[0].read8 (32'h00000010, rdt[0+:8 ], sts, err);  assert (rdt[0+:8 ] ==         8'h10) else $error("read data mismatch");
         man[0].read8 (32'h00000011, rdt[0+:8 ], sts, err);  assert (rdt[0+:8 ] ==       8'h32  ) else $error("read data mismatch");
         man[0].read8 (32'h00000012, rdt[0+:8 ], sts, err);  assert (rdt[0+:8 ] ==     8'h54    ) else $error("read data mismatch");
