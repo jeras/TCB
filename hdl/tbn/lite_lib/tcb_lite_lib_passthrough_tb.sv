@@ -51,9 +51,6 @@ module tcb_lite_lib_passthrough_tb
     tcb_lite_if #(MAN_CFG     ) tcb_man (.clk (clk), .rst (rst));
     tcb_lite_if #(SUB_CFG, VIP) tcb_sub (.clk (clk), .rst (rst));
 
-    // empty array
-    logic [8-1:0] nul [];
-
     // response
     logic [DAT-1:0] rdt;  // read data
     logic [STS-1:0] sts;  // response status

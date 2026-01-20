@@ -139,9 +139,9 @@ module tcb_lite_vip_manager
         end
         // byte enable
         if (man.MOD == 1'b1) begin
-            byt = '1;
+            byt = '0;
             for (int unsigned i=0; i<len/8; i++) begin
-                int unsigned b = i+int'(adr[$clog2(man.BYT)-1:0]);
+                int unsigned b = (i+int'(adr[man.MAX-1:0]))%man.BYT;
                 byt[b] = 1'b1;
                 if (wen) begin
                     dat[8*b+:8] = wdt[8*i+:8];
@@ -177,7 +177,7 @@ module tcb_lite_vip_manager
         if (man.MOD == 1'b1) begin
             byt = '1;
             for (int unsigned i=0; i<len/8; i++) begin
-                int unsigned b = i+int'(adr[$clog2(man.BYT)-1:0]);
+                int unsigned b = (i+int'(adr[man.MAX-1:0]))%man.BYT;
                 if (~wen) begin
                     rdt[8*i+:8] = tmp_rdt[8*b+:8];
                 end

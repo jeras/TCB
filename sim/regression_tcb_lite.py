@@ -6,7 +6,7 @@ import re
 
 tests = [
 # "tcb_lite_vip_tb",
-## "tcb_lite_vip_memory_tb",
+ "tcb_lite_vip_memory_tb",
  "tcb_lite_lib_passthrough_tb",
 ## "tcb_lite_lib_error_tb",
 ## "tcb_lite_lib_register_request_tb",
@@ -16,8 +16,8 @@ tests = [
 ## "tcb_lite_lib_demultiplexer_tb",
 ## "tcb_lite_lib_logsize2byteena_tb",
 ## "tcb_lite_lib_misaligned_memory_controller_tb",
-# "tcb_lite_peri_gpio_tb",
-# "tcb_lite_peri_uart_tb",
+ "tcb_lite_peri_gpio_tb",
+ "tcb_lite_peri_uart_tb",
 ]
 
 simulator = "questa"

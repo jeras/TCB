@@ -20,7 +20,7 @@ module tcb_lite_lib_logsize2byteena_tb
     import tcb_lite_pkg::*;
 #(
     // RTL configuration parameters
-    parameter  int unsigned DLY =    1,  // response delay
+    parameter  int unsigned DLY =    0,  // response delay
     parameter  bit          HLD = 1'b0,  // response hold
     parameter  bit          MOD = 1'b0,  // bus mode (0-logarithmic size, 1-byte enable)
     parameter  int unsigned CTL =    0,  // control width (user defined request signals)
@@ -66,30 +66,25 @@ module tcb_lite_lib_logsize2byteena_tb
 // tests
 ////////////////////////////////////////////////////////////////////////////////
 
-//    task test_aligned ();
-//        // write sequence
-//        testname = "write sequence";
-//        $display("TEST: %s", testname);
-//        tst_mon.delete();
-//        fork
-//            // manager (blocking API)
-//            begin: fork_man_write
-//                obj_man.write8 (32'h00000010,        8'h10, sts);
-//                obj_man.write8 (32'h00000011,      8'h32  , sts);
-//                obj_man.write8 (32'h00000012,    8'h54    , sts);
-//                obj_man.write8 (32'h00000013,  8'h76      , sts);
-//                obj_man.write16(32'h00000020,     16'h3210, sts);
-//                obj_man.write16(32'h00000022, 16'h7654    , sts);
-//                obj_man.write32(32'h00000030, 32'h76543210, sts);
-//            end: fork_man_write
-//            // subordinate (monitor)
-//            begin: fork_mon_write
-//                obj_sub.transfer_monitor(tst_mon);
-//            end: fork_mon_write
-//        join_any
-//        // disable transfer monitor
-//        repeat (tcb_man.CFG.HSK.DLY) @(posedge clk);
-//        disable fork;
+    task test_aligned ();
+        // write sequence
+        testname = "write sequence";
+        $display("TEST: %s", testname);
+
+        // manager (blocking API)
+        man.write8 (32'h00000010,        8'h10, sts, err);
+        man.write8 (32'h00000011,      8'h32  , sts, err);
+        man.write8 (32'h00000012,    8'h54    , sts, err);
+        man.write8 (32'h00000013,  8'h76      , sts, err);
+        man.write16(32'h00000020,     16'h3210, sts, err);
+        man.write16(32'h00000022, 16'h7654    , sts, err);
+        man.write32(32'h00000030, 32'h76543210, sts, err);
+
+        foreach(    man.rsp_que[i])  $display("DEBUG: man.rsp_que[%0d] = %p", i,     man.rsp_que[i]);
+        foreach(    sub.req_que[i])  $display("DEBUG: sub.req_que[%0d] = %p", i,     sub.req_que[i]);
+        foreach(mon_man.bus_que[i])  $display("DEBUG: mon_man.que[%0d] = %p", i, mon_man.bus_que[i]);
+        foreach(mon_sub.bus_que[i])  $display("DEBUG: mon_sub.que[%0d] = %p", i, mon_sub.bus_que[i]);
+
 //        // reference transfer queue
 //        sts = '0;
 //        tst_ref.delete();
@@ -174,8 +169,8 @@ module tcb_lite_lib_logsize2byteena_tb
 //        obj_man.check16(32'h00000022, 16'h7654    , 1'b0);
 //        obj_man.check32(32'h00000020, 32'h76543210, 1'b0);
 //        obj_man.check32(32'h00000030, 32'h76543210, 1'b0);
-//    endtask: test_aligned
-//
+    endtask: test_aligned
+
 //    task test_misaligned ();
 //        // clear memory
 //        mem.mem = '{default: 'x};
@@ -399,7 +394,7 @@ module tcb_lite_lib_logsize2byteena_tb
         /* verilator lint_on INITIALDLY */
         repeat (1) @(posedge clk);
 
-//        test_aligned;
+        test_aligned;
 //        if (CFG_SIZ.PMA.ALN != tcb_man.CFG_BUS_MAX) begin
 //            test_misaligned;
 //        end
@@ -414,26 +409,18 @@ module tcb_lite_lib_logsize2byteena_tb
 // VIP instances
 ////////////////////////////////////////////////////////////////////////////////
 
-    // manager VIP
-    tcb_lite_vip_manager #(
-    ) man (
-        .man (tcb_man)
-    );
+    // VIP
+    tcb_lite_vip_manager              man (.man (tcb_man));
+    tcb_lite_vip_subordinate          sub (.sub (tcb_sub));
+    tcb_lite_vip_monitor          mon_man (.mon (tcb_man));
+    tcb_lite_vip_monitor          mon_sub (.mon (tcb_man));
+    tcb_lite_vip_protocol_checker chk_man (.mon (tcb_man));
+    tcb_lite_vip_protocol_checker chk_sub (.mon (tcb_sub));
 
     // connect singular interface to interface array
     tcb_lite_lib_passthrough pas [0:0] (
         .sub (tcb_sub),
         .man (tcb_mem)
-    );
-
-    // manager TCB-Lite protocol checker
-    tcb_lite_vip_protocol_checker chk_man (
-        .mon (tcb_man)
-    );
-
-    // subordinate TCB-Lite protocol checker
-    tcb_lite_vip_protocol_checker chk_sub (
-        .mon (tcb_sub)
     );
 
     // memory model subordinate
