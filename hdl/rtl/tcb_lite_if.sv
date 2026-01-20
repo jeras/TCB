@@ -167,28 +167,6 @@ interface tcb_lite_if
     endgenerate
 
 ////////////////////////////////////////////////////////////////////////////////
-// VIP type definitions
-////////////////////////////////////////////////////////////////////////////////
-
-    // VIP transfer request queue type
-    typedef struct {
-        req_t        req;  // TCB request structure
-        int unsigned idl;  // idle cycles number
-    } vip_req_t;
-
-    // transfer response queue type
-    typedef struct {
-        rsp_t        rsp;  // TCB response structure
-        int unsigned bpr;  // backpressure cycles number
-    } vip_rsp_t;
-
-    // transfer request/response queue type
-    typedef struct {
-        vip_req_t req;
-        vip_rsp_t rsp;
-    } vip_bus_t;
-
-////////////////////////////////////////////////////////////////////////////////
 // modports
 ////////////////////////////////////////////////////////////////////////////////
 
