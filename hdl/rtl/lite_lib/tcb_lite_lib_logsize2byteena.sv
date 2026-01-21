@@ -84,13 +84,13 @@ module tcb_lite_lib_logsize2byteena
     assign req_ndn = sub.req_dly[0      ].ndn;
     assign rsp_ndn = sub.req_dly[sub.DLY].ndn;
 
-    // request/response address offset
-    assign req_off = sub.req_dly[0      ].adr[$clog2(sub.BYT)-1:0];
-    assign rsp_off = sub.req_dly[sub.DLY].adr[$clog2(sub.BYT)-1:0];
-
     // request/response logarithmic size
     assign req_siz = sub.req_dly[0      ].siz;
     assign rsp_siz = sub.req_dly[sub.DLY].siz;
+
+    // request/response address offset
+    assign req_off = sub.req_dly[0      ].adr[$clog2(sub.BYT)-1:0];
+    assign rsp_off = sub.req_dly[sub.DLY].adr[$clog2(sub.BYT)-1:0];
 
 ////////////////////////////////////////////////////////////////////////////////
 // multiplexers
@@ -141,7 +141,7 @@ module tcb_lite_lib_logsize2byteena
         // logarithmic size mode (subordinate interface) byte enable
         always_comb
         for (int unsigned i=0; i<sub.BYT; i++) begin: logsize2byteena
-            sub_req_ben[i] = (i < 2**rsp_siz) ? 1'b1 : 1'b0;
+            sub_req_ben[i] = (i < 2**req_siz) ? 1'b1 : 1'b0;
         end: logsize2byteena
 
         // byte enable
