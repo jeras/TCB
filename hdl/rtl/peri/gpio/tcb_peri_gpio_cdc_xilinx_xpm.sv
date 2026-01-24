@@ -26,8 +26,9 @@ module tcb_peri_gpio_cdc #(
     input  logic           clk,  // clock
     input  logic           rst,  // reset
     // GPIO signals
-    input  logic [DAT-1:0] gpio_i,
-    output logic [DAT-1:0] gpio_r
+    input  logic [DAT-1:0] gpio_i,  // data input
+    input  logic [DAT-1:0] gpio_e,  // enable input (not used)
+    output logic [DAT-1:0] gpio_r   // resynchronized output
 );
 
 ////////////////////////////////////////////////////////////////////////////////
