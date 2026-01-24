@@ -24,18 +24,18 @@ module tcb_lite_peri_gpio
     import tcb_lite_pkg::*;
 #(
     // GPIO parameters
-    parameter  int unsigned GDW = 32,  // GPIO data width
-    parameter  int unsigned CDC =  2,  // implement clock domain crossing stages (0 - bypass)
+    parameter  int unsigned GPIO_DAT = 32,  // GPIO data width
+    parameter  int unsigned GPIO_CDC =  2,  // implement clock domain crossing stages (0 - bypass)
     // optional implementation configuration
-    parameter  bit           SYS_IEN =   '0,  // input enable implementation
-    parameter  bit [GDW-1:0] SYS_IRQ =   '1,  // interrupt request implementation mask
-    parameter  bit           SYS_MIN = 1'b0   // minimalistic response implementation (configuration is write only)
+    parameter  bit                SYS_IEN =   '0,  // input enable implementation
+    parameter  bit [GPIO_DAT-1:0] SYS_IRQ =   '1,  // interrupt request implementation mask
+    parameter  bit                SYS_MIN = 1'b0   // minimalistic response implementation (configuration is write only)
     // NOTE 1: if none of the interrupts are enabled, the controller has a smaller address space
 )(
     // GPIO signals
-    output logic [GDW-1:0] gpio_o,
-    output logic [GDW-1:0] gpio_e,
-    input  logic [GDW-1:0] gpio_i,
+    output logic [GPIO_DAT-1:0] gpio_o,
+    output logic [GPIO_DAT-1:0] gpio_e,
+    input  logic [GPIO_DAT-1:0] gpio_i,
     // TCB interface
     tcb_lite_if.sub sub,
     // IRQ interface
@@ -47,8 +47,8 @@ module tcb_lite_peri_gpio
 ////////////////////////////////////////////////////////////////////////////////
 
     initial begin
-        assert (sub.DLY ==   0) else $error("Unsupported DLY = %0d (must be 0)", sub.DLY);
-        assert (sub.DAT >= GDW) else $error("Unsupported (DAT = %0d) < (GDW = %0d)", sub.DAT, GDW);
+        assert (sub.DLY ==        0) else $error("Unsupported DLY = %0d (must be 0)", sub.DLY);
+        assert (sub.DAT >= GPIO_DAT) else $error("Unsupported (DAT = %0d) < (GPIO_DAT = %0d)", sub.DAT, GPIO_DAT);
     end
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -69,8 +69,8 @@ module tcb_lite_peri_gpio
     // TCB variant independent instance
     tcb_peri_gpio #(
         // GPIO parameters
-        .GDW      (GDW),
-        .CDC      (CDC),
+        .GPIO_DAT (GPIO_DAT),
+        .GPIO_CDC (GPIO_CDC),
         // system interface parameters
         .SYS_DAT  (sub.DAT),
         // optional implementation configuration

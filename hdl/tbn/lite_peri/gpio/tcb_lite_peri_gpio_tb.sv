@@ -34,7 +34,7 @@ module tcb_lite_peri_gpio_tb
 ////////////////////////////////////////////////////////////////////////////////
 
     // GPIO width
-    localparam int unsigned GDW = 32;
+    localparam int unsigned GPIO_DAT = 32;
 
     // TCB configurations               '{HSK: '{DLY, HLD}, BUS: '{MOD, CTL, ADR, DAT, STS}}
     localparam tcb_lite_cfg_t MAN_CFG = '{HSK: '{DLY, HLD}, BUS: '{MOD, CTL, ADR, DAT, STS}};
@@ -65,9 +65,9 @@ module tcb_lite_peri_gpio_tb
 ////////////////////////////////////////////////////////////////////////////////
 
     // GPIO signals
-    logic [GDW-1:0] gpio_o;
-    logic [GDW-1:0] gpio_e;
-    logic [GDW-1:0] gpio_i;
+    logic [GPIO_DAT-1:0] gpio_o;
+    logic [GPIO_DAT-1:0] gpio_e;
+    logic [GPIO_DAT-1:0] gpio_i;
 
 ////////////////////////////////////////////////////////////////////////////////
 // test sequence
@@ -104,10 +104,10 @@ module tcb_lite_peri_gpio_tb
         man.write32('h08, 32'hffffffff, sts, err);  // write input enable register
         repeat (1) @(posedge clk);
         $info("reading/checking input begin.");
-        #10ns gpio_i = GDW'('h89abcdef);
+        #10ns gpio_i = GPIO_DAT'('h89abcdef);
         repeat (2) @(posedge clk);
         man.read32('h0c, rdt, sts, err);  assert (rdt == 32'h89abcdef) else $error("TCB read mismatch");  // read input data register
-        #10ns gpio_i = GDW'('hfedcba98);
+        #10ns gpio_i = GPIO_DAT'('hfedcba98);
         repeat (2) @(posedge clk);
         man.read32('h0c, rdt, sts, err);  assert (rdt == 32'hfedcba98) else $error("TCB read mismatch");  // read input data register
         $info("reading/checking input end.");
@@ -139,10 +139,10 @@ module tcb_lite_peri_gpio_tb
 
     // TCB GPIO
     tcb_lite_peri_gpio #(
-        .GDW     (GDW),
+        .GPIO_DAT (GPIO_DAT),
         // implementation details
 //        bit          CFG_MIN = 1'b0,  // minimalistic implementation
-        .CDC     (2)
+        .GPIO_CDC (2)
     ) gpio (
         // GPIO signals
         .gpio_o  (gpio_o),
@@ -156,7 +156,7 @@ module tcb_lite_peri_gpio_tb
 
 //    // GPIO three state drivers and loopback
 //    generate
-//    for (genvar i=0; i<GDW; i++) begin: io
+//    for (genvar i=0; i<GPIO_DAT; i++) begin: io
 //        assign gpio_i[i] = gpio_e[i] ? gpio_o[i] : 'z;
 //    end: io
 //    endgenerate

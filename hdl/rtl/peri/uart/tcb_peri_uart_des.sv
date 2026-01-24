@@ -17,42 +17,42 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 module tcb_peri_uart_des #(
-    parameter  int unsigned RW = 8,  // baudrate counter width
-    parameter  int unsigned DW = 8,  // shifter data width
-    parameter  int unsigned SW = 1   // stop sequence width
+    parameter  int unsigned BDR = 8,  // baudrate counter width
+    parameter  int unsigned DAT = 8,  // shifter data width
+    parameter  int unsigned STP = 1   // stop sequence width
 )(
     // system signals
-    input  logic          clk,
-    input  logic          rst,
+    input  logic           clk,
+    input  logic           rst,
     // configuration
-    input  logic [RW-1:0] cfg_bdr,  // baudrate
-    input  logic [RW-1:0] cfg_smp,  // sample position
+    input  logic [BDR-1:0] cfg_bdr,  // baudrate
+    input  logic [BDR-1:0] cfg_smp,  // sample position
     // parallel stream (there is no READY signal)
-    output logic          str_vld,  // valid
-    output logic [DW-1:0] str_dat,  // data
+    output logic           str_vld,  // valid
+    output logic [DAT-1:0] str_dat,  // data
     // serial RX output
-    input  logic          rxd
+    input  logic           rxd
 );
 
     // shift sequence length (start + data + stop)
-    localparam int unsigned SL = 1 + DW + SW;
+    localparam int unsigned SHF = 1 + DAT + STP;
 
     // delay RDX and detect a start edge
-    logic          rxd_dly;
-    logic          rxd_edg;
+    logic           rxd_dly;
+    logic           rxd_edg;
 
     // baudrate counter
-    logic [RW-1:0] bdr_cnt;
-    logic          bdr_end;
-    logic          bdr_smp;
+    logic [BDR-1:0] bdr_cnt;
+    logic           bdr_end;
+    logic           bdr_smp;
 
     // shifter bit counter
-    logic  [4-1:0] shf_cnt;
-    logic          shf_end;
-    logic          shf_run;
+    logic   [4-1:0] shf_cnt;
+    logic           shf_end;
+    logic           shf_run;
 
     // shift data register
-    logic [DW+SW-1:0] shf_dat;
+    logic [DAT+STP-1:0] shf_dat;
 
 ////////////////////////////////////////////////////////////////////////////////
 // parallel stream
@@ -117,15 +117,15 @@ module tcb_peri_uart_des #(
     end
 
     // end of shift sequence
-    assign shf_end = shf_cnt == 4'(SL-1);
+    assign shf_end = shf_cnt == 4'(SHF-1);
 
     // data shift register
     always_ff @(posedge clk)
     if (shf_run) begin
-        if (bdr_smp)  shf_dat <= {rxd, shf_dat[DW+SW-1:1]};
+        if (bdr_smp)  shf_dat <= {rxd, shf_dat[DAT+STP-1:1]};
     end
 
     // parallel stream data (START is already shifted out when VALID is active)
-    assign str_dat = shf_dat[DW-1:0];
+    assign str_dat = shf_dat[DAT-1:0];
 
 endmodule: tcb_peri_uart_des

@@ -17,24 +17,24 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 module tcb_peri_uart_fifo #(
-    parameter  int unsigned SZ = 32,            // size
-    localparam int unsigned AW = $clog2(SZ),    // address width (clog2)
-    localparam int unsigned CW = $clog2(SZ+1),  // counter width
-    parameter  int unsigned DW = 8              // data width
+    parameter  int unsigned SIZ = 32,            // size
+    localparam int unsigned ADR = $clog2(SIZ),    // address width (clog2)
+    localparam int unsigned CNT = $clog2(SIZ+1),  // counter width
+    parameter  int unsigned DAT = 8              // data width
 )(
     // system signals
-    input  logic          clk,
-    input  logic          rst,
+    input  logic           clk,
+    input  logic           rst,
     // parallel stream input
-    input  logic          sti_vld,  // valid
-    input  logic [DW-1:0] sti_dat,  // data
-    output logic          sti_rdy,  // ready
+    input  logic           sti_vld,  // valid
+    input  logic [DAT-1:0] sti_dat,  // data
+    output logic           sti_rdy,  // ready
     // parallel stream output
-    output logic          sto_vld,  // valid
-    output logic [DW-1:0] sto_dat,  // data
-    input  logic          sto_rdy,  // ready
+    output logic           sto_vld,  // valid
+    output logic [DAT-1:0] sto_dat,  // data
+    input  logic           sto_rdy,  // ready
     // status
-    output logic [CW-1:0] cnt       // load counter
+    output logic [CNT-1:0] cnt       // load counter
 );
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -48,16 +48,12 @@ module tcb_peri_uart_fifo #(
 ////////////////////////////////////////////////////////////////////////////////
 
     // input interface
-    logic          sti_trn;  // transfer
-    logic [AW-1:0] sti_adr;  // address counter
-
-    // CDC FIFO memory
-    (* ram_style ="distributed" *)
-    logic [DW-1:0] mem [0:SZ-1];
+    logic           sti_trn;  // transfer
+    logic [ADR-1:0] sti_adr;  // address counter
 
     // output interface
-    logic          sto_trn;  // transfer
-    logic [AW-1:0] sto_adr;  // counter
+    logic           sto_trn;  // transfer
+    logic [ADR-1:0] sto_adr;  // counter
 
 ////////////////////////////////////////////////////////////////////////////////
 // input interface
@@ -69,11 +65,22 @@ module tcb_peri_uart_fifo #(
     // address
     always_ff @(posedge clk, posedge rst)
     if (rst)           sti_adr <= 'd0;
-    else if (sti_trn)  sti_adr <= (sti_adr == AW'(SZ-1)) ? 'd0 : sti_adr + 'd1;
+    else if (sti_trn)  sti_adr <= (sti_adr == ADR'(SIZ-1)) ? 'd0 : sti_adr + 'd1;
+
+////////////////////////////////////////////////////////////////////////////////
+// memory
+////////////////////////////////////////////////////////////////////////////////
+
+    // CDC FIFO memory
+    (* ram_style ="distributed" *)
+    logic [DAT-1:0] mem [0:SIZ-1];
 
     // memory write
     always_ff @ (posedge clk)
-    if (sti_trn) mem [sti_adr[AW-1:0]] <= sti_dat;
+    if (sti_trn) mem [sti_adr[ADR-1:0]] <= sti_dat;
+
+    // asynchronous memory read
+    assign sto_dat = mem [sto_adr[ADR-1:0]];
 
 ////////////////////////////////////////////////////////////////////////////////
 // output interface
@@ -85,10 +92,7 @@ module tcb_peri_uart_fifo #(
     // address
     always_ff @(posedge clk, posedge rst)
     if (rst)           sto_adr <= 'd0;
-    else if (sto_trn)  sto_adr <= (sto_adr == AW'(SZ-1)) ? 'd0 : sto_adr + 'd1;
-
-    // asynchronous memory read
-    assign sto_dat = mem [sto_adr[AW-1:0]];
+    else if (sto_trn)  sto_adr <= (sto_adr == ADR'(SIZ-1)) ? 'd0 : sto_adr + 'd1;
 
 ////////////////////////////////////////////////////////////////////////////////
 // load counter
@@ -97,10 +101,10 @@ module tcb_peri_uart_fifo #(
     // counter binary
     always_ff @(posedge clk, posedge rst)
     if (rst)  cnt <= 'd0;
-    else      cnt <= cnt + CW'(sti_trn) - CW'(sto_trn);
+    else      cnt <= cnt + CNT'(sti_trn) - CNT'(sto_trn);
 
     // input ready (not full)
-    assign sti_rdy = (cnt != CW'(SZ));
+    assign sti_rdy = (cnt != CNT'(SIZ));
 
     // output valid (not empty)
     assign sto_vld = (cnt != 'd0);

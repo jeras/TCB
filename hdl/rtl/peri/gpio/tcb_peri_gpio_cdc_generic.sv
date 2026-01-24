@@ -18,7 +18,7 @@
 
 module tcb_peri_gpio_cdc #(
     // GPIO parameters
-    parameter  int unsigned GDW =   32,  // GPIO data width
+    parameter  int unsigned DAT =   32,  // GPIO data width
     parameter  int unsigned CDC =    2,  // implement clock domain crossing stages (0 - bypass)
     parameter  bit          IEN = 1'b1   // implement input enable mask (to minimize toggling propagation)
 )(
@@ -26,9 +26,9 @@ module tcb_peri_gpio_cdc #(
     input  logic           clk,  // clock
     input  logic           rst,  // reset
     // GPIO signals
-    input  logic [GDW-1:0] gpio_i,  // GPIO input data
-    input  logic [GDW-1:0] gpio_e,  // GPIO input enable
-    output logic [GDW-1:0] gpio_r   // GPIO registered/synchronized output
+    input  logic [DAT-1:0] gpio_i,  // GPIO input data
+    input  logic [DAT-1:0] gpio_e,  // GPIO input enable
+    output logic [DAT-1:0] gpio_r   // GPIO registered/synchronized output
 );
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -46,7 +46,7 @@ module tcb_peri_gpio_cdc #(
 ////////////////////////////////////////////////////////////////////////////////
 
     // temporary signal for synchronization
-    logic [GDW-1:0] gpio_t [CDC-1:0];
+    logic [DAT-1:0] gpio_t [CDC-1:0];
 
     // asynchronous input synchronization
     always_ff @(posedge clk, posedge rst)

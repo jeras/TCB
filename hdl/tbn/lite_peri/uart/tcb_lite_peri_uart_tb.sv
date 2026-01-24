@@ -34,7 +34,7 @@ module tcb_lite_peri_uart_tb
 ////////////////////////////////////////////////////////////////////////////////
 
     // UART data width
-    localparam int unsigned UDW = 8;
+    localparam int unsigned UART_DAT = 8;
 
     // UART baudrate
     localparam int unsigned TX_BDR = 4;         // TX baudrate
@@ -133,7 +133,7 @@ module tcb_lite_peri_uart_tb
         $info("reading RX data begin.");
         for (int unsigned i=0; i<TX_LEN; i++) begin
             man.read32('h20, rdt, sts, err);
-            rx_str[i] = rdt[UDW-1:0];
+            rx_str[i] = rdt[UART_DAT-1:0];
         end
         $info("reading RX data end.");
 
@@ -174,7 +174,7 @@ module tcb_lite_peri_uart_tb
 
     // TCB UART
     tcb_lite_peri_uart #(
-        .UART_DW  (UDW)
+        .UART_DAT (UART_DAT)
     ) uart (
         // UART signals
         .uart_txd (uart_txd),

@@ -17,40 +17,40 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 module tcb_peri_uart_ser #(
-    parameter  int unsigned RW = 8,  // baudrate number width
-    parameter  int unsigned DW = 8,  // shifter data width
-    parameter  int unsigned SW = 1   // stop sequence width
+    parameter  int unsigned BDR = 8,  // baudrate number width
+    parameter  int unsigned DAT = 8,  // shifter data width
+    parameter  int unsigned STP = 1   // stop sequence width
 )(  
     // system signals
-    input  logic          clk,
-    input  logic          rst,
+    input  logic           clk,
+    input  logic           rst,
     // configuration
-    input  logic [RW-1:0] cfg_bdr,  // baudrate
+    input  logic [BDR-1:0] cfg_bdr,  // baudrate
     // parallel stream
-    input  logic          str_vld,  // valid
-    input  logic [DW-1:0] str_dat,  // data
-    output logic          str_rdy,  // ready
+    input  logic           str_vld,  // valid
+    input  logic [DAT-1:0] str_dat,  // data
+    output logic           str_rdy,  // ready
     // serial TX output
-    output logic          txd
+    output logic           txd
 );
 
     // shift sequence length (start + data + stop)
-    localparam int unsigned SL = 1 + DW + SW;
+    localparam int unsigned SHF = 1 + DAT + STP;
 
     // parallel stream transfer
-    logic          str_trn;
+    logic           str_trn;
 
     // baudrate counter
-    logic [RW-1:0] bdr_cnt;
-    logic          bdr_end;
+    logic [BDR-1:0] bdr_cnt;
+    logic           bdr_end;
 
     // shifter bit counter and run status
-    logic  [4-1:0] shf_cnt;
-    logic          shf_end;
-    logic          shf_run;
+    logic   [4-1:0] shf_cnt;
+    logic           shf_end;
+    logic           shf_run;
 
     // shift data register
-    logic [DW+1-1:0] shf_dat;
+    logic [DAT+1-1:0] shf_dat;
 
 ////////////////////////////////////////////////////////////////////////////////
 // parallel stream
@@ -99,15 +99,15 @@ module tcb_peri_uart_ser #(
     end
 
     // end of shift sequence
-    assign shf_end = shf_cnt == 4'(SL-1);
+    assign shf_end = shf_cnt == 4'(SHF-1);
 
     // data shift register
     // without reset, to reduce ASIC area
     always_ff @(posedge clk, posedge rst)
     if (rst)                shf_dat <= '1;
     else begin
-        if       (str_trn)  shf_dat <= {      str_dat        , 1'b0};
-        else if  (bdr_end)  shf_dat <= {1'b1, shf_dat[DW-0:1]      };
+        if       (str_trn)  shf_dat <= {      str_dat         , 1'b0};
+        else if  (bdr_end)  shf_dat <= {1'b1, shf_dat[DAT-0:1]      };
     end
 
     assign txd = shf_dat[0];

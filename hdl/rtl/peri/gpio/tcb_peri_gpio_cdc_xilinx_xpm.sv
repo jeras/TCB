@@ -18,7 +18,7 @@
 
 module tcb_peri_gpio_cdc #(
     // GPIO parameters
-    parameter  int unsigned GDW =   32,  // GPIO data width
+    parameter  int unsigned DAT =   32,  // GPIO data width
     parameter  int unsigned CDC =    2,  // implement clock domain crossing stages (0 - bypass)
     parameter  bit          IEN = 1'b1   // implement input enable mask (to minimize toggling propagation)
 )(
@@ -26,8 +26,8 @@ module tcb_peri_gpio_cdc #(
     input  logic           clk,  // clock
     input  logic           rst,  // reset
     // GPIO signals
-    input  logic [GDW-1:0] gpio_i,
-    output logic [GDW-1:0] gpio_r
+    input  logic [DAT-1:0] gpio_i,
+    output logic [DAT-1:0] gpio_r
 );
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -51,7 +51,7 @@ module tcb_peri_gpio_cdc #(
         .INIT_SYNC_FF   (0),    // DECIMAL; 0=disable simulation init values, 1=enable simulation init values
         .SIM_ASSERT_CHK (0),    // DECIMAL; 0=disable simulation messages, 1=enable simulation messages
         .SRC_INPUT_REG  (0),    // DECIMAL; 0=do not register input, 1=register input
-        .WIDTH          (GDW)   // DECIMAL; range: 1-1024
+        .WIDTH          (DAT)   // DECIMAL; range: 1-1024
     ) gpio_cdc (
         .src_clk  (clk),
         .src_in   (gpio_i),

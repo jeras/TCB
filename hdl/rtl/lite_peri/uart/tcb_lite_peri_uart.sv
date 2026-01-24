@@ -18,20 +18,20 @@
 
 module tcb_lite_peri_uart #(
     // UART parameters
-    parameter  int unsigned UART_RW = 8,  // baudrate number width
-    parameter  int unsigned UART_DW = 8,  // shifter data width
+    parameter  int unsigned UART_BDR = 8,  // baudrate number width
+    parameter  int unsigned UART_DAT = 8,  // shifter data width
 //    parameter string PARITY   = "NONE",         // parity type "EVEN", "ODD", "NONE"
 //    parameter int    STOPSIZE = 1,              // number of stop bits
     // FIFO parameters
-    parameter  int unsigned FIFO_SZ = 32,             // size
-    localparam int unsigned FIFO_AW = $clog2(FIFO_SZ),     // address width
-    localparam int unsigned FIFO_CW = $clog2(FIFO_SZ+1),   // counter width
+    parameter  int unsigned FIFO_SIZ = 32,             // size
+    localparam int unsigned FIFO_ADR = $clog2(FIFO_SIZ),     // address width
+    localparam int unsigned FIFO_CNT = $clog2(FIFO_SIZ+1),   // counter width
     // configuration register parameters (write enable, reset value)
-    parameter  bit CFG_TX_BDR_WEN = 1'b1, parameter  logic [UART_RW-1:0] CFG_TX_BDR_RST = '0,  // TX baudrate
-    parameter  bit CFG_TX_IRQ_WEN = 1'b1, parameter  logic [FIFO_CW-1:0] CFG_TX_IRQ_RST = '0,  // TX interrupt level
-    parameter  bit CFG_RX_BDR_WEN = 1'b1, parameter  logic [UART_RW-1:0] CFG_RX_BDR_RST = '0,  // RX baudrate
-    parameter  bit CFG_RX_SMP_WEN = 1'b1, parameter  logic [UART_RW-1:0] CFG_RX_SMP_RST = '0,  // RX sample
-    parameter  bit CFG_RX_IRQ_WEN = 1'b1, parameter  logic [FIFO_CW-1:0] CFG_RX_IRQ_RST = '0,  // RX interrupt level
+    parameter  bit CFG_TX_BDR_WEN = 1'b1, parameter  logic [UART_BDR-1:0] CFG_TX_BDR_RST = '0,  // TX baudrate
+    parameter  bit CFG_TX_IRQ_WEN = 1'b1, parameter  logic [FIFO_CNT-1:0] CFG_TX_IRQ_RST = '0,  // TX interrupt level
+    parameter  bit CFG_RX_BDR_WEN = 1'b1, parameter  logic [UART_BDR-1:0] CFG_RX_BDR_RST = '0,  // RX baudrate
+    parameter  bit CFG_RX_SMP_WEN = 1'b1, parameter  logic [UART_BDR-1:0] CFG_RX_SMP_RST = '0,  // RX sample
+    parameter  bit CFG_RX_IRQ_WEN = 1'b1, parameter  logic [FIFO_CNT-1:0] CFG_RX_IRQ_RST = '0,  // RX interrupt level
     // TCB parameters
     parameter  bit          SYS_MIN = 1'b0   // minimalistic response implementation
 )(
@@ -66,12 +66,12 @@ module tcb_lite_peri_uart #(
     // TCB variant independent instance
     tcb_peri_uart #(
         // UART parameters
-        .UART_RW  (UART_RW),
-        .UART_DW  (UART_DW),
+        .UART_BDR  (UART_BDR),
+        .UART_DAT  (UART_DAT),
     //  .PARITY
     //  .STOPSIZE
         // FIFO parameters
-        .FIFO_SZ  (FIFO_SZ),
+        .FIFO_SIZ  (FIFO_SIZ),
         // configuration register parameters (write enable, reset value)
         .CFG_TX_BDR_WEN (CFG_TX_BDR_WEN),  .CFG_TX_BDR_RST (CFG_TX_BDR_RST),
         .CFG_TX_IRQ_WEN (CFG_TX_IRQ_WEN),  .CFG_TX_IRQ_RST (CFG_TX_IRQ_RST),
