@@ -38,7 +38,6 @@ module tcb_lite_vip_memory
 
     generate
     for (genvar i=0; i<IFN; i++) begin
-        initial assert (tcb[i].VIP) else $error("VIP parameter must be enabled to support read access.");
     end
     endgenerate
 
@@ -151,7 +150,7 @@ module tcb_lite_vip_memory
         //always @(*)
         always_latch
         if (tcb[i].trn) begin
-            if (~tcb[i].req.wen) begin: read
+            if (tcb[i].req.ren) begin: read
                 for (int unsigned b=0; b<BYT; b++) begin: bytes
                     if (tcb[i].MOD == 1'b0) begin
                         // read only transfer size bytes, the rest remains undefined
@@ -167,9 +166,9 @@ module tcb_lite_vip_memory
         end
 
         // continuous assignment
-        assign tcb[i].rsp_dly[0].rdt = rdt;
-        assign tcb[i].rsp_dly[0].sts = '0;
-        assign tcb[i].rsp_dly[0].err = 1'b0;
+        assign tcb[i].rsp.rdt = $past(rdt, tcb[i].DLY, , @(posedge tcb[i].clk));
+        assign tcb[i].rsp.sts = '0;
+        assign tcb[i].rsp.err = 1'b0;
 
         // as a memory model, there is no immediate need for backpressure, this feature might be added in the future
         assign tcb[i].rdy = 1'b1;

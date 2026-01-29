@@ -54,6 +54,7 @@ module tcb_lite_lib_register_response
     assign man.req.lck = sub.req.lck;
     assign man.req.ndn = sub.req.ndn;
     assign man.req.wen = sub.req.wen;
+    assign man.req.ren = sub.req.ren;
     assign man.req.ctl = sub.req.ctl;
     assign man.req.adr = sub.req.adr;
     assign man.req.siz = sub.req.siz;
@@ -68,14 +69,14 @@ module tcb_lite_lib_register_response
         // TODO: only on read enable, and byte enable (problem is what to do with LOG_SIZE
             for (genvar i=0; i<sub.BYT; i++) begin: rdt
                 always_ff @(posedge man.clk)
-                if (man.trn_dly[man.DLY] & ~sub.req.wen & (i < 2**sub.req.siz   ))  sub.rsp.rdt[i*8+:8] <= man.rsp.rdt[i*8+:8];
+                if (man.trn_dly[man.DLY] & sub.req.ren & (i < 2**sub.req.siz   ))  sub.rsp.rdt[i*8+:8] <= man.rsp.rdt[i*8+:8];
             end: rdt
         end: byt
         1'b1: begin: byt
             // read data (byte enable)
             for (genvar i=0; i<sub.BYT; i++) begin: rdt
                 always_ff @(posedge man.clk)
-                if (man.trn_dly[man.DLY] & ~sub.req.wen & (       sub.req.byt[i]))  sub.rsp.rdt[i*8+:8] <= man.rsp.rdt[i*8+:8];
+                if (man.trn_dly[man.DLY] & sub.req.ren & (       sub.req.byt[i]))  sub.rsp.rdt[i*8+:8] <= man.rsp.rdt[i*8+:8];
             end: rdt
         end: byt
     endcase

@@ -63,6 +63,7 @@ module tcb_lite_lib_register_request
         man.req.lck <= sub.req.lck;
         man.req.ndn <= sub.req.ndn;
         man.req.wen <= sub.req.wen;
+        man.req.ren <= sub.req.ren;
         man.req.adr <= sub.req.adr;
         man.req.ctl <= sub.req.ctl;
     end

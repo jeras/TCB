@@ -20,9 +20,7 @@ interface tcb_lite_if
     import tcb_lite_pkg::*;
 #(
     // configuration parameters
-    parameter tcb_lite_cfg_t CFG = TCB_LITE_CFG_DEF,
-    // enable testbench VIP functionality
-    parameter bit            VIP = 1'b0
+    parameter tcb_lite_cfg_t CFG = TCB_LITE_CFG_DEF
 )(
     // system signals
     input  logic clk,  // clock
@@ -46,7 +44,8 @@ interface tcb_lite_if
     typedef struct {
         logic           lck;  // arbitration lock
         logic           ndn;  // endianness (0-little, 1-big)
-        logic           wen;  // write enable (0-read, 1-write)
+        logic           wen;  // write enable
+        logic           ren;  // read  enable
         logic [CTL-1:0] ctl;  // control (user defined request signals)
         logic [ADR-1:0] adr;  // address
         logic [SIZ-1:0] siz;  // transfer size
@@ -117,53 +116,28 @@ interface tcb_lite_if
     // delay line
     logic trn_dly [0:DLY];  // handshake transfer
     req_t req_dly [0:DLY];  // request
-    rsp_t rsp_dly [0:DLY];  // response
 
     // zero delay (continuous assignment)
     assign trn_dly[0] = trn;
     assign req_dly[0] = req;
 
+    // handshake/request delay line
     generate
-        // handshake/request delay line
-        for (genvar i=1; i<=DLY; i++) begin: dly
-            logic trn_tmp;
-            req_t req_tmp;
-            // continuous assignment
-            assign trn_dly[i] = trn_tmp;
-            assign req_dly[i] = req_tmp;
-            // propagate through delay line
-            always_ff @(posedge clk)
-            begin
-                trn_tmp <= trn_dly[i-1];
-                if (trn_dly[i-1]) begin
-                    req_tmp <= req_dly[i-i];
-                end
+    for (genvar i=1; i<=DLY; i++) begin: dly
+        logic trn_tmp;
+        req_t req_tmp;
+        // continuous assignment
+        assign trn_dly[i] = trn_tmp;
+        assign req_dly[i] = req_tmp;
+        // propagate through delay line
+        always_ff @(posedge clk)
+        begin
+            trn_tmp <= trn_dly[i-1];
+            if (trn_dly[i-1]) begin
+                req_tmp <= req_dly[i-i];
             end
-        end: dly
-
-        if (VIP) begin: vip
-            // response delay line
-            for (genvar i=1; i<=DLY; i++) begin: dly
-                rsp_t rsp_tmp;
-                // continuous assignment
-                assign rsp_dly[i] = rsp_tmp;
-                // propagate through delay line
-                always_ff @(posedge clk)
-                begin
-                    if (trn_dly[i-1]) begin
-                        rsp_tmp <= rsp_dly[i-i];
-                    end
-                end
-            end: dly
-            // continuous assignment
-            if (DLY == 0) begin
-                assign rsp = trn ? rsp_dly[DLY] : '{default: 'z};
-            end else begin
-                if (HLD)  assign rsp =                rsp_dly[DLY];
-                else      assign rsp = trn_dly[DLY] ? rsp_dly[DLY] : '{default: 'x};
-            end
-        end: vip
-
+        end
+    end: dly
     endgenerate
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -187,8 +161,7 @@ interface tcb_lite_if
         input  rsp,
         // delay line
         input  trn_dly,
-        input  req_dly,
-        input  rsp_dly
+        input  req_dly
     );
 
     // monitor
@@ -208,8 +181,7 @@ interface tcb_lite_if
         input  rsp,
         // delay line
         input  trn_dly,
-        input  req_dly,
-        input  rsp_dly
+        input  req_dly
     );
 
     // subordinate
@@ -229,8 +201,7 @@ interface tcb_lite_if
         output rsp,
         // delay line
         input  trn_dly,
-        input  req_dly,
-        input  rsp_dly
+        input  req_dly
     );
 
 endinterface: tcb_lite_if

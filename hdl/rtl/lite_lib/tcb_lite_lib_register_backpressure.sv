@@ -64,6 +64,7 @@ module tcb_lite_lib_register_backpressure
         tmp_req.lck <= sub.req.lck;
         tmp_req.ndn <= sub.req.ndn;
         tmp_req.wen <= sub.req.wen;
+        tmp_req.ren <= sub.req.ren;
         tmp_req.adr <= sub.req.adr;
         tmp_req.ctl <= sub.req.ctl;
     end
@@ -97,6 +98,7 @@ module tcb_lite_lib_register_backpressure
     assign man.req.lck = sub.rdy ? sub.req.lck : tmp_req.lck;
     assign man.req.ndn = sub.rdy ? sub.req.ndn : tmp_req.ndn;
     assign man.req.wen = sub.rdy ? sub.req.wen : tmp_req.wen;
+    assign man.req.ren = sub.rdy ? sub.req.ren : tmp_req.ren;
     assign man.req.ctl = sub.rdy ? sub.req.ctl : tmp_req.ctl;
     assign man.req.adr = sub.rdy ? sub.req.adr : tmp_req.adr;
     assign man.req.siz = sub.rdy ? sub.req.siz : tmp_req.siz;

@@ -97,7 +97,6 @@ module tcb_lite_lib_arbiter
         if (tcb_trn[sel_cmb]) begin
             sel_lck <= tcb_lck[sel_cmb];
         end
-
     end
 
     // registered select

@@ -94,6 +94,7 @@ module tcb_lite_lib_demultiplexer
         assign man[i].req.lck = (sub_sel == i[IFL-1:0]) ? sub.req.lck : 'x;
         assign man[i].req.ndn = (sub_sel == i[IFL-1:0]) ? sub.req.ndn : 'x;
         assign man[i].req.wen = (sub_sel == i[IFL-1:0]) ? sub.req.wen : 'x;
+        assign man[i].req.ren = (sub_sel == i[IFL-1:0]) ? sub.req.ren : 'x;
         assign man[i].req.ctl = (sub_sel == i[IFL-1:0]) ? sub.req.ctl : 'x;
         assign man[i].req.adr = (sub_sel == i[IFL-1:0]) ? sub.req.adr : 'x;
         assign man[i].req.siz = (sub_sel == i[IFL-1:0]) ? sub.req.siz : 'x;

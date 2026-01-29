@@ -45,7 +45,8 @@ module tcb_lite_dut_wrapper #(
     output logic           sub_rdy    [SUB_IFN-1:0],  // handshake: ready
     input  logic           sub_req_lck[SUB_IFN-1:0],  // request: arbitration lock
     input  logic           sub_req_ndn[SUB_IFN-1:0],  // request: endianness (0-little, 1-big)
-    input  logic           sub_req_wen[SUB_IFN-1:0],  // request: write enable (0-read, 1-write)
+    input  logic           sub_req_wen[SUB_IFN-1:0],  // request: write enable
+    input  logic           sub_req_ren[SUB_IFN-1:0],  // request: read  enable
     input  logic [ADR-1:0] sub_req_adr[SUB_IFN-1:0],  // request: address
     input  logic [SIZ-1:0] sub_req_siz[SUB_IFN-1:0],  // request: transfer size
     input  logic [BYT-1:0] sub_req_byt[SUB_IFN-1:0],  // request: byte enable
@@ -57,7 +58,8 @@ module tcb_lite_dut_wrapper #(
     input  logic           man_rdy    [MAN_IFN-1:0],  // handshake: ready
     output logic           man_req_lck[MAN_IFN-1:0],  // request: arbitration lock
     output logic           man_req_ndn[MAN_IFN-1:0],  // request: endianness (0-little, 1-big)
-    output logic           man_req_wen[MAN_IFN-1:0],  // request: write enable (0-read, 1-write)
+    output logic           man_req_wen[MAN_IFN-1:0],  // request: write enable
+    output logic           man_req_ren[MAN_IFN-1:0],  // request: read  enable
     output logic [ADR-1:0] man_req_adr[MAN_IFN-1:0],  // request: address
     output logic [SIZ-1:0] man_req_siz[MAN_IFN-1:0],  // request: transfer size
     output logic [BYT-1:0] man_req_byt[MAN_IFN-1:0],  // request: byte enable
@@ -100,6 +102,7 @@ module tcb_lite_dut_wrapper #(
         assign tcb_sub[i].req.lck = sub_req_lck[i];
         assign tcb_sub[i].req.ndn = sub_req_ndn[i];
         assign tcb_sub[i].req.wen = sub_req_wen[i];
+        assign tcb_sub[i].req.ren = sub_req_ren[i];
         assign tcb_sub[i].req.adr = sub_req_adr[i];
         assign tcb_sub[i].req.siz = sub_req_siz[i];
         assign tcb_sub[i].req.byt = sub_req_byt[i];
@@ -220,6 +223,7 @@ module tcb_lite_dut_wrapper #(
         assign man_req_lck[i] = tcb_man[i].req.lck;
         assign man_req_ndn[i] = tcb_man[i].req.ndn;
         assign man_req_wen[i] = tcb_man[i].req.wen;
+        assign man_req_ren[i] = tcb_man[i].req.ren;
         assign man_req_adr[i] = tcb_man[i].req.adr;
         assign man_req_siz[i] = tcb_man[i].req.siz;
         assign man_req_byt[i] = tcb_man[i].req.byt;

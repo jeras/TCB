@@ -94,7 +94,7 @@ module tcb_lite_peri_uart #(
         .sys_wad  (sys_req_adr),
         .sys_wdt  (sub.req.wdt),
         // system read interface
-        .sys_ren  (~sub.req.wen & sub.trn),
+        .sys_ren  (sub.req.ren & sub.trn),
         .sys_rad  (sys_req_adr),
         .sys_rdt  (sub.rsp.rdt),
         // interrupt request interface

@@ -32,8 +32,6 @@ module tcb_lite_vip_memory_tb
     // TCB configurations               '{HSK: '{DLY, HLD}, BUS: '{MOD, CTL, ADR, DAT, STS}}
     localparam tcb_lite_cfg_t MAN_CFG = '{HSK: '{DLY, HLD}, BUS: '{MOD, CTL, ADR, DAT, STS}};
 
-    localparam bit VIP = 1'b1;
-
     // slave interface number
     localparam int unsigned  IFN = 1;
     // write mask (which interfaces are allowed write access)
@@ -48,7 +46,7 @@ module tcb_lite_vip_memory_tb
     logic rst = 1'b1;  // reset
 
     // TCB interfaces
-    tcb_lite_if #(MAN_CFG, VIP) tcb [IFN-1:0] (.clk (clk), .rst (rst));
+    tcb_lite_if #(MAN_CFG) tcb [IFN-1:0] (.clk (clk), .rst (rst));
 
     // testbench status signals
     string       testname;  // test name

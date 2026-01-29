@@ -65,6 +65,7 @@ module tcb_lite_lib_multiplexer
     logic               lck [IFN-1:0];
     logic               ndn [IFN-1:0];
     logic               wen [IFN-1:0];
+    logic               ren [IFN-1:0];
     logic [man.CTL-1:0] ctl [IFN-1:0];
     logic [man.ADR-1:0] adr [IFN-1:0];
     logic [man.SIZ-1:0] siz [IFN-1:0];
@@ -100,6 +101,7 @@ module tcb_lite_lib_multiplexer
         assign lck[i] = sub[i].req.lck;
         assign ndn[i] = sub[i].req.ndn;
         assign wen[i] = sub[i].req.wen;
+        assign ren[i] = sub[i].req.ren;
         assign ctl[i] = sub[i].req.ctl;
         assign adr[i] = sub[i].req.adr;
         assign siz[i] = sub[i].req.siz;
@@ -114,6 +116,7 @@ module tcb_lite_lib_multiplexer
     assign man.req.lck = lck[sub_sel];
     assign man.req.ndn = ndn[sub_sel];
     assign man.req.wen = wen[sub_sel];
+    assign man.req.ren = ren[sub_sel];
     assign man.req.ctl = ctl[sub_sel];
     assign man.req.adr = adr[sub_sel];
     assign man.req.siz = siz[sub_sel];

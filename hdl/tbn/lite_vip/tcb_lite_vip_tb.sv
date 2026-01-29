@@ -36,8 +36,6 @@ module tcb_lite_vip_tb
     // TCB configurations               '{HSK: '{DLY, HLD}, BUS: '{MOD, CTL, ADR, DAT, STS}}
     localparam tcb_lite_cfg_t MAN_CFG = '{HSK: '{DLY, HLD}, BUS: '{MOD, CTL, ADR, DAT, STS}};
 
-    localparam bit VIP = 1'b1;
-
 ////////////////////////////////////////////////////////////////////////////////
 // local signals
 ////////////////////////////////////////////////////////////////////////////////
@@ -51,7 +49,7 @@ module tcb_lite_vip_tb
     int unsigned errorcnt;  // ERROR counter
 
     // TCB interfaces
-    tcb_lite_if #(MAN_CFG, VIP) tcb (.clk (clk), .rst (rst));
+    tcb_lite_if #(MAN_CFG) tcb (.clk (clk), .rst (rst));
 
 ////////////////////////////////////////////////////////////////////////////////
 // reference data for tests

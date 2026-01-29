@@ -37,8 +37,6 @@ module tcb_lite_lib_passthrough_tb
     localparam tcb_lite_cfg_t MAN_CFG = '{HSK: '{DLY, HLD}, BUS: '{MOD, CTL, ADR, DAT, STS}};
     localparam tcb_lite_cfg_t SUB_CFG = '{HSK: '{DLY, HLD}, BUS: '{MOD, CTL, ADR, DAT, STS}};
 
-    localparam bit VIP = 1'b1;
-
 ////////////////////////////////////////////////////////////////////////////////
 // local signals
 ////////////////////////////////////////////////////////////////////////////////
@@ -48,8 +46,8 @@ module tcb_lite_lib_passthrough_tb
     logic rst = 1'b1;  // reset
 
     // TCB interfaces
-    tcb_lite_if #(MAN_CFG     ) tcb_man (.clk (clk), .rst (rst));
-    tcb_lite_if #(SUB_CFG, VIP) tcb_sub (.clk (clk), .rst (rst));
+    tcb_lite_if #(MAN_CFG) tcb_man (.clk (clk), .rst (rst));
+    tcb_lite_if #(SUB_CFG) tcb_sub (.clk (clk), .rst (rst));
 
     // response
     logic [DAT-1:0] rdt;  // read data
@@ -79,9 +77,9 @@ module tcb_lite_lib_passthrough_tb
 
         // manager (non-blocking API)
 
-        //                              lck,  ndn,  wen, ctl,          adr,             siz,              byt,          wdt}, idl
-        man.req_que.push_back('{req: '{1'b0, 1'b0, 1'b1,  'x, 32'h01234567, tcb_man.SIZ'(2), tcb_man.BYT'('1), 32'h76543210}, idl: 0});
-        man.req_que.push_back('{req: '{1'b0, 1'b0, 1'b0,  'x, 32'h89ABCDEF, tcb_man.SIZ'(2), tcb_man.BYT'('1), 32'hxxxxxxxx}, idl: 0});
+        //                              lck,  ndn,  wen,  ren, ctl,          adr,             siz,              byt,          wdt}, idl
+        man.req_que.push_back('{req: '{1'b0, 1'b0, 1'b1, 1'b0,  'x, 32'h01234567, tcb_man.SIZ'(2), tcb_man.BYT'('1), 32'h76543210}, idl: 0});
+        man.req_que.push_back('{req: '{1'b0, 1'b0, 1'b0, 1'b1,  'x, 32'h89ABCDEF, tcb_man.SIZ'(2), tcb_man.BYT'('1), 32'hxxxxxxxx}, idl: 0});
         //                                      rdt, sts,  err}, bpr
         sub.rsp_que.push_back('{rsp: '{32'hxxxxxxxx,  '0, 1'b0}, bpr: 0});
         sub.rsp_que.push_back('{rsp: '{32'h76543210,  '0, 1'b0}, bpr: 0});

@@ -37,8 +37,6 @@ module tcb_lite_lib_register_backpressure_tb
     localparam tcb_lite_cfg_t MAN_CFG = '{HSK: '{DLY, HLD}, BUS: '{MOD, CTL, ADR, DAT, STS}};
     localparam tcb_lite_cfg_t SUB_CFG = '{HSK: '{DLY, HLD}, BUS: '{MOD, CTL, ADR, DAT, STS}};
 
-    localparam bit VIP = 1'b1;
-
 ////////////////////////////////////////////////////////////////////////////////
 // local signals
 ////////////////////////////////////////////////////////////////////////////////
@@ -48,8 +46,8 @@ module tcb_lite_lib_register_backpressure_tb
     logic rst = 1'b1;  // reset
 
     // TCB interfaces
-    tcb_lite_if #(MAN_CFG     ) tcb_man (.clk (clk), .rst (rst));
-    tcb_lite_if #(SUB_CFG, VIP) tcb_sub (.clk (clk), .rst (rst));
+    tcb_lite_if #(MAN_CFG) tcb_man (.clk (clk), .rst (rst));
+    tcb_lite_if #(SUB_CFG) tcb_sub (.clk (clk), .rst (rst));
 
     // empty array
     logic [8-1:0] nul [];

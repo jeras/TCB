@@ -24,6 +24,62 @@ module tcb_lite_vip_subordinate
 );
 
 ////////////////////////////////////////////////////////////////////////////////
+// transfer response queue and driver
+////////////////////////////////////////////////////////////////////////////////
+
+    // transfer response structure
+    typedef sub.rsp_t rsp_t;
+
+    // transfer response queue type
+    typedef struct {
+        rsp_t        rsp;  // TCB response structure
+        int unsigned bpr;  // backpressure cycles number
+    } rsp_que_t;
+
+    // transfer response queue
+    rsp_que_t rsp_que [$];
+
+    // response without delay
+    rsp_t sub_rsp;
+
+    // transfer response initialization
+    initial begin
+        sub.rdy = 1'b0;
+        sub_rsp = '{default: 'x};
+    end
+
+    // transfer response driver
+    always @(rsp_que.size())
+    begin: driver
+        static int unsigned idl = 0;
+        if (rsp_que.size() > 0) begin
+            // backpressure cycles
+            while (rsp_que[0].bpr > 0) begin
+                @(posedge sub.clk);
+                rsp_que[0].bpr--;
+            end
+            // drive response
+            sub.rdy <= 1'b1;
+            sub_rsp <= rsp_que[0].rsp;
+            // idle cycles
+            do begin
+                @(posedge sub.clk);
+                idl++;
+            end while (~sub.trn);
+            // remove response
+            sub.rdy <= 1'b0;
+            sub_rsp <= '{default: 'x};
+            void'(rsp_que.pop_front());
+        end else begin
+            sub.rdy <= 1'b0;
+            sub_rsp <= '{default: 'x};
+        end
+    end: driver
+
+    // delayed response
+    assign sub.rsp = $past(sub_rsp, sub.DLY, , @(posedge sub.clk));
+
+////////////////////////////////////////////////////////////////////////////////
 // transfer request queue and sampler
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -47,57 +103,4 @@ module tcb_lite_vip_subordinate
         end
     end: sampler
 
-////////////////////////////////////////////////////////////////////////////////
-// transfer response queue and driver
-////////////////////////////////////////////////////////////////////////////////
-
-    // transfer response structure
-    typedef sub.rsp_t rsp_t;
-
-    // transfer response queue type
-    typedef struct {
-        rsp_t        rsp;  // TCB response structure
-        int unsigned bpr;  // backpressure cycles number
-    } rsp_que_t;
-
-    // transfer response queue
-    rsp_que_t rsp_que [$];
-
-    // transfer response initialization
-    initial begin
-        sub.rdy = 1'b0;
-        sub.rsp_dly[0] = '{default: 'x};
-    end
-
-    // transfer response driver
-    always @(rsp_que.size())
-    begin: driver
-        static int unsigned idl = 0;
-        if (rsp_que.size() > 0) begin
-            // backpressure cycles
-            while (rsp_que[0].bpr > 0) begin
-                @(posedge sub.clk);
-                rsp_que[0].bpr--;
-            end
-            // drive response
-            sub.rdy <= 1'b1;
-//            sub.rsp_dly[0] <= rsp_que[0].rsp;
-            sub.rsp_dly[0].rdt <= rsp_que[0].rsp.rdt;
-            sub.rsp_dly[0].sts <= rsp_que[0].rsp.sts;
-            sub.rsp_dly[0].err <= rsp_que[0].rsp.err;
-            // idle cycles
-            do begin
-                @(posedge sub.clk);
-                idl++;
-            end while (~sub.trn);
-            // remove response
-            sub.rdy <= 1'b0;
-            sub.rsp_dly[0] <= '{default: 'x};
-            void'(rsp_que.pop_front());
-        end else begin
-            sub.rdy <= 1'b0;
-            sub.rsp_dly[0] <= '{default: 'x};
-        end
-    end: driver
-    
 endmodule: tcb_lite_vip_subordinate

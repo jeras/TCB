@@ -102,7 +102,7 @@ module tcb_lite_vip_protocol_checker
     if ($realtime > 0) begin
         // response/read data bus and data sizing
         if (mon.trn_dly[mon.DLY]) begin
-            if (~mon.req_dly[mon.DLY].wen) begin
+            if (mon.req_dly[mon.DLY].ren) begin
                 if (mon.MOD == 1'b0) begin
                     for (int unsigned i=0; i<2**mon.req_dly[mon.DLY].siz; i++) begin
                         assert (!$isunknown(mon.rsp.rdt[8*i+:8])) else $error("TCB: mon.rsp.rdt[%0d] is unknown during a transfer cycle.", i);
