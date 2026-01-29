@@ -29,7 +29,7 @@ module tcb_lite_vip_memory
     parameter  bit [IFN-1:0] WRM = '1
 )(
     // TCB interface
-    tcb_lite_if tcb [IFN-1:0]
+    tcb_lite_if.sub sub [IFN-1:0]
 );
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -105,15 +105,15 @@ module tcb_lite_vip_memory
     generate
     for (genvar i=0; i<IFN; i++) begin: ifn
 
-        localparam int unsigned BYT = tcb[i].BYT;
+        localparam int unsigned BYT = sub[i].BYT;
 
         // request address and size (TCB_LOG_SIZE mode)
         int unsigned adr;
         int unsigned siz;
 
         // request address and size
-        assign adr =    int'(tcb[i].req.adr);
-        assign siz = 2**int'(tcb[i].req.siz);
+        assign adr =    int'(sub[i].req.adr);
+        assign siz = 2**int'(sub[i].req.siz);
 
         logic [BYT-1:0][8-1:0] wdt;
         logic [BYT-1:0][8-1:0] rdt;
@@ -122,21 +122,21 @@ module tcb_lite_vip_memory
         // NOTE: `always_ff` provides better simulator performance than `always`,
         //       but allows only one statement to be able to write into the `mem` array
 
-        assign wdt = tcb[i].req.wdt;
+        assign wdt = sub[i].req.wdt;
 
         if (WRM[i]) begin: write_mask
 
             // write access
-            always_ff @(posedge tcb[i].clk)
-            if (tcb[i].trn) begin
-                if (tcb[i].req.wen) begin: write
+            always_ff @(posedge sub[i].clk)
+            if (sub[i].trn) begin
+                if (sub[i].req.wen) begin: write
                     for (int unsigned b=0; b<BYT; b++) begin: bytes
-                        if (tcb[i].MOD == 1'b0) begin
+                        if (sub[i].MOD == 1'b0) begin
                             // write only transfer size bytes
                             if (b < siz)  mem[(adr+b)%SIZE] <= wdt[b];
                         end else begin
                             // write only enabled bytes
-                            if (tcb[i].req.byt[(adr+b)%BYT])  mem[(adr+b)%SIZE] <= wdt[(adr+b)%BYT];
+                            if (sub[i].req.byt[(adr+b)%BYT])  mem[(adr+b)%SIZE] <= wdt[(adr+b)%BYT];
                         end
                     end: bytes
                 end: write
@@ -149,16 +149,16 @@ module tcb_lite_vip_memory
         //       but at least on Questa always_comb provides faster execution
         //always @(*)
         always_latch
-        if (tcb[i].trn) begin
-            if (tcb[i].req.ren) begin: read
+        if (sub[i].trn) begin
+            if (sub[i].req.ren) begin: read
                 for (int unsigned b=0; b<BYT; b++) begin: bytes
-                    if (tcb[i].MOD == 1'b0) begin
+                    if (sub[i].MOD == 1'b0) begin
                         // read only transfer size bytes, the rest remains undefined
                         if (b < siz)  rdt[b] = mem[(adr+b)%SIZE];
                         else          rdt[b] = 'x;
                     end else begin
                         // read only enabled bytes, the rest remains undefined
-                        if (tcb[i].req.byt[(adr+b)%BYT])  rdt[(adr+b)%BYT] = mem[(adr+b)%SIZE];
+                        if (sub[i].req.byt[(adr+b)%BYT])  rdt[(adr+b)%BYT] = mem[(adr+b)%SIZE];
                         else                              rdt[(adr+b)%BYT] = 'x;
                     end
                 end: bytes
@@ -166,12 +166,12 @@ module tcb_lite_vip_memory
         end
 
         // continuous assignment
-        assign tcb[i].rsp.rdt = $past(rdt, tcb[i].DLY, , @(posedge tcb[i].clk));
-        assign tcb[i].rsp.sts = '0;
-        assign tcb[i].rsp.err = 1'b0;
+        assign sub[i].rsp.rdt = $past(rdt, sub[i].DLY, , @(posedge sub[i].clk));
+        assign sub[i].rsp.sts = '0;
+        assign sub[i].rsp.err = 1'b0;
 
         // as a memory model, there is no immediate need for backpressure, this feature might be added in the future
-        assign tcb[i].rdy = 1'b1;
+        assign sub[i].rdy = 1'b1;
 
     end: ifn
     endgenerate

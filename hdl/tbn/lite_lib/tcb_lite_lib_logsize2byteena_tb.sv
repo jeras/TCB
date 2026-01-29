@@ -171,7 +171,7 @@ module tcb_lite_lib_logsize2byteena_tb
     tcb_lite_vip_memory #(
         .SIZE (2**8)
     ) mem (
-        .tcb (tcb_mem)
+        .sub (tcb_mem)
     );
 
 ////////////////////////////////////////////////////////////////////////////////
