@@ -137,7 +137,7 @@ module tcb_lite_lib_logsize2byteena
 
         // logarithmic size mode (subordinate interface) byte enable
         for (genvar i=0; i<sub.BYT; i++) begin: logsize2byteena
-            assign sub_req_ben[i] = (i < 2**req_siz) ? 1'b1 : 1'b0;
+            assign sub_req_ben[i] = (i < (1<<req_siz)) ? 1'b1 : 1'b0;
         end: logsize2byteena
 
         // byte enable
@@ -149,8 +149,8 @@ module tcb_lite_lib_logsize2byteena
         for (genvar i=0; i<sub.BYT; i++) begin: wdt
             always_comb
             unique case (req_ndn)
-                1'b0   :  man_wdt[i] = sub_wdt[(             i-integer'(req_off)) % sub.BYT];
-                1'b1   :  man_wdt[i] = sub_wdt[(2**req_siz-1-i+integer'(req_off)) % sub.BYT];
+                1'b0   :  man_wdt[i] = sub_wdt[(               i-integer'(req_off)) % sub.BYT];
+                1'b1   :  man_wdt[i] = sub_wdt[((1<<req_siz)-1-i+integer'(req_off)) % sub.BYT];
                 default:  man_wdt[i] = 8'hxx;
             endcase
         end: wdt
@@ -159,8 +159,8 @@ module tcb_lite_lib_logsize2byteena
         for (genvar i=0; i<sub.BYT; i++) begin: rdt
             always_comb
             unique case (rsp_ndn)
-                1'b0   :  sub_rdt[i] = man_rdt[(             i+integer'(rsp_off)) % sub.BYT];
-                1'b1   :  sub_rdt[i] = man_rdt[(2**rsp_siz-1-i+integer'(rsp_off)) % sub.BYT];
+                1'b0   :  sub_rdt[i] = man_rdt[(               i+integer'(rsp_off)) % sub.BYT];
+                1'b1   :  sub_rdt[i] = man_rdt[((1<<req_siz)-1-i+integer'(rsp_off)) % sub.BYT];
                 default:  sub_rdt[i] = 8'hxx;
             endcase
         end: rdt

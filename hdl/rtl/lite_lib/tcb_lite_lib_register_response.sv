@@ -63,22 +63,39 @@ module tcb_lite_lib_register_response
 
     // response (data)
     generate
-    case (sub.MOD)
-        1'b0: begin: byt
-            // read data (logarithmic size)
-        // TODO: only on read enable, and byte enable (problem is what to do with LOG_SIZE
-            for (genvar i=0; i<sub.BYT; i++) begin: rdt
-                always_ff @(posedge man.clk)
-                if (man.trn_dly[man.DLY] & sub.req.ren & (i < 2**sub.req.siz   ))  sub.rsp.rdt[i*8+:8] <= man.rsp.rdt[i*8+:8];
-            end: rdt
-        end: byt
-        1'b1: begin: byt
-            // read data (byte enable)
-            for (genvar i=0; i<sub.BYT; i++) begin: rdt
-                always_ff @(posedge man.clk)
-                if (man.trn_dly[man.DLY] & sub.req.ren & (       sub.req.byt[i]))  sub.rsp.rdt[i*8+:8] <= man.rsp.rdt[i*8+:8];
-            end: rdt
-        end: byt
+    case (OPT)
+        "POWER": begin
+            case (sub.MOD)
+                1'b0: begin: byt
+                    // read data (logarithmic size)
+                    for (genvar i=0; i<sub.BYT; i++) begin: rdt
+                        always_ff @(posedge man.clk)
+                        if (man.trn_dly[man.DLY] & sub.req.ren) begin
+                            if (i < (1<<sub.req.siz)) begin
+                                sub.rsp.rdt[i*8+:8] <= man.rsp.rdt[i*8+:8]; 
+                            end
+                        end
+                    end: rdt
+                end: byt
+                1'b1: begin: byt
+                    // read data (byte enable)
+                    for (genvar i=0; i<sub.BYT; i++) begin: rdt
+                        always_ff @(posedge man.clk)
+                        if (man.trn_dly[man.DLY] & sub.req.ren) begin
+                            if (sub.req.byt[i]) begin
+                                sub.rsp.rdt[i*8+:8] <= man.rsp.rdt[i*8+:8];
+                            end
+                        end
+                    end: rdt
+                end: byt
+            endcase
+        end
+        "COMPLEXITY": begin
+            always_ff @(posedge sub.clk)
+            if (man.trn_dly[man.DLY] & sub.req.ren) begin
+                sub.rsp.rdt <= man.rsp.rdt;
+            end
+        end
     endcase
     endgenerate
 

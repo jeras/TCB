@@ -64,32 +64,49 @@ module tcb_lite_lib_register_request
         man.req.ndn <= sub.req.ndn;
         man.req.wen <= sub.req.wen;
         man.req.ren <= sub.req.ren;
-        man.req.adr <= sub.req.adr;
         man.req.ctl <= sub.req.ctl;
+        man.req.adr <= sub.req.adr;
+        man.req.siz <= sub.req.siz;
+        man.req.byt <= sub.req.byt;
+//        man.req.wdt <= sub.req.wdt;
     end
 
     generate
-    case (sub.MOD)
-        1'b0: begin: byt
-            // logarithmic size
+    case (OPT)
+        "POWER": begin
+            case (sub.MOD)
+                // logarithmic size
+                1'b0: begin: byt
+                    // write data
+                    for (genvar i=0; i<sub.BYT; i++) begin: wdt
+                        always_ff @(posedge sub.clk)
+                        if (sub.trn & sub.req.wen) begin
+                            if (i < (1<<sub.req.siz)) begin
+                                man.req.wdt[i*8+:8] <= sub.req.wdt[i*8+:8];
+                            end
+                        end
+                    end: wdt
+                end: byt
+                // byte enable
+                1'b1: begin: byt
+                    // write data
+                    for (genvar i=0; i<sub.BYT; i++) begin: wdt
+                        always_ff @(posedge sub.clk)
+                        if (sub.trn & sub.req.wen) begin
+                            if (sub.req.byt[i]) begin
+                                man.req.wdt[i*8+:8] <= sub.req.wdt[i*8+:8];
+                            end 
+                        end
+                    end: wdt
+                end: byt
+            endcase
+        end
+        "COMPLEXITY": begin
             always_ff @(posedge sub.clk)
-            if (sub.trn)  man.req.siz <= sub.req.siz;
-            // write data
-            for (genvar i=0; i<sub.BYT; i++) begin: wdt
-                always_ff @(posedge sub.clk)
-                if (sub.trn & sub.req.wen & (i < 2**sub.req.siz   ))  man.req.wdt[i*8+:8] <= sub.req.wdt[i*8+:8];
-            end: wdt
-        end: byt
-        1'b1: begin: byt
-            // byte enable
-            always_ff @(posedge sub.clk)
-            if (sub.trn)  man.req.byt <= sub.req.byt;
-            // write data
-            for (genvar i=0; i<sub.BYT; i++) begin: wdt
-                always_ff @(posedge sub.clk)
-                if (sub.trn & sub.req.wen & (       sub.req.byt[i]))  man.req.wdt[i*8+:8] <= sub.req.wdt[i*8+:8];
-            end: wdt
-        end: byt
+            if (sub.trn & sub.req.wen) begin
+                man.req.wdt <= sub.req.wdt;
+            end
+        end
     endcase
     endgenerate
 
