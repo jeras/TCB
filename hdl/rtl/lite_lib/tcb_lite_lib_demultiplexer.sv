@@ -55,8 +55,8 @@ module tcb_lite_lib_demultiplexer
 ////////////////////////////////////////////////////////////////////////////////
 
     // demultiplexer signals
-    logic [IFL-1:0] sub_sel;
-    logic [IFL-1:0] man_sel;
+    logic [IFL-1:0] req_sel;
+    logic [IFL-1:0] rsp_sel;
     
     // response
     logic [sub.DAT-1:0] rdt [IFN-1:0];  // read data
@@ -70,16 +70,30 @@ module tcb_lite_lib_demultiplexer
 // control
 ////////////////////////////////////////////////////////////////////////////////
 
-    // select
-    assign sub_sel = sel;
+    // TODO: this code only works with DLY=1
 
-    // demultiplexer select
-    always_ff @(posedge sub.clk, posedge sub.rst)
-    if (sub.rst) begin
-        man_sel <= '0;
-    end else if (sub.trn) begin
-        man_sel <= sub_sel;
+    // request select
+    assign req_sel = sel;
+
+    // response select
+    generate
+    if (sub.DLY == 0) begin
+        assign rsp_sel = req_sel;
     end
+    else if (sub.DLY == 1) begin
+        always_ff @(posedge sub.clk, posedge sub.rst)
+        if (sub.rst) begin
+            rsp_sel <= '0;
+        end else if (sub.trn) begin
+            rsp_sel <= req_sel;
+        end
+    end
+    else begin
+        // TODO
+        initial $error("only DLY 0/1 are supported, TODO");
+    end
+    endgenerate
+    
 
 ////////////////////////////////////////////////////////////////////////////////
 // request
@@ -89,17 +103,17 @@ module tcb_lite_lib_demultiplexer
     generate
     for (genvar i=0; i<IFN; i++) begin: gen_req
         // handshake
-        assign man[i].vld = (sub_sel == i) ? sub.vld : 1'b0;
+        assign man[i].vld = (req_sel == i) ? sub.vld : 1'b0;
         // request
-        assign man[i].req.lck = (sub_sel == i[IFL-1:0]) ? sub.req.lck : 'x;
-        assign man[i].req.ndn = (sub_sel == i[IFL-1:0]) ? sub.req.ndn : 'x;
-        assign man[i].req.wen = (sub_sel == i[IFL-1:0]) ? sub.req.wen : 'x;
-        assign man[i].req.ren = (sub_sel == i[IFL-1:0]) ? sub.req.ren : 'x;
-        assign man[i].req.ctl = (sub_sel == i[IFL-1:0]) ? sub.req.ctl : 'x;
-        assign man[i].req.adr = (sub_sel == i[IFL-1:0]) ? sub.req.adr : 'x;
-        assign man[i].req.siz = (sub_sel == i[IFL-1:0]) ? sub.req.siz : 'x;
-        assign man[i].req.byt = (sub_sel == i[IFL-1:0]) ? sub.req.byt : 'x;
-        assign man[i].req.wdt = (sub_sel == i[IFL-1:0]) ? sub.req.wdt : 'x;
+        assign man[i].req.lck = (req_sel == i[IFL-1:0]) ? sub.req.lck : 'x;
+        assign man[i].req.ndn = (req_sel == i[IFL-1:0]) ? sub.req.ndn : 'x;
+        assign man[i].req.wen = (req_sel == i[IFL-1:0]) ? sub.req.wen : 'x;
+        assign man[i].req.ren = (req_sel == i[IFL-1:0]) ? sub.req.ren : 'x;
+        assign man[i].req.ctl = (req_sel == i[IFL-1:0]) ? sub.req.ctl : 'x;
+        assign man[i].req.adr = (req_sel == i[IFL-1:0]) ? sub.req.adr : 'x;
+        assign man[i].req.siz = (req_sel == i[IFL-1:0]) ? sub.req.siz : 'x;
+        assign man[i].req.byt = (req_sel == i[IFL-1:0]) ? sub.req.byt : 'x;
+        assign man[i].req.wdt = (req_sel == i[IFL-1:0]) ? sub.req.wdt : 'x;
     end: gen_req
     endgenerate
 
@@ -121,11 +135,11 @@ module tcb_lite_lib_demultiplexer
     endgenerate
 
     // response multiplexer
-    assign sub.rsp.rdt = rdt[man_sel];
-    assign sub.rsp.sts = sts[man_sel];
-    assign sub.rsp.err = err[man_sel];
+    assign sub.rsp.rdt = rdt[rsp_sel];
+    assign sub.rsp.sts = sts[rsp_sel];
+    assign sub.rsp.err = err[rsp_sel];
 
     // handshake multiplexer
-    assign sub.rdy = rdy[sub_sel];
+    assign sub.rdy = rdy[req_sel];
 
 endmodule: tcb_lite_lib_demultiplexer
