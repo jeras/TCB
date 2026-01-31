@@ -108,29 +108,25 @@ module tcb_lite_lib_logsize2byteena
         logic [sub.MAX-1:0] req_msk;
 
         // offset mask
-        always_comb
-        for (int unsigned i=0; i<sub.MAX; i++) begin
-            req_msk[i] = (i >= req_siz);
+        for (genvar i=0; i<sub.MAX; i++) begin
+            assign req_msk[i] = (i >= req_siz);
         end
 
         // byte enable
-        always_comb
-        for (int unsigned i=0; i<sub.BYT; i++) begin
-            man.req.byt[i] = (req_off & req_msk) == (i[sub.MAX-1:0] & req_msk);
+        for (genvar i=0; i<sub.BYT; i++) begin
+            assign man.req.byt[i] = (req_off & req_msk) == (i[sub.MAX-1:0] & req_msk);
         end
 
         // TODO: add big endian support, maybe ASCENDING also
 
         // write access
-        always_comb
-        for (int unsigned i=0; i<sub.BYT; i++) begin
-            man_wdt[i] = sub_wdt[i[sub.MAX-1:0] & ~req_msk];
+        for (genvar i=0; i<sub.BYT; i++) begin
+            assign man_wdt[i] = sub_wdt[i[sub.MAX-1:0] & ~req_msk];
         end
 
         // read access
-        always_comb
-        for (int unsigned i=0; i<sub.BYT; i++) begin
-            sub_rdt[i] = man_rdt[(~prefix_or(i[sub.MAX-1:0]) & rsp_off) | i[sub.MAX-1:0]];
+        for (genvar i=0; i<sub.BYT; i++) begin
+            assign sub_rdt[i] = man_rdt[(~prefix_or(i[sub.MAX-1:0]) & rsp_off) | i[sub.MAX-1:0]];
         end
 
     end: aligned
@@ -140,20 +136,18 @@ module tcb_lite_lib_logsize2byteena
         logic [sub.BYT-1:0] sub_req_ben;
 
         // logarithmic size mode (subordinate interface) byte enable
-        always_comb
-        for (int unsigned i=0; i<sub.BYT; i++) begin: logsize2byteena
-            sub_req_ben[i] = (i < 2**req_siz) ? 1'b1 : 1'b0;
+        for (genvar i=0; i<sub.BYT; i++) begin: logsize2byteena
+            assign sub_req_ben[i] = (i < 2**req_siz) ? 1'b1 : 1'b0;
         end: logsize2byteena
 
         // byte enable
-        always_comb
-        for (int unsigned i=0; i<sub.BYT; i++) begin: ben
-            man.req.byt[i] = sub_req_ben[(i-integer'(req_off)) % sub.BYT];
+        for (genvar i=0; i<sub.BYT; i++) begin: ben
+            assign man.req.byt[i] = sub_req_ben[(i-integer'(req_off)) % sub.BYT];
         end: ben
 
         // write data
-        always_comb
-        for (int unsigned i=0; i<sub.BYT; i++) begin: wdt
+        for (genvar i=0; i<sub.BYT; i++) begin: wdt
+            always_comb
             unique case (req_ndn)
                 1'b0   :  man_wdt[i] = sub_wdt[(             i-integer'(req_off)) % sub.BYT];
                 1'b1   :  man_wdt[i] = sub_wdt[(2**req_siz-1-i+integer'(req_off)) % sub.BYT];
@@ -162,8 +156,8 @@ module tcb_lite_lib_logsize2byteena
         end: wdt
 
         // read data
-        always_comb
-        for (int unsigned i=0; i<sub.BYT; i++) begin: rdt
+        for (genvar i=0; i<sub.BYT; i++) begin: rdt
+            always_comb
             unique case (rsp_ndn)
                 1'b0   :  sub_rdt[i] = man_rdt[(             i+integer'(rsp_off)) % sub.BYT];
                 1'b1   :  sub_rdt[i] = man_rdt[(2**rsp_siz-1-i+integer'(rsp_off)) % sub.BYT];
