@@ -225,12 +225,12 @@ TODO: define clock/reset/power domain functionality.
 The manager initiates a request with the handshake signal `vld` (valid).
 Backpressure from the subordinate is supported by the handshake signal `rdy` (ready).
 
-If no backpressure conditions are possible, the `rdy` signal can be omitted,
-and the manager shall interpret it as always being active (`rdy==1'b1`).
+If no backpressure conditions are possible,
+the `rdy` signal shall be hardwired to active (`rdy==1'b1`).
 
 NOTE: The handshake signals intentionally use names from the AMBA AXI family of protocols,
       since the handshake is governed by compatible (equivalent) rules.
-      Otherwise the TCB protocol bears no relation to AMBA.
+      Otherwise the TCB-Lite protocol bears no relation to AMBA.
 
 .Handshake signals
 [%autowidth]
