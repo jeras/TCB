@@ -399,28 +399,28 @@ image::tcb_request_response_timing.svg[Request/response signal timing]
 
 For the protocol to support memories and memory mapped peripherals,
 the request and response signal groups must be further defined
-to contain the read/write control signal, the address, transfer size or byte enable,
-read/write data busses, and various optional extensions.
+to contain the read/write control signals, the address, transfer size or byte enable,
+write/read data busses, and response status.
 
 === Parameters
 
-All TCB interfaces are parameterized.
-In addition to the handshake layer parameter `HSK.DLY` there are parameters for:
+All TCB-Lite interfaces are parameterized.
+In addition to the handshake layer parameter `HSK.DLY`
+there are parameters defining operation mode and signal widths.
 
-* defining the presence of signals specific to individual bus layer features,
-* defining how data bytes are packed into the data bus
-  (documented in packing layer section).
-
-==== Feature presence parameters
+==== Signal width parameters
 
 .Signal width parameters
 [%autowidth]
 |===
-| parameter | default | type           | description
+| parameter     | default | type           | description
 
-| `CFG.BUS.UNT` | `8`     | `int unsigned` | Data unit width (in most cases it should be 8, the size of a byte).
-| `CFG.BUS.ADR` | `32`    | `int unsigned` | Address bus width.
-| `CFG.BUS.DAT` | `32`    | `int unsigned` | Data bus width.
+| `CFG.BUS.MOD` | `1'b0`  | `bit`          | Mode: `1'b0` - logarithmic size, `1'b1` - byte enable.
+
+| `CFG.BUS.CTL` | `0`     | `int unsigned` | Request control signal width.
+| `CFG.BUS.ADR` | `32`    | `int unsigned` | Request address bus width.
+| `CFG.BUS.DAT` | `32`    | `int unsigned` | Request/response data bus width.
+| `CFG.BUS.STS` | `0`     | `int unsigned` | Response status signal width.
 
 | `CFG.BUS_BYT` | `DAT/UNT`           | `int unsigned` | Byte enable width is the number of unit widths fitting into the data width.
 | `CFG_BUS_MAX` | `$clog2(CFG.BUS_BYT)`   | `int unsigned` | Maximum transfer logarithmic size, also width of 'off' (unit offset within data width) part of address.
@@ -440,20 +440,6 @@ Since TCB was designed with 32-bit CPU/SoC/peripherals in mind,
 32-bit is the default data bus width `BUS.DAT` and 4-bit is the default byte enable width `BUS_BYT`.
 Byte enable width `BUS_BYT` is a calculated local parameter,
 it should not be passed across module hierarchy.
-
-==== Custom extension signal type parameters
-
-Data types for custom extension signals are listed here without details.
-Further in the document there are definitions for some standard configurations.
-
-.Custom signal types
-[%autowidth]
-|===
-| parameter       | description
-
-| `tcb_req_cmd_t` | Custom request command signal `cmd` type.
-| `tcb_rsp_sts_t` | Custom response status signal `sts` type.
-|===
 
 === Signals
 
