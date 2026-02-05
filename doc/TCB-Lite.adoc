@@ -238,7 +238,7 @@ NOTE: The handshake signals intentionally use names from the AMBA AXI family of 
 | signal | type    | direction      | description
 
 | `vld`  | `logic` | `man` -> `sub` | Handshake valid.
-| `rdy`  | `logic` | `sub` -> `man` | Handshake ready (can be omitted if there is no backpressure).
+| `rdy`  | `logic` | `sub` -> `man` | Handshake ready.
 |===
 
 Signals going from manager to subordinate are part of the request group,
@@ -251,7 +251,7 @@ This signal groups are used to provide transaction type details, addressing and 
 | signal | type    | direction      | description
 
 | `req`  | `req_t` | `man` -> `sub` | Request group.
-| `rsp`  | `req_t` | `sub` -> `man` | Response group.
+| `rsp`  | `rsp_t` | `sub` -> `man` | Response group.
 |===
 
 While the handshake defines the request transfer,
@@ -301,10 +301,10 @@ both `vld` and `rdy` handshake signals are active indicating a transfer `trn` (l
 
 When the delay parameter is zero (`HSK.DLY=0`),
 the subordinate shall provide the response `rsp` combinationally
-in the same clock period as the transfer `trn` is active.
+at the same clock period as the transfer `trn` is active.
 When the delay parameter is greater then zero (`HSK.DLY>0`),
 the subordinate shall provide the response `rsp` sequentially
-in `HSK.DLY` clock periods after the transfer `trn` is active.
+at `HSK.DLY` clock periods after the transfer `trn` is active.
 As a power consumption consideration, the response can remain unchanged
 till a new one becomes active.
 
@@ -341,13 +341,14 @@ Long (multiple clock periods) reset sequences are sometimes required
 so that reset values can propagate through flipflops without reset.
 If a device requires a longer active reset, this must be documented.
 A global reset shall be applied for the longest sequence required by eny devices in the same domain.
-Requiring long active reset sequences just in case should be avoided,
+Requiring long active reset sequences __just in case__ should be avoided,
 the exact required reset sequence length shall be derived from the RTL.
 
 ==== Sequential logic without reset
 
-It is allowed to use reset capable flipflops only for control signals (handshake signals in TCB),
-while address, data and other signals use flipflops without a reset for example to reduce ASIC area.
+It is allowed to use reset capable flipflops only for control signals
+(handshake signals in TCB-Lite), while address, data and other signals
+use flipflops without a reset (primarily to example to reduce ASIC area).
 While this approach does not affect functionality,
 it affects reproducibility of power consumption tests.
 
@@ -366,7 +367,8 @@ between high clock speed and low latency.
 It is important to note the recommended timing
 is somehow opposite to what is usually recommended for RTL modules.
 The common recommendation is to place registers at
-module (hierarchical boundary) outputs and optionally at module inputs.
+module (hierarchical boundary) output ports
+and optionally at module input ports.
 
 * link:https://docs.xilinx.com/r/en-US/ug1387-acap-hardware-ip-platform-dev-methodology/Register-Data-Paths-at-Logical-Boundaries[Xilinx recommendations],
 * TODO: link more.
@@ -386,7 +388,7 @@ This are a few SRAM examples:
 * Xilinx 7 Series FPGAs link:https://docs.xilinx.com/v/u/en-US/ug473_7Series_Memory_Resources[Memory Resources],
 * GlobalFoundries GF180MCU PDK link:https://gf180mcu-pdk.readthedocs.io/en/latest/IPs/SRAM/gf180mcu_fd_ip_sram/cells/gf180mcu_fd_ip_sram__sram512x8m8wm1/gf180mcu_fd_ip_sram__sram512x8m8wm1.html[SRAM macro].
 
-As an example where a TCB peripheral is placed in the same address space as a SRAM block.
+An example would be a TCB-Lite peripheral placed in the same address space as a SRAM block.
 Placing a register at the peripheral request inputs matches the low setup time of SRAM.
 On the peripheral response output combinational logic can add as much clock to output delay
 as specified for SRAM, without affecting overall interconnect timing.
