@@ -194,6 +194,25 @@ Grouping names shall use specifiers like manager/subordinate (`man`/`sub`) or re
 Within interface definitions input/output suffixes do not make sense,
 since they can be used for both manager and subordinate ports.
 
+=== History
+
+TCB-Lite is based on the [QMEM](https://somuch.guru/2016/06/28/qsoc-the-qmem-bus/) bus used in OpenRisc,
+which is itself based on SRAM interface with added backpressure.
+
+Compared to QMEM, TCB-Lite has the following changes:
+- the handshake signals `cs`/`ack` are replaced with
+  a more formal, standard and intuitive VALID/READY handshake,
+- the response (read data, ...) delay was generalized from a fixed value of 1,
+- the reset sequence is better defined,
+- byte enable signals are used in both write and read accesses,
+- the separation of write and read enable control signals
+  allows for RISC-V AMO operations,
+- a logarithmic size mode is added to the existing byte enable mode
+- in QMEM the error signal is returned with the same timing as handshake backpressure,
+  TCB-Lite instead provides the error status as part of the delayed response,
+  future versions of TCB-Lite might support both options,
+- bus locking is formalized (was used with QMEM but not documented).
+
 == Handshake layer
 
 The TCB protocol family most basic layer is comprised of a valid/ready handshake for the request
@@ -255,14 +274,14 @@ This signal groups are used to provide transaction type details, addressing and 
 |===
 
 While the handshake defines the request transfer,
-the response is always provided `HSK.DLY` clock periods after the handshake transfer.
+the response is always provided `CFG.HSK.DLY` clock periods after the handshake transfer.
 
 .Base protocol parameter
 [%autowidth]
 |===
-| parameter | type           | description
+| parameter     | type           | description
 
-| `HSK.DLY` | `int unsigned` | Response delay.
+| `CFG.HSK.DLY` | `int unsigned` | Response delay.
 |===
 
 === Handshake rules
