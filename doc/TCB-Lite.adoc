@@ -1217,13 +1217,8 @@ The rest are reserved with no intention to be documented and implemented.
 |===
 | `MOD`      | `ORD`        | `CFG.BUS.DAT` | `CFG.BUS.MIN`   | `CFG.BUS.OFF`   | `BUS.ALN`   | `ndn`   | description
 
-| `LOG_SIZE` | `ASCENDING`  | `32`      | `CFG_BUS_MAX=2` | `CFG_BUS_MAX=2` | `CFG_BUS_MAX=2` | ignored | RISC-V single issue instruction fetch unit without C extension.
-| `LOG_SIZE` | `ASCENDING`  | `32`      |     `1`/`2` |         `1` |         ??? | ignored | RISC-V single issue instruction fetch unit with C extension (details in examples).
-
 | `LOG_SIZE` | `DESCENDING` | `32`/`64` | `0`         | `0`         | 0           | ignored | RISC-V RV32/64 GPR load/store (no sign extension) with misaligned access support.
 | `LOG_SIZE` | `DESCENDING` | `32`/`64` | `0`         | `0`         | `CFG_BUS_MAX`   | ignored | RISC-V RV32/64 GPR load/store (no sign extension) with only aligned access support.
-
-| `LOG_SIZE` | `ASCENDING`  | any       | any         | any         | any         | ignored | Reserved (not defined or used).
 
 | `BYTE_ENA` | `DESCENDING` | `32`/`64` | `0`         | `0`         | 0           | both    | RISC-V RV32/64 memory load/store with misaligned access support.
 | `BYTE_ENA` | `DESCENDING` | `32`/`64` | `0`         | `CFG_BUS_MAX`   | `CFG_BUS_MAX`   | both    | RISC-V RV32/64 memory load/store with only aligned access support.
@@ -1231,12 +1226,7 @@ The rest are reserved with no intention to be documented and implemented.
 | `BYTE_ENA` | `DESCENDING` | `32`      | `CFG_BUS_MAX=2` | `CFG_BUS_MAX=2` | `CFG_BUS_MAX=2` | both    | Peripheral bus with only 4-byte (word) aligned access support.
 | `BYTE_ENA` | `DESCENDING` | `64`      | `CFG_BUS_MAX=3` | `CFG_BUS_MAX=3` | `CFG_BUS_MAX=3` | both    | Peripheral bus with only 8-byte (double) aligned accesses support.
 | `BYTE_ENA` | `DESCENDING` | `64`      |         `2` |         `2` | `CFG_BUS_MAX=3` | both    | Peripheral bus with mixed 4/8-byte aligned accesses support.
-
-| `BYTE_ENA` | `ASCENDING`  | `32`/`64` | TBD         | TBD         | TBD         | both    | OpenPOWER storage operands (for old peripherals).
-| `BYTE_ENA` | `ASCENDING`  | any other | any other   | any other   | any other   | both    | Reserved (not defined or used).
 |===
-
-NOTE: The OpenPOWER specific configuration is included for historic compatibility, and completeness.
 
 TODO: Boundary
 
