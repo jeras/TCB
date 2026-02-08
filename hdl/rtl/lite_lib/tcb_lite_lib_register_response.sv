@@ -21,6 +21,7 @@ module tcb_lite_lib_register_response
 #(
     parameter string OPT = "POWER"  // optimization for "POWER" or "COMPLEXITY"
 )(
+    // TCB-Lite interfaces
     tcb_lite_if.sub sub,  // TCB subordinate interface (manager     device connects here)
     tcb_lite_if.man man   // TCB manager     interface (subordinate device connects here)
 );
@@ -34,12 +35,9 @@ module tcb_lite_lib_register_response
     // comparing subordinate and manager interface parameters
     initial
     begin
-        assert (man.DLY+1 == sub.DLY) else $error("Parameter (man.DLY = %p)+1 != (sub.DLY = %p)", man.DLY, sub.DLY);
+        assert (man.CFG.HSK.DLY+1 == sub.CFG.HSK.DLY) else $error("Parameter (man.CFG.HSK.DLY = %p)+1 != (sub.CFG.HSK.DLY = %p)", man.CFG.HSK.DLY, sub.CFG.HSK.DLY);
 
-        assert (man.DAT == sub.DAT) else $error("Parameter (man.DAT = %p) != (sub.DAT = %p)", man.DAT, sub.DAT);
-        assert (man.ADR == sub.ADR) else $error("Parameter (man.ADR = %p) != (sub.ADR = %p)", man.ADR, sub.ADR);
-//        assert (man.MSK == sub.MSK) else $error("Parameter (man.MSK = %p) != (sub.MSK = %p)", man.MSK, sub.MSK);
-        assert (man.MOD == sub.MOD) else $error("Parameter (man.MOD = %p) != (sub.MOD = %p)", man.MOD, sub.MOD);
+        assert (man.CFG.BUS == sub.CFG.BUS) else $error("Parameter (man.CFG.BUS = %p) != (sub.CFG.BUS = %p)", man.CFG.BUS, sub.CFG.BUS);
     end
 `endif
 
@@ -65,12 +63,12 @@ module tcb_lite_lib_register_response
     generate
     case (OPT)
         "POWER": begin
-            case (sub.MOD)
+            case (sub.CFG.BUS.MOD)
                 1'b0: begin: byt
                     // read data (logarithmic size)
-                    for (genvar i=0; i<sub.BYT; i++) begin: rdt
+                    for (genvar i=0; i<sub.CFG_BUS_BYT; i++) begin: rdt
                         always_ff @(posedge man.clk)
-                        if (man.trn_dly[man.DLY] & sub.req.ren) begin
+                        if (man.trn_dly[man.CFG.HSK.DLY] & sub.req.ren) begin
                             if (i < (1<<sub.req.siz)) begin
                                 sub.rsp.rdt[i*8+:8] <= man.rsp.rdt[i*8+:8]; 
                             end
@@ -79,9 +77,9 @@ module tcb_lite_lib_register_response
                 end: byt
                 1'b1: begin: byt
                     // read data (byte enable)
-                    for (genvar i=0; i<sub.BYT; i++) begin: rdt
+                    for (genvar i=0; i<sub.CFG_BUS_BYT; i++) begin: rdt
                         always_ff @(posedge man.clk)
-                        if (man.trn_dly[man.DLY] & sub.req.ren) begin
+                        if (man.trn_dly[man.CFG.HSK.DLY] & sub.req.ren) begin
                             if (sub.req.byt[i]) begin
                                 sub.rsp.rdt[i*8+:8] <= man.rsp.rdt[i*8+:8];
                             end
@@ -92,7 +90,7 @@ module tcb_lite_lib_register_response
         end
         "COMPLEXITY": begin
             always_ff @(posedge sub.clk)
-            if (man.trn_dly[man.DLY] & sub.req.ren) begin
+            if (man.trn_dly[man.CFG.HSK.DLY] & sub.req.ren) begin
                 sub.rsp.rdt <= man.rsp.rdt;
             end
         end
@@ -102,7 +100,7 @@ module tcb_lite_lib_register_response
     // response (error)
     always_ff @(posedge man.clk)
     begin
-        if (man.trn_dly[man.DLY]) begin
+        if (man.trn_dly[man.CFG.HSK.DLY]) begin
             sub.rsp.sts <= man.rsp.sts;
             sub.rsp.err <= man.rsp.err;
         end

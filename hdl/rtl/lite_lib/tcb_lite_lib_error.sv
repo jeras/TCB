@@ -19,10 +19,10 @@
 module tcb_lite_lib_error
     import tcb_lite_pkg::*;
 (
-    // system bus interface
+    // TCB-Lite interface
     tcb_lite_if.sub sub,
     // default response status
-    input  logic [sub.STS-1:0] sts
+    input  logic [sub.CFG.BUS.STS-1:0] sts
 );
 
 ////////////////////////////////////////////////////////////////////////////////

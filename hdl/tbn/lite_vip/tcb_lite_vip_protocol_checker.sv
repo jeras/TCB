@@ -70,10 +70,10 @@ module tcb_lite_vip_protocol_checker
             // address
             // TODO: decide how to handle partial address decoders
 //            assert (!$isunknown(mon.req.adr & mon.MSK)) else $error("TCB: mon.req.adr is unknown during a transfer cycle.");
-            if (mon.MOD == 1'b0) begin
+            if (mon.CFG.BUS.MOD == 1'b0) begin
                 // transfer size
                 assert (!$isunknown(mon.req.siz)) else $error("TCB: mon.req.siz is unknown during a transfer cycle.");
-                assert (mon.req.siz <= mon.SIZ'(mon.MAX)) else $error("TCB: mon.req.siz is outside range.");
+                assert (mon.req.siz <= mon.CFG_BUS_SIZ'(mon.CFG_BUS_OFF)) else $error("TCB: mon.req.siz is outside range.");
                 // write data
                 if (mon.req.wen == 1'b1) begin
                     for (int unsigned i=0; i<2**mon.req.siz; i++) begin
@@ -81,13 +81,13 @@ module tcb_lite_vip_protocol_checker
                     end
                 end
             end
-            if (mon.MOD == 1'b1) begin
+            if (mon.CFG.BUS.MOD == 1'b1) begin
                 // byte enable
                 assert (!$isunknown(mon.req.byt)) else $error("TCB: mon.req.byt is unknown during a transfer cycle.");
                 // TODO: add checks for valid byte enable combinations
                 // write data
                 if (mon.req.wen == 1'b1) begin
-                    for (int unsigned i=0; i<mon.BYT; i++) begin
+                    for (int unsigned i=0; i<mon.CFG_BUS_BYT; i++) begin
                         if (mon.req.byt[i]) begin 
                             assert (!$isunknown(mon.req.wdt[8*i+:8])) else $error("TCB: mon.req.wdt[8*%0d+:8] is unknown during a transfer cycle.", i);
                         end
@@ -101,16 +101,16 @@ module tcb_lite_vip_protocol_checker
     always_ff @(posedge mon.clk)
     if ($realtime > 0) begin
         // response/read data bus and data sizing
-        if (mon.trn_dly[mon.DLY]) begin
-            if (mon.req_dly[mon.DLY].ren) begin
-                if (mon.MOD == 1'b0) begin
-                    for (int unsigned i=0; i<2**mon.req_dly[mon.DLY].siz; i++) begin
+        if (mon.trn_dly[mon.CFG.HSK.DLY]) begin
+            if (mon.req_dly[mon.CFG.HSK.DLY].ren) begin
+                if (mon.CFG.BUS.MOD == 1'b0) begin
+                    for (int unsigned i=0; i<2**mon.req_dly[mon.CFG.HSK.DLY].siz; i++) begin
                         assert (!$isunknown(mon.rsp.rdt[8*i+:8])) else $error("TCB: mon.rsp.rdt[%0d] is unknown during a transfer cycle.", i);
                     end
                 end
-                if (mon.MOD == 1'b1) begin
-                    for (int unsigned i=0; i<mon.BYT; i++) begin
-                        if (mon.req_dly[mon.DLY].byt[i]) begin
+                if (mon.CFG.BUS.MOD == 1'b1) begin
+                    for (int unsigned i=0; i<mon.CFG_BUS_BYT; i++) begin
+                        if (mon.req_dly[mon.CFG.HSK.DLY].byt[i]) begin
                             assert (!$isunknown(mon.rsp.rdt[8*i+:8])) else $error("TCB: mon.rsp.rdt[%0d] is unknown during a transfer cycle.", i);
                         end
                     end

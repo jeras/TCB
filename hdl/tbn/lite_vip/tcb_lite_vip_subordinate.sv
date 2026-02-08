@@ -77,7 +77,7 @@ module tcb_lite_vip_subordinate
     end: driver
 
     // delayed response
-    assign sub.rsp = $past(sub_rsp, sub.DLY, , @(posedge sub.clk));
+    assign sub.rsp = $past(sub_rsp, sub.CFG.HSK.DLY, , @(posedge sub.clk));
 
 ////////////////////////////////////////////////////////////////////////////////
 // transfer request queue and sampler

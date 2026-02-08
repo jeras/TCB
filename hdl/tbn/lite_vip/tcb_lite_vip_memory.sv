@@ -105,7 +105,7 @@ module tcb_lite_vip_memory
     generate
     for (genvar i=0; i<IFN; i++) begin: ifn
 
-        localparam int unsigned BYT = sub[i].BYT;
+        localparam int unsigned BYT = sub[i].CFG_BUS_BYT;
 
         // request address and size (TCB_LOG_SIZE mode)
         int unsigned adr;
@@ -131,7 +131,7 @@ module tcb_lite_vip_memory
             if (sub[i].trn) begin
                 if (sub[i].req.wen) begin: write
                     for (int unsigned b=0; b<BYT; b++) begin: bytes
-                        if (sub[i].MOD == 1'b0) begin
+                        if (sub[i].CFG.BUS.MOD == 1'b0) begin
                             // write only transfer size bytes
                             if (b < siz)  mem[(adr+b)%SIZE] <= wdt[b];
                         end else begin
@@ -152,7 +152,7 @@ module tcb_lite_vip_memory
         if (sub[i].trn) begin
             if (sub[i].req.ren) begin: read
                 for (int unsigned b=0; b<BYT; b++) begin: bytes
-                    if (sub[i].MOD == 1'b0) begin
+                    if (sub[i].CFG.BUS.MOD == 1'b0) begin
                         // read only transfer size bytes, the rest remains undefined
                         if (b < siz)  rdt[b] = mem[(adr+b)%SIZE];
                         else          rdt[b] = 'x;
@@ -166,7 +166,7 @@ module tcb_lite_vip_memory
         end
 
         // continuous assignment
-        assign sub[i].rsp.rdt = $past(rdt, sub[i].DLY, , @(posedge sub[i].clk));
+        assign sub[i].rsp.rdt = $past(rdt, sub[i].CFG.HSK.DLY, , @(posedge sub[i].clk));
         assign sub[i].rsp.sts = '0;
         assign sub[i].rsp.err = 1'b0;
 

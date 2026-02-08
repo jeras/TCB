@@ -77,9 +77,9 @@ module tcb_lite_lib_passthrough_tb
 
         // manager (non-blocking API)
 
-        //                              lck,  ndn,  wen,  ren, ctl,          adr,             siz,              byt,          wdt}, idl
-        man.req_que.push_back('{req: '{1'b0, 1'b0, 1'b1, 1'b0,  'x, 32'h01234567, tcb_man.SIZ'(2), tcb_man.BYT'('1), 32'h76543210}, idl: 0});
-        man.req_que.push_back('{req: '{1'b0, 1'b0, 1'b0, 1'b1,  'x, 32'h89ABCDEF, tcb_man.SIZ'(2), tcb_man.BYT'('1), 32'hxxxxxxxx}, idl: 0});
+        //                              lck,  ndn,  wen,  ren, ctl,          adr,                 siz    ,                 byt     ,          wdt}, idl
+        man.req_que.push_back('{req: '{1'b0, 1'b0, 1'b1, 1'b0,  'x, 32'h01234567, tcb_man.CFG_BUS_SIZ'(2), tcb_man.CFG_BUS_BYT'('1), 32'h76543210}, idl: 0});
+        man.req_que.push_back('{req: '{1'b0, 1'b0, 1'b0, 1'b1,  'x, 32'h89ABCDEF, tcb_man.CFG_BUS_SIZ'(2), tcb_man.CFG_BUS_BYT'('1), 32'hxxxxxxxx}, idl: 0});
         //                                      rdt, sts,  err}, bpr
         sub.rsp_que.push_back('{rsp: '{32'hxxxxxxxx,  '0, 1'b0}, bpr: 0});
         sub.rsp_que.push_back('{rsp: '{32'h76543210,  '0, 1'b0}, bpr: 0});
@@ -89,7 +89,7 @@ module tcb_lite_lib_passthrough_tb
             @(posedge clk);
         end while (man.req_que.size() > 0);
         // wait for response delay cycles
-        repeat(tcb_man.DLY) @(posedge clk);
+        repeat(tcb_man.CFG.HSK.DLY) @(posedge clk);
 
         // debug printout
         foreach(    man.rsp_que[i])  $display("DEBUG: man.rsp_que[%0d] = %p", i,     man.rsp_que[i]);

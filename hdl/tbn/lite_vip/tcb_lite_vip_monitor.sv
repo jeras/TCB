@@ -64,13 +64,13 @@ module tcb_lite_vip_monitor
     // transfer response sampler
     always_ff @(posedge mon.clk)
     begin: sampler
-        if (mon.trn_dly[mon.DLY]) begin
+        if (mon.trn_dly[mon.CFG.HSK.DLY]) begin
             bus_que.push_back('{
-                req: $past(mon.req, mon.DLY),
+                req: $past(mon.req, mon.CFG.HSK.DLY),
                 rsp:       mon.rsp,
-                idl: $past(    idl, mon.DLY),
-                bpr: $past(    bpr, mon.DLY),
-                tim: $past(    tim, mon.DLY)
+                idl: $past(    idl, mon.CFG.HSK.DLY),
+                bpr: $past(    bpr, mon.CFG.HSK.DLY),
+                tim: $past(    tim, mon.CFG.HSK.DLY)
             });
         end
     end: sampler

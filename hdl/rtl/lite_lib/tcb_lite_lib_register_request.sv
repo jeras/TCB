@@ -21,6 +21,7 @@ module tcb_lite_lib_register_request
 #(
     parameter string OPT = "POWER"  // optimization for "POWER" or "COMPLEXITY"
 )(
+    // TCB-Lite interfaces
     tcb_lite_if.sub sub,  // TCB subordinate interface (manager     device connects here)
     tcb_lite_if.man man   // TCB manager     interface (subordinate device connects here)
 );
@@ -34,12 +35,9 @@ module tcb_lite_lib_register_request
     // comparing subordinate and manager interface parameters
     initial
     begin
-        assert (man.DLY+1 == sub.DLY) else $error("Parameter (man.DLY = %p)+1 != (sub.DLY = %p)", man.DLY, sub.DLY);
+        assert (man.CFG.HSK.DLY+1 == sub.CFG.HSK.DLY) else $error("Parameter (man.CFG.HSK.DLY = %p)+1 != (sub.CFG.HSK.DLY = %p)", man.CFG.HSK.DLY, sub.CFG.HSK.DLY);
 
-        assert (man.DAT == sub.DAT) else $error("Parameter (man.DAT = %p) != (sub.DAT = %p)", man.DAT, sub.DAT);
-        assert (man.ADR == sub.ADR) else $error("Parameter (man.ADR = %p) != (sub.ADR = %p)", man.ADR, sub.ADR);
-//        assert (man.MSK == sub.MSK) else $error("Parameter (man.MSK = %p) != (sub.MSK = %p)", man.MSK, sub.MSK);
-        assert (man.MOD == sub.MOD) else $error("Parameter (man.MOD = %p) != (sub.MOD = %p)", man.MOD, sub.MOD);
+        assert (man.CFG.BUS == sub.CFG.BUS) else $error("Parameter (man.CFG.BUS = %p) != (sub.CFG.BUS = %p)", man.CFG.BUS, sub.CFG.BUS);
     end
 `endif
 
@@ -61,9 +59,9 @@ module tcb_lite_lib_register_request
     always_ff @(posedge sub.clk)
     if (sub.trn) begin
         man.req.lck <= sub.req.lck;
-        man.req.ndn <= sub.req.ndn;
         man.req.wen <= sub.req.wen;
         man.req.ren <= sub.req.ren;
+        man.req.ndn <= sub.req.ndn;
         man.req.ctl <= sub.req.ctl;
         man.req.adr <= sub.req.adr;
         man.req.siz <= sub.req.siz;
@@ -74,11 +72,11 @@ module tcb_lite_lib_register_request
     generate
     case (OPT)
         "POWER": begin
-            case (sub.MOD)
+            case (sub.CFG.BUS.MOD)
                 // logarithmic size
                 1'b0: begin: byt
                     // write data
-                    for (genvar i=0; i<sub.BYT; i++) begin: wdt
+                    for (genvar i=0; i<sub.CFG_BUS_BYT; i++) begin: wdt
                         always_ff @(posedge sub.clk)
                         if (sub.trn & sub.req.wen) begin
                             if (i < (1<<sub.req.siz)) begin
@@ -90,7 +88,7 @@ module tcb_lite_lib_register_request
                 // byte enable
                 1'b1: begin: byt
                     // write data
-                    for (genvar i=0; i<sub.BYT; i++) begin: wdt
+                    for (genvar i=0; i<sub.CFG_BUS_BYT; i++) begin: wdt
                         always_ff @(posedge sub.clk)
                         if (sub.trn & sub.req.wen) begin
                             if (sub.req.byt[i]) begin

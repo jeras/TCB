@@ -19,6 +19,7 @@
 module tcb_lite_lib_passthrough
     import tcb_lite_pkg::*;
 (
+    // TCB-Lite interfaces
     tcb_lite_if.sub sub,  // TCB subordinate interface (manager     device connects here)
     tcb_lite_if.man man   // TCB manager     interface (subordinate device connects here)
 );
@@ -46,9 +47,9 @@ module tcb_lite_lib_passthrough
 
     // request
     assign man.req.lck = sub.req.lck;
-    assign man.req.ndn = sub.req.ndn;
     assign man.req.wen = sub.req.wen;
     assign man.req.ren = sub.req.ren;
+    assign man.req.ndn = sub.req.ndn;
     assign man.req.ctl = sub.req.ctl;
     assign man.req.adr = sub.req.adr;
     assign man.req.siz = sub.req.siz;

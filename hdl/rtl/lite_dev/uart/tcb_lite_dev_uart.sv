@@ -52,7 +52,7 @@ module tcb_lite_dev_uart #(
     // comparing subordinate and manager interface parameters
     initial
     begin
-        assert (sub.DLY == 0) else $error("Unsupported DLY = %0d (must be 0)", sub.DLY);
+        assert (sub.CFG.HSK.DLY == 0) else $error("Unsupported CFG.HSK.DLY = %0d (must be 0)", sub.CFG.HSK.DLY);
     end
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -61,7 +61,7 @@ module tcb_lite_dev_uart #(
 
     logic [4-1:0] sys_req_adr;
 
-    assign sys_req_adr = sub.req.adr[sub.MAX+:4];
+    assign sys_req_adr = sub.req.adr[sub.CFG_BUS_OFF+:4];
 
     // TCB variant independent instance
     tcb_dev_uart #(
@@ -79,7 +79,7 @@ module tcb_lite_dev_uart #(
         .CFG_RX_SMP_WEN (CFG_RX_SMP_WEN),  .CFG_RX_SMP_RST (CFG_RX_SMP_RST),
         .CFG_RX_IRQ_WEN (CFG_RX_IRQ_WEN),  .CFG_RX_IRQ_RST (CFG_RX_IRQ_RST),
         // system interface parameters
-        .SYS_DAT  (sub.DAT),
+        .SYS_DAT  (sub.CFG.BUS.DAT),
         // TCB parameters
         .SYS_MIN  (SYS_MIN)
     ) uart (

@@ -31,7 +31,7 @@ module tcb_lite_lib_interconnect
     // topology
     parameter  string TOPOLOGY = "STAR"  // "STAR", "MESH"
 )(
-    // TCB interfaces
+    // TCB-Lite interfaces
     tcb_lite_if.sub tcb_sub [SUB_IFN-1:0],  // TCB subordinate interfaces (manager     devices connect here)
     tcb_lite_if.man tcb_man [MAN_IFN-1:0]  // TCB manager     interface  (subordinate device connects here)
 );

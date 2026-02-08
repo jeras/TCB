@@ -21,7 +21,7 @@ module tcb_lite_lib_logsize2byteena
 #(
     parameter bit ALIGNED = 1'b1
 )(
-    // interfaces
+    // TCB-Lite interfaces
     tcb_lite_if.sub sub,  // TCB subordinate interface (manager     device connects here)
     tcb_lite_if.man man   // TCB manager     interface (subordinate device connects here)
 );
@@ -33,13 +33,13 @@ module tcb_lite_lib_logsize2byteena
     // BUS parameters
     initial
     begin
-        assert (man.DLY == sub.DLY) else $error("Parameter (man.DLY = %p) != (sub.DLY = %p)", man.DLY, sub.DLY);
-        assert (man.DAT == sub.DAT) else $error("Parameter (man.DAT = %p) != (sub.DAT = %p)", man.DAT, sub.DAT);
-        assert (man.ADR == sub.ADR) else $error("Parameter (man.ADR = %p) != (sub.ADR = %p)", man.ADR, sub.ADR);
+        assert (man.CFG.HSK.DLY == sub.CFG.HSK.DLY) else $error("Parameter (man.CFG.HSK.DLY = %p) != (sub.CFG.HSK.DLY = %p)", man.CFG.HSK.DLY, sub.CFG.HSK.DLY);
+        assert (man.CFG.BUS.DAT == sub.CFG.BUS.DAT) else $error("Parameter (man.CFG.BUS.DAT = %p) != (sub.CFG.BUS.DAT = %p)", man.CFG.BUS.DAT, sub.CFG.BUS.DAT);
+        assert (man.CFG.BUS.ADR == sub.CFG.BUS.ADR) else $error("Parameter (man.CFG.BUS.ADR = %p) != (sub.CFG.BUS.ADR = %p)", man.CFG.BUS.ADR, sub.CFG.BUS.ADR);
 //        assert (man.MSK == sub.MSK) else $error("Parameter (man.MSK = %p) != (sub.MSK = %p)", man.MSK, sub.MSK);
 
-        assert (man.MOD == 1'b1)    else $error("Parameter (man.MOD = %p) != 1'b1"          , man.MOD);
-        assert (sub.MOD == 1'b0)    else $error("Parameter (sub.MOD = %p) != 1'b0"          , sub.MOD);
+        assert (man.CFG.BUS.MOD == 1'b1) else $error("Parameter (man.CFG.BUS.MOD = %p) != 1'b1", man.CFG.BUS.MOD);
+        assert (sub.CFG.BUS.MOD == 1'b0) else $error("Parameter (sub.CFG.BUS.MOD = %p) != 1'b0", sub.CFG.BUS.MOD);
     end
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -63,35 +63,35 @@ module tcb_lite_lib_logsize2byteena
 ////////////////////////////////////////////////////////////////////////////////
 
     // request/response
-    logic               req_ndn, rsp_ndn;  // endianness
-    logic [sub.MAX-1:0] req_off, rsp_off;  // address offset
-    logic [sub.SIZ-1:0] req_siz, rsp_siz;  // logarithmic size
+    logic                       req_ndn, rsp_ndn;  // endianness
+    logic [sub.CFG_BUS_OFF-1:0] req_off, rsp_off;  // address offset
+    logic [sub.CFG_BUS_SIZ-1:0] req_siz, rsp_siz;  // logarithmic size
 
     // manager/subordinate read/write data
-    logic [sub.BYT-1:0][8-1:0] sub_wdt, man_wdt;
-    logic [sub.BYT-1:0][8-1:0] sub_rdt, man_rdt;
+    logic [sub.CFG_BUS_BYT-1:0][8-1:0] sub_wdt, man_wdt;
+    logic [sub.CFG_BUS_BYT-1:0][8-1:0] sub_rdt, man_rdt;
 
     // prefix OR operation
-    function automatic [sub.MAX-1:0] prefix_or (
-        input logic [sub.MAX-1:0] val
+    function automatic [sub.CFG_BUS_OFF-1:0] prefix_or (
+        input logic [sub.CFG_BUS_OFF-1:0] val
     );
-        prefix_or[sub.MAX-1] = val[sub.MAX-1];
-        for (int unsigned i=sub.MAX-1; i>0; i--) begin
+        prefix_or[sub.CFG_BUS_OFF-1] = val[sub.CFG_BUS_OFF-1];
+        for (int unsigned i=sub.CFG_BUS_OFF-1; i>0; i--) begin
             prefix_or[i-1] = prefix_or[i] | val[i-1];
         end
     endfunction: prefix_or
 
     // request/response endianness
-    assign req_ndn = sub.req_dly[0      ].ndn;
-    assign rsp_ndn = sub.req_dly[sub.DLY].ndn;
+    assign req_ndn = sub.req_dly[0              ].ndn;
+    assign rsp_ndn = sub.req_dly[sub.CFG.HSK.DLY].ndn;
 
     // request/response logarithmic size
-    assign req_siz = sub.req_dly[0      ].siz;
-    assign rsp_siz = sub.req_dly[sub.DLY].siz;
+    assign req_siz = sub.req_dly[0              ].siz;
+    assign rsp_siz = sub.req_dly[sub.CFG.HSK.DLY].siz;
 
     // request/response address offset
-    assign req_off = sub.req_dly[0      ].adr[$clog2(sub.BYT)-1:0];
-    assign rsp_off = sub.req_dly[sub.DLY].adr[$clog2(sub.BYT)-1:0];
+    assign req_off = sub.req_dly[0              ].adr[$clog2(sub.CFG_BUS_BYT)-1:0];
+    assign rsp_off = sub.req_dly[sub.CFG.HSK.DLY].adr[$clog2(sub.CFG_BUS_BYT)-1:0];
 
 ////////////////////////////////////////////////////////////////////////////////
 // multiplexers
@@ -105,62 +105,62 @@ module tcb_lite_lib_logsize2byteena
     if (ALIGNED == 1'b1) begin: aligned
 
         // offset mask
-        logic [sub.MAX-1:0] req_msk;
+        logic [sub.CFG_BUS_OFF-1:0] req_msk;
 
         // offset mask
-        for (genvar i=0; i<sub.MAX; i++) begin
+        for (genvar i=0; i<sub.CFG_BUS_OFF; i++) begin
             assign req_msk[i] = (i >= req_siz);
         end
 
         // byte enable
-        for (genvar i=0; i<sub.BYT; i++) begin
-            assign man.req.byt[i] = (req_off & req_msk) == (i[sub.MAX-1:0] & req_msk);
+        for (genvar i=0; i<sub.CFG_BUS_BYT; i++) begin
+            assign man.req.byt[i] = (req_off & req_msk) == (i[sub.CFG_BUS_OFF-1:0] & req_msk);
         end
 
         // TODO: add big endian support, maybe ASCENDING also
 
         // write access
-        for (genvar i=0; i<sub.BYT; i++) begin
-            assign man_wdt[i] = sub_wdt[i[sub.MAX-1:0] & ~req_msk];
+        for (genvar i=0; i<sub.CFG_BUS_BYT; i++) begin
+            assign man_wdt[i] = sub_wdt[i[sub.CFG_BUS_OFF-1:0] & ~req_msk];
         end
 
         // read access
-        for (genvar i=0; i<sub.BYT; i++) begin
-            assign sub_rdt[i] = man_rdt[(~prefix_or(i[sub.MAX-1:0]) & rsp_off) | i[sub.MAX-1:0]];
+        for (genvar i=0; i<sub.CFG_BUS_BYT; i++) begin
+            assign sub_rdt[i] = man_rdt[(~prefix_or(i[sub.CFG_BUS_OFF-1:0]) & rsp_off) | i[sub.CFG_BUS_OFF-1:0]];
         end
 
     end: aligned
     else begin: unaligned
 
         // byte enable
-        logic [sub.BYT-1:0] sub_req_ben;
+        logic [sub.CFG_BUS_BYT-1:0] sub_req_ben;
 
         // logarithmic size mode (subordinate interface) byte enable
-        for (genvar i=0; i<sub.BYT; i++) begin: logsize2byteena
+        for (genvar i=0; i<sub.CFG_BUS_BYT; i++) begin: logsize2byteena
             assign sub_req_ben[i] = (i < (1<<req_siz)) ? 1'b1 : 1'b0;
         end: logsize2byteena
 
         // byte enable
-        for (genvar i=0; i<sub.BYT; i++) begin: ben
-            assign man.req.byt[i] = sub_req_ben[(i-integer'(req_off)) % sub.BYT];
+        for (genvar i=0; i<sub.CFG_BUS_BYT; i++) begin: ben
+            assign man.req.byt[i] = sub_req_ben[(i-integer'(req_off)) % sub.CFG_BUS_BYT];
         end: ben
 
         // write data
-        for (genvar i=0; i<sub.BYT; i++) begin: wdt
+        for (genvar i=0; i<sub.CFG_BUS_BYT; i++) begin: wdt
             always_comb
             unique case (req_ndn)
-                1'b0   :  man_wdt[i] = sub_wdt[(               i-integer'(req_off)) % sub.BYT];
-                1'b1   :  man_wdt[i] = sub_wdt[((1<<req_siz)-1-i+integer'(req_off)) % sub.BYT];
+                1'b0   :  man_wdt[i] = sub_wdt[(               i-integer'(req_off)) % sub.CFG_BUS_BYT];
+                1'b1   :  man_wdt[i] = sub_wdt[((1<<req_siz)-1-i+integer'(req_off)) % sub.CFG_BUS_BYT];
                 default:  man_wdt[i] = 8'hxx;
             endcase
         end: wdt
 
         // read data
-        for (genvar i=0; i<sub.BYT; i++) begin: rdt
+        for (genvar i=0; i<sub.CFG_BUS_BYT; i++) begin: rdt
             always_comb
             unique case (rsp_ndn)
-                1'b0   :  sub_rdt[i] = man_rdt[(               i+integer'(rsp_off)) % sub.BYT];
-                1'b1   :  sub_rdt[i] = man_rdt[((1<<req_siz)-1-i+integer'(rsp_off)) % sub.BYT];
+                1'b0   :  sub_rdt[i] = man_rdt[(               i+integer'(rsp_off)) % sub.CFG_BUS_BYT];
+                1'b1   :  sub_rdt[i] = man_rdt[((1<<req_siz)-1-i+integer'(rsp_off)) % sub.CFG_BUS_BYT];
                 default:  sub_rdt[i] = 8'hxx;
             endcase
         end: rdt

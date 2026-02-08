@@ -23,6 +23,15 @@ module tcb_lite_vip_manager
     tcb_lite_if.man man
 );
 
+    localparam int unsigned CTL = man.CFG.BUS.CTL;
+    localparam int unsigned ADR = man.CFG.BUS.ADR;
+    localparam int unsigned DAT = man.CFG.BUS.DAT;
+    localparam int unsigned STS = man.CFG.BUS.STS;
+
+    localparam int unsigned BYT = man.CFG_BUS_BYT;
+    localparam int unsigned OFF = man.CFG_BUS_OFF;
+    localparam int unsigned SIZ = man.CFG_BUS_SIZ;
+
 ////////////////////////////////////////////////////////////////////////////////
 // transfer request queue and driver
 ////////////////////////////////////////////////////////////////////////////////
@@ -92,8 +101,8 @@ module tcb_lite_vip_manager
     // transfer response sampler
     always_ff @(posedge man.clk)
     begin: sampler
-        if (man.trn_dly[man.DLY]) begin
-            rsp_que.push_back('{rsp: man.rsp, bpr: $past(driver.bpr, man.DLY)});
+        if (man.trn_dly[man.CFG.HSK.DLY]) begin
+            rsp_que.push_back('{rsp: man.rsp, bpr: $past(driver.bpr, man.CFG.HSK.DLY)});
         end
     end: sampler
 
@@ -107,33 +116,33 @@ module tcb_lite_vip_manager
     bit cfg_ndn;
 
     // response signals sampled
-    event               evn_rsp;
-    logic [man.DAT-1:0] tmp_rdt;
-    logic [man.STS-1:0] tmp_sts;
-    logic               tmp_err;
+    event                       evn_rsp;
+    logic [man.CFG.BUS.DAT-1:0] tmp_rdt;
+    logic [man.CFG.BUS.STS-1:0] tmp_sts;
+    logic                       tmp_err;
 
     // manager endianness state
     initial cfg_ndn = 1'b0;
 
     task automatic access (
-        input  logic               wen,
-        input  logic               ren,
-        input  logic [man.CTL-1:0] ctl,
-        input  logic [man.ADR-1:0] adr,
-        input  logic [man.DAT-1:0] wdt,
-        output logic [man.DAT-1:0] rdt,
-        output logic [man.STS-1:0] sts,
-        output logic               err,
-        input  int unsigned        len = man.DAT,
-        input  logic               ndn = cfg_ndn
+        input  logic           wen,
+        input  logic           ren,
+        input  logic [CTL-1:0] ctl,
+        input  logic [ADR-1:0] adr,
+        input  logic [DAT-1:0] wdt,
+        output logic [DAT-1:0] rdt,
+        output logic [STS-1:0] sts,
+        output logic           err,
+        input  int unsigned    len = DAT/8,
+        input  logic           ndn = cfg_ndn
     );
         // local signals
-        logic [man.SIZ-1:0] siz = 'x;
-        logic [man.BYT-1:0] byt = 'x;
-        logic [man.DAT-1:0] dat = 'x;
+        logic [SIZ-1:0] siz = 'x;
+        logic [BYT-1:0] byt = 'x;
+        logic [DAT-1:0] dat = 'x;
         // logarithmic size
-        if (man.MOD == 1'b0) begin
-            siz = man.SIZ'($clog2(len/8));
+        if (man.CFG.BUS.MOD == 1'b0) begin
+            siz = SIZ'($clog2(len/8));
             for (int unsigned i=0; i<len/8; i++) begin
                 if (wen) begin
                     dat[8*i+:8] = wdt[8*i+:8];
@@ -141,10 +150,10 @@ module tcb_lite_vip_manager
             end
         end
         // byte enable
-        if (man.MOD == 1'b1) begin
+        if (man.CFG.BUS.MOD == 1'b1) begin
             byt = '0;
             for (int unsigned i=0; i<len/8; i++) begin
-                int unsigned b = (i+int'(adr[man.MAX-1:0]))%man.BYT;
+                int unsigned b = (i+int'(adr[OFF-1:0]))%BYT;
                 byt[b] = 1'b1;
                 if (wen) begin
                     dat[8*b+:8] = wdt[8*i+:8];
@@ -160,7 +169,7 @@ module tcb_lite_vip_manager
             begin: response
                 do begin
                     @(posedge man.clk);
-                end while (~man.trn_dly[man.DLY]);
+                end while (~man.trn_dly[man.CFG.HSK.DLY]);
                 -> evn_rsp;
                 tmp_rdt <= man.rsp.rdt;
                 tmp_sts <= man.rsp.sts;
@@ -169,7 +178,7 @@ module tcb_lite_vip_manager
             end: response
         join
         // logarithmic size
-        if (man.MOD == 1'b0) begin
+        if (man.CFG.BUS.MOD == 1'b0) begin
             for (int unsigned i=0; i<len/8; i++) begin
                 if (ren) begin
                     rdt[8*i+:8] = tmp_rdt[8*i+:8];
@@ -177,10 +186,10 @@ module tcb_lite_vip_manager
             end
         end
         // byte enable
-        if (man.MOD == 1'b1) begin
+        if (man.CFG.BUS.MOD == 1'b1) begin
             byt = '1;
             for (int unsigned i=0; i<len/8; i++) begin
-                int unsigned b = (i+int'(adr[man.MAX-1:0]))%man.BYT;
+                int unsigned b = (i+int'(adr[OFF-1:0]))%BYT;
                 if (ren) begin
                     rdt[8*i+:8] = tmp_rdt[8*b+:8];
                 end
@@ -196,53 +205,53 @@ module tcb_lite_vip_manager
 ////////////////////////////////////////////////////////////////////////////////
 
     task automatic write8 (
-        input  logic [man.ADR-1:0] adr,
-        input  logic [      8-1:0] dat,
-        output logic [man.STS-1:0] sts,
-        output logic               err,
-        input  logic               ndn = 1'b0
+        input  logic [ADR-1:0] adr,
+        input  logic [  8-1:0] dat,
+        output logic [STS-1:0] sts,
+        output logic           err,
+        input  logic           ndn = 1'b0
     );
-        logic [man.DAT-1:0] wdt = man.DAT'(dat);
-        logic [man.DAT-1:0] rdt;
+        logic [DAT-1:0] wdt = DAT'(dat);
+        logic [DAT-1:0] rdt;
         //      wen, ren, ctl, adr, wdt, rdt, sts, err, len, ndn
         access(1'b1,1'b0,  'x, adr, wdt, rdt, sts, err,   8, ndn);
     endtask: write8
 
     task automatic write16 (
-        input  logic [man.ADR-1:0] adr,
-        input  logic [     16-1:0] dat,
-        output logic [man.STS-1:0] sts,
-        output logic               err,
-        input  logic               ndn = 1'b0
+        input  logic [ADR-1:0] adr,
+        input  logic [ 16-1:0] dat,
+        output logic [STS-1:0] sts,
+        output logic           err,
+        input  logic           ndn = 1'b0
     );
-        logic [man.DAT-1:0] wdt = man.DAT'(dat);
-        logic [man.DAT-1:0] rdt;
+        logic [DAT-1:0] wdt = DAT'(dat);
+        logic [DAT-1:0] rdt;
         //      wen, ren, ctl, adr, wdt, rdt, sts, err, len, ndn
         access(1'b1,1'b0,  'x, adr, wdt, rdt, sts, err,  16, ndn);
     endtask: write16
 
     task automatic write32 (
-        input  logic [man.ADR-1:0] adr,
-        input  logic [     32-1:0] dat,
-        output logic [man.STS-1:0] sts,
-        output logic               err,
-        input  logic               ndn = 1'b0
+        input  logic [ADR-1:0] adr,
+        input  logic [ 32-1:0] dat,
+        output logic [STS-1:0] sts,
+        output logic           err,
+        input  logic           ndn = 1'b0
     );
-        logic [man.DAT-1:0] wdt = man.DAT'(dat);
-        logic [man.DAT-1:0] rdt;
+        logic [DAT-1:0] wdt = DAT'(dat);
+        logic [DAT-1:0] rdt;
         //      wen, ren, ctl, adr, wdt, rdt, sts, err, len, ndn
         access(1'b1,1'b0,  'x, adr, wdt, rdt, sts, err,  32, ndn);
     endtask: write32
 
     task automatic write64 (
-        input  logic [man.ADR-1:0] adr,
-        input  logic [     64-1:0] dat,
-        output logic [man.STS-1:0] sts,
-        output logic               err,
-        input  logic               ndn = 1'b0
+        input  logic [ADR-1:0] adr,
+        input  logic [ 64-1:0] dat,
+        output logic [STS-1:0] sts,
+        output logic           err,
+        input  logic           ndn = 1'b0
     );
-        logic [man.DAT-1:0] wdt = man.DAT'(dat);
-        logic [man.DAT-1:0] rdt;
+        logic [DAT-1:0] wdt = DAT'(dat);
+        logic [DAT-1:0] rdt;
         //      wen, ren, ctl, adr, wdt, rdt, sts, err, len, ndn
         access(1'b1,1'b0,  'x, adr, wdt, rdt, sts, err,  64, ndn);
     endtask: write64
@@ -252,58 +261,58 @@ module tcb_lite_vip_manager
 ////////////////////////////////////////////////////////////////////////////////
 
     task automatic read8 (
-        input  logic [man.ADR-1:0] adr,
-        output logic [      8-1:0] dat,
-        output logic [man.STS-1:0] sts,
-        output logic               err,
-        input  logic               ndn = 1'b0
+        input  logic [ADR-1:0] adr,
+        output logic [  8-1:0] dat,
+        output logic [STS-1:0] sts,
+        output logic           err,
+        input  logic           ndn = 1'b0
     );
-        logic [man.DAT-1:0] wdt = 'x;
-        logic [man.DAT-1:0] rdt;
-        //      wen, ren, ctl, adr,          wdt , rdt, sts, err, len, ndn
-        access(1'b0,1'b1,  'x, adr, man.DAT'(wdt), rdt, sts, err,   8, ndn);
+        logic [DAT-1:0] wdt = 'x;
+        logic [DAT-1:0] rdt;
+        //      wen, ren, ctl, adr,      wdt , rdt, sts, err, len, ndn
+        access(1'b0,1'b1,  'x, adr, DAT'(wdt), rdt, sts, err,   8, ndn);
         dat = 8'(rdt);
     endtask: read8
 
     task automatic read16 (
-        input  logic [man.ADR-1:0] adr,
-        output logic [     16-1:0] dat,
-        output logic [man.STS-1:0] sts,
-        output logic               err,
-        input  logic               ndn = 1'b0
+        input  logic [ADR-1:0] adr,
+        output logic [ 16-1:0] dat,
+        output logic [STS-1:0] sts,
+        output logic           err,
+        input  logic           ndn = 1'b0
     );
-        logic [man.DAT-1:0] wdt = 'x;
-        logic [man.DAT-1:0] rdt;
-        //      wen, ren, ctl, adr,          wdt , rdt, sts, err, len, ndn
-        access(1'b0,1'b1,  'x, adr, man.DAT'(wdt), rdt, sts, err,  16, ndn);
+        logic [DAT-1:0] wdt = 'x;
+        logic [DAT-1:0] rdt;
+        //      wen, ren, ctl, adr,      wdt , rdt, sts, err, len, ndn
+        access(1'b0,1'b1,  'x, adr, DAT'(wdt), rdt, sts, err,  16, ndn);
         dat = 16'(rdt);
     endtask: read16
 
     task automatic read32 (
-        input  logic [man.ADR-1:0] adr,
-        output logic [     32-1:0] dat,
-        output logic [man.STS-1:0] sts,
-        output logic               err,
-        input  logic               ndn = 1'b0
+        input  logic [ADR-1:0] adr,
+        output logic [ 32-1:0] dat,
+        output logic [STS-1:0] sts,
+        output logic           err,
+        input  logic           ndn = 1'b0
     );
-        logic [man.DAT-1:0] wdt = 'x;
-        logic [man.DAT-1:0] rdt;
-        //      wen, ren, ctl, adr,          wdt , rdt, sts, err, len, ndn
-        access(1'b0,1'b1,  'x, adr, man.DAT'(wdt), rdt, sts, err,  32, ndn);
+        logic [DAT-1:0] wdt = 'x;
+        logic [DAT-1:0] rdt;
+        //      wen, ren, ctl, adr,      wdt , rdt, sts, err, len, ndn
+        access(1'b0,1'b1,  'x, adr, DAT'(wdt), rdt, sts, err,  32, ndn);
         dat = 32'(rdt);
     endtask: read32
 
     task automatic read64 (
-        input  logic [man.DAT-1:0] adr,
-        output logic [     64-1:0] dat,
-        output logic [man.STS-1:0] sts,
-        output logic               err,
-        input  logic               ndn = 1'b0
+        input  logic [DAT-1:0] adr,
+        output logic [ 64-1:0] dat,
+        output logic [STS-1:0] sts,
+        output logic           err,
+        input  logic           ndn = 1'b0
     );
-        logic [man.DAT-1:0] wdt = 'x;
-        logic [man.DAT-1:0] rdt;
-        //      wen, ren, ctl, adr,          wdt , rdt, sts, err, len, ndn
-        access(1'b0,1'b1,  'x, adr, man.DAT'(wdt), rdt, sts, err,  64, ndn);
+        logic [DAT-1:0] wdt = 'x;
+        logic [DAT-1:0] rdt;
+        //      wen, ren, ctl, adr,      wdt , rdt, sts, err, len, ndn
+        access(1'b0,1'b1,  'x, adr, DAT'(wdt), rdt, sts, err,  64, ndn);
         dat = 64'(rdt);
     endtask: read64
 

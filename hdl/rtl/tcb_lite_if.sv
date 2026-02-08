@@ -29,15 +29,15 @@ interface tcb_lite_if
 
     // local parameters (calculated from configuration)
     localparam int unsigned CFG_BUS_BYT = CFG.BUS.DAT/8;          // byte enable width
-    localparam int unsigned CFG_BUS_MAX = $clog2(CFG_BUS_BYT);    // maximum logarithmic size
-    localparam int unsigned CFG_BUS_SIZ = $clog2(CFG_BUS_MAX+1);  // logarithmic size width
+    localparam int unsigned CFG_BUS_OFF = $clog2(CFG_BUS_BYT);    // address offset size
+    localparam int unsigned CFG_BUS_SIZ = $clog2(CFG_BUS_OFF+1);  // logarithmic size width
 
     // request type
     typedef struct {
         logic                   lck;  // arbitration lock
-        logic                   ndn;  // endianness (0-little, 1-big)
         logic                   wen;  // write enable
         logic                   ren;  // read  enable
+        logic                   ndn;  // endianness (0-little, 1-big)
         logic [CFG.BUS.CTL-1:0] ctl;  // control (user defined request signals)
         logic [CFG.BUS.ADR-1:0] adr;  // address
         logic [CFG_BUS_SIZ-1:0] siz;  // transfer size

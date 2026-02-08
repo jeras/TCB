@@ -19,7 +19,7 @@
 module tcb_lite_lib_decoder
     import tcb_lite_pkg::*;
 #(
-    // TCB parameters (contains address width)
+    // TCB-Lite parameters (contains address width)
     parameter  int unsigned ADR = 32,
     // interconnect parameters (subordinate interface number and logarithm)
     parameter  int unsigned IFN = 2,
@@ -27,10 +27,11 @@ module tcb_lite_lib_decoder
     // decoder address and mask array
     parameter  logic [ADR-1:0] DAM [IFN-1:0]
 )(
-    // TCB interfaces
+    // TCB-Lite interfaces
     tcb_lite_if.mon mon,  // TCB subordinate interface (manager device connects here)
     // control
-    output logic [IFL-1:0] sel  // select
+    output logic [IFL-1:0] sel,  // decoder select
+    output logic           err   // decoder error (no matches)
 );
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -54,7 +55,7 @@ module tcb_lite_lib_decoder
 ////////////////////////////////////////////////////////////////////////////////
 
     // match
-    logic mch [IFN-1:0];
+    logic [IFN-1:0] mch;
 
     // match
     generate
@@ -64,7 +65,7 @@ module tcb_lite_lib_decoder
     endgenerate
 
     // encode (convert from one-hot to binary encoding)
-    function logic [IFL-1:0] encode (logic val [IFN-1:0]);
+    function logic [IFL-1:0] encode (logic [IFN-1:0] val);
         encode = '0;
         for (int i=0; i<IFN; i++) begin
             encode |= val[i] ? i[IFL-1:0] : '0;
@@ -72,6 +73,7 @@ module tcb_lite_lib_decoder
     endfunction: encode
 
     // address decoder
-    assign sel = encode(mch);
+    assign sel = encode(mch);  // decoder select
+    assign err =      ~|mch;   // decoder error
 
 endmodule: tcb_lite_lib_decoder

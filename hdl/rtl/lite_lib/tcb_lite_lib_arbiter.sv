@@ -27,7 +27,7 @@ module tcb_lite_lib_arbiter
     // interface priorities (lower number is higher priority)
     parameter  bit unsigned [IFL-1:0] PRI [IFN-1:0]
 )(
-    // TCB interfaces
+    // TCB-Lite interfaces
     tcb_lite_if.mon mon [IFN-1:0],   // TCB subordinate interfaces (manager devices connect here)
     // control
     output logic [IFL-1:0] sel  // select

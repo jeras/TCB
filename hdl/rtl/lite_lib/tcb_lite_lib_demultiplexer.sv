@@ -25,7 +25,7 @@ module tcb_lite_lib_demultiplexer
 )(
     // control
     input  logic [IFL-1:0] sel,  // select
-    // TCB interfaces
+    // TCB-Lite interfaces
     tcb_lite_if.sub sub         ,  // TCB subordinate interface  (manager     device connects here)
     tcb_lite_if.man man[IFN-1:0]   // TCB manager     interfaces (subordinate devices connect here)
 );
@@ -40,11 +40,7 @@ module tcb_lite_lib_demultiplexer
     generate
     for (genvar i=0; i<IFN; i++) begin: param
         initial begin    
-            assert (man[i].DLY == sub.DLY) else $error("Parameter (man[%0d].DLY = %p) != (sub.DLY = %p)", i, man[i].DLY, sub.DLY);
-            assert (man[i].DAT == sub.DAT) else $error("Parameter (man[%0d].DAT = %p) != (sub.DAT = %p)", i, man[i].DAT, sub.DAT);
-            assert (man[i].ADR == sub.ADR) else $error("Parameter (man[%0d].ADR = %p) != (sub.ADR = %p)", i, man[i].ADR, sub.ADR);
-//            assert (man[i].MSK == sub.MSK) else $error("Parameter (man[%0d].MSK = %p) != (sub.MSK = %p)", i, man[i].MSK, sub.MSK);
-            assert (man[i].MOD == sub.MOD) else $error("Parameter (man[%0d].MOD = %p) != (sub.MOD = %p)", i, man[i].MOD, sub.MOD);
+            assert (man[i].CFG == sub.CFG) else $error("Parameter (man[%0d].CFG = %p) != (sub.CFG = %p)", i, man[i].CFG, sub.CFG);
         end
     end: param
     endgenerate
@@ -59,9 +55,9 @@ module tcb_lite_lib_demultiplexer
     logic [IFL-1:0] rsp_sel;
     
     // response
-    logic [sub.DAT-1:0] rdt [IFN-1:0];  // read data
-    logic [sub.STS-1:0] sts [IFN-1:0];  // status
-    logic               err [IFN-1:0];  // bus error
+    logic [sub.CFG.BUS.DAT-1:0] rdt [IFN-1:0];  // read data
+    logic [sub.CFG.BUS.STS-1:0] sts [IFN-1:0];  // status
+    logic                       err [IFN-1:0];  // bus error
 
     // handshake
     logic rdy [IFN-1:0];
@@ -77,10 +73,10 @@ module tcb_lite_lib_demultiplexer
 
     // response select
     generate
-    if (sub.DLY == 0) begin
+    if (sub.CFG.HSK.DLY == 0) begin
         assign rsp_sel = req_sel;
     end
-    else if (sub.DLY == 1) begin
+    else if (sub.CFG.HSK.DLY == 1) begin
         always_ff @(posedge sub.clk, posedge sub.rst)
         if (sub.rst) begin
             rsp_sel <= '0;

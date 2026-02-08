@@ -25,7 +25,7 @@ module tcb_lite_lib_multiplexer
 )(
     // control
     input  logic [IFL-1:0] sel,  // select
-    // TCB interfaces
+    // TCB-Lite interfaces
     tcb_lite_if.sub sub[IFN-1:0],  // TCB subordinate interfaces (manager     devices connect here)
     tcb_lite_if.man man            // TCB manager     interface  (subordinate device connects here)
 );
@@ -40,11 +40,7 @@ module tcb_lite_lib_multiplexer
     generate
     for (genvar i=0; i<IFN; i++) begin: param
         initial begin
-            assert (man.DLY == sub[i].DLY) else $error("Parameter (man.DLY = %p) != (sub[%0d].DLY = %p)", man.DLY, i, sub[i].DLY);
-            assert (man.DAT == sub[i].DAT) else $error("Parameter (man.DAT = %p) != (sub[%0d].DAT = %p)", man.DAT, i, sub[i].DAT);
-            assert (man.ADR == sub[i].ADR) else $error("Parameter (man.ADR = %p) != (sub[%0d].ADR = %p)", man.ADR, i, sub[i].ADR);
-//            assert (man.MSK == sub[i].MSK) else $error("Parameter (man.MSK = %p) != (sub[%0d].MSK = %p)", man.MSK, i, sub[i].MSK);
-            assert (man.MOD == sub[i].MOD) else $error("Parameter (man.MOD = %p) != (sub[%0d].MOD = %p)", man.MOD, i, sub[i].MOD);
+            assert (man.CFG == sub[i].CFG) else $error("Parameter (man.CFG = %p) != (sub[%0d].CFG = %p)", man.CFG, i, sub[i].CFG);
         end
     end: param
     endgenerate
@@ -62,15 +58,15 @@ module tcb_lite_lib_multiplexer
     logic vld [IFN-1:0];
 
     // request
-    logic               lck [IFN-1:0];
-    logic               ndn [IFN-1:0];
-    logic               wen [IFN-1:0];
-    logic               ren [IFN-1:0];
-    logic [man.CTL-1:0] ctl [IFN-1:0];
-    logic [man.ADR-1:0] adr [IFN-1:0];
-    logic [man.SIZ-1:0] siz [IFN-1:0];
-    logic [man.BYT-1:0] byt [IFN-1:0];
-    logic [man.DAT-1:0] wdt [IFN-1:0];
+    logic                       lck [IFN-1:0];
+    logic                       wen [IFN-1:0];
+    logic                       ren [IFN-1:0];
+    logic                       ndn [IFN-1:0];
+    logic [man.CFG.BUS.CTL-1:0] ctl [IFN-1:0];
+    logic [man.CFG.BUS.ADR-1:0] adr [IFN-1:0];
+    logic [man.CFG_BUS_SIZ-1:0] siz [IFN-1:0];
+    logic [man.CFG_BUS_BYT-1:0] byt [IFN-1:0];
+    logic [man.CFG.BUS.DAT-1:0] wdt [IFN-1:0];
 
 ////////////////////////////////////////////////////////////////////////////////
 // control
@@ -99,9 +95,9 @@ module tcb_lite_lib_multiplexer
         assign vld[i] = sub[i].vld;
         // request
         assign lck[i] = sub[i].req.lck;
-        assign ndn[i] = sub[i].req.ndn;
         assign wen[i] = sub[i].req.wen;
         assign ren[i] = sub[i].req.ren;
+        assign ndn[i] = sub[i].req.ndn;
         assign ctl[i] = sub[i].req.ctl;
         assign adr[i] = sub[i].req.adr;
         assign siz[i] = sub[i].req.siz;
@@ -114,9 +110,9 @@ module tcb_lite_lib_multiplexer
     assign man.vld = vld[sub_sel];
     // request multiplexer
     assign man.req.lck = lck[sub_sel];
-    assign man.req.ndn = ndn[sub_sel];
     assign man.req.wen = wen[sub_sel];
     assign man.req.ren = ren[sub_sel];
+    assign man.req.ndn = ndn[sub_sel];
     assign man.req.ctl = ctl[sub_sel];
     assign man.req.adr = adr[sub_sel];
     assign man.req.siz = siz[sub_sel];
@@ -135,7 +131,7 @@ module tcb_lite_lib_multiplexer
         assign sub[i].rsp.sts = (man_sel == i[IFL-1:0]) ? man.rsp.sts : 'x;
         assign sub[i].rsp.err = (man_sel == i[IFL-1:0]) ? man.rsp.err : 'x;
         // handshake
-        assign sub[i].rdy = (sub_sel == i[IFL-1:0]) ? man.rdy : '0;
+        assign sub[i].rdy     = (sub_sel == i[IFL-1:0]) ? man.rdy     : '0;
     end: gen_rsp
     endgenerate
 

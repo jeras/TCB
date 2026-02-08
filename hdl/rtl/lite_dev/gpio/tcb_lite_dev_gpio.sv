@@ -47,8 +47,8 @@ module tcb_lite_dev_gpio
 ////////////////////////////////////////////////////////////////////////////////
 
     initial begin
-        assert (sub.DLY ==        0) else $error("Unsupported DLY = %0d (must be 0)", sub.DLY);
-        assert (sub.DAT >= GPIO_DAT) else $error("Unsupported (DAT = %0d) < (GPIO_DAT = %0d)", sub.DAT, GPIO_DAT);
+        assert (sub.CFG.HSK.DLY ==        0) else $error("Unsupported CFG.HSK.DLY = %0d (must be 0)", sub.CFG.HSK.DLY);
+        assert (sub.CFG.BUS.DAT >= GPIO_DAT) else $error("Unsupported (CFG.BUS.DAT = %0d) < (GPIO_DAT = %0d)", sub.CFG.BUS.DAT, GPIO_DAT);
     end
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -60,9 +60,9 @@ module tcb_lite_dev_gpio
     // check whether at least one GPIO pin has enabled interrupt support
     generate
     if (~|SYS_IRQ) begin
-        assign sys_req_adr =        sub.req.adr[sub.MAX+:3];
+        assign sys_req_adr =        sub.req.adr[sub.CFG_BUS_OFF+:3];
     end else begin
-        assign sys_req_adr = {1'b0, sub.req.adr[sub.MAX+:2]};
+        assign sys_req_adr = {1'b0, sub.req.adr[sub.CFG_BUS_OFF+:2]};
     end
     endgenerate
 
@@ -72,7 +72,7 @@ module tcb_lite_dev_gpio
         .GPIO_DAT (GPIO_DAT),
         .GPIO_CDC (GPIO_CDC),
         // system interface parameters
-        .SYS_DAT  (sub.DAT),
+        .SYS_DAT  (sub.CFG.BUS.DAT),
         // optional implementation configuration
         .SYS_IEN  (SYS_IEN),
         .SYS_IRQ  (SYS_IRQ),

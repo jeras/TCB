@@ -21,6 +21,7 @@ module tcb_lite_lib_register_backpressure
 #(
     parameter string OPT = "POWER"  // optimization for "POWER" or "COMPLEXITY"
 )(
+    // TCB-Lite interfaces
     tcb_lite_if.sub sub,  // TCB subordinate interface (manager     device connects here)
     tcb_lite_if.man man   // TCB manager     interface (subordinate device connects here)
 );
@@ -34,11 +35,7 @@ module tcb_lite_lib_register_backpressure
     // comparing subordinate and manager interface parameters
     initial
     begin
-        assert (man.DLY == sub.DLY) else $error("Parameter (man.DLY = %p) != (sub.DLY = %p)", man.DLY, sub.DLY);
-        assert (man.DAT == sub.DAT) else $error("Parameter (man.DAT = %p) != (sub.DAT = %p)", man.DAT, sub.DAT);
-        assert (man.ADR == sub.ADR) else $error("Parameter (man.ADR = %p) != (sub.ADR = %p)", man.ADR, sub.ADR);
-//        assert (man.MSK == sub.MSK) else $error("Parameter (man.MSK = %p) != (sub.MSK = %p)", man.MSK, sub.MSK);
-        assert (man.MOD == sub.MOD) else $error("Parameter (man.MOD = %p) != (sub.MOD = %p)", man.MOD, sub.MOD);
+        assert (man.CFG == sub.CFG) else $error("Parameter (man.CFG = %p) != (sub.CFG = %p)", man.CFG, sub.CFG);
     end
 `endif
 
@@ -62,9 +59,9 @@ module tcb_lite_lib_register_backpressure
     always_ff @(posedge sub.clk)
     if (tmp_trn) begin
         tmp_req.lck <= sub.req.lck;
-        tmp_req.ndn <= sub.req.ndn;
         tmp_req.wen <= sub.req.wen;
         tmp_req.ren <= sub.req.ren;
+        tmp_req.ndn <= sub.req.ndn;
         tmp_req.ctl <= sub.req.ctl;
         tmp_req.adr <= sub.req.adr;
         tmp_req.siz <= sub.req.siz;
@@ -74,11 +71,11 @@ module tcb_lite_lib_register_backpressure
     generate
     case (OPT)
         "POWER": begin
-            case (sub.MOD)
+            case (sub.CFG.BUS.MOD)
                 // logarithmic size
                 1'b0: begin: byt
                     // write data
-                    for (genvar i=0; i<sub.BYT; i++) begin: wdt
+                    for (genvar i=0; i<sub.CFG_BUS_BYT; i++) begin: wdt
                         always_ff @(posedge sub.clk)
                         if (tmp_trn & sub.req.wen) begin
                             if (i < (1<<sub.req.siz)) begin
@@ -90,7 +87,7 @@ module tcb_lite_lib_register_backpressure
                 // byte enable
                 1'b1: begin: byt
                     // write data
-                    for (genvar i=0; i<sub.BYT; i++) begin: wdt
+                    for (genvar i=0; i<sub.CFG_BUS_BYT; i++) begin: wdt
                         always_ff @(posedge sub.clk)
                         if (tmp_trn & sub.req.wen) begin
                             if (sub.req.byt[i]) begin
@@ -112,9 +109,9 @@ module tcb_lite_lib_register_backpressure
 
     // request
     assign man.req.lck = sub.rdy ? sub.req.lck : tmp_req.lck;
-    assign man.req.ndn = sub.rdy ? sub.req.ndn : tmp_req.ndn;
     assign man.req.wen = sub.rdy ? sub.req.wen : tmp_req.wen;
     assign man.req.ren = sub.rdy ? sub.req.ren : tmp_req.ren;
+    assign man.req.ndn = sub.rdy ? sub.req.ndn : tmp_req.ndn;
     assign man.req.ctl = sub.rdy ? sub.req.ctl : tmp_req.ctl;
     assign man.req.adr = sub.rdy ? sub.req.adr : tmp_req.adr;
     assign man.req.siz = sub.rdy ? sub.req.siz : tmp_req.siz;
