@@ -27,37 +27,29 @@ interface tcb_lite_if
     input  logic rst   // reset
 );
 
-    // local handshake parameters (configuration shorthand)
-    localparam int unsigned DLY = CFG.HSK.DLY;  // response delay
-    localparam bit          HLD = CFG.HSK.HLD;  // response hold
-    localparam bit          MOD = CFG.BUS.MOD;  // bus mode (0-logarithmic size, 1-byte enable)
-    localparam int unsigned CTL = CFG.BUS.CTL;  // control width (user defined request signals)
-    localparam int unsigned ADR = CFG.BUS.ADR;  // address width
-    localparam int unsigned DAT = CFG.BUS.DAT;  // data    width
-    localparam int unsigned STS = CFG.BUS.STS;  // status  width (user defined response signals)
     // local parameters (calculated from configuration)
-    localparam int unsigned BYT = DAT/8;          // byte enable width
-    localparam int unsigned MAX = $clog2(BYT);    // maximum logarithmic size
-    localparam int unsigned SIZ = $clog2(MAX+1);  // logarithmic size width
+    localparam int unsigned CFG_BUS_BYT = CFG.BUS.DAT/8;          // byte enable width
+    localparam int unsigned CFG_BUS_MAX = $clog2(CFG_BUS_BYT);    // maximum logarithmic size
+    localparam int unsigned CFG_BUS_SIZ = $clog2(CFG_BUS_MAX+1);  // logarithmic size width
 
     // request type
     typedef struct {
-        logic           lck;  // arbitration lock
-        logic           ndn;  // endianness (0-little, 1-big)
-        logic           wen;  // write enable
-        logic           ren;  // read  enable
-        logic [CTL-1:0] ctl;  // control (user defined request signals)
-        logic [ADR-1:0] adr;  // address
-        logic [SIZ-1:0] siz;  // transfer size
-        logic [BYT-1:0] byt;  // byte enable
-        logic [DAT-1:0] wdt;  // write data
+        logic                   lck;  // arbitration lock
+        logic                   ndn;  // endianness (0-little, 1-big)
+        logic                   wen;  // write enable
+        logic                   ren;  // read  enable
+        logic [CFG.BUS.CTL-1:0] ctl;  // control (user defined request signals)
+        logic [CFG.BUS.ADR-1:0] adr;  // address
+        logic [CFG_BUS_SIZ-1:0] siz;  // transfer size
+        logic [CFG_BUS_BYT-1:0] byt;  // byte enable
+        logic [CFG.BUS.DAT-1:0] wdt;  // write data
     } req_t;
 
     // response type
     typedef struct {
-        logic [DAT-1:0] rdt;  // read data
-        logic [STS-1:0] sts;  // response status (user defined response signals)
-        logic           err;  // response error
+        logic [CFG.BUS.DAT-1:0] rdt;  // read data
+        logic [CFG.BUS.STS-1:0] sts;  // response status (user defined response signals)
+        logic                   err;  // response error
     } rsp_t;
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -96,8 +88,8 @@ interface tcb_lite_if
 ////////////////////////////////////////////////////////////////////////////////
 
     // delay line
-    logic trn_dly [0:DLY];  // handshake transfer
-    req_t req_dly [0:DLY];  // request
+    logic trn_dly [0:CFG.HSK.DLY];  // handshake transfer
+    req_t req_dly [0:CFG.HSK.DLY];  // request
 
     // zero delay (continuous assignment)
     assign trn_dly[0] = trn;
@@ -105,7 +97,7 @@ interface tcb_lite_if
 
     // handshake/request delay line
     generate
-    for (genvar i=1; i<=DLY; i++) begin: dly
+    for (genvar i=1; i<=CFG.HSK.DLY; i++) begin: dly
         logic trn_tmp;
         req_t req_tmp;
         // continuous assignment

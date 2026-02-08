@@ -103,4 +103,7 @@ module tcb_lite_vip_subordinate
         end
     end: sampler
 
+    // TODO: enable/disable transfer logger
+    // this will allow for proper measuring of idle times
+
 endmodule: tcb_lite_vip_subordinate
