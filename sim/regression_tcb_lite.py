@@ -16,8 +16,8 @@ tests = [
 ## "tcb_lite_lib_demultiplexer_tb",
 ## "tcb_lite_lib_logsize2byteena_tb",
 ## "tcb_lite_lib_misaligned_memory_controller_tb",
- "tcb_lite_peri_gpio_tb",
- "tcb_lite_peri_uart_tb",
+ "tcb_lite_dev_gpio_tb",
+ "tcb_lite_dev_uart_tb",
 ]
 
 simulator = "questa"

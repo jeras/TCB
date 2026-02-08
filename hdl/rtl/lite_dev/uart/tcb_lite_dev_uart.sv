@@ -16,7 +16,7 @@
 // limitations under the License.
 ////////////////////////////////////////////////////////////////////////////////
 
-module tcb_lite_peri_uart #(
+module tcb_lite_dev_uart #(
     // UART parameters
     parameter  int unsigned UART_BDR = 8,  // baudrate number width
     parameter  int unsigned UART_DAT = 8,  // shifter data width
@@ -64,7 +64,7 @@ module tcb_lite_peri_uart #(
     assign sys_req_adr = sub.req.adr[sub.MAX+:4];
 
     // TCB variant independent instance
-    tcb_peri_uart #(
+    tcb_dev_uart #(
         // UART parameters
         .UART_BDR  (UART_BDR),
         .UART_DAT  (UART_DAT),
@@ -109,4 +109,4 @@ module tcb_lite_peri_uart #(
     // TCB backpressure
     assign sub.rdy = 1'b1;
 
-endmodule: tcb_lite_peri_uart
+endmodule: tcb_lite_dev_uart

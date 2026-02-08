@@ -20,7 +20,7 @@
 // limitations under the License.
 ////////////////////////////////////////////////////////////////////////////////
 
-module tcb_peri_gpio #(
+module tcb_dev_gpio #(
     // GPIO parameters
     parameter  int unsigned GPIO_DAT = 32,  // GPIO data width
     parameter  int unsigned GPIO_CDC =  2,  // implement clock domain crossing stages (0 - bypass)
@@ -97,7 +97,7 @@ module tcb_peri_gpio #(
     generate
     if (GPIO_CDC > 1) begin: gen_cdc_stages
 
-        tcb_peri_gpio_cdc #(
+        tcb_dev_gpio_cdc #(
             .DAT (GPIO_DAT),
             .CDC (GPIO_CDC),
             .IEN (SYS_IEN)
@@ -202,4 +202,4 @@ module tcb_peri_gpio #(
     // interrupt clear pulse on write to interrupt status register
     assign irq_clr = (sys_wen & (sys_wad == 3'd7)) ? GPIO_DAT'(sys_wdt) : '0;
 
-endmodule: tcb_peri_gpio
+endmodule: tcb_dev_gpio

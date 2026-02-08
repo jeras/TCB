@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// TCB-Full UART testbench
+// TCB-Lite UART testbench
 ////////////////////////////////////////////////////////////////////////////////
 // Copyright 2022 Iztok Jeras
 //
@@ -16,13 +16,17 @@
 // limitations under the License.
 ////////////////////////////////////////////////////////////////////////////////
 
-module tcb_peri_uart_tb
-    import tcb_full_pkg::*;
-    import tcb_full_vip_blocking_pkg::*;
+module tcb_lite_dev_uart_tb
+    import tcb_lite_pkg::*;
 #(
-    // TCB widths
-    int unsigned ADR = 32,
-    int unsigned DAT = 32
+    // RTL configuration parameters
+    parameter  int unsigned DLY =    0,  // response delay
+    parameter  bit          HLD = 1'b0,  // response hold
+    parameter  bit          MOD = 1'b0,  // bus mode (0-logarithmic size, 1-byte enable)
+    parameter  int unsigned CTL =    0,  // control width (user defined request signals)
+    parameter  int unsigned ADR =   32,  // address width (only 32/64 are supported)
+    parameter  int unsigned DAT =   32,  // data    width (only 32/64 are supported)
+    parameter  int unsigned STS =    0   // status  width (user defined response signals)
 );
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -30,48 +34,15 @@ module tcb_peri_uart_tb
 ////////////////////////////////////////////////////////////////////////////////
 
     // UART data width
-    localparam int unsigned UDW = 8;
+    localparam int unsigned UART_DAT = 8;
 
     // UART baudrate
     localparam int unsigned TX_BDR = 4;         // TX baudrate
     localparam int unsigned RX_BDR = 4;         // RX baudrate
     localparam int unsigned RX_SMP = RX_BDR/2;  // RX sample
 
-    // configuration parameter
-    localparam tcb_cfg_t CFG = '{
-        // handshake parameter
-        HSK: '{
-            DLY: 0,
-            HLD: 1'b0
-        },
-        // bus parameter
-        BUS: '{
-            ADR: TCB_BUS_DEF.ADR,
-            DAT: TCB_BUS_DEF.DAT,
-            LEN: TCB_BUS_DEF.LEN,
-            LCK: TCB_LCK_PRESENT,
-            CHN: TCB_CHN_HALF_DUPLEX,
-            AMO: TCB_AMO_ABSENT,
-            PRF: TCB_PRF_ABSENT,
-            NXT: TCB_NXT_ABSENT,
-            MOD: TCB_MOD_LOG_SIZE,
-            ORD: TCB_ORD_DESCENDING,
-            NDN: TCB_NDN_BI_NDN
-        },
-        // physical interface parameter
-        PMA: TCB_PMA_DEF
-    };
-
-    localparam tcb_full_vip_t VIP = '{
-        DRV: 1'b1
-    };
-
-//    typedef tcb_c #(HSK, BUS_SIZ, PMA)::req_t req_t;
-//    typedef tcb_c #(HSK, BUS_SIZ, PMA)::rsp_t rsp_t;
-
-    // local request/response types are copies of packaged defaults
-    typedef tcb_req_t req_t;
-    typedef tcb_rsp_t rsp_t;
+    // TCB configurations               '{HSK: '{DLY, HLD}, BUS: '{MOD, CTL, ADR, DAT, STS}}
+    localparam tcb_lite_cfg_t MAN_CFG = '{HSK: '{DLY, HLD}, BUS: '{MOD, CTL, ADR, DAT, STS}};
 
 ////////////////////////////////////////////////////////////////////////////////
 // local signals
@@ -84,17 +55,12 @@ module tcb_peri_uart_tb
     string testname = "none";
 
     // TCB interfaces
-    tcb_full_if #(tcb_cfg_t, CFG, req_t, rsp_t) tcb_man (.clk (clk), .rst (rst));
-
-    // parameterized class specialization (blocking API)
-    typedef tcb_full_vip_blocking_c #(tcb_cfg_t, CFG, req_t, rsp_t) tcb_man_s;
-
-    // TCB class objects
-    tcb_man_s obj_man = new(tcb_man, "MAN");
+    tcb_lite_if #(MAN_CFG) tcb_man (.clk (clk), .rst (rst));
 
     // response
-    logic [tcb_man.CFG_BUS_BYT-1:0][8-1:0] rdt;  // read data
-    tcb_rsp_sts_t                          sts;  // status response
+    logic [DAT-1:0] rdt;  // read data
+    logic [STS-1:0] sts;  // response status
+    logic           err;  // response error
 
 ////////////////////////////////////////////////////////////////////////////////
 // data checking
@@ -132,52 +98,48 @@ module tcb_peri_uart_tb
         repeat (1) @(posedge clk);
 
         // write configuration
-        $display("(%t) INFO: writing configuration begin.", $time);
-        obj_man.write32('h08, 32'(TX_BDR-1), sts);  // TX baudrate
-        obj_man.write32('h28, 32'(RX_BDR-1), sts);  // RX baudrate
-        obj_man.write32('h2C, 32'(RX_SMP-1), sts);  // RX sample
-        obj_man.write32('h30, 32'(TX_LEN-1), sts);  // RX IRQ level
-        $display("(%t) INFO: writing configuration end.", $time);
+        $info("writing configuration begin.");
+        man.write32('h08, DAT'(TX_BDR-1), sts, err);  // TX baudrate
+        man.write32('h28, DAT'(RX_BDR-1), sts, err);  // RX baudrate
+        man.write32('h2C, DAT'(RX_SMP-1), sts, err);  // RX sample
+        man.write32('h30, DAT'(TX_LEN-1), sts, err);  // RX IRQ level
+        $info("writing configuration end.");
         repeat (1) @(posedge clk);
 
         // read/check configuration
-        $display("(%t) INFO: reading/checking configuration begin.", $time);
-        obj_man.check32('h08, 32'(TX_BDR-1), '0);  // TX baudrate
-        obj_man.check32('h28, 32'(RX_BDR-1), '0);  // RX baudrate
-        obj_man.check32('h2C, 32'(RX_SMP-1), '0);  // RX sample
-        obj_man.check32('h30, 32'(TX_LEN-1), '0);  // RX IRQ level
-        $display("(%t) INFO: reading/checking configuration end.", $time);
+        $info("reading/checking configuration begin.");
+        man.read32('h08, rdt, sts, err);  assert (rdt == 32'(TX_BDR-1)) else $error("TCB read mismatch");   // TX baudrate
+        man.read32('h28, rdt, sts, err);  assert (rdt == 32'(RX_BDR-1)) else $error("TCB read mismatch");   // RX baudrate
+        man.read32('h2C, rdt, sts, err);  assert (rdt == 32'(RX_SMP-1)) else $error("TCB read mismatch");   // RX sample
+        man.read32('h30, rdt, sts, err);  assert (rdt == 32'(TX_LEN-1)) else $error("TCB read mismatch");   // RX IRQ level
+        $info("reading/checking configuration end.");
         repeat (1) @(posedge clk);
 
         // write TX data
-        $display("(%t) INFO: writing TX data begin.", $time);
+        $info("writing TX data begin.");
         for (int unsigned i=0; i<TX_LEN; i++) begin
-            obj_man.write32('h00, 32'(TX_STR[i]), sts);
+            man.write32('h00, 32'(TX_STR[i]), sts, err);
         end
-        $display("(%t) INFO: writing TX data end.", $time);
+        $info("writing TX data end.");
 
         // wait for RX IRQ
-        $display("(%t) INFO: writing RX IRQ begin.", $time);
+        $info("writing RX IRQ begin.");
         do begin
             @(posedge clk);
         end while (!irq_rx);
-        $display("(%t) INFO: writing RX IRQ end.", $time);
+        $info("writing RX IRQ end.");
 
         // read RX data
-        $display("(%t) INFO: reading RX data begin.", $time);
+        $info("reading RX data begin.");
         for (int unsigned i=0; i<TX_LEN; i++) begin
-            obj_man.read32('h20, rdt, sts);
-            rx_str[i] = rdt[UDW-1:0];
+            man.read32('h20, rdt, sts, err);
+            rx_str[i] = rdt[UART_DAT-1:0];
         end
-        $display("(%t) INFO: reading RX data end.", $time);
+        $info("reading RX data end.");
 
         // checking if TX and RX data arrays are the same
-        if (string'(rx_str) != TX_STR) begin
-            $display("ERROR: RX '%s' differs from TX '%s'", string'(rx_str), TX_STR);
-            $display("FAILURE");
-        end else begin
-            $display("SUCCESS");
-        end
+        assert (string'(rx_str) == TX_STR) else
+            $error("RX '%s' differs from TX '%s'", string'(rx_str), TX_STR);
 
         // end simulation
         repeat (4) @(posedge clk);
@@ -188,8 +150,7 @@ module tcb_peri_uart_tb
     initial
     begin
         repeat (TX_LEN*10*TX_BDR + 100) @(posedge clk);
-        $display("ERROR: RX IRQ not triggered.");
-        $display("FAILURE");
+        $error("ERROR: RX IRQ not triggered.");
         $finish();
     end
 
@@ -197,8 +158,14 @@ module tcb_peri_uart_tb
 // VIP instances
 ////////////////////////////////////////////////////////////////////////////////
 
-    tcb_full_vip_protocol_checker chk_man (
-        .tcb (tcb_man)
+    // manager VIP
+    tcb_lite_vip_manager #(
+    ) man (
+        .man (tcb_man)
+    );
+
+    tcb_lite_vip_protocol_checker chk_man (
+        .mon (tcb_man)
     );
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -206,8 +173,8 @@ module tcb_peri_uart_tb
 ////////////////////////////////////////////////////////////////////////////////
 
     // TCB UART
-    tcb_peri_uart #(
-        .DW       (UDW)
+    tcb_lite_dev_uart #(
+        .UART_DAT (UART_DAT)
     ) uart (
         // UART signals
         .uart_txd (uart_txd),
@@ -216,7 +183,7 @@ module tcb_peri_uart_tb
         .irq_tx   (irq_tx),
         .irq_rx   (irq_rx),
         // TCB interface
-        .tcb      (tcb_man)
+        .sub      (tcb_man)
     );
 
     // UART loopback
@@ -236,4 +203,4 @@ module tcb_peri_uart_tb
         $dumpvars;
     end
 
-endmodule: tcb_peri_uart_tb
+endmodule: tcb_lite_dev_uart_tb

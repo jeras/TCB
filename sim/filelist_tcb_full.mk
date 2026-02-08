@@ -22,12 +22,12 @@ RTL+=${PATH_HDL}/rtl/full_lib/tcb_full_lib_logsize2byteena.sv
 RTL+=${PATH_HDL}/rtl/full_lib/tcb_full_lib_misaligned_memory_controller.sv
 RTL+=${PATH_HDL}/rtl/full_lib/tcb_full_lib_read_modify_write.sv
 # GPIO RTL
-RTL+=${PATH_HDL}/rtl/peri/gpio/tcb_peri_gpio.sv
+RTL+=${PATH_HDL}/rtl/dev/gpio/tcb_dev_gpio.sv
 # UART RTL
-RTL+=${PATH_HDL}/rtl/peri/uart/tcb_peri_uart_ser.sv
-RTL+=${PATH_HDL}/rtl/peri/uart/tcb_peri_uart_des.sv
-RTL+=${PATH_HDL}/rtl/peri/uart/tcb_peri_uart_fifo.sv
-RTL+=${PATH_HDL}/rtl/peri/full_uart/tcb_full_peri_uart.sv
+RTL+=${PATH_HDL}/rtl/dev/uart/tcb_dev_uart_ser.sv
+RTL+=${PATH_HDL}/rtl/dev/uart/tcb_dev_uart_des.sv
+RTL+=${PATH_HDL}/rtl/dev/uart/tcb_dev_uart_fifo.sv
+RTL+=${PATH_HDL}/rtl/dev/full_uart/tcb_full_dev_uart.sv
 
 # SystemVerilog VIP
 TBN+=${PATH_HDL}/tbn/full_vip/tcb_full_vip_pkg.sv
@@ -52,14 +52,14 @@ TBN+=${PATH_HDL}/tbn/full_lib/tcb_full_lib_logsize2byteena_tb.sv
 TBN+=${PATH_HDL}/tbn/full_lib/tcb_full_lib_misaligned_memory_controller_tb.sv
 TBN+=${PATH_HDL}/tbn/full_lib/tcb_full_lib_read_modify_write_tb.sv
 # RAM models
-TBN+=${PATH_HDL}/tbn/peri/sram/sram_model.sv
-TBN+=${PATH_HDL}/tbn/peri/cram/cram_model.sv
+TBN+=${PATH_HDL}/tbn/dev/sram/sram_model.sv
+TBN+=${PATH_HDL}/tbn/dev/cram/cram_model.sv
 # GPIO testbench
-TBN+=${PATH_HDL}/tbn/peri/full_gpio/tcb_full_peri_gpio_tb.sv
+TBN+=${PATH_HDL}/tbn/dev/full_gpio/tcb_full_dev_gpio_tb.sv
 # UART testbench
-TBN+=${PATH_HDL}/tbn/peri/uart/uart_model.sv
-TBN+=${PATH_HDL}/tbn/peri/uart/uart_model_tb.sv
-TBN+=${PATH_HDL}/tbn/peri/full_uart/tcb_full_peri_uart_tb.sv
+TBN+=${PATH_HDL}/tbn/dev/uart/uart_model.sv
+TBN+=${PATH_HDL}/tbn/dev/uart/uart_model_tb.sv
+TBN+=${PATH_HDL}/tbn/dev/full_uart/tcb_full_dev_uart_tb.sv
 
 # combined HDL sources
 HDL =${RTL}

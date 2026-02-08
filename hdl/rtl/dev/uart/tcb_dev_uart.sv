@@ -16,7 +16,7 @@
 // limitations under the License.
 ////////////////////////////////////////////////////////////////////////////////
 
-module tcb_peri_uart #(
+module tcb_dev_uart #(
     // UART parameters
     parameter  int unsigned UART_BDR = 8,  // baudrate number width
     parameter  int unsigned UART_DAT = 8,  // shifter data width
@@ -150,7 +150,7 @@ module tcb_peri_uart #(
 ////////////////////////////////////////////////////////////////////////////////
 
     // FIFO
-    tcb_peri_uart_fifo #(
+    tcb_dev_uart_fifo #(
         .SIZ      (FIFO_SIZ),
         .DAT      (UART_DAT)
     )  tx_fifo (
@@ -170,7 +170,7 @@ module tcb_peri_uart #(
     );
 
     // serializer
-    tcb_peri_uart_ser #(
+    tcb_dev_uart_ser #(
         .BDR     (UART_BDR),
         .DAT     (UART_DAT)
     ) tx_ser (
@@ -195,7 +195,7 @@ module tcb_peri_uart #(
 ////////////////////////////////////////////////////////////////////////////////
 
     // FIFO
-    tcb_peri_uart_fifo #(
+    tcb_dev_uart_fifo #(
         .SIZ      (FIFO_SIZ),
         .DAT      (UART_DAT)
     ) rx_fifo (
@@ -215,7 +215,7 @@ module tcb_peri_uart #(
     );
 
     // deserializer
-    tcb_peri_uart_des #(
+    tcb_dev_uart_des #(
         .BDR     (UART_BDR),
         .DAT     (UART_DAT)
     ) rx_des (
@@ -235,4 +235,4 @@ module tcb_peri_uart #(
     // interrupt (RX FIFO load is above limit)
     assign irq_rx = (rx_sts_cnt > rx_cfg_irq);
 
-endmodule: tcb_peri_uart
+endmodule: tcb_dev_uart

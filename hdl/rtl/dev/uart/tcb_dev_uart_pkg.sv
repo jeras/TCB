@@ -16,7 +16,7 @@
 // limitations under the License.
 ////////////////////////////////////////////////////////////////////////////////
 
-module tcb_peri_uart_pkg;
+module tcb_dev_uart_pkg;
 
     // helper function for calculating boudrate divider
     function int unsigned baudrate_divider (
@@ -26,4 +26,4 @@ module tcb_peri_uart_pkg;
         return frequency/baudrate;
     endfunction: baudrate_divider
 
-endmodule: tcb_peri_uart_pkg
+endmodule: tcb_dev_uart_pkg

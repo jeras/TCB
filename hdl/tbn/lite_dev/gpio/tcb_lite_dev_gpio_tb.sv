@@ -16,7 +16,7 @@
 // limitations under the License.
 ////////////////////////////////////////////////////////////////////////////////
 
-module tcb_lite_peri_gpio_tb
+module tcb_lite_dev_gpio_tb
     import tcb_lite_pkg::*;
 #(
     // RTL configuration parameters
@@ -138,7 +138,7 @@ module tcb_lite_peri_gpio_tb
 ////////////////////////////////////////////////////////////////////////////////
 
     // TCB GPIO
-    tcb_lite_peri_gpio #(
+    tcb_lite_dev_gpio #(
         .GPIO_DAT (GPIO_DAT),
         // implementation details
 //        bit          CFG_MIN = 1'b0,  // minimalistic implementation
@@ -175,4 +175,4 @@ module tcb_lite_peri_gpio_tb
         $dumpvars;
     end
 
-endmodule: tcb_lite_peri_gpio_tb
+endmodule: tcb_lite_dev_gpio_tb

@@ -151,7 +151,7 @@ module tcb_full_peri_uart #(
 ////////////////////////////////////////////////////////////////////////////////
 
     // FIFO
-    tcb_peri_uart_fifo #(
+    tcb_dev_uart_fifo #(
         .SZ      (SZ),
     //  .AW      (AW),
     //  .CW      (CW),
@@ -173,7 +173,7 @@ module tcb_full_peri_uart #(
     );
 
     // serializer
-    tcb_peri_uart_ser #(
+    tcb_dev_uart_ser #(
         .RW      (RW),
         .DW      (DW)
     ) tx_ser (
@@ -198,7 +198,7 @@ module tcb_full_peri_uart #(
 ////////////////////////////////////////////////////////////////////////////////
 
     // FIFO
-    tcb_peri_uart_fifo #(
+    tcb_dev_uart_fifo #(
         .SZ      (SZ),
         .AW      (AW),
     //  .CW      (8),
@@ -220,7 +220,7 @@ module tcb_full_peri_uart #(
     );
 
     // deserializer
-    tcb_peri_uart_des #(
+    tcb_dev_uart_des #(
         .RW      (RW),
         .DW      (DW)
     ) rx_des (

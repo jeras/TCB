@@ -16,7 +16,7 @@
 // limitations under the License.
 ////////////////////////////////////////////////////////////////////////////////
 
-module tcb_peri_uart_des #(
+module tcb_dev_uart_des #(
     parameter  int unsigned BDR = 8,  // baudrate counter width
     parameter  int unsigned DAT = 8,  // shifter data width
     parameter  int unsigned STP = 1   // stop sequence width
@@ -128,4 +128,4 @@ module tcb_peri_uart_des #(
     // parallel stream data (START is already shifted out when VALID is active)
     assign str_dat = shf_dat[DAT-1:0];
 
-endmodule: tcb_peri_uart_des
+endmodule: tcb_dev_uart_des

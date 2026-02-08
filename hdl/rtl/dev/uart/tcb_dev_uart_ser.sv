@@ -16,7 +16,7 @@
 // limitations under the License.
 ////////////////////////////////////////////////////////////////////////////////
 
-module tcb_peri_uart_ser #(
+module tcb_dev_uart_ser #(
     parameter  int unsigned BDR = 8,  // baudrate number width
     parameter  int unsigned DAT = 8,  // shifter data width
     parameter  int unsigned STP = 1   // stop sequence width
@@ -112,4 +112,4 @@ module tcb_peri_uart_ser #(
 
     assign txd = shf_dat[0];
 
-endmodule: tcb_peri_uart_ser
+endmodule: tcb_dev_uart_ser

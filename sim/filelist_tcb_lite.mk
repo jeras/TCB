@@ -21,16 +21,16 @@ RTL+=${PATH_HDL}/rtl/lite_lib/tcb_lite_lib_demultiplexer.sv
 RTL+=${PATH_HDL}/rtl/lite_lib/tcb_lite_lib_logsize2byteena.sv
 #RTL+=${PATH_HDL}/rtl/lite_lib/tcb_lite_lib_misaligned_memory_controller.sv
 ## GPIO RTL
-RTL+=${PATH_HDL}/rtl/peri/gpio/tcb_peri_gpio_cdc_generic.sv
-#RTL+=${PATH_HDL}/rtl/peri/gpio/tcb_peri_gpio_cdc_xilinx_xpm.sv
-RTL+=${PATH_HDL}/rtl/peri/gpio/tcb_peri_gpio.sv
-RTL+=${PATH_HDL}/rtl/lite_peri/gpio/tcb_lite_peri_gpio.sv
+RTL+=${PATH_HDL}/rtl/dev/gpio/tcb_dev_gpio_cdc_generic.sv
+#RTL+=${PATH_HDL}/rtl/dev/gpio/tcb_dev_gpio_cdc_xilinx_xpm.sv
+RTL+=${PATH_HDL}/rtl/dev/gpio/tcb_dev_gpio.sv
+RTL+=${PATH_HDL}/rtl/lite_dev/gpio/tcb_lite_dev_gpio.sv
 ## UART RTL
-RTL+=${PATH_HDL}/rtl/peri/uart/tcb_peri_uart_ser.sv
-RTL+=${PATH_HDL}/rtl/peri/uart/tcb_peri_uart_des.sv
-RTL+=${PATH_HDL}/rtl/peri/uart/tcb_peri_uart_fifo.sv
-RTL+=${PATH_HDL}/rtl/peri/uart/tcb_peri_uart.sv
-RTL+=${PATH_HDL}/rtl/lite_peri/uart/tcb_lite_peri_uart.sv
+RTL+=${PATH_HDL}/rtl/dev/uart/tcb_dev_uart_ser.sv
+RTL+=${PATH_HDL}/rtl/dev/uart/tcb_dev_uart_des.sv
+RTL+=${PATH_HDL}/rtl/dev/uart/tcb_dev_uart_fifo.sv
+RTL+=${PATH_HDL}/rtl/dev/uart/tcb_dev_uart.sv
+RTL+=${PATH_HDL}/rtl/lite_dev/uart/tcb_lite_dev_uart.sv
 
 # SystemVerilog VIP
 TBN+=${PATH_HDL}/tbn/lite_vip/tcb_lite_vip_protocol_checker.sv
@@ -53,14 +53,14 @@ TBN+=${PATH_HDL}/tbn/lite_lib/tcb_lite_lib_demultiplexer_tb.sv
 TBN+=${PATH_HDL}/tbn/lite_lib/tcb_lite_lib_logsize2byteena_tb.sv
 #TBN+=${PATH_HDL}/tbn/lite_lib/tcb_lite_lib_misaligned_memory_controller_tb.sv
 # RAM models
-#TBN+=${PATH_HDL}/tbn/peri/sram/sram_model.sv
-#TBN+=${PATH_HDL}/tbn/peri/cram/cram_model.sv
+#TBN+=${PATH_HDL}/tbn/dev/sram/sram_model.sv
+#TBN+=${PATH_HDL}/tbn/dev/cram/cram_model.sv
 ## GPIO testbench
-TBN+=${PATH_HDL}/tbn/lite_peri/gpio/tcb_lite_peri_gpio_tb.sv
+TBN+=${PATH_HDL}/tbn/lite_dev/gpio/tcb_lite_dev_gpio_tb.sv
 ## UART testbench
-TBN+=${PATH_HDL}/tbn/peri/uart/uart_model.sv
-TBN+=${PATH_HDL}/tbn/peri/uart/uart_model_tb.sv
-TBN+=${PATH_HDL}/tbn/lite_peri/uart/tcb_lite_peri_uart_tb.sv
+TBN+=${PATH_HDL}/tbn/dev/uart/uart_model.sv
+TBN+=${PATH_HDL}/tbn/dev/uart/uart_model_tb.sv
+TBN+=${PATH_HDL}/tbn/lite_dev/uart/tcb_lite_dev_uart_tb.sv
 
 # combined HDL sources
 HDL =${RTL}

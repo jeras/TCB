@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// TCB peripheral: GPIO controller: CDC implementation using Xilinx XPM library
+// TCB peripheral: GPIO controller: generic CDC implementation for inference
 ////////////////////////////////////////////////////////////////////////////////
 // Copyright 2023 Iztok Jeras
 //
@@ -16,7 +16,7 @@
 // limitations under the License.
 ////////////////////////////////////////////////////////////////////////////////
 
-module tcb_peri_gpio_cdc #(
+module tcb_dev_gpio_cdc #(
     // GPIO parameters
     parameter  int unsigned DAT =   32,  // GPIO data width
     parameter  int unsigned CDC =    2,  // implement clock domain crossing stages (0 - bypass)
@@ -26,9 +26,9 @@ module tcb_peri_gpio_cdc #(
     input  logic           clk,  // clock
     input  logic           rst,  // reset
     // GPIO signals
-    input  logic [DAT-1:0] gpio_i,  // data input
-    input  logic [DAT-1:0] gpio_e,  // enable input (not used)
-    output logic [DAT-1:0] gpio_r   // resynchronized output
+    input  logic [DAT-1:0] gpio_i,  // GPIO input data
+    input  logic [DAT-1:0] gpio_e,  // GPIO input enable
+    output logic [DAT-1:0] gpio_r   // GPIO registered/synchronized output
 );
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -37,27 +37,26 @@ module tcb_peri_gpio_cdc #(
 
     initial
     begin
-        assert (CDC >= 2) else $error("Xilinx XPM CDC depth must be at least 2.");
-        assert (IEN == 1'b0) else $error("Xilinx CDC and input buffers do not support input enable.");
+        assert (CDC >= 2) else $error("CDC depth must be at least 2.");
+        assert (IEN == 1'b0) else $warning("Input enable might not synthesize properly on FPGA.");
     end
 
 ////////////////////////////////////////////////////////////////////////////////
 // GPIO input CDC (clock domain crossing)
 ////////////////////////////////////////////////////////////////////////////////
 
-    // xpm_cdc_array_single: Single-bit Array Synchronizer
-    // Xilinx Parameterized Macro, version 2021.2
-    xpm_cdc_array_single #(
-        .DEST_SYNC_FF   (CDC),  // DECIMAL; range: 2-10
-        .INIT_SYNC_FF   (0),    // DECIMAL; 0=disable simulation init values, 1=enable simulation init values
-        .SIM_ASSERT_CHK (0),    // DECIMAL; 0=disable simulation messages, 1=enable simulation messages
-        .SRC_INPUT_REG  (0),    // DECIMAL; 0=do not register input, 1=register input
-        .WIDTH          (DAT)   // DECIMAL; range: 1-1024
-    ) gpio_cdc (
-        .src_clk  (clk),
-        .src_in   (gpio_i),
-        .dest_clk (clk),
-        .dest_out (gpio_r)
-    );
+    // temporary signal for synchronization
+    logic [DAT-1:0] gpio_t [CDC-1:0];
 
-endmodule: tcb_peri_gpio_cdc
+    // asynchronous input synchronization
+    always_ff @(posedge clk, posedge rst)
+    if (rst) begin
+        gpio_t <= '{default: '0};
+    end else begin
+        gpio_t[      0] <= gpio_i & gpio_e;
+        gpio_t[CDC-1:1] <= gpio_t[CDC-2:0];
+    end
+
+    assign gpio_r = gpio_t[CDC-1];
+
+endmodule: tcb_dev_gpio_cdc

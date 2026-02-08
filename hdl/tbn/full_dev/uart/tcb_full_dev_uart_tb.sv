@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// TCB-Full GPIO testbench
+// TCB-Full UART testbench
 ////////////////////////////////////////////////////////////////////////////////
 // Copyright 2022 Iztok Jeras
 //
@@ -16,7 +16,7 @@
 // limitations under the License.
 ////////////////////////////////////////////////////////////////////////////////
 
-module tcb_peri_gpio_tb
+module tcb_dev_uart_tb
     import tcb_full_pkg::*;
     import tcb_full_vip_blocking_pkg::*;
 #(
@@ -29,8 +29,13 @@ module tcb_peri_gpio_tb
 // local parameters
 ////////////////////////////////////////////////////////////////////////////////
 
-    // GPIO width
-    localparam int unsigned GW = 32;
+    // UART data width
+    localparam int unsigned UDW = 8;
+
+    // UART baudrate
+    localparam int unsigned TX_BDR = 4;         // TX baudrate
+    localparam int unsigned RX_BDR = 4;         // RX baudrate
+    localparam int unsigned RX_SMP = RX_BDR/2;  // RX sample
 
     // configuration parameter
     localparam tcb_cfg_t CFG = '{
@@ -95,10 +100,19 @@ module tcb_peri_gpio_tb
 // data checking
 ////////////////////////////////////////////////////////////////////////////////
 
-    // GPIO signals
-    logic [GW-1:0] gpio_o;
-    logic [GW-1:0] gpio_e;
-    logic [GW-1:0] gpio_i;
+    // UART signals
+    logic uart_rxd;  // receive
+    logic uart_txd;  // transmit
+
+    // interrupts
+    logic irq_tx;    // TX FIFO load is below limit
+    logic irq_rx;    // RX FIFO load is above limit
+
+    // TX string
+    localparam string TX_STR = "Hello, World!";
+    localparam int    TX_LEN = TX_STR.len();
+    // RX string
+    byte rx_str [TX_LEN];
 
 ////////////////////////////////////////////////////////////////////////////////
 // test sequence
@@ -117,36 +131,67 @@ module tcb_peri_gpio_tb
         rst <= 1'b0;
         repeat (1) @(posedge clk);
 
-        // write configuration (output and enable registers)
+        // write configuration
         $display("(%t) INFO: writing configuration begin.", $time);
-        obj_man.write32('h00, 32'h01234567, sts);  // write output register
-        obj_man.write32('h04, 32'h76543210, sts);  // write enable register
+        obj_man.write32('h08, 32'(TX_BDR-1), sts);  // TX baudrate
+        obj_man.write32('h28, 32'(RX_BDR-1), sts);  // RX baudrate
+        obj_man.write32('h2C, 32'(RX_SMP-1), sts);  // RX sample
+        obj_man.write32('h30, 32'(TX_LEN-1), sts);  // RX IRQ level
         $display("(%t) INFO: writing configuration end.", $time);
         repeat (1) @(posedge clk);
 
-        // check configuration (output and enable registers)
+        // read/check configuration
         $display("(%t) INFO: reading/checking configuration begin.", $time);
-        obj_man.check32('h00, 32'h01234567, sts);  // write output register
-        obj_man.check32('h04, 32'h76543210, sts);  // write enable register
+        obj_man.check32('h08, 32'(TX_BDR-1), '0);  // TX baudrate
+        obj_man.check32('h28, 32'(RX_BDR-1), '0);  // RX baudrate
+        obj_man.check32('h2C, 32'(RX_SMP-1), '0);  // RX sample
+        obj_man.check32('h30, 32'(TX_LEN-1), '0);  // RX IRQ level
         $display("(%t) INFO: reading/checking configuration end.", $time);
         repeat (1) @(posedge clk);
 
-        // read/check GPIO input status
-        $display("(%t) INFO: reading/checking input begin.", $time);
-        #10 gpio_i = GW'('h89abcdef);
-        repeat (2) @(posedge clk);
-        obj_man.check32('h08, 32'h89abcdef, '0);  // read input register
-        #10 gpio_i = GW'('hfedcba98);
-        repeat (2) @(posedge clk);
-        obj_man.check32('h08, 32'hfedcba98, '0);  // read input register
-        $display("(%t) INFO: reading/checking input end.", $time);
+        // write TX data
+        $display("(%t) INFO: writing TX data begin.", $time);
+        for (int unsigned i=0; i<TX_LEN; i++) begin
+            obj_man.write32('h00, 32'(TX_STR[i]), sts);
+        end
+        $display("(%t) INFO: writing TX data end.", $time);
 
-        // TODO: add automatic testbench status report (SUCCESS/FAILURE)
+        // wait for RX IRQ
+        $display("(%t) INFO: writing RX IRQ begin.", $time);
+        do begin
+            @(posedge clk);
+        end while (!irq_rx);
+        $display("(%t) INFO: writing RX IRQ end.", $time);
+
+        // read RX data
+        $display("(%t) INFO: reading RX data begin.", $time);
+        for (int unsigned i=0; i<TX_LEN; i++) begin
+            obj_man.read32('h20, rdt, sts);
+            rx_str[i] = rdt[UDW-1:0];
+        end
+        $display("(%t) INFO: reading RX data end.", $time);
+
+        // checking if TX and RX data arrays are the same
+        if (string'(rx_str) != TX_STR) begin
+            $display("ERROR: RX '%s' differs from TX '%s'", string'(rx_str), TX_STR);
+            $display("FAILURE");
+        end else begin
+            $display("SUCCESS");
+        end
 
         // end simulation
         repeat (4) @(posedge clk);
         $finish();
     end: test
+
+    // timeout (in case RX IRQ is not triggered)
+    initial
+    begin
+        repeat (TX_LEN*10*TX_BDR + 100) @(posedge clk);
+        $display("ERROR: RX IRQ not triggered.");
+        $display("FAILURE");
+        $finish();
+    end
 
 ////////////////////////////////////////////////////////////////////////////////
 // VIP instances
@@ -160,22 +205,22 @@ module tcb_peri_gpio_tb
 // DUT instance
 ////////////////////////////////////////////////////////////////////////////////
 
-    // TCB GPIO
-    tcb_peri_gpio #(
-        .GW      (GW),
-        // implementation details
-//        bit          CFG_MIN = 1'b0,  // minimalistic implementation
-        .CFG_CDC (2),
-        // implementation device (ASIC/FPGA vendor/device)
-        .CHIP    ("")
-    ) gpio (
-        // GPIO signals
-        .gpio_o  (gpio_o),
-        .gpio_e  (gpio_e),
-        .gpio_i  (gpio_i),
+    // TCB UART
+    tcb_dev_uart #(
+        .DW       (UDW)
+    ) uart (
+        // UART signals
+        .uart_txd (uart_txd),
+        .uart_rxd (uart_rxd),
+        // interrupts
+        .irq_tx   (irq_tx),
+        .irq_rx   (irq_rx),
         // TCB interface
-        .tcb     (tcb_man)
+        .tcb      (tcb_man)
     );
+
+    // UART loopback
+    assign uart_rxd = uart_txd;
 
 ////////////////////////////////////////////////////////////////////////////////
 // VCD/FST waveform trace
@@ -191,4 +236,4 @@ module tcb_peri_gpio_tb
         $dumpvars;
     end
 
-endmodule: tcb_peri_gpio_tb
+endmodule: tcb_dev_uart_tb

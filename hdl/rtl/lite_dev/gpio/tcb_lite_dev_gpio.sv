@@ -20,7 +20,7 @@
 // limitations under the License.
 ////////////////////////////////////////////////////////////////////////////////
 
-module tcb_lite_peri_gpio
+module tcb_lite_dev_gpio
     import tcb_lite_pkg::*;
 #(
     // GPIO parameters
@@ -67,7 +67,7 @@ module tcb_lite_peri_gpio
     endgenerate
 
     // TCB variant independent instance
-    tcb_peri_gpio #(
+    tcb_dev_gpio #(
         // GPIO parameters
         .GPIO_DAT (GPIO_DAT),
         .GPIO_CDC (GPIO_CDC),
@@ -104,4 +104,4 @@ module tcb_lite_peri_gpio
     // TCB backpressure
     assign sub.rdy = 1'b1;
 
-endmodule: tcb_lite_peri_gpio
+endmodule: tcb_lite_dev_gpio
