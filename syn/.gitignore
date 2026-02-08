@@ -1,0 +1,4 @@
+# synthesis products
+*.json
+*.sv
+*.svg
