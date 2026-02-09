@@ -1,0 +1,16 @@
+{signal: [
+  ['system',
+    {name: "clk", wave: 'P...'},
+    {name: "rst", wave: '10..'},
+  ],
+  {},
+  ['handshake',
+    {name: "vld", wave: '0.1|',
+                  node: '.XY.'},
+    {name: "rdy", wave: 'xx1|'},
+    {             node: 'ABC.'},
+  ],
+],
+  edge: ['X-B', 'B<->C ≥1 period', 'Y-C'],
+  config: {hscale: 3},
+}
