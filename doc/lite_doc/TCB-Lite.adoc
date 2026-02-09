@@ -334,7 +334,7 @@ at `CFG.HSK.DLY` clock periods after the transfer `trn` is active.
 As a power consumption consideration, the response can remain unchanged
 till a new one becomes active.
 
-image::tcb_handshake.svg[Handshake transfer and request/response]
+image::tcb_lite_handshake.svg[Handshake transfer and request/response]
 
 ==== Reset release and assertion sequences
 
@@ -358,7 +358,7 @@ In this case the `vld` signal depends on a register toggling after reset is rele
 and this can only happen with the described timing.
 The same explanation stands for `rdy` if it is not a constant value.
 
-image::tcb_reset.svg[Reset sequence]
+image::tcb_lite_reset.svg[Reset sequence]
 
 ==== Reset sequence length
 
@@ -642,6 +642,9 @@ The response status error signal `err` is used for handling error conditions:
 * address decoder errors while accessing undefined regions,
 * unsupported transfer size/alignment.
 
+In case an error is returned, the state of the device at the target address
+should not change (no write to memory/registers, no read/write side effects).
+
 [WARNING]
 ====
 Since the error status is only provided during the response,
@@ -663,16 +666,18 @@ See appendix TODO for, ... move the below code to an appendix
 
 === Access cycles
 
-Read/write transfer cycles are shown with common response delays (parameter `HSK.DLY`) of 0, 1 and 2 clock periods.
+Read/write transfer cycles are shown with common response delays (parameter `CFG.HSK.DLY`) of 0, 1 and 2 clock periods.
 
-* `HSK.DLY=0` is the case with a combinational response to a request.
-  This can be used in case multiple simple subordinates are combined into an interconnect segment.
-  Such a segment can then be combined with a TCB register slice `tcb_register_slice`
-  to break long timing paths at either the request path, response path or both to improve timing.
+* `CFG.HSK.DLY=0` is the case with a combinational response to a request.
+  This can be used in case multiple simple subordinate devices
+  are combined into an interconnect segment.
+  Such a segment can then be combined with a TCB register slice
+  to break long timing paths at either the request path, response path or both.
   Such collections can be used to achieve better area timing compromises,
   compared to using subordinates with integrated registers.
-* `HSK.DLY=1` is the most common delay for subordinates with SRAM as an example, this is also the **HDL default**.
-* `HSK.DLY=2` is the case where a single subordinate or a segment of the interconnect with `HSK.DLY=1`
+* `CFG.HSK.DLY=1` is the most common delay for subordinates with SRAM as an example,
+  this is also the **HDL default**.
+* `CFG.HSK.DLY=2` is the case where a single subordinate or a segment of the interconnect with `CFG.HSK.DLY=1`
   would have an extra register added to the request path (address decoder)
   or response path (read data multiplexer) to improve timing.
 
@@ -681,19 +686,18 @@ Read/write transfer cycles are shown with common response delays (parameter `HSK
 A write transfer is performed when both handshake signals `vld` and `rdy` are simultaneously active
 and the write enable signal `wen` is also active.
 
-Only bytes with an active corresponding byte enable bit in `ben` are written.
-The other bytes can be optimized to unchanged value, zeros or just undefined,
-depending what brings the preferred optimization for area timing, power consumption, ...
-The same optimization principle can be applied to all signals when valid is not active.
+In logarithmic size mode only `2**siz` bytes alligned with LSB of `wdt` are written.
+In byte enable mode only bytes with an active corresponding byte enable bit in `byt` are written.
+The other bytes can be undefined, and shall be ignored.
 
-There are no special pipelining considerations for write transfers,
-all signals shall be propagated through a pipeline,
-similar to a single direction data stream
+Response data is undefined and shall be ignored.
+The returned response error `err` shall be `1'b0` if the write operation succeeded.
+In case the write was unsuccessful the returned response error `err` shall be `1'b1`.
+In case of a write error, the addressed subordinate should not modify
+the target memory location or peripheral register,
+also there should be no write side effects.
 
-The base protocol does not have a mechanism for confirming
-write transfers reached their destination and were successfully applied.
-
-image::tcb_write.svg[Write transfer]
+image::tcb_lite_write.svg[Write transfer]
 
 ==== Read transfer
 
@@ -709,7 +713,27 @@ NOTE: in contrast to most interconnect standards,
       TCB specifies the use of byte enable signals `ben` to
       enable or disable read from each byte.
 
-image::tcb_read.svg[Read transfer]
+image::tcb_lite_read.svg[Read transfer]
+
+==== Read transfer
+
+A read transfer is performed when both handshake signals `vld` and `rdy` are simultaneously active
+and the write enable signal `wen` is not active.
+
+The handshake is done during the arbitration phase,
+While the primary reason for backpressure,
+would be whether the interconnect is occupied with another transfer.
+Subordinate devices can also stall the transfer if red data is not ready yet,
+
+Read data is available on `rdt` after a fixed delay of 1 clock cycle from the transfer.
+
+NOTE: in contrast to many interconnect standards,
+      TCB specifies the use of byte enable signals `siz and/or `ben` to
+      enable or disable read from each byte.
+
+image::tcb_lite_read.svg[Read transfer]
+
+==== Read modify write transfer
 
 ==== Arbitration locking mechanism
 

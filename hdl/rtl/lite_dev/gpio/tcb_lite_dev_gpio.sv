@@ -29,7 +29,11 @@ module tcb_lite_dev_gpio
     // optional implementation configuration
     parameter  bit                SYS_IEN =   '0,  // input enable implementation
     parameter  bit [GPIO_DAT-1:0] SYS_IRQ =   '1,  // interrupt request implementation mask
-    parameter  bit                SYS_MIN = 1'b0   // minimalistic response implementation (configuration is write only)
+    parameter  bit                SYS_MIN = 1'b0,  // minimalistic response implementation (configuration is write only)
+    // register reset default values and write masks
+    parameter  int unsigned      REG_DAT = 32,
+    parameter  bit [REG_DAT-1:0] REG_RST [0:4-1] = '{default: '0},
+    parameter  bit [REG_DAT-1:0] REG_MSK [0:4-1] = '{default: '1}
     // NOTE 1: if none of the interrupts are enabled, the controller has a smaller address space
 )(
     // GPIO signals
