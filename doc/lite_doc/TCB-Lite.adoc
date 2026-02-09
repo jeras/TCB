@@ -413,15 +413,14 @@ This are a few SRAM examples:
 
 * Xilinx 7 Series FPGAs link:https://docs.xilinx.com/v/u/en-US/ug473_7Series_Memory_Resources[Memory Resources],
 * GlobalFoundries GF180MCU PDK link:https://gf180mcu-pdk.readthedocs.io/en/latest/IPs/SRAM/gf180mcu_fd_ip_sram/cells/gf180mcu_fd_ip_sram__sram512x8m8wm1/gf180mcu_fd_ip_sram__sram512x8m8wm1.html[SRAM macro].
+* IHP 130nm BiCMOS Open Source PDK link:https://github.com/IHP-GmbH/IHP-Open-PDK/tree/main/ihp-sg13g2/libs.ref/sg13g2_sram[SRAM macros]
 
 An example would be a TCB-Lite peripheral placed in the same address space as a SRAM block.
 Placing a register at the peripheral request inputs matches the low setup time of SRAM.
 On the peripheral response output combinational logic can add as much clock to output delay
 as specified for SRAM, without affecting overall interconnect timing.
 
-image::tcb_request_response_timing.svg[Request/response signal timing]
-
-TODO
+image::tcb_lite_request_response_timing.svg[Request/response signal timing]
 
 == Bus layer
 
@@ -652,7 +651,7 @@ a manager must have a delay line of access addresses to be able to handle the er
 This delay line consumes area (logic resources in FPGA) and consumes power.
 
 Future versions of the protocol might provide an alternative approach,
-where an error signal is combinationaly related to the request,
+where an error signal is combinationally related to the request,
 see appendix TODO.
 ====
 
@@ -681,13 +680,19 @@ Read/write transfer cycles are shown with common response delays (parameter `CFG
   would have an extra register added to the request path (address decoder)
   or response path (read data multiplexer) to improve timing.
 
+The handshake is done during the arbitration phase,
+While the primary reason for backpressure,
+would be whether the interconnect is occupied with another transfer,
+subordinate devices can also stall the transfer if read data is not ready yet.
+
 ==== Write transfer
 
 A write transfer is performed when both handshake signals `vld` and `rdy` are simultaneously active
 and the write enable signal `wen` is also active.
 
-In logarithmic size mode only `2**siz` bytes alligned with LSB of `wdt` are written.
-In byte enable mode only bytes with an active corresponding byte enable bit in `byt` are written.
+In **logarithmic size mode** only `2**siz` bytes aligned with LSB of `wdt` are written.
+
+In **byte enable mode** only bytes with an active corresponding byte enable bit in `byt` are written.
 The other bytes can be undefined, and shall be ignored.
 
 Response data is undefined and shall be ignored.
@@ -702,48 +707,46 @@ image::tcb_lite_write.svg[Write transfer]
 ==== Read transfer
 
 A read transfer is performed when both handshake signals `vld` and `rdy` are simultaneously active
-and the write enable signal `wen` is not active.
+and the write enable signal `ren` is active.
 
-The handshake is done during the arbitration phase, it is primarily
-about whether the address `adr` from the manager can reach the subordinate.
+Read data is available on `rdt` after a fixed delay of `CFG.HSK.DLY` clock cycles from the transfer.
 
-Read data is available on `rdt` after a fixed delay of 1 clock cycle from the transfer.
+In **logarithmic size mode** `2**siz` bytes aligned with LSB of `rdt` are available in the response.
+
+In **byte enable mode** bytes at positions with an active corresponding byte enable bit in `byt`
+are available in the response. The other bytes can be undefined, and shall be ignored.
 
 NOTE: in contrast to most interconnect standards,
-      TCB specifies the use of byte enable signals `ben` to
+      TCB explicitly specifies the use of byte enable signals `byt` to
       enable or disable read from each byte.
+      While subordinates can ignore the byte enable signal and read the full data bus width,
+      this read should not trigger any read side effects on bytes that are not enabled.
 
 image::tcb_lite_read.svg[Read transfer]
 
-==== Read transfer
+==== Atomic read-modify-write transfer
 
-A read transfer is performed when both handshake signals `vld` and `rdy` are simultaneously active
-and the write enable signal `wen` is not active.
+A single cycle atomic read-modify-write transfer is performed
+when both handshake signals `vld` and `rdy` are simultaneously active
+and both the read enable `ren` and write enable `wen` signals are active.
 
-The handshake is done during the arbitration phase,
-While the primary reason for backpressure,
-would be whether the interconnect is occupied with another transfer.
-Subordinate devices can also stall the transfer if red data is not ready yet,
+Since the current protocol does not define any modify operations,
+only a swap operation is supported by default.
+Support for other operations (RISC-V AMO instructions) can be implemented
+by adding the encoded bits to the user defined control signal `ctl`.
 
-Read data is available on `rdt` after a fixed delay of 1 clock cycle from the transfer.
-
-NOTE: in contrast to many interconnect standards,
-      TCB specifies the use of byte enable signals `siz and/or `ben` to
-      enable or disable read from each byte.
-
-image::tcb_lite_read.svg[Read transfer]
-
-==== Read modify write transfer
+image::tcb_lite_read_modify_write.svg[Single cycle atomic read-modify-write transfer]
 
 ==== Arbitration locking mechanism
 
-Arbitration locking is used in the TCB reference implementation library to:
+Arbitration locking is used in the TCB-Lite reference implementation library to:
 
+* Implement atomic read-modify-write access as separate read and write cycles.
 * Keep atomicity in data bus width conversion from a wider manager to a narrower subordinate.
   For example an atomic 64-bit read/write access over a 32-bit interconnect.
 * Keep atomicity while converting a misaligned access into multiple aligned accesses.
 
-It can also be used for read modify write, and similar operations and for QoS control.
+Further examples can be found in the documentation for the reference library implementation.
 
 
 == Appendix A: Data packing examples
@@ -1207,6 +1210,14 @@ Two different implementations:
 
 == Appendix B: PMA (physical memory attributes)
 
+[WARNING]
+====
+PMA was not researched enough,
+and not easy enough to implement to make it into this version of the protocol.
+
+The following text is just a collection of unorganized ideas.
+====
+
 A combination of parameters and runtime signals define how
 bytes (smallest data units) are organized inside the read/write data bus,
 and across transfers for multi transfer transactions.
@@ -1216,7 +1227,7 @@ To a degree data packing rules are a generalization of endianness rules.
 This section will first document the parameters
 and then provide examples of packing with some parameter configurations.
 
-=== PMA (physical memory attributes) parameters
+=== PMA parameters
 
 NOTE: The current choice of PMA parameters can be confusing.
       This might remain or change in future TCB standard releases, depending on user feedback.
@@ -1239,17 +1250,15 @@ The rest are reserved with no intention to be documented and implemented.
 .Relevant PMA combinations
 [%autowidth]
 |===
-| `MOD`      | `ORD`        | `CFG.BUS.DAT` | `CFG.BUS.MIN`   | `CFG.BUS.OFF`   | `BUS.ALN`   | `ndn`   | description
+| `MOD`      | `CFG.BUS.DAT` | `CFG.BUS.MIN`   | `CFG.BUS.OFF`   | `BUS.ALN`       | `ndn`   | description
 
-| `LOG_SIZE` | `DESCENDING` | `32`/`64` | `0`         | `0`         | 0           | ignored | RISC-V RV32/64 GPR load/store (no sign extension) with misaligned access support.
-| `LOG_SIZE` | `DESCENDING` | `32`/`64` | `0`         | `0`         | `CFG_BUS_MAX`   | ignored | RISC-V RV32/64 GPR load/store (no sign extension) with only aligned access support.
-
-| `BYTE_ENA` | `DESCENDING` | `32`/`64` | `0`         | `0`         | 0           | both    | RISC-V RV32/64 memory load/store with misaligned access support.
-| `BYTE_ENA` | `DESCENDING` | `32`/`64` | `0`         | `CFG_BUS_MAX`   | `CFG_BUS_MAX`   | both    | RISC-V RV32/64 memory load/store with only aligned access support.
-
-| `BYTE_ENA` | `DESCENDING` | `32`      | `CFG_BUS_MAX=2` | `CFG_BUS_MAX=2` | `CFG_BUS_MAX=2` | both    | Peripheral bus with only 4-byte (word) aligned access support.
-| `BYTE_ENA` | `DESCENDING` | `64`      | `CFG_BUS_MAX=3` | `CFG_BUS_MAX=3` | `CFG_BUS_MAX=3` | both    | Peripheral bus with only 8-byte (double) aligned accesses support.
-| `BYTE_ENA` | `DESCENDING` | `64`      |         `2` |         `2` | `CFG_BUS_MAX=3` | both    | Peripheral bus with mixed 4/8-byte aligned accesses support.
+| `LOG_SIZE` | `32`/`64`     | `0`             | `0`             | 0               | ignored | RISC-V RV32/64 GPR load/store (no sign extension) with misaligned access support.
+| `LOG_SIZE` | `32`/`64`     | `0`             | `0`             | `CFG_BUS_MAX`   | ignored | RISC-V RV32/64 GPR load/store (no sign extension) with only aligned access support.
+| `BYTE_ENA` | `32`/`64`     | `0`             | `0`             | 0               | both    | RISC-V RV32/64 memory load/store with misaligned access support.
+| `BYTE_ENA` | `32`/`64`     | `0`             | `CFG_BUS_MAX`   | `CFG_BUS_MAX`   | both    | RISC-V RV32/64 memory load/store with only aligned access support.
+| `BYTE_ENA` | `32`          | `CFG_BUS_MAX=2` | `CFG_BUS_MAX=2` | `CFG_BUS_MAX=2` | both    | Peripheral bus with only 4-byte (word) aligned access support.
+| `BYTE_ENA` | `64`          | `CFG_BUS_MAX=3` | `CFG_BUS_MAX=3` | `CFG_BUS_MAX=3` | both    | Peripheral bus with only 8-byte (double) aligned accesses support.
+| `BYTE_ENA` | `64`          | `2`             | `2`             | `CFG_BUS_MAX=3` | both    | Peripheral bus with mixed 4/8-byte aligned accesses support.
 |===
 
 TODO: Boundary
@@ -1352,60 +1361,16 @@ the instruction is 32-bit or 16-bit aligned in the memory.
 In this case a multiplexer for aligning the instruction would still be needed,
 but it would be placed in the interconnect instead of the CPU.
 
-=== Byte order
 
-The `ORD` parameter encoding defines the following options.
+=== Appendix C: Read data hold
 
-* `DESCENDING`,
-* `ASCENDING`.
+[WARNING]
+====
+Read data hold is a property of the protocol that was not researched enough,
+and not easy enough to implement to make it into this version of the protocol.
 
-Almost all modern standards and HDL/schematic implementations use the `DESCENDING` order.
-Here indexing starts with 0 on the right side and increments to the left side of the vector.
-When writing bit vectors and equivalent packed byte arrays in SystemVerilog:
-
-[source,SystemVerilog]
-----
-logic     [31:0] data_bit_vector;
-logic [3:0][7:0] data_byte_array;
-----
-
-Byte addressing follows the same rules so it increments from the right to the left.
-
-The `ASCENDING` order was prominently used in the OpenPOWER specification
-and its big endian predecessors.
-Here indexing starts with 0 on the left side and increments to the right side of the vector.
-When writing bit vectors and equivalent packed byte arrays in SystemVerilog:
-
-[source,SystemVerilog]
-----
-logic     [0:31] data_bit_vector;
-logic [0:3][0:7] data_byte_array;
-----
-
-Byte addressing follows the same rules so it increments from the left to the right.
-
-Due to the current prevalence of descending indexing order and little-endian ISAs,
-it can be difficult and confusing to understand big endian (bi-endian) compatibility.
-A few reasons that aggravate the confusion:
-
-* while OpenPOWER defines all 64-bit registers with ascending order `[0:63]`,
-  a load/store byte operation would place the byte in the register aligned to the right `[56:63]`,
-* on OpenPOWER the least significant bit of the program counter or address pointer is `[63]`,
-* not all native big-endian ISAs use the ascending order,
-* early bi-endian approaches differ from moderns ones.
-
-Modern OpenPOWER implementations use ascending order in the core to match the specification,
-but use descending order on the system bus, which is usually AMBA AXI based.
-The only practical use case for ascending order would probably be while interfacing with historic hardware.
-
-
-
-== Limitations and undefined features
-
-There are some generalizations and additional features that can be implemented,
-but were not researched well enough to be fully defined.
-
-=== Data output hold
+The following text is just a collection of unorganized ideas.
+====
 
 SRAM usually holds the data output from the last read request,
 till a new request is processed.
@@ -1417,7 +1382,7 @@ Read data hold can be useful during CPU stalls.
 Either there is no need to repeat a read or a temporary buffer
 for read data can be avoided.
 
-===== Repeat access transfer
+==== Repeat access transfer
 
 TODO: think this through.
 
@@ -1446,9 +1411,8 @@ The request command signals `cmd` are used to:
 |===
 | signal        | width | description
 
-| `req.cmd.lck` | `1`   | Arbitration lock.
-| `req.cmd.rpt` | `1`   | Repeat address access.
-| `req.cmd.inc` | `1`   | Incrementing address access.
+| `req.ctl.rpt` | `1`   | Repeat address access.
+| `req.ctl.inc` | `1`   | Incrementing address access.
 |===
 
 The repeat address access `rpt` is used to reduce power consumption on repeated read accesses to the same address.
@@ -1463,16 +1427,6 @@ some examples of custom signals would be:
 * multiple types of error responses,
 * ...
 
-=== Out of order transfers
-
-Out of order reads are not supported.
-
-=== Generalized read delay
-
-The delay of 0 would be an asynchronous read,
-a delay of 1 is equal to a common SRAM read cycle,
-longer delays can be caused by registers in the system bus interconnect.
-
 === Integration with standard system busses
 
 It is possible to translate between the processor native system bus and
@@ -1482,17 +1436,3 @@ Such translation could compromise the performance,
 so it might make sense to implement a standard bus interface unit (BIU)
 separately inside the processor core,
 instead of attaching translators to the optimized native bus.
-
-=== Write confirmation
-
-Write confirmation is returned with the same timing as read data.
-
-In case the native system bus is only used for the intend purpose
-of connecting tightly coupled memories, writes can be assumed to always succeed.
-
-Write through cache access was not yet researched.
-
-=== Atomic access
-
-TODO, on some implementations it might be possible
-to simultaneously perform both read and write.
