@@ -12,7 +12,7 @@
   ['request',
     {name: "wen", wave: 'x.000.x111.x101x.'},
     {name: "adr", wave: 'x.123.x456.x789x.', data: 'A1 A2 A3 A4 A5 A6 A7 A8 A9'},
-    {name: "ben", wave: 'x.123.x456.x789x.', data: 'F  F  F  F  F  F  F  F  F '},
+    {name: "byt", wave: 'x.123.x456.x789x.', data: 'F  F  F  F  F  F  F  F  F '},
     {name: "wdt", wave: 'x......456.x7x9x.', data: '      D3 D4 D5 D6    D7   '}
   ],
   {},

@@ -1,5 +1,6 @@
 #!/bin/sh
 
+wavedrom-cli -i lite_doc/tcb_lite_read_write_sram.json         --svg lite_doc/tcb_lite_read_write_sram.svg
 wavedrom-cli -i lite_doc/tcb_lite_request_response_timing.json --svg lite_doc/tcb_lite_request_response_timing.svg
 wavedrom-cli -i lite_doc/tcb_lite_handshake.json               --svg lite_doc/tcb_lite_handshake.svg
 wavedrom-cli -i lite_doc/tcb_lite_reset.json                   --svg lite_doc/tcb_lite_reset.svg
