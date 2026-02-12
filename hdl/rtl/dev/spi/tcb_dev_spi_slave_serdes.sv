@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// TCB peripheral: SPI slave controller I/O
+// TCB peripheral: SPI slave controller I/O ser/des
 ////////////////////////////////////////////////////////////////////////////////
 // Copyright 2025 Iztok Jeras
 //
@@ -16,19 +16,23 @@
 // limitations under the License.
 ////////////////////////////////////////////////////////////////////////////////
 
-module tcb_dev_spi_slave_io #(
-    parameter  int unsigned DAT = 8  // shift register width
+module tcb_dev_spi_slave_serdes
+    import spi_pkg::*;
+#(
+    parameter  int unsigned DAT = 8,    // shift register width
+    parameter  bit          FDX = 1'b1  // reset value for full duplex mode
 )(
     // system signals
     input  logic clk,  // clock
     input  logic rst,  // reset
-    // configuration
-    input  logic           cfg_mod,  // mode 0 - single, 1 - dual
     // parallel request/response interface
     output logic           par_stb,  // data strobe
     output logic [DAT-1:0] par_req,  // request
-    input  logic           par_dir,  // direction (0 - request, 1 - response)
+    // parallel response/control interface
     input  logic [DAT-1:0] par_rsp,  // response
+    input  logic           par_oen,  // output enable
+    input  logic           par_dpx,  // full duplex
+    input  logic   [2-1:0] par_siz,  // size
     // SPI interface
     input  logic       spi_sclk,  // serial clock
     input  logic       spi_ss_n,  // slave select
@@ -48,7 +52,9 @@ module tcb_dev_spi_slave_io #(
     logic [DAT-1:0] spi_reg;  // SPI shift register
     logic [DAT-1:0] spi_wdt;  // write data
     logic [DAT-1:0] spi_rdt;  // read data buffer
-    logic           spi_dir;  // SPI I/O direction (0 - inputs, 1 - outputs)
+    logic           spi_oen;  // output enable
+    logic           spi_dpx;  // duplex (0 - half, 1 - full)
+    logic   [2-1:0] spi_siz;  // size
 
     // FSM signals
     logic [CNT-1:0] fsm_cnt;  // bit counter
@@ -68,34 +74,55 @@ module tcb_dev_spi_slave_io #(
     if (~spi_ss_n) begin
         fsm_cnt <= CNT'(0);
         spi_reg <= '0;
-        spi_dir <= 1'b0;
+        spi_oen <= 1'b0;
     end else begin
         // increment bit counter
-        fsm_cnt <= fsm_cnt + CNT'(cfg_mod ? 2 : 1);
-        // shift register
+        fsm_cnt <= fsm_cnt + CNT'(2**spi_siz);
+        // shift register and control
         if (fsm_end) begin
             // parallel load
             spi_reg <= par_rsp;
-            spi_dir <= par_dir;
+            spi_oen <= par_oen;
         end else begin
             // shift
             spi_reg <= spi_wdt;
         end
     end
 
-    // shift counter reaches end
+    // duplex/size control (system reset)
+    always_ff @(posedge spi_sclk, rst)
+    if (rst) begin
+        spi_dpx <= FDX;
+        spi_siz <= 2'd0;
+    end else begin
+        // control load
+        if (fsm_end) begin
+            spi_dpx <= par_dpx;
+            spi_siz <= par_siz;
+        end
+    end
+
+//    // shift counter reaches end
+//    assign fsm_end = (fsm_cnt == DAT-1);
+
     // MSB first concatenation with MOSI
     // SPI I/O output driver enable
     always_comb
-    case (cfg_mod)
-        // single bit mode
-        1'b0: begin
+    casez ({spi_dpx, spi_siz})
+        // full duplex, single bit, 
+        {1'b1, 2'd0}: begin
             fsm_end = (fsm_cnt == DAT-1);
             spi_wdt = {spi_reg, spi_io_i[0]}[DAT-1:0];
             spi_io_e = 2'b10;  // {miso, mosi}
         end
-        // dual bit mode
-        1'b1: begin
+        // half duplex, single bit
+        {1'b0, 2'd0}: begin
+            fsm_end = (fsm_cnt == DAT-1);
+            spi_wdt = {spi_reg, spi_io_i[0]}[DAT-1:0];
+            spi_io_e = 2'b10;  // {miso, mosi}
+        end
+        // half duplex, dual bit
+        {1'b?, 2'd1}: begin
             fsm_end = (fsm_cnt == DAT-2);
             spi_wdt = {spi_reg, spi_io_i[1:0]}[DAT-1:0];
             spi_io_e = 
@@ -145,4 +172,4 @@ module tcb_dev_spi_slave_io #(
     always_ff @(negedge clk, negedge rst)
     if (cdc_tgl)  par_req <= spi_rdt;
 
-endmodule: tcb_dev_spi_slave_io
+endmodule: tcb_dev_spi_slave_serdes

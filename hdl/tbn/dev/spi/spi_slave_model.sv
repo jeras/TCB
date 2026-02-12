@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// SPI master model
+// SPI slave model
 ////////////////////////////////////////////////////////////////////////////////
 // Copyright 2025 Iztok Jeras
 //
@@ -16,30 +16,18 @@
 // limitations under the License.
 ////////////////////////////////////////////////////////////////////////////////
 
-package spi_pkg;
+module spi_slave_model
+    import spi_pkg::*;
+#(
+    // shift register width
+    parameter  int unsigned DAT = 8,
+    // IO data width (supported values are 2, 4, 8)
+    parameter  int unsigned IO_WIDTH = 2
+)(
+    input  wire                sclk,  // serial clock
+    input  wire                ss_n,  // slave select
+    inout  wire [IO_WIDTH-1:0] sdio   // serial data I/O {sdio[IO_WIDTH-1:2], miso, mosi}
+);
 
-    typedef struct packed {
-        logic cpol;  // Clock POLarity
-        logic cpha;  // Clock PHAse
-    } spi_mode_t;
 
-    typedef enum logic [1:0] {
-        SPI_MODE0 = 2'b00,  // {cpol: 1'b0, cpha: 1'b0}
-        SPI_MODE1 = 2'b01,  // {cpol: 1'b0, cpha: 1'b1}
-        SPI_MODE2 = 2'b10,  // {cpol: 1'b1, cpha: 1'b0}
-        SPI_MODE3 = 2'b11   // {cpol: 1'b1, cpha: 1'b1}
-    } spi_mode_e;
-
-    typedef enum logic {
-        SPI_HALF = 1'b0,
-        SPI_FULL = 1'b1
-    } spi_duplex_e;
-
-    typedef enum logic [1:0] {
-        SPI_SINGLE = 2'b00,
-        SPI_DUAL   = 2'b01,
-        SPI_QUAD   = 2'b10,
-        SPI_OCTA   = 2'b11
-    } spi_size_e;
-
-endpackage: spi_pkg
+endmodule: spi_slave_model
