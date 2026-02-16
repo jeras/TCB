@@ -40,6 +40,6 @@ package spi_pkg;
         SPI_DUAL   = 2'b01,
         SPI_QUAD   = 2'b10,
         SPI_OCTA   = 2'b11
-    } spi_size_e;
+    } spi_width_e;
 
 endpackage: spi_pkg

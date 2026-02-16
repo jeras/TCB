@@ -29,5 +29,4 @@ module spi_slave_model
     inout  wire [IO_WIDTH-1:0] sdio   // serial data I/O {sdio[IO_WIDTH-1:2], miso, mosi}
 );
 
-
 endmodule: spi_slave_model

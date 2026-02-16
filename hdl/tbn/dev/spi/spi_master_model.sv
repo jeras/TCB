@@ -22,13 +22,21 @@ module spi_master_model
     // shift register width
     parameter  int unsigned DAT = 8,
     // IO data width (supported values are 2, 4, 8)
-    parameter  int unsigned IO_WIDTH = 2
-    // default clock period
-    parameter  realtime     PERIOD = 20ns,  // 50MHz
+    parameter  int unsigned IOW = 2,
+    // default transfer configuration
+    parameter  spi_width_e  CFG_WIDTH  = SPI_SINGLE,
+    parameter  spi_duplex_e CFG_DUPLEX = SPI_FULL,
+    parameter  spi_mode_t   CFG_MODE   = SPI_MODE0,
+    // default timing
+    parameter  realtime     CFG_PERIOD = 20ns,  // 50MHz
+    parameter  realtime     CFG_SETUP  = 0ns,
+    parameter  realtime     CFG_HOLD   = 0ns,
+    parameter  realtime     CFG_OUTPUT = 0ns,
+    parameter  realtime     CFG_ENABLE = 0ns
 )(
-    inout  wire                sclk,  // serial clock
-    output wire                ss_n,  // slave select
-    inout  wire [IO_WIDTH-1:0] sdio   // serial data I/O {sdio[IO_WIDTH-1:2], miso, mosi}
+    output wire           sclk,  // serial clock
+    output wire           ss_n,  // slave select
+    inout  wire [IOW-1:0] sdio   // serial data I/O {sdio[IOW-1:2], miso, mosi}
 );
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -36,74 +44,115 @@ module spi_master_model
 ////////////////////////////////////////////////////////////////////////////////
 
     // clock period (initialized with parameter)
-    realtime cfg_period = PERIOD;
+    realtime cfg_period = CFG_PERIOD;
 
     // SPI mode
     spi_mode_t cfg_mode = SPI_MODE0;
 
-    // SPI width (single, dual, quad, octa)
-    spi_size_e cfg_size = SPI_SINGLE;
-
-    // SPI duplex (half, dual)
-    spi_duplex_e cfg_duplex = SPI_FULL;
-
 ////////////////////////////////////////////////////////////////////////////////
-// local signals
+// port drivers
 ////////////////////////////////////////////////////////////////////////////////
 
-    logic                spi_clk;  // clock
-    logic                spi_sel;  // select
-    logic                spi_oen;  // output enable
-    logic [IO_WIDTH-1:0] spi_sdi;  // serial data input
-    logic [IO_WIDTH-1:0] spi_sdo;  // serial data output
+    logic           sclk_o;
+    logic           ss_n_o;
+    logic [IOW-1:0] sdio_o;
+    logic [IOW-1:0] sdio_e;
+
+    assign sclk = sclk_o;
+    assign ss_n = ss_n_o;
+    generate
+    for (genvar i=0; i<IOW; i++) begin
+        assign sdio[i] = sdio_e[i] ? sdio_o[i] : 1'bz;
+    end
+    endgenerate
+    
 
 ////////////////////////////////////////////////////////////////////////////////
 // initialization
 ////////////////////////////////////////////////////////////////////////////////
 
+    initial
+    begin
+        // idle
+        sclk_o = cfg_mode.cpol;
+        ss_n_o = 1'b1;
+        sdio_o = 'x;
+        sdio_e = '0;
+    end
 
 ////////////////////////////////////////////////////////////////////////////////
 // SPI transfer
 ////////////////////////////////////////////////////////////////////////////////
 
-    task spi_transfer (
-        input  logic [DAT-1:0] dto,  // output data
-        output logic [DAT-1:0] dti,  // input  data
-        output logic [DAT-1:0] oen,  // output enable
-        input  bit             lst,  // last (closes chip select window)
+    task automatic spi_transfer (
+        input  logic [DAT-1:0] data_o,               // output data
+        output logic [DAT-1:0] data_i,               // input  data
+        input  bit             last   = 1'b1,        // last (closes chip select window)
+        input  bit             enable = 1'b1,        // output enable
+        input  spi_duplex_e    duplex = SPI_HALF,    // I/O duplex (half, full)
+        input  spi_width_e     width  = SPI_SINGLE,  // I/O width (single, dual, quad, octa)
+        input  realtime        period = cfg_period   // clock period
     );
         // start transfer
-        spi_sel <= 1'b1;
-        spi_oen <= oen;
+        sclk_o = cfg_mode.cpol;
+        ss_n_o = 1'b0;
+        case ({duplex, width})
+            {SPI_FULL, SPI_SINGLE}: sdio_e = '{0: enable, 1: 1'b0  ,                       default: 1'b0};
+            {SPI_HALF, SPI_SINGLE}: sdio_e = '{0: enable,                                  default: 1'b0};
+            {SPI_HALF, SPI_DUAL  }: sdio_e = '{0: enable, 1: enable,                       default: 1'b0};
+            {SPI_HALF, SPI_QUAD  }: sdio_e = '{0: enable, 1: enable, 2: enable, 3: enable, default: 1'b0};
+            {SPI_HALF, SPI_OCTA  }: sdio_e = '{                                            default: enable};
+        endcase
+        sdio_e = '1;
         // ser/des data
-        for (int unsigned i=0; i<DAT; i++) begin
-            spi_clk <= cfg_mode.cpha;
-            spi_sdo[0+:2**cfg_size] <= dto[8-1-i-:2**cfg_size];
-            #(cfg_period/2);
-            spi_clk <= ~cfg_mode.cpha;
-            dti[8-1-i-:2**cfg_size] <= spi_sdi;
-            #(cfg_period/2);
+        for (int unsigned i=0; i<DAT; i+=2**width) begin
+            // data output
+            sclk_o = cfg_mode.cpha;
+            for (int unsigned j=0; j<IOW; j++) begin
+                sdio_o[j] = data_o[8-1-(i+j)];
+            end
+            #(period/2);
+            // data input
+            sclk_o = ~cfg_mode.cpha;
+            for (int unsigned j=0; j<IOW; j++) begin
+            data_o[8-1-(i+j)] = sdio[j];
+            end
+            #(period/2);
         end;
         // set clock back to idle state
-        spi_clk = cfg_mode.cpol;
+        sclk_o = cfg_mode.cpol;
         // end transfer
-        if (lst) begin
-            spi_sel <= 1'b0;
-            spi_oen <= 1'b0;
+        if (last) begin
+            ss_n_o = 1'b1;
+            sdio_e = '0;
         end
     endtask: spi_transfer
 
 ////////////////////////////////////////////////////////////////////////////////
-// SPI I/O tristate drivers
+// SPI transaction
 ////////////////////////////////////////////////////////////////////////////////
 
-    // serial clock
-    assign sclk = spi_clk;
-    // slave select (active low)
-    assign ss_n = spi_sel;
-    // serial data I/O
-    assign sdio[0] = {cfg_duplex == SPI_FULL} ? spi_sdo[0] : (spi_oen ? spi_sdo[0] : 1'bz);  // MOSI
-    assign sdio[1] = {cfg_duplex == SPI_FULL} ? 1'bz       : (spi_oen ? spi_sdo[1] : 1'bz);  // MISO
-    assign sdio[IO_WIDTH-1:2] = (spi_oen ? spi_sdo[IO_WIDTH-1:2] : 'z);
+    task automatic spi_transaction (
+        input  logic [DAT-1:0] data_o [],                           // output data
+        output logic [DAT-1:0] data_i [],                           // input  data
+        input  logic           enable [] = '{default: 1'b1},        // output enable
+        input  spi_duplex_e    duplex [] = '{default: SPI_HALF},    // I/O duplex (half, full)
+        input  spi_width_e     width  [] = '{default: SPI_SINGLE},  // I/O width (single, dual, quad, octa)
+        input  realtime        period [] = '{default: cfg_period}   // clock period
+    );
+        int unsigned size = data_o.size();
+        data_i = new[size];
+        for (int unsigned i=0; i<size; i++) begin
+            spi_transfer(
+                .data_o (data_o[i]),
+                .data_i (data_i[i]),
+                .last   (i!=size-1),
+                .enable (enable[i<enable.size() ? i : enable.size()]),
+                .duplex (duplex[i<duplex.size() ? i : duplex.size()]),
+                .width  (width [i<width .size() ? i : width .size()]),
+                .period (period[i<period.size() ? i : period.size()])
+            );
+        end
+    endtask: spi_transaction
 
 endmodule: spi_master_model
