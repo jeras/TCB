@@ -35,9 +35,14 @@ interface tcb_lite_if
     // request type
     typedef struct {
         logic                   lck;  // arbitration lock
-        logic                   wen;  // write enable
-        logic                   ren;  // read  enable
         logic                   ndn;  // endianness (0-little, 1-big)
+        logic                   wen;  // write   enable
+        logic                   ren;  // read    enable
+        logic                   exe;  // execute
+        logic                   dbg;  // debug
+        logic           [2-1:0] lvl;  // privilege level
+        logic           [2-1:0] typ;  // type {cacheable, bufferable}
+        logic           [5-1:0] amo;  // atomic memory operations
         logic [CFG.BUS.CTL-1:0] ctl;  // control (user defined request signals)
         logic [CFG.BUS.ADR-1:0] adr;  // address
         logic [CFG_BUS_SIZ-1:0] siz;  // transfer size
@@ -49,6 +54,7 @@ interface tcb_lite_if
     typedef struct {
         logic [CFG.BUS.DAT-1:0] rdt;  // read data
         logic [CFG.BUS.STS-1:0] sts;  // response status (user defined response signals)
+        logic                   exc;  // exclusive access confirmation
         logic                   err;  // response error
     } rsp_t;
 
