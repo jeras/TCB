@@ -69,7 +69,7 @@ module tcb_lite_vip_protocol_checker
             assert (!$isunknown(mon.req.wen)) else $error("TCB: mon.req.wen is unknown during a transfer cycle.");
             // address
             // TODO: decide how to handle partial address decoders
-//            assert (!$isunknown(mon.req.adr & mon.MSK)) else $error("TCB: mon.req.adr is unknown during a transfer cycle.");
+            assert (!$isunknown(mon.req.adr)) else $error("TCB: mon.req.adr is unknown during a transfer cycle.");
             if (mon.CFG.BUS.MOD == 1'b0) begin
                 // transfer size
                 assert (!$isunknown(mon.req.siz)) else $error("TCB: mon.req.siz is unknown during a transfer cycle.");
