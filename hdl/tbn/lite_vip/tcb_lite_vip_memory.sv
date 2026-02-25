@@ -20,9 +20,10 @@ module tcb_lite_vip_memory
     import tcb_lite_pkg::*;
 #(
     // memory parameters
-    parameter  logic [8-1:0] INIT = 'x,    // initialization (at power up)
     parameter  string        FILE = "",    // file name
     parameter  int unsigned  SIZE = 2**8,  // size
+    parameter  logic [8-1:0] INIT = 'x,    // initialization (at power up)
+//    parameter  logic [8-1:0] INIT [0:SIZE-1] = '{default: 'x},    // initialization (at power up)
     // slave interface number
     parameter  int unsigned  IFN = 1,
     // write mask (which interfaces are allowed write access)
@@ -45,6 +46,7 @@ module tcb_lite_vip_memory
 // local signals
 ////////////////////////////////////////////////////////////////////////////////
 
+//    logic [8-1:0] mem [0:SIZE-1] = INIT;
     logic [8-1:0] mem [0:SIZE-1] = '{default: INIT};
 
 ////////////////////////////////////////////////////////////////////////////////
