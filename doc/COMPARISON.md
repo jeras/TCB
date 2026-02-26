@@ -9,8 +9,7 @@ The following system busses are compared:
 
 - AMBA APB
 - AMBA AHB
-- AMBA AXI4-Lite
-- AMBA AXI5-Lite
+- AMBA AXI4-Lite AXI5-Lite
 - QMEM ([specification](https://somuch.guru/2016/06/28/qsoc-the-qmem-bus/) and [IP](https://github.com/rkrajnc/or1200-qmem)),
 - Wishbone ([specification](https://opencores.org/howto/wishbone) version [B4](https://cdn.opencores.org/downloads/wbspec_b4.pdf))
 - OBI ([OpenBus Interface specification](https://github.com/openhwgroup/obi) versions ..., [1.6](https://github.com/openhwgroup/obi/blob/main/OBI-v1.6.0.pdf))
@@ -22,7 +21,47 @@ Other system busses are mentioned but not used in the comparison.
 - CoreConnect from [IBM](https://web.archive.org/web/20090129183058/http://www-01.ibm.com/chips/techlib/techlib.nsf/products/CoreConnect_Bus_Architecture)
 - Altera Avalon ()
 
+### AMBA APB
 
+The APB protocol is a very common protocol for simple peripherals,
+where throughput is not an important factor.
+Its use is usually limited to a peripheral section of a SoC,
+connected to the CPU native bus through a bridge.
+
+### AMBA AHB
+
+[Hazard3](https://github.com/Wren6991/Hazard3) uses the AHB5 protocol.
+AHB5 **exclusive access** features are used to implement RISC-V atomic instructions.
+
+AHB is primarily used for CPUs and memory controllers,
+while low throughput peripherals are often in an APB subsystem
+connected to AHB through a bridge.
+
+### AMBA AXI and AXI-Lite
+
+### QMEM and Wishbone
+
+The Wishbone bus was designed by the Open Cores team for the OpenRISC CPU and peripherals.
+Inside OR1200 QMEM is used to connect the CPU core to I/D caches and the MMU.
+
+QMEM was used as the main system bus in some ASIC devices (inSilica/Aptina),
+connecting a CPU without caches to tightly coupled RAM/ROM and peripherals.
+
+#### OpenCores and OpenRISC
+
+The following OpenRISC implementations use Wishbone:
+- [OR1200](https://github.com/openrisc/or1200) (also uses QMEM internally),
+- [mor1kx](https://github.com/openrisc/mor1kx),
+- [or1k_marocchino](https://github.com/openrisc/or1k_marocchino).
+
+Several peripherals from [OpenCores](https://opencores.org/) (there are several forks on GitHub)
+use the Wishbone bus.
+
+#### Zip CPU
+
+The [Zip CPU](https://github.com/ZipCPU/zipcpu) uses the Wishbone interface as one of the options.
+
+#### NEORV32
 
 ### OBI (OpenBus Interface)
 
