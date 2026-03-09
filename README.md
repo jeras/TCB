@@ -66,6 +66,28 @@ this can be generalized to any integer delay `DLY` (values `0`, `1`, `2` would b
 
 ![TCB-Lite request to response delay](doc/lite_doc/tcb_lite_handshake.svg)
 
+### Logarithmic size mode in addition to byte enable mode
+
+Instead of the common approach of using byte enable signals
+to position data smaller than the bus width,
+TCB-Lite can use the logarithmic size of data (same as RISC-V ISA).
+
+Byte enable signals and the related data byte multiplexer
+are necessary for interfacing between a CPU and SRAM.
+The multiplexer is mapping bytes between different positions
+within the memory bus to the right of CPU registers.
+
+But the data byte multiplexer is not necessary for accessing peripheral devices,
+since they are usually only accessed with the full bus width.
+Skipping the data byte multiplexer on the path between the CPU and peripheral devices
+can improve timing and dynamic power consumption.
+
+When using this approach a RISC-V CPU LSU (load store unit)
+can be implemented with just the logarithmic size and signed/unsigned extension.
+The data byte multiplexer becomes a part of the system interconnect.
+
+![TCB-Lite interconnect showcase](doc/lite_doc/tcb_lite_interconnect_showcase.svg)
+
 ### Matching timing of peripherals to SRAM
 
 Typical ASIC/FPGA SRAM has a low setup time for request inputs (control, address, write data),
@@ -80,29 +102,8 @@ thus avoiding undesired effects of retiming on signal toggling and consequent po
 
 This can be achieved by writing peripheral devices with `DLY=0`,
 where write access is synchronous, but reads are combinational.
-A `DLY=1` TCB interface is then achieved by placing a pipeline stage at the request input side.
-
-![TCB-Lite peripheral devices]() TODO
-
-### Logarithmic size mode in addition to byte enable mode
-
-Instead of the common approach of using byte enable signals
-to position data smaller than the bus width,
-TCB-Lite can use the logarithmic size of data (same as RISC-V ISA).
-
-Byte enable signals and the related data byte multiplexer
-(mapping bytes between different positions within the memory bus to the right of CPU registers)
-are necessary for interfacing between a CPU and SRAM.
-But the data byte multiplexer is not necessary for accessing peripheral devices,
-since they are usually only accessed with the full bus width.
-Skipping the data byte multiplexer on the path between the CPU and peripheral devices
-can improve timing and dynamic power consumption.
-
-When using this approach a RISC-V CPU LSU (load store unit)
-can be implemented with just the logarithmic size and signed/unsigned extension.
-The data byte multiplexer becomes a part of the system interconnect.
-
-![TCB-Lite RISC-V LSU]() TODO
+A `DLY=1` TCB interface is then achieved by placing a pipeline stage
+at the request input side (**request register**).
 
 ### Support for atomic access and arbiter locking
 
