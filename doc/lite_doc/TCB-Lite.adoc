@@ -217,10 +217,21 @@ Compared to QMEM, TCB-Lite has the following changes:
 
 == System bus topology
 
-TODO: define the distinction between device and interconnect component,
-      manager and subordinate interfaces.
+From the point of view of a single TCB-Lite interface:
+- a **system controller** is driving clock and reset signals,
+- a **manager** is driving the handshake valid and request bus
+  while sampling the handshake ready and response bus,
+- a **subordinate** is sampling the handshake valid and request bus
+  while driving the handshake ready and response bus,
+- a **monitor** is sampling the handshake valid/ready and request/response busses.
 
 image::tcb_lite_manager_subordinate_monitor.svg[Manager, subordinate and monitor]
+
+From the interconnect point of view:
+- managers (driving requests) are connected to a module's subordinate interface port,
+- subordinates (driving responses) are connected to a modules manager interface port.
+
+image::tcb_lite_managers_interconnect_subordinates.svg[Managers, subordinates and the interconnect]
 
 == Handshake layer
 
