@@ -84,25 +84,25 @@ module tcb_full_lib_logsize2byteena
 ////////////////////////////////////////////////////////////////////////////////
 
     // request/response address offset, logarithmic size
-    logic [sub.CFG_BUS_MAX-1:0] req_off, rsp_off;
+    logic [sub.CFG_BUS_OFF-1:0] req_off, rsp_off;
     logic [sub.CFG_BUS_SIZ-1:0] req_siz, rsp_siz;
 
     // endianness
     logic                   req_ndn, rsp_ndn;
 
     // prefix OR operation
-    function automatic [sub.CFG_BUS_MAX-1:0] prefix_or (
-        input logic [sub.CFG_BUS_MAX-1:0] val
+    function automatic [sub.CFG_BUS_OFF-1:0] prefix_or (
+        input logic [sub.CFG_BUS_OFF-1:0] val
     );
-        prefix_or[sub.CFG_BUS_MAX-1] = val[sub.CFG_BUS_MAX-1];
-        for (int unsigned i=sub.CFG_BUS_MAX-1; i>0; i--) begin
+        prefix_or[sub.CFG_BUS_OFF-1] = val[sub.CFG_BUS_OFF-1];
+        for (int unsigned i=sub.CFG_BUS_OFF-1; i>0; i--) begin
             prefix_or[i-1] = prefix_or[i] | val[i-1];
         end
     endfunction: prefix_or
 
     // request/response address offset, logarithmic size
-    assign req_off = sub.req_dly[0              ].adr[sub.CFG_BUS_MAX-1:0];
-    assign rsp_off = sub.req_dly[sub.CFG.HSK.DLY].adr[sub.CFG_BUS_MAX-1:0];
+    assign req_off = sub.req_dly[0              ].adr[sub.CFG_BUS_OFF-1:0];
+    assign rsp_off = sub.req_dly[sub.CFG.HSK.DLY].adr[sub.CFG_BUS_OFF-1:0];
     assign req_siz = sub.req_dly[0              ].siz;
     assign rsp_siz = sub.req_dly[sub.CFG.HSK.DLY].siz;
 
@@ -115,21 +115,21 @@ module tcb_full_lib_logsize2byteena
 ////////////////////////////////////////////////////////////////////////////////
 
     generate
-    if (sub.CFG.PMA.ALN == sub.CFG_BUS_MAX) begin: aligned
+    if (sub.CFG.PMA.ALN == sub.CFG_BUS_OFF) begin: aligned
 
         // offset mask
-        logic [sub.CFG_BUS_MAX-1:0] req_msk;
+        logic [sub.CFG_BUS_OFF-1:0] req_msk;
 
         // offset mask
         always_comb
-        for (int unsigned i=0; i<sub.CFG_BUS_MAX; i++) begin
+        for (int unsigned i=0; i<sub.CFG_BUS_OFF; i++) begin
             req_msk[i] = (i >= sub.req.siz);
         end
 
         // byte enable
         always_comb
         for (int unsigned i=0; i<sub.CFG_BUS_BYT; i++) begin
-            man.req.byt[i] = (req_off & req_msk) == (i[sub.CFG_BUS_MAX-1:0] & req_msk);
+            man.req.byt[i] = (req_off & req_msk) == (i[sub.CFG_BUS_OFF-1:0] & req_msk);
         end
 
         // TODO: add big endian support, maybe ASCENDING also
@@ -138,7 +138,7 @@ module tcb_full_lib_logsize2byteena
             // write access
             always_comb
             for (int unsigned i=0; i<sub.CFG_BUS_BYT; i++) begin
-                man.req.wdt[i] = sub.req.wdt[i[sub.CFG_BUS_MAX-1:0] & ~req_msk];
+                man.req.wdt[i] = sub.req.wdt[i[sub.CFG_BUS_OFF-1:0] & ~req_msk];
             end
         end: write
 
@@ -146,7 +146,7 @@ module tcb_full_lib_logsize2byteena
             // read access
             always_comb
             for (int unsigned i=0; i<sub.CFG_BUS_BYT; i++) begin
-                sub.rsp.rdt[i] = man.rsp.rdt[(~prefix_or(i[sub.CFG_BUS_MAX-1:0]) & rsp_off) | i[sub.CFG_BUS_MAX-1:0]];
+                sub.rsp.rdt[i] = man.rsp.rdt[(~prefix_or(i[sub.CFG_BUS_OFF-1:0]) & rsp_off) | i[sub.CFG_BUS_OFF-1:0]];
             end
         end: read
 

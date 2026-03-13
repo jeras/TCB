@@ -140,8 +140,8 @@ interface tcb_full_if
 
     // local parameters are calculated from the request
     localparam int unsigned CFG_BUS_BYT = CFG.BUS.DAT/8;
-    localparam int unsigned CFG_BUS_MAX = $clog2(CFG_BUS_BYT);
-    localparam int unsigned CFG_BUS_SIZ = $clog2(CFG_BUS_MAX+1);
+    localparam int unsigned CFG_BUS_OFF = $clog2(CFG_BUS_BYT);
+    localparam int unsigned CFG_BUS_SIZ = $clog2(CFG_BUS_OFF+1);
 
 ////////////////////////////////////////////////////////////////////////////////
 // helper functions

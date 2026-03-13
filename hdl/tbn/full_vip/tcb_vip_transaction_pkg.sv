@@ -70,8 +70,8 @@ package tcb_full_vip_transaction_pkg;
         // local parameters
         localparam int unsigned CFG_BUS_ADR = CFG.BUS.ADR;  // TODO: this is only needed by VCS
         localparam int unsigned CFG_BUS_BYT = CFG.BUS.DAT/8;
-        localparam int unsigned CFG_BUS_MAX = $clog2(CFG_BUS_BYT);
-        localparam int unsigned CFG_BUS_SIZ = $clog2(CFG_BUS_MAX+1);
+        localparam int unsigned CFG_BUS_OFF = $clog2(CFG_BUS_BYT);
+        localparam int unsigned CFG_BUS_SIZ = $clog2(CFG_BUS_OFF+1);
 
         // TCB transaction request structure
         typedef struct {
@@ -214,7 +214,7 @@ package tcb_full_vip_transaction_pkg;
                 // mode logarithmic size vs. byte enable
                 case (CFG.BUS.MOD)
                   TCB_MOD_LOG_SIZE:  byt =  idx                                       % CFG_BUS_BYT;  // all data bytes are LSB aligned
-                  TCB_MOD_BYTE_ENA:  byt = (i + transaction.req.adr[CFG_BUS_MAX-1:0]) % CFG_BUS_BYT;
+                  TCB_MOD_BYTE_ENA:  byt = (i + transaction.req.adr[CFG_BUS_OFF-1:0]) % CFG_BUS_BYT;
                 endcase
                 // request
                 if (wen) tmp.req.wdt[byt] = transaction.req.wdt[idx];
@@ -368,7 +368,7 @@ package tcb_full_vip_transaction_pkg;
                     TCB_MOD_BYTE_ENA: begin
                         // data signals
                         for (int unsigned i=0; i<CFG_BUS_BYT; i++) begin
-                            int unsigned byt = (i + tmp.req.adr[CFG_BUS_MAX-1:0]) % CFG_BUS_BYT;
+                            int unsigned byt = (i + tmp.req.adr[CFG_BUS_OFF-1:0]) % CFG_BUS_BYT;
                             if (tmp.req.byt[byt]) begin
                                 // endianness request/response data
                                 if (tmp.req.ndn ~^ CFG.BUS.ORD) begin

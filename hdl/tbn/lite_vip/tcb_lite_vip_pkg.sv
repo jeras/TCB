@@ -14,8 +14,8 @@ package tcb_lite_vip_pkg;
 
         // local parameters (calculated from configuration)
         localparam int unsigned CFG_BUS_BYT = CFG.BUS.DAT/8;          // byte enable width
-        localparam int unsigned CFG_BUS_MAX = $clog2(CFG_BUS_BYT);    // maximum logarithmic size
-        localparam int unsigned CFG_BUS_SIZ = $clog2(CFG_BUS_MAX+1);  // logarithmic size width
+        localparam int unsigned CFG_BUS_OFF = $clog2(CFG_BUS_BYT);    // maximum logarithmic size
+        localparam int unsigned CFG_BUS_SIZ = $clog2(CFG_BUS_OFF+1);  // logarithmic size width
         
         // request type
         typedef struct {

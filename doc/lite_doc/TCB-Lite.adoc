@@ -467,8 +467,9 @@ there are parameters defining operation mode and signal widths.
 | parameter     | default                 | type           | description
 
 | `CFG_BUS_BYT` | `CFG.BUS.DAT/8`         | `int unsigned` | Byte enable width is the number of bytes fitting into the data width.
-| `CFG_BUS_MAX` | `$clog2(CFG_BUS_BYT)`   | `int unsigned` | Maximum transfer logarithmic size, also width of 'off' (unit offset within data width) part of address.
-| `CFG_BUS_SIZ` | `$clog2(CFG_BUS_MAX+1)` | `int unsigned` | Width of logarithmic size signal.
+| `CFG_BUS_OFF` | `$clog2(CFG_BUS_BYT)`   | `int unsigned` | Maximum transfer logarithmic size, also width of 'off' (unit offset within data width) part of address.
+| `CFG_BUS_OFF` | `$clog2(CFG_BUS_BYT)`   | `int unsigned` | Maximum transfer logarithmic size, also width of 'off' (unit offset within data width) part of address.
+| `CFG_BUS_SIZ` | `$clog2(CFG_BUS_OFF+1)` | `int unsigned` | Width of logarithmic size signal.
 |===
 
 [NOTE]
@@ -764,7 +765,7 @@ Further examples can be found in the documentation for the reference library imp
 
 Examples are given for the next data packing configurations:
 
-* logarithmic size mode, fixed of variable size transfers with and without misaligned access support,
+* logarithmic size mode, fixed or variable size transfers with and without misaligned access support,
 * byte enable mode, with and without misaligned access support, for both little and big endianness.
 
 The examples list all supported read/write transfers in a table.
@@ -793,10 +794,11 @@ logic      [2:0] off = adr[2:0];
 
 Examples for the following logarithmic size mode configurations are provided:
 
+* instruction fetch for RISC-V with C extension,
 * data bus width sized transfers with size aligned address,
 * any size transfers with size aligned address,
 * any size transfers with no address alignment restrictions,
-* instruction fetch for RISC-V with C extension.
+* unconventional transfer types.
 
 ==== RISC-V with C extension instruction fetch
 
@@ -825,7 +827,10 @@ It is common to only allow full data bus width and aligned transfers when access
 
 This case would specify the following parameter values and signal restrictions:
 
-TODO
+```
+siz = CFG_BUS_OFF = $clog2(CFG_BUS_BYT) = $clog2(CFG.BUS.DAT/8)
+off = 0
+```
 
 The following table lists such transfers for a 32-bit data bus.
 
@@ -1248,10 +1253,10 @@ NOTE: The current choice of PMA parameters can be confusing.
 |===
 | parameter     | type (enumeration) | range (options)   | default       | description
 
-| `CFG.PMA.MAX` | `int unsigned`     | `0`~`CFG_BUS_MAX` | `0`           | Maximum transfer logarithmic size.
-| `CFG.PMA.MIN` | `int unsigned`     | `0`~`CFG_BUS_MAX` | `0`           | Minimum transfer logarithmic size.
-| `CFG.PMA.OFF` | `int unsigned`     | `0`~`CFG_BUS_MAX` | `0`           | Number of LSB address bits (the offset of unit/byte inside the data bus) tied to zero.
-| `CFG.PMA.ALN` | `int unsigned`     | `0`~`CFG_BUS_MAX` | `CFG_BUS_MAX` | Alignment width, number of least significant address bits which are zero.
+| `CFG.PMA.MAX` | `int unsigned`     | `0`~`CFG_BUS_OFF` | `0`           | Maximum transfer logarithmic size.
+| `CFG.PMA.MIN` | `int unsigned`     | `0`~`CFG_BUS_OFF` | `0`           | Minimum transfer logarithmic size.
+| `CFG.PMA.OFF` | `int unsigned`     | `0`~`CFG_BUS_OFF` | `0`           | Number of LSB address bits (the offset of unit/byte inside the data bus) tied to zero.
+| `CFG.PMA.ALN` | `int unsigned`     | `0`~`CFG_BUS_OFF` | `CFG_BUS_OFF` | Alignment width, number of least significant address bits which are zero.
 |===
 
 Only a small subset of all parameter value combinations configurations from all parameter combinations
@@ -1264,22 +1269,22 @@ The rest are reserved with no intention to be documented and implemented.
 | `MOD`      | `CFG.BUS.DAT` | `CFG.BUS.MIN`   | `CFG.BUS.OFF`   | `BUS.ALN`       | `ndn`   | description
 
 | `LOG_SIZE` | `32`/`64`     | `0`             | `0`             | 0               | ignored | RISC-V RV32/64 GPR load/store (no sign extension) with misaligned access support.
-| `LOG_SIZE` | `32`/`64`     | `0`             | `0`             | `CFG_BUS_MAX`   | ignored | RISC-V RV32/64 GPR load/store (no sign extension) with only aligned access support.
+| `LOG_SIZE` | `32`/`64`     | `0`             | `0`             | `CFG_BUS_OFF`   | ignored | RISC-V RV32/64 GPR load/store (no sign extension) with only aligned access support.
 | `BYTE_ENA` | `32`/`64`     | `0`             | `0`             | 0               | both    | RISC-V RV32/64 memory load/store with misaligned access support.
-| `BYTE_ENA` | `32`/`64`     | `0`             | `CFG_BUS_MAX`   | `CFG_BUS_MAX`   | both    | RISC-V RV32/64 memory load/store with only aligned access support.
-| `BYTE_ENA` | `32`          | `CFG_BUS_MAX=2` | `CFG_BUS_MAX=2` | `CFG_BUS_MAX=2` | both    | Peripheral bus with only 4-byte (word) aligned access support.
-| `BYTE_ENA` | `64`          | `CFG_BUS_MAX=3` | `CFG_BUS_MAX=3` | `CFG_BUS_MAX=3` | both    | Peripheral bus with only 8-byte (double) aligned accesses support.
-| `BYTE_ENA` | `64`          | `2`             | `2`             | `CFG_BUS_MAX=3` | both    | Peripheral bus with mixed 4/8-byte aligned accesses support.
+| `BYTE_ENA` | `32`/`64`     | `0`             | `CFG_BUS_OFF`   | `CFG_BUS_OFF`   | both    | RISC-V RV32/64 memory load/store with only aligned access support.
+| `BYTE_ENA` | `32`          | `CFG_BUS_OFF=2` | `CFG_BUS_OFF=2` | `CFG_BUS_OFF=2` | both    | Peripheral bus with only 4-byte (word) aligned access support.
+| `BYTE_ENA` | `64`          | `CFG_BUS_OFF=3` | `CFG_BUS_OFF=3` | `CFG_BUS_OFF=3` | both    | Peripheral bus with only 8-byte (double) aligned accesses support.
+| `BYTE_ENA` | `64`          | `2`             | `2`             | `CFG_BUS_OFF=3` | both    | Peripheral bus with mixed 4/8-byte aligned accesses support.
 |===
 
 TODO: Boundary
 
 * `PMA.BND` = 0
   There are no boundaries, any transfer can cross any boundary.
-* `PMA.BND` =CFG_BUS_MAX
+* `PMA.BND` =CFG_BUS_OFF
   Transfer must be within the data bus width, otherwise it must be split.
-* `PMA.BND` =CFG_BUS_MAX + 1
-  For example a 32-bit CPU with a TCB `BUS.DAT=32`` (`CFG_BUS_MAX=2``).
+* `PMA.BND` =CFG_BUS_OFF + 1
+  For example a 32-bit CPU with a TCB `BUS.DAT=32`` (`CFG_BUS_OFF=2``).
   Connected to a 64-bit wide memory controller,
   TCB can realign transfers not crossing the 64-bit boundary,
   transfers crossing it must be split. So `PMA.BND=3`.
@@ -1303,7 +1308,7 @@ Interface signal `siz` encodes the logarithmic size of a transfer.
 The linear size (number of units/bytes) of the transfer is calculated as `2**siz`.
 
 The number bits required to encode sizes from 1 to `BUS_BYT` (unit/byte enable width) is
-`BUS_SIZ = $clog2(CFG_BUS_MAX+1)` where the largest transfer logarithmic size is `CFG_BUS_MAX`.
+`BUS_SIZ = $clog2(CFG_BUS_OFF+1)` where the largest transfer logarithmic size is `CFG_BUS_OFF`.
 Depending on the data bus width, some logarithmic size values encoded with `BUS_SIZ` bits
 can be invalid and are thus reserved.
 

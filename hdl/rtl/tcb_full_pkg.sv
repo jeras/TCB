@@ -300,8 +300,8 @@ package tcb_full_pkg;
         // signal widths
         localparam CFG_BUS_LEN = $clog2(CFG.BUS.LEN);
         localparam CFG_BUS_BYT = CFG.BUS.DAT/8;
-        localparam CFG_BUS_MAX = $clog2(CFG_BUS_BYT);
-        localparam CFG_BUS_SIZ = $clog2(CFG_BUS_MAX+1);
+        localparam CFG_BUS_OFF = $clog2(CFG_BUS_BYT);
+        localparam CFG_BUS_SIZ = $clog2(CFG_BUS_OFF+1);
 
         localparam int unsigned LEFT  = (CFG.BUS.ORD == TCB_ORD_DESCENDING) ? CFG_BUS_BYT-1 : 0;
         localparam int unsigned RIGHT = (CFG.BUS.ORD == TCB_ORD_DESCENDING) ? 0 : CFG_BUS_BYT-1;

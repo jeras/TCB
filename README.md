@@ -103,7 +103,7 @@ thus avoiding undesired effects of retiming on signal toggling and consequent po
 This can be achieved by writing peripheral devices with `DLY=0`,
 where write access is synchronous, but reads are combinational.
 A `DLY=1` TCB interface is then achieved by placing a pipeline stage
-at the request input side (**request register**).
+at the request input side (**request register**, see the block diagram above).
 
 ### Support for atomic access and arbiter locking
 

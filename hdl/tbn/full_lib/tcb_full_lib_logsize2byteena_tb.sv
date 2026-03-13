@@ -347,7 +347,7 @@ module tcb_full_lib_logsize2byteena_tb
 //          begin
 //            static logic ndn = ndn_list[0];
 
-            for (int unsigned siz=tcb_man.CFG.PMA.MIN; siz<=tcb_man.CFG_BUS_MAX; siz++) begin
+            for (int unsigned siz=tcb_man.CFG.PMA.MIN; siz<=tcb_man.CFG_BUS_OFF; siz++) begin
 //            begin
 //              static int unsigned siz=1;
                 for (int unsigned off=0; off<tcb_man.CFG_BUS_BYT; off+=2**tcb_man.CFG.PMA.OFF) begin
@@ -460,7 +460,7 @@ module tcb_full_lib_logsize2byteena_tb
         repeat (1) @(posedge clk);
 
         test_aligned;
-        if (CFG_SIZ.PMA.ALN != tcb_man.CFG_BUS_MAX) begin
+        if (CFG_SIZ.PMA.ALN != tcb_man.CFG_BUS_OFF) begin
             test_misaligned;
         end
         test_parameterized;

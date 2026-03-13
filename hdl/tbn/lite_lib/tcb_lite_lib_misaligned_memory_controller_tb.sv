@@ -87,9 +87,9 @@ module tcb_lite_lib_misaligned_memory_controller_tb
 
     // local parameters
     localparam int unsigned CFG_BUS_BYT = CFG.BUS.DAT/8;
-    localparam int unsigned CFG_BUS_MAX = $clog2(CFG_BUS_BYT);
+    localparam int unsigned CFG_BUS_OFF = $clog2(CFG_BUS_BYT);
     localparam int unsigned MEM_CEN = CFG_BUS_BYT/(2**CFG.PMA.OFF);
-    localparam int unsigned MEM_ADR = CFG.BUS.ADR-CFG_BUS_MAX;
+    localparam int unsigned MEM_ADR = CFG.BUS.ADR-CFG_BUS_OFF;
     localparam int unsigned MEM_DAT = CFG.BUS.DAT/MEM_CEN;
 
     // SRAM model
@@ -168,7 +168,7 @@ module tcb_lite_lib_misaligned_memory_controller_tb
         // parameterized tests
         $display("parameterized tests");
         testname = "parameterized tests";
-        for (int unsigned siz=tcb.CFG.PMA.MIN; siz<=tcb.CFG_BUS_MAX; siz++) begin
+        for (int unsigned siz=tcb.CFG.PMA.MIN; siz<=tcb.CFG_BUS_OFF; siz++) begin
 //          begin
 //              static int unsigned siz=1;
 //              for (int unsigned off=0; off<tcb.CFG.CFG_BUS_BYT; off+=2) begin
@@ -248,7 +248,7 @@ module tcb_lite_lib_misaligned_memory_controller_tb
         repeat (1) @(posedge clk);
 
         test_aligned;
-        if (CFG.PMA.ALN != tcb.CFG_BUS_MAX) begin
+        if (CFG.PMA.ALN != tcb.CFG_BUS_OFF) begin
             test_misaligned;
         end
         test_parameterized;
