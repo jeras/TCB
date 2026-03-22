@@ -467,8 +467,7 @@ there are parameters defining operation mode and signal widths.
 | parameter     | default                 | type           | description
 
 | `CFG_BUS_BYT` | `CFG.BUS.DAT/8`         | `int unsigned` | Byte enable width is the number of bytes fitting into the data width.
-| `CFG_BUS_OFF` | `$clog2(CFG_BUS_BYT)`   | `int unsigned` | Maximum transfer logarithmic size, also width of 'off' (unit offset within data width) part of address.
-| `CFG_BUS_OFF` | `$clog2(CFG_BUS_BYT)`   | `int unsigned` | Maximum transfer logarithmic size, also width of 'off' (unit offset within data width) part of address.
+| `CFG_BUS_OFF` | `$clog2(CFG_BUS_BYT)`   | `int unsigned` | Width of offset signals `off` (byte offset within data bus).
 | `CFG_BUS_SIZ` | `$clog2(CFG_BUS_OFF+1)` | `int unsigned` | Width of logarithmic size signal.
 |===
 
@@ -503,6 +502,7 @@ Most signals are designed to directly interface with ASIC/FPGA SRAM memories:
 | `req.wen` | `1`           | Write enable.
 | `req.ren` | `1`           | Read enable.
 | `req.ndn` | `1`           | Read/write data endianness (only used in logarithmic size mode).
+| `req.ato` | `5`           | Atomic access code (based ob RISC-V ISA).
 | `req.ctl` | `CFG.BUS.CTL` | User defined control protocol extensions.
 | `req.adr` | `CFG.BUS.ADR` | Address.
 | `req.siz` | `CFG_BUS_SIZ` | Transfer logarithmic size (only used in logarithmic size mode).
@@ -569,13 +569,41 @@ support for RISC-V AMO instructions.
 | `1'b0` | `1'b0` | Dataless access.
 | `1'b1` | `1'b0` | Write access.
 | `1'b0` | `1'b1` | Read access.
-| `1'b1` | `1'b1` | Read-modify-write access.
+| `1'b1` | `1'b1` | Read-modify-write or AMO access.
 |===
 
 When connecting TCB-Lite to a SRAM memory,
 where simultaneous read/write operations are not possible
 the read enable signal can be ignored and
 the write enable `wen` can be connected directly to a corresponding SRAM port.
+
+===== Atomic access
+
+Atomic access signal encoding is directly based on the RISC-V ISA.
+
+In the current version of the standard only AMO accesses are properly supported.
+AMO access is enabled by setting `wen`/`ren` simultaneously.
+
+In case an implementation does not support AMO accesses,
+the signal should be tied to `AMOSWAP` (`5'b00001`).
+
+.Atomic access codes
+[%autowidth]
+|===
+| operation | code       | description
+
+| `LR`      | `5'b00010` |
+| `SC`      | `5'b00011` |
+| `AMOSWAP` | `5'b00001` | default
+| `AMOADD ` | `5'b00000` |
+| `AMOXOR ` | `5'b00100` |
+| `AMOAND ` | `5'b01100` |
+| `AMOOR  ` | `5'b01000` |
+| `AMOMIN ` | `5'b10000` |
+| `AMOMAX ` | `5'b10100` |
+| `AMOMINU` | `5'b11000` |
+| `AMOMAXU` | `5'b11100` |
+|===
 
 ==== Data size and address
 
@@ -794,23 +822,30 @@ logic      [2:0] off = adr[2:0];
 
 Examples for the following logarithmic size mode configurations are provided:
 
-* instruction fetch for RISC-V with C extension,
-* data bus width sized transfers with size aligned address,
-* any size transfers with size aligned address,
-* any size transfers with no address alignment restrictions,
+.TODO
+[%autowidth]
+|===
+| `ndn`        | `siz`               | `off`               | description
+| `1'b0`       | `siz==2'd2`         | `off[0]==1'b0`      | Instruction fetch for RISC-V with C extension.
+| undefined    | `siz==CFG_BUS_OFF`  | `off=='d0`          | Full size, aligned.
+| undefined    | `siz<=CFG_BUS_OFF`  | `off=='d0`          | Variable size, aligned to full size.
+| unrestricted | `siz<=CFG_BUS_OFF`  | `off[siz-1:0]=='d0` | Variable size, aligned to transfer size.
+| unrestricted | `siz<=CFG_BUS_OFF`  | unrestricted        | Variable size, unaligned.
+|===
+
 * unconventional transfer types.
 
 ==== RISC-V with C extension instruction fetch
 
 This case would specify the following parameter values and signal restrictions:
 
-* logarithmic size mode `CFG.BUS.MOD=1'b0`,
-* misaligned accesses are supported
-* always attempt to fetch a 32-bit instruction `siz=2'd2`,
-* address aligned to 2-byte size (`adr[0]==1'b0`),
-* only little endian support `ndn=1'b0`.
+* logarithmic size mode (`CFG.BUS.MOD=1'b0`),
+* only little endian support (`ndn=1'b0`),
+* always attempt to fetch a 32-bit instruction (`siz=2'd2`),
+* address aligned to 2-byte size (`off[0]=1'b0`),
+* within a 32-bit data bus misaligned accesses are supported (`off[1]` is unrestricted).
 
-The following table lists such transfers.
+The following table lists such transfers for a 32-bit data bus.
 
 .TODO
 [%autowidth]
@@ -821,38 +856,57 @@ The following table lists such transfers.
 | word | misaligned | `2'd2` | `2'd2` | `{[3],[2],[1],[0]}`
 |===
 
-==== Full data width, aligned address
+==== Full data width size, aligned address
 
-It is common to only allow full data bus width and aligned transfers when accessing peripherals.
+It is common to only allow full data bus width and aligned transfers
+when accessing memory mapped peripherals.
 
 This case would specify the following parameter values and signal restrictions:
 
-```
-siz = CFG_BUS_OFF = $clog2(CFG_BUS_BYT) = $clog2(CFG.BUS.DAT/8)
-off = 0
-```
+* logarithmic size mode (`CFG.BUS.MOD=1'b0`),
+* endianness should not be relevant when accessing memory mapped peripheral registers,
+* transfer size must be the full data bus width (`siz=CFG_BUS_OFF= $clog2(CFG_BUS_BYT)=$clog2(CFG.BUS.DAT/8)`),
+* address is aligned to the transfer size (`off=0`).
 
-The following table lists such transfers for a 32-bit data bus.
+The following tables lists such transfers for 32/64-bit data buses.
 
-.32-bit full data width, aligned address
+.32-bit full data width size, aligned address
 [%autowidth]
 |===
-| size | `off`  | `siz`  | dat
+| size | `off`  | `siz`  | `dat`
 
 | word | `2'd0` | `2'd2` | `{[3],[2],[1],[0]}`
 |===
 
-.64-bit full data width, aligned address
+.64-bit full data width size, aligned address
 [%autowidth]
 |===
-| size | `off`  | `siz`  | dat
+| size | `off`  | `siz`  | `dat`
 
 | word | `3'd0` | `2'd3` | `{[7],[6],[5],[4],[3],[2],[1],[0]}`
 |===
 
-==== Variable data width, zero offset
+==== Variable data width size, aligned address
 
-.32-bit variable data width, zero offset
+When accessing memory mapped peripherals,
+while keeping address alignment to the full bus width,
+allowing access sizes smaller than the full data bus width
+could reduce toggling of data signals and thus improve power consumption.
+
+For example a peripheral might have a 32-bit TCB-Lite interface,
+able to atomically access 32-bit registers,
+but some registers 16/8 or less fields.
+
+This case would specify the following parameter values and signal restrictions:
+
+* logarithmic size mode (`CFG.BUS.MOD=1'b0`),
+* endianness should not be relevant when accessing memory mapped peripheral registers,
+* transfers size can be anything up to the data bus width (`siz<=CFG_BUS_OFF`),
+* address is aligned to the data bus width (`off=0`).
+
+The following tables lists such transfers for 32/64-bit data buses.
+
+.32-bit variable data width size, aligned address
 [%autowidth]
 |===
 | size | `off`  | `siz`  | `dat`
@@ -862,7 +916,7 @@ The following table lists such transfers for a 32-bit data bus.
 | word | `3'd0` | `2'd2` | `{[3], [2], [1], [0]}`
 |===
 
-.64-bit variable data width, zero offset
+.64-bit variable data width size, aligned address
 [%autowidth]
 |===
 | size   | `off`  | `siz`  | `dat`
@@ -881,7 +935,7 @@ This case would specify the following parameter values and signal restrictions:
 
 * logarithmic size mode `MOD=LOG_SIZE`,
 * full alignment required `ALN=$clog2(DAT/UNT)=clog2(BEN)`
-* transfer size from byte to data bus width `0<=siz<=$clog2(ALN)`,
+* transfer size from byte to data bus width `siz<=$clog2(ALN)`,
 * address aligned to transfer size `adr[siz-1:0]=='0`,
 * the transfer endianness `ndn` is ignored.
 
@@ -1009,12 +1063,19 @@ This case would specify the following parameter values and signal restrictions:
 | double | misaligned | `3'd7` | `2'd3` | `{[7],[6],[5],[4],[3],[2],[1],[0]}`
 |===
 
+==== Unconventional transfer types
+
+I a conventional address map an `XLEN` sized register consumes `XLEN/8` address locations.
+
+TCB-Lite does not strictly require the address map follow this convention.
+
 === Byte enable mode
 
 Examples for the following byte enable mode configurations are provided:
 
 * any size transfers with size aligned address,
 * any size transfers with no alignment restrictions address.
+* unconventional transfer types.
 
 Both configurations are documented for big and little endianness.
 
@@ -1378,7 +1439,12 @@ In this case a multiplexer for aligning the instruction would still be needed,
 but it would be placed in the interconnect instead of the CPU.
 
 
-=== Appendix C: Read data hold
+== Appendix C: Planed protocol features
+
+Draft ideas for future versions of the protocol.
+They are listed here, so they can be discussed before various incompatible implementations arise.
+
+=== Read data hold
 
 [WARNING]
 ====
@@ -1398,7 +1464,7 @@ Read data hold can be useful during CPU stalls.
 Either there is no need to repeat a read or a temporary buffer
 for read data can be avoided.
 
-==== Repeat access transfer
+=== Repeat access transfer
 
 TODO: think this through.
 
