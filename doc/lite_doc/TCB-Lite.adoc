@@ -420,11 +420,8 @@ giving inputs a low _setup time_.
 The read data output path is a mixed signal (analog+digital) combinational logic
 with a high _clock to output_ delay.
 
-This are a few SRAM examples:
-
-* Xilinx 7 Series FPGAs link:https://docs.xilinx.com/v/u/en-US/ug473_7Series_Memory_Resources[Memory Resources],
-* GlobalFoundries GF180MCU PDK link:https://gf180mcu-pdk.readthedocs.io/en/latest/IPs/SRAM/gf180mcu_fd_ip_sram/cells/gf180mcu_fd_ip_sram__sram512x8m8wm1/gf180mcu_fd_ip_sram__sram512x8m8wm1.html[SRAM macro].
-* IHP 130nm BiCMOS Open Source PDK link:https://github.com/IHP-GmbH/IHP-Open-PDK/tree/main/ihp-sg13g2/libs.ref/sg13g2_sram[SRAM macros]
+A few SRAM examples are analyzed in a separate
+link::../MEMORIES.md[memories document].
 
 An example would be a TCB-Lite peripheral placed in the same address space as a SRAM block.
 Placing a register at the peripheral request inputs matches the low setup time of SRAM.
