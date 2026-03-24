@@ -6,10 +6,14 @@ The focus is on the following aspects affecting TCB compatibility:
    - control, address, write data setup time,
    - read data clock to output time.
 2. features and behavior:
-   - write byte enable,
+   - write byte enable (bit enable),
    - read byte enable and read data bus hold,
    - asynchronous read (typical for LUT based RAM),
    - additional read data register.
+
+## Modeling and inference
+
+
 
 ## FPGA
 
@@ -41,14 +45,13 @@ can differ between devices withing the same family and between revisions of the 
 
 Gowin FPGA memory resources are:
 - bloc SRAM (BSRAM):
-  - dual port,
+  - single/semi-dual/dual port,
   - byte enable,
   - bypass read and pipeline read modes (optional output register),
   - normal write and write-through modes,
   - output cascading multiplexer.
 - shadow SRAM (SSRAM):
-  - .
-
+  - single/semi-dual port.
 
 [UG285, Gowin BSRAM & SSRAM User Guide](https://www.gowinsemi.com/upload/database_doc/1785/document/68f69723d7d7d.pdf)
 provides information like timing diagrams and instantiation examples for generated primitives.
@@ -56,6 +59,9 @@ provides information like timing diagrams and instantiation examples for generat
 The documented timing diagrams do not show the BSRAM behavior
 when no read is performed (output clock enable `OCEA`/`OCEB` is not active),
 so the full read data behavior can't be understood from the documentation alone.
+
+[SUG550, Gowin Synthesis User Guide](https://www.gowinsemi.com/upload/database_doc/1878/document/69b862abe7274.pdf)
+provides some inference examples.
 
 Simulation models (Gowin IDE folder `IDE/simlib/gw1n/*`) provide full details on primitive behavior.
 
@@ -78,8 +84,7 @@ The Sipeed [Tang Nano 9k](https://wiki.sipeed.com/hardware/en/tang/Tang-Nano-9K/
 uses a GW1NR-9 device from the Gowin GW1NR[https://www.gowinsemi.com/en/support/database/1781/] series.
 
 [GW1NR series of FPGA Products Data Sheet](https://www.gowinsemi.com/upload/database_doc/1785/document/68f69723d7d7d.pdf)
-provides some details on configuration options and
-
+provides some details on configuration options and series/device/revision specifics.
 
 ## ASIC
 
