@@ -13,7 +13,41 @@ The focus is on the following aspects affecting TCB compatibility:
 
 ## Modeling and inference
 
+The focus will be on single port SRAM,
+since this takes the smallest area on an ASIC.
+Byte enable support might be optional,
+since the same can be achieved
+with separate RAM instances for each byte.
 
+```SystemVerilog
+module sram #(
+    // bus parameters
+    parameter int unsigned ADR = 16,
+    parameter int unsigned DAT = 32,
+    parameter int unsigned BYT = DAT/8
+)(
+    input  logic           clk,  // clock
+    input  logic           cen,  // clock enable
+    input  logic           wen,  // write enable
+    input  logic [ADR-1:0] adr,  // address
+    input  logic [BYT-1:0] byt,  // byte enable
+    input  logic [DAT-1:0] wdt,  // write data
+    output logic [DAT-1:0] rdt   // read data
+)
+
+    logic [DAT-1:0] mem [0:$clog2(ADR)];
+
+always @(posedge clk)
+if (ena) begin  // enable
+    if (wen) begin
+        for (int unsigned i=0; i<BYT; i++) begin
+            if (byt[i])  mem[adr][i*8+:8] <= dat[i*8+:8];
+        end
+    end else begin
+        rdt <= mem[adr];
+    end
+end
+```
 
 ## FPGA
 
