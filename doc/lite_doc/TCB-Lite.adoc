@@ -815,6 +815,15 @@ logic [7:0]      ben;
 logic      [2:0] off = adr[2:0];
 ----
 
+.128-bit data bus vector
+[source,SystemVerilog]
+----
+logic [15:0][7:0] dat;
+logic       [2:0] siz;
+logic [15:0]      ben;
+logic       [2:0] off = adr[3:0];
+----
+
 === Logarithmic size mode
 
 Examples for the following logarithmic size mode configurations are provided:
@@ -823,11 +832,14 @@ Examples for the following logarithmic size mode configurations are provided:
 [%autowidth]
 |===
 | `ndn`        | `siz`               | `off`               | description
-| `1'b0`       | `siz==2'd2`         | `off[0]==1'b0`      | Instruction fetch for RISC-V with C extension.
+
+| `1'b0`       | `siz==2'd2`         | `off[0]==1'b0`      | RISC-V with C extension instruction fetch.
 | undefined    | `siz==CFG_BUS_OFF`  | `off=='d0`          | Full size, aligned.
 | undefined    | `siz<=CFG_BUS_OFF`  | `off=='d0`          | Variable size, aligned to full size.
-| unrestricted | `siz<=CFG_BUS_OFF`  | `off[siz-1:0]=='d0` | Variable size, aligned to transfer size.
+| unrestricted | `siz<=CFG_BUS_OFF`  | `off[siz-1:0]=='d0` | Variable size, aligned.
 | unrestricted | `siz<=CFG_BUS_OFF`  | unrestricted        | Variable size, unaligned.
+| unrestricted | `siz> CFG_BUS_OFF`  | `adr[siz-1:0]=='d0` | Double size, aligned.
+| unrestricted | `siz> CFG_BUS_OFF`  | unrestricted        | Double size, unaligned.
 |===
 
 * unconventional transfer types.

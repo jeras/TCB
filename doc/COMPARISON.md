@@ -130,3 +130,5 @@ which behaves like [TCB-Lite with `DLY=1`](https://github.com/lowRISC/ibex/blob/
 1. Pulp Platform Snitch [Reqrsp Interface](https://pulp-platform.github.io/snitch/rm/reqrsp_interface/)
 1. OpenTitan [TileLink IP](https://docs.opentitan.org/hw/ip/tlul/doc/)
 1. https://github.com/pulp-platform/obi?tab=readme-ov-file
+
+https://www.researchgate.net/publication/237587431_An_overview_of_on-chip_buses
