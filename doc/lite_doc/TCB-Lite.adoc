@@ -840,6 +840,7 @@ Examples for the following logarithmic size mode configurations are provided:
 | unrestricted | `siz<=CFG_BUS_OFF`  | unrestricted        | Variable size, unaligned.
 | unrestricted | `siz> CFG_BUS_OFF`  | `adr[siz-1:0]=='d0` | Double size, aligned.
 | unrestricted | `siz> CFG_BUS_OFF`  | unrestricted        | Double size, unaligned.
+| unrestricted | `siz==CFG_BUS_OFF`  | unrestricted        | Full size, unconventional alignment.
 |===
 
 * unconventional transfer types.
