@@ -1,4 +1,4 @@
-# Implementation recommendations
+# Subordinate implementation considerations
 
 The aim of this recommendations is to optimize
 Power, Performance, and Area (PPA) for subordinate implementations.
@@ -22,17 +22,116 @@ with typical response delays (0, 1, 2) so that accesses
 to memory-mapped I/O registers is properly ordered.
 
 The ordering requirements for a simple register (non-volatile, no side effects) are:
-
 1. every read reflects the value last written into the register,
 2. for read modify write transactions, the read must reflect the value before the write.
+
+### Write access
+
+The following write access implementations will be analyzed:
+1. write on transfer,
+2. write after transfer (`1` clock cycle delay).
+
+WHile an even larger delay between write transfer and register change
+can have practical applications, this would be outside the scope of this document.
+
+#### Write on transfer
+
+Write data is written into the addressed register
+at the rising clock edge during the handshake transfer cycle.
+
+```SystemVerilog
+assign rsp.rdt = reg[req_adr];
+```
+
+![Write on transfer block diagram](subordinate_write_on_transfer_block.svg)
+
+![Write on transfer timing diagram](subordinate_write_on_transfer_timing.svg)
+
+#### Write after transfer
+
+The request is registered and thus delayed by one clock cycle compared to the handshake transfer.
+Write data is written into the addressed register
+at the rising clock edge one clock period after the handshake transfer cycle.
+
+```SystemVerilog
+always
+assign rsp.rdt = reg[req_adr];
+```
+
+![Write after transfer block diagram](subordinate_write_after_transfer_block.svg)
+
+![Write after transfer timing diagram](subordinate_write_after_transfer_timing.svg)
+
+### Read access
+
+The following read access implementations will be analyzed:
+1. combinational read,
+2. registered request read,
+3. registered response read,
+4. registered request and response read.
+
+#### Combinational read
+
+The read data multiplexer is driven directly (combinationally) from the request address.
+
+```SystemVerilog
+assign rsp.rdt = reg[req.adr];
+```
+
+![Combinational read block diagram](subordinate_read_combinational_block.svg)
+
+![Combinational read timing diagram](subordinate_read_combinational_timing.svg)
+
+#### Registered request read
+
+```SystemVerilog
+always @(posedge clk, posedge rst)
+if (rst)                      dly_adr <= '0;
+else if (vld & rdy & req.ren) dly_adr <= req_adr;
+
+assign rsp.rdt = reg[dly_adr];
+```
+
+![Registered request read block diagram](subordinate_read_registered_request_block.svg)
+
+![Registered request read timing diagram](subordinate_read_registered_request_timing.svg)
+
+#### Registered response read
+
+```SystemVerilog
+always @(posedge clk, posedge rst)
+if (rst)                      rsp.rdt <= '0;
+else if (vld & rdy & req.ren) rsp.rdt <= reg[req.adr];
+```
+
+![Registered response read block diagram](subordinate_read_registered_response_block.svg)
+
+![Registered response read timing diagram](subordinate_read_registered_response_timing.svg)
+
+#### Registered request and response read
+
+```SystemVerilog
+always @(posedge clk, posedge rst)
+if (rst) dly_ren <= '0;
+else     dly_ren <= vld & rdy & req.ren;
+
+always @(posedge clk, posedge rst)
+if (rst)                      dly_adr <= '0;
+else if (vld & rdy & req.ren) dly_adr <= req_adr;
+
+always @(posedge clk, posedge rst)
+if (rst)          rsp.rdt <= '0;
+else if (dly_ren) rsp.rdt <= reg[dly_adr];
+```
+
+![Registered request and response read block diagram](subordinate_read_registered_request_and_response_block.svg)
+
+![Registered request and response read timing diagram](subordinate_read_registered_request_and_response_timing.svg)
 
 ### Response delay 0 (`DLY=0`)
 
 The smallest possible response delay is `0`.
 
-#### Write access
-
-#### Read access
 
 A read response delay of `0` is only possible
 if there is only combinational logic between the request and response.
