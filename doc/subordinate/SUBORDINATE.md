@@ -84,6 +84,11 @@ assign rsp.rdt = reg[req.adr];
 
 #### Registered request read
 
+The request address is delayed one clock cycle using a register.
+While the address register can be registered unconditionally,
+enabling it only during read transfers prevents undesired toggling
+from propagating from the request address to read response data.
+
 ```SystemVerilog
 always @(posedge clk, posedge rst)
 if (rst)                      dly_adr <= '0;
@@ -98,6 +103,11 @@ assign rsp.rdt = reg[dly_adr];
 
 #### Registered response read
 
+The read response data is delayed one clock cycle using a register.
+While the data register can be registered unconditionally,
+enabling it only during read transfers prevents undesired toggling
+from propagating from a volatile register to read response data.
+
 ```SystemVerilog
 always @(posedge clk, posedge rst)
 if (rst)                      rsp.rdt <= '0;
@@ -109,6 +119,9 @@ else if (vld & rdy & req.ren) rsp.rdt <= reg[req.adr];
 ![Registered response read timing diagram](subordinate_read_registered_response_timing.svg)
 
 #### Registered request and response read
+
+Both the request address and read response data are registered,
+resulting in a delay of 2 clock cycles.
 
 ```SystemVerilog
 always @(posedge clk, posedge rst)
@@ -128,19 +141,32 @@ else if (dly_ren) rsp.rdt <= reg[dly_adr];
 
 ![Registered request and response read timing diagram](subordinate_read_registered_request_and_response_timing.svg)
 
+### Combining read and write access
+
+Not all combination of the above read and write access implementations
+will result in an implementation that has a desired response delay and
+complies with the desired memory ordering.
+
 ### Response delay 0 (`DLY=0`)
 
 The smallest possible response delay is `0`.
 
+The only possible read/write access combination is:
+- **write on transfer** and **combinational read**.
 
-A read response delay of `0` is only possible
-if there is only combinational logic between the request and response.
+This combination also allows read modify write to be done in a single clock cycle.
 
-
+Zero delay implementations can be wrapped into modules providing
+request registers (read/write address, write data) or/and
+response registers (read data) to achieve larger response delays.
 
 ### Response delay 1 (`DLY=1`)
 
 Response delay of `1` is typical of SRAM memories.
+
+The possible read/write access combination are:
+- **write on transfer** and **combinational read**
+-
 
 ### Response delay 2 (`DLY=2`)
 
