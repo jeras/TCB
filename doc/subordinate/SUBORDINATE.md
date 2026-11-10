@@ -462,6 +462,8 @@ assign data_mask = enable ? data_input : '0;
 
 ![Data path registers versus masking](data_path_registers_versus_masking.svg)
 
+
+
 #### Registered request
 
 It is common for system bus implementations to use AND gate masking
@@ -476,4 +478,22 @@ for request signals for subordinates that are not currently being addressed.
 #### Partial data decoding (size dependent)
 
 ## References
+
+### Clock gating
+
+Wikipedia articles:
+- [clock gating](https://en.wikipedia.org/wiki/Clock_gating) and
+  [integrated clock-gating (ICG) cells](https://en.wikipedia.org/wiki/Clock_gating#Glitch-free_clock_gating),
+- [glitch removal](https://en.wikipedia.org/wiki/Glitch_removal).
+
+Old clock gating plugin for Yosys
+https://github.com/AUCOHL/Lighter
+
+Yosys [clockgate](https://yosyshq.readthedocs.io/projects/yosys/en/0.46/cmd/clockgate.html) command.
+
+IHP Open Source PDK:
+- process [SG13CMOS5L](https://github.com/IHP-GmbH/ihp-sg13cmos5l)
+  ICG cell [LGCP](https://github.com/IHP-GmbH/ihp-sg13cmos5l/blob/main/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v#L1718-L1754),
+- process [SG13G2](https://github.com/IHP-GmbH/IHP-Open-PDK)
+  ICG cell [LGCP](https://github.com/IHP-GmbH/IHP-Open-PDK/blob/main/ihp-sg13g2/libs.ref/sg13g2_stdcell/verilog/sg13g2_stdcell.v#L1718-L1754).
 
