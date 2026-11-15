@@ -22,7 +22,7 @@ module uart_model #(
     int unsigned DW     = 8,          // data width (sizes from 5 to 8 bits are supported)
     int unsigned SW     = 1,          // stop width (one or more stop bits are supported)
     string       PARITY = "NONE",     // parity ("NONE" , "EVEN", "ODD")
-    longint      BAUD   = 112_200,    // baud rate
+    longint      BAUD   = 115_200,    // baud rate
     // data streams
     string       FILE_I = "",         // program filename
     string       FILE_O = "",         // program filename
