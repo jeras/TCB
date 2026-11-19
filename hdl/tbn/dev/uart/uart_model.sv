@@ -102,7 +102,8 @@ module uart_model #(
     end endtask
 
     final begin
-          stop;
+        $fclose (fp_tx);
+        $fclose (fp_rx);
     end
 
 ////////////////////////////////////////////////////////////////////////////////
