@@ -171,8 +171,8 @@ module tcb_dev_uart #(
 
     // serializer
     tcb_dev_uart_ser #(
-        .BDR     (UART_BDR),
-        .DAT     (UART_DAT)
+        .BAUD_WIDTH (UART_BDR),
+        .DATA_WIDTH (UART_DAT)
     ) tx_ser (
         // system signals
         .clk     (clk),
@@ -216,8 +216,8 @@ module tcb_dev_uart #(
 
     // deserializer
     tcb_dev_uart_des #(
-        .BDR     (UART_BDR),
-        .DAT     (UART_DAT)
+        .BAUD_WIDTH (UART_BDR),
+        .DATA_WIDTH (UART_DAT)
     ) rx_des (
         // system signals
         .clk     (clk),

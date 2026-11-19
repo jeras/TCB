@@ -17,42 +17,43 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 module tcb_dev_uart_des #(
-    parameter  int unsigned BDR = 8,  // baudrate counter width
-    parameter  int unsigned DAT = 8,  // shifter data width
-    parameter  int unsigned STP = 1   // stop sequence width
+    parameter  int unsigned BAUD_WIDTH = 8,  // baudrate number width
+    parameter  int unsigned DATA_WIDTH = 8,  // shifter data width
+    parameter  int unsigned STOP_WIDTH = 1   // stop sequence width
 )(
     // system signals
-    input  logic           clk,
-    input  logic           rst,
+    input  logic                  clk,
+    input  logic                  rst,
     // configuration
-    input  logic [BDR-1:0] cfg_bdr,  // baudrate
-    input  logic [BDR-1:0] cfg_smp,  // sample position
+    input  logic [BAUD_WIDTH-1:0] cfg_bdr,  // baudrate
+    input  logic [BAUD_WIDTH-1:0] cfg_smp,  // sample position
     // parallel stream (there is no READY signal)
-    output logic           str_vld,  // valid
-    output logic [DAT-1:0] str_dat,  // data
+    output logic                  str_vld,  // valid
+    output logic [DATA_WIDTH-1:0] str_dat,  // data
     // serial RX output
-    input  logic           rxd
+    input  logic                  rxd
 );
 
     // shift sequence length (start + data + stop)
-    localparam int unsigned SHF = 1 + DAT + STP;
+    localparam int unsigned SHF = 1 + DATA_WIDTH + STOP_WIDTH;
 
     // delay RDX and detect a start edge
-    logic           rxd_dly;
-    logic           rxd_edg;
+    logic                  rxd_dly;
+    logic                  rxd_edg;
 
-    // baudrate counter
-    logic [BDR-1:0] bdr_cnt;
-    logic           bdr_end;
-    logic           bdr_smp;
+    // baudrate counter/decrement/end
+    logic [BAUD_WIDTH-1:0] bdr_cnt;
+    logic [BAUD_WIDTH-0:0] bdr_dec;
+    logic                  bdr_end;
+    logic                  bdr_smp;
 
     // shifter bit counter
-    logic   [4-1:0] shf_cnt;
-    logic           shf_end;
-    logic           shf_run;
+    logic          [4-1:0] shf_cnt;
+    logic                  shf_end;
+    logic                  shf_run;
 
     // shift data register
-    logic [DAT+STP-1:0] shf_dat;
+    logic [DATA_WIDTH+STOP_WIDTH-1:0] shf_dat;
 
 ////////////////////////////////////////////////////////////////////////////////
 // parallel stream
@@ -83,12 +84,17 @@ module tcb_dev_uart_des #(
     always_ff @(posedge clk, posedge rst)
     if (rst)          bdr_cnt <= '0;
     else begin
-        if (shf_run)  bdr_cnt <= bdr_end ? '0 : bdr_cnt + 1;
-        else          bdr_cnt <= '0;
+        if (shf_run)  bdr_cnt <= bdr_end ? cfg_bdr : bdr_dec[BAUD_WIDTH-1:0];
+        else          bdr_cnt <= cfg_bdr;
     end
 
-    // enable signal for shifting and sample logic
-    assign bdr_end = bdr_cnt == cfg_bdr;
+    // baudrate counter decrement
+    assign bdr_dec = {1'b0, bdr_cnt} - 'd1;
+
+    // enable signal for shifting logic
+    assign bdr_end = bdr_dec[BAUD_WIDTH];
+
+    // sample pulse logic
     assign bdr_smp = bdr_cnt == cfg_smp;
 
     // bit counter
@@ -122,10 +128,10 @@ module tcb_dev_uart_des #(
     // data shift register
     always_ff @(posedge clk)
     if (shf_run) begin
-        if (bdr_smp)  shf_dat <= {rxd, shf_dat[DAT+STP-1:1]};
+        if (bdr_smp)  shf_dat <= {rxd, shf_dat[DATA_WIDTH+STOP_WIDTH-1:1]};
     end
 
     // parallel stream data (START is already shifted out when VALID is active)
-    assign str_dat = shf_dat[DAT-1:0];
+    assign str_dat = shf_dat[DATA_WIDTH-1:0];
 
 endmodule: tcb_dev_uart_des
